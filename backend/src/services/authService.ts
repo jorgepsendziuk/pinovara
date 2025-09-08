@@ -249,13 +249,47 @@ export const getUserById = async (userId: number): Promise<AuthUser> => {
 };
 
 /**
- * Verificar se usuário tem uma permissão específica
+ * Verificar se usuário tem uma permissão específica baseada no tipo de usuário
  */
 export const hasPermission = (user: AuthUser, moduleName: string, roleName?: string): boolean => {
+  // Verificar se o usuário tem algum dos tipos de role
   return user.roles.some(role => {
-    const moduleMatch = role.module.name === moduleName;
-    const roleMatch = !roleName || role.name === roleName;
-    return moduleMatch && roleMatch;
+    const userType = role.name; // O nome do role representa o tipo de usuário
+
+    // Se especificou um roleName, verificar se coincide
+    if (roleName && userType !== roleName) {
+      return false;
+    }
+
+    // Lógica de permissões baseada no tipo de usuário
+    switch (userType) {
+      case 'administracao':
+        // Admin tem acesso a tudo
+        return true;
+
+      case 'gestao':
+        // Gestão tem acesso de visualização a tudo
+        return true;
+
+      case 'tecnico':
+        // Técnico só tem acesso ao módulo de técnicos
+        return moduleName === 'tecnicos';
+
+      case 'pesquisa':
+        // Pesquisa tem acesso aos módulos especificados
+        return ['pesquisa', 'dashboard', 'diagnostico', 'relatorios', 'mapas'].includes(moduleName);
+
+      case 'associados':
+        // Associados só tem acesso ao módulo de associados
+        return moduleName === 'associados';
+
+      case 'geoprocessamento':
+        // Geoprocessamento tem acesso aos módulos especificados
+        return ['mapas', 'dashboard', 'diagnostico', 'relatorios'].includes(moduleName);
+
+      default:
+        return false;
+    }
   });
 };
 

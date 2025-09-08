@@ -11,7 +11,7 @@ export const createModuleSchema = z.object({
 export const createRoleSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   description: z.string().optional(),
-  moduleId: z.string().cuid('ID do módulo inválido'),
+  moduleId: z.number().int().positive('ID do módulo deve ser um número positivo'),
 });
 
 export class ModuleService {
@@ -59,7 +59,7 @@ export class ModuleService {
     });
   }
 
-  static async getModuleById(id: string) {
+  static async getModuleById(id: number) {
     const module = await prisma.module.findUnique({
       where: { id },
       include: {
@@ -82,7 +82,7 @@ export class ModuleService {
     return module;
   }
 
-  static async updateModule(id: string, data: Partial<z.infer<typeof createModuleSchema>>) {
+  static async updateModule(id: number, data: Partial<z.infer<typeof createModuleSchema>>) {
     const module = await prisma.module.findUnique({
       where: { id },
     });
@@ -111,7 +111,7 @@ export class ModuleService {
     });
   }
 
-  static async deleteModule(id: string) {
+  static async deleteModule(id: number) {
     const module = await prisma.module.findUnique({
       where: { id },
       include: {
@@ -187,7 +187,7 @@ export class ModuleService {
     });
   }
 
-  static async getRoleById(id: string) {
+  static async getRoleById(id: number) {
     const role = await prisma.role.findUnique({
       where: { id },
       include: {
@@ -207,7 +207,7 @@ export class ModuleService {
     return role;
   }
 
-  static async updateRole(id: string, data: Partial<Omit<z.infer<typeof createRoleSchema>, 'moduleId'>>) {
+  static async updateRole(id: number, data: Partial<Omit<z.infer<typeof createRoleSchema>, 'moduleId'>>) {
     const role = await prisma.role.findUnique({
       where: { id },
     });
@@ -241,7 +241,7 @@ export class ModuleService {
     });
   }
 
-  static async deleteRole(id: string) {
+  static async deleteRole(id: number) {
     const role = await prisma.role.findUnique({
       where: { id },
       include: {

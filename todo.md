@@ -24,6 +24,10 @@ administracao - cria usuarios, acessa tudo, pode editar tudo
 gestao - visualiza tudo
 geoprocessamento - acessa e edita modulo de mapas, adiciona entidades geo etc..
 
+
+me fiz entender errado, os roles sao os especificados anteriormente, mas nao existem varios roles para cada módulo, e sim cada role pode acessar alguns módulos, como exemplificado.. ajuste essas roles
+
+
 resumo do sistema:
 sistema onde serao cadastrados organizacoes como sindicatos e associacoes, sera aplicado um questionario em campo e os dados virao para o banco de dados, onde o sistema mostrara os dados das organizacoes para visualizacao, edicao e cálculo da maturidade.
 em outra fase, serao cadastrados em campo através dos técnicos de campo também as pessoas que participam dessas organizacoes

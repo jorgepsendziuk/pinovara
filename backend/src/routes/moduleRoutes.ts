@@ -14,45 +14,8 @@ router.post('/',
   moduleController.createModule
 );
 
-/**
- * @route GET /modules
- * @desc Obter todos os módulos
- * @access Public
- */
-router.get('/',
-  moduleController.getAllModules
-);
-
-/**
- * @route GET /modules/:id
- * @desc Obter módulo por ID
- * @access Public
- */
-router.get('/:id',
-  moduleController.getModuleById
-);
-
-/**
- * @route PUT /modules/:id
- * @desc Atualizar módulo
- * @access Public
- * @body { name?: string, description?: string }
- */
-router.put('/:id',
-  moduleController.updateModule
-);
-
-/**
- * @route DELETE /modules/:id
- * @desc Excluir módulo
- * @access Public
- */
-router.delete('/:id',
-  moduleController.deleteModule
-);
-
-// Rotas de Papéis
-/**
+// Rotas de Papéis (devem vir primeiro para não conflitar com :id)
+ /**
  * @route POST /modules/roles
  * @desc Criar novo papel
  * @access Public
@@ -97,6 +60,54 @@ router.put('/roles/:id',
  */
 router.delete('/roles/:id',
   moduleController.deleteRole
+);
+
+// Rotas de Módulos
+/**
+ * @route POST /modules
+ * @desc Criar novo módulo
+ * @access Public
+ * @body { name: string, description?: string }
+ */
+router.post('/',
+  moduleController.createModule
+);
+
+/**
+ * @route GET /modules
+ * @desc Obter todos os módulos
+ * @access Public
+ */
+router.get('/',
+  moduleController.getAllModules
+);
+
+/**
+ * @route GET /modules/:id
+ * @desc Obter módulo por ID
+ * @access Public
+ */
+router.get('/:id',
+  moduleController.getModuleById
+);
+
+/**
+ * @route PUT /modules/:id
+ * @desc Atualizar módulo
+ * @access Public
+ * @body { name?: string, description?: string }
+ */
+router.put('/:id',
+  moduleController.updateModule
+);
+
+/**
+ * @route DELETE /modules/:id
+ * @desc Excluir módulo
+ * @access Public
+ */
+router.delete('/:id',
+  moduleController.deleteModule
 );
 
 export default router;

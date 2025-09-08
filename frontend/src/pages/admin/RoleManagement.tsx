@@ -2,23 +2,26 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface Module {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  roles?: Role[];
+  _count?: { roles: number };
 }
 
 interface Role {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   active: boolean;
-  moduleId: string;
+  moduleId: number;
   module: Module;
   createdAt: string;
   updatedAt: string;
+  _count?: { userRoles: number };
 }
 
 function RoleManagement() {
@@ -27,21 +30,12 @@ function RoleManagement() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [showModuleForm, setShowModuleForm] = useState(false);
   const [showRoleForm, setShowRoleForm] = useState(false);
   const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
-  const [newModule, setNewModule] = useState({
-    name: '',
-    description: ''
-  });
-  const [newRole, setNewRole] = useState({
-    name: '',
-    description: '',
-    moduleId: ''
-  });
+  const [newModule, setNewModule] = useState({ name: '', description: '' });
+  const [newRole, setNewRole] = useState({ name: '', description: '', moduleId: '' });
 
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -285,135 +279,90 @@ function RoleManagement() {
 
   return (
     <div className="admin-page">
-      <div className="page-header">
-        <div className="header-content">
-          <h1>Gestão de Módulos e Papéis</h1>
-          <p>Gerencie os módulos do sistema e seus papéis de acesso</p>
+      {/* Header Compacto */}
+      <div className="compact-header">
+        <div className="compact-title">
+          <h1>Módulos & Papéis</h1>
+          <div className="compact-stats">
+            <span>{modules.filter(m => m.active).length} módulos</span>
+            <span>{roles.filter(r => r.active).length} papéis</span>
+          </div>
         </div>
-        
-        <div className="header-actions">
-          <button 
-            onClick={() => setShowModuleForm(true)}
-            className="btn btn-secondary"
-          >
-            + Novo Módulo
+
+        <div className="compact-actions">
+          <button onClick={() => setShowModuleForm(true)} className="btn btn-small btn-secondary">
+            + Módulo
           </button>
-          <button 
-            onClick={() => setShowRoleForm(true)}
-            className="btn btn-primary"
-          >
-            + Novo Papel
+          <button onClick={() => setShowRoleForm(true)} className="btn btn-small btn-primary">
+            + Papel
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="alert alert-error">
+        <div className="alert alert-error alert-compact">
           <p>{error}</p>
-          <button onClick={() => setError(null)} className="alert-close">×</button>
+          <button onClick={() => setError(null)}>×</button>
         </div>
       )}
 
-      {/* Stats */}
-      <div className="stats-section">
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-value">{modules.filter(m => m.active).length}</div>
-            <div className="stat-label">Módulos Ativos</div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-value">{roles.filter(r => r.active).length}</div>
-            <div className="stat-label">Papéis Ativos</div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-value">{roles.length}</div>
-            <div className="stat-label">Total de Papéis</div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-value">{modules.length}</div>
-            <div className="stat-label">Total de Módulos</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Modules and Roles */}
-      <div className="modules-roles-section">
+      {/* Lista Compacta de Módulos */}
+      <div className="compact-modules-list">
         {groupRolesByModule().map(({ module, roles: moduleRoles }) => (
-          <div key={module.id} className="module-section">
-            <div className="module-header">
-              <div className="module-info">
-                <h2>{module.name}</h2>
-                {module.description && <p>{module.description}</p>}
-                <div className="module-meta">
-                  <span className={`status-badge ${module.active ? 'active' : 'inactive'}`}>
-                    {module.active ? 'Ativo' : 'Inativo'}
-                  </span>
-                  <span className="creation-date">
-                    Criado: {new Date(module.createdAt).toLocaleDateString('pt-BR')}
-                  </span>
+          <div key={module.id} className="compact-module-item">
+            <div className="compact-module-header">
+              <div className="compact-module-info">
+                <div className="module-name-badges">
+                  <h3>{module.name}</h3>
+                  <div className="module-badges">
+                    <span className={`status-dot ${module.active ? 'active' : 'inactive'}`}></span>
+                    <span className="role-count">{moduleRoles.length} papéis</span>
+                  </div>
                 </div>
+                {module.description && (
+                  <p className="module-description-compact">{module.description}</p>
+                )}
               </div>
-              
-              <div className="module-actions">
-                <button
-                  onClick={() => setEditingModule(module)}
-                  className="btn btn-small btn-outline"
-                >
-                  Editar
+
+              <div className="compact-module-actions">
+                <button onClick={() => setEditingModule(module)} className="btn-icon" title="Editar módulo">
+                  ✏️
                 </button>
-                <button
-                  onClick={() => handleDeleteModule(module.id)}
-                  className="btn btn-small btn-danger"
-                >
-                  Excluir
+                <button onClick={() => handleDeleteModule(module.id)} className="btn-icon btn-danger" title="Excluir módulo">
+                  🗑️
                 </button>
               </div>
             </div>
             
-            <div className="roles-grid">
-              {moduleRoles.length > 0 ? (
-                moduleRoles.map((role) => (
-                  <div key={role.id} className="role-card">
-                    <div className="role-header">
-                      <h3>{role.name}</h3>
-                      <span className={`status-badge ${role.active ? 'active' : 'inactive'}`}>
-                        {role.active ? 'Ativo' : 'Inativo'}
+            {/* Papéis em Linha Compacta */}
+            {moduleRoles.length > 0 && (
+              <div className="compact-roles-list">
+                {moduleRoles.map((role) => (
+                  <div key={role.id} className="compact-role-item">
+                    <div className="compact-role-info">
+                      <span className="role-name">{role.name}</span>
+                      {role.description && (
+                        <span className="role-desc" title={role.description}>
+                          {role.description.length > 30 ? `${role.description.substring(0, 30)}...` : role.description}
+                        </span>
+                      )}
+                      <span className={`status-indicator ${role.active ? 'active' : 'inactive'}`}>
+                        {role.active ? '●' : '○'}
                       </span>
                     </div>
-                    
-                    {role.description && (
-                      <p className="role-description">{role.description}</p>
-                    )}
-                    
-                    <div className="role-meta">
-                      <span>Criado: {new Date(role.createdAt).toLocaleDateString('pt-BR')}</span>
-                    </div>
-                    
-                    <div className="role-actions">
-                      <button
-                        onClick={() => setEditingRole(role)}
-                        className="btn btn-small btn-outline"
-                      >
-                        Editar
+
+                    <div className="compact-role-actions">
+                      <button onClick={() => setEditingRole(role)} className="btn-icon-small" title="Editar papel">
+                        ✏️
                       </button>
-                      <button
-                        onClick={() => handleDeleteRole(role.id)}
-                        className="btn btn-small btn-danger"
-                      >
-                        Excluir
+                      <button onClick={() => handleDeleteRole(role.id)} className="btn-icon-small btn-danger" title="Excluir papel">
+                        🗑️
                       </button>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="no-roles">
-                  <p>Nenhum papel criado para este módulo ainda.</p>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
 

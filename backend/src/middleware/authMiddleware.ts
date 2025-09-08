@@ -163,7 +163,7 @@ export const requireOwnership = (resourceIdParam: string = 'id') => {
     const resourceId = req.params[resourceIdParam];
 
     // Se o ID do recurso for igual ao ID do usuário, permitir acesso
-    if (req.user.id === resourceId) {
+    if (req.user.id === Number(resourceId)) {
       next();
       return;
     }

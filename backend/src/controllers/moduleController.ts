@@ -69,7 +69,7 @@ export const moduleController = {
   async getModuleById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const module = await ModuleService.getModuleById(id);
+      const module = await ModuleService.getModuleById(Number(id));
 
       res.json({
         message: 'Módulo obtido com sucesso',
@@ -99,7 +99,7 @@ export const moduleController = {
   async updateModule(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const module = await ModuleService.updateModule(id, req.body);
+      const module = await ModuleService.updateModule(Number(id), req.body);
 
       res.json({
         message: 'Módulo atualizado com sucesso',
@@ -141,7 +141,7 @@ export const moduleController = {
   async deleteModule(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      await ModuleService.deleteModule(id);
+      await ModuleService.deleteModule(Number(id));
 
       res.json({
         message: 'Módulo excluído com sucesso',
@@ -257,7 +257,7 @@ export const moduleController = {
   async getRoleById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const role = await ModuleService.getRoleById(id);
+      const role = await ModuleService.getRoleById(Number(id));
 
       res.json({
         message: 'Papel obtido com sucesso',
@@ -287,7 +287,7 @@ export const moduleController = {
   async updateRole(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const role = await ModuleService.updateRole(id, req.body);
+      const role = await ModuleService.updateRole(Number(id), req.body);
 
       res.json({
         message: 'Papel atualizado com sucesso',
@@ -329,7 +329,7 @@ export const moduleController = {
   async deleteRole(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      await ModuleService.deleteRole(id);
+      await ModuleService.deleteRole(Number(id));
 
       res.json({
         message: 'Papel excluído com sucesso',
