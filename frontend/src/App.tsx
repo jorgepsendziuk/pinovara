@@ -24,6 +24,7 @@ import PesquisaModule from './pages/modules/PesquisaModule';
 import TecnicosModule from './pages/modules/TecnicosModule';
 import MobilizacaoModule from './pages/modules/MobilizacaoModule';
 import TestPermissions from './pages/TestPermissions';
+import AccessDenied from './pages/AccessDenied';
 import './App.css';
 
 function AppRoutes() {
@@ -148,6 +149,13 @@ function AppRoutes() {
         <Route path="modules" element={<RoleManagement />} />
         <Route path="roles" element={<RoleManagement />} />
         <Route path="test-permissions" element={<TestPermissions />} />
+        <Route path="test-access-denied" element={<AccessDenied
+          title="Teste de Acesso Negado"
+          message="Esta é uma página de teste para verificar os estilos dos botões."
+          showLoginButton={true}
+          showDashboardButton={true}
+          contactAdmin={true}
+        />} />
         <Route path="backup" element={<BackupManager />} />
         <Route path="monitor" element={<SystemMonitor />} />
       </Route>
