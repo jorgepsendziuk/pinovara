@@ -44,6 +44,20 @@ router.post('/logout', authenticateToken, authController.logout);
 router.get('/verify', authenticateToken, authController.verifyAuth);
 
 /**
+ * @route PUT /auth/profile
+ * @desc Atualizar perfil do usuário
+ * @access Private - Requer autenticação
+ */
+router.put('/profile', authenticateToken, authController.updateProfile);
+
+/**
+ * @route PUT /auth/change-password
+ * @desc Alterar senha do usuário
+ * @access Private - Requer autenticação
+ */
+router.put('/change-password', authenticateToken, authController.changePassword);
+
+/**
  * @route POST /auth/refresh
  * @desc Renovar token de acesso (futuro)
  * @access Private - Requer autenticação

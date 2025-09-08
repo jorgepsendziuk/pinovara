@@ -400,16 +400,21 @@ const Sidebar: React.FC = () => {
 
         {/* User Info Compact */}
         {!isCollapsed && user && (
-          <div className="user-compact">
-            <div className="user-avatar-mini">
-              <span>{user.name?.charAt(0).toUpperCase()}</span>
+          <Link to="/perfil" className="user-compact-link">
+            <div className="user-compact">
+              <div className="user-avatar-mini">
+                <span>{user.name?.charAt(0).toUpperCase()}</span>
+              </div>
+              <div className="user-info-mini">
+                <span className="user-name-mini">
+                  {user.name?.split(' ')[0]}
+                </span>
+                <span className="user-role-mini">
+                  {user.roles?.[0]?.name || 'Usuário'}
+                </span>
+              </div>
             </div>
-            <div className="user-info-mini">
-              <span className="user-name-mini">
-                {user.name?.split(' ')[0]}
-              </span>
-            </div>
-          </div>
+          </Link>
         )}
 
         <button

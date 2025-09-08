@@ -148,6 +148,216 @@ export const verifyAuth = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
+/**
+ * Controller para atualizar perfil do usuário
+ */
+export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: {
+          message: 'Usuário não autenticado',
+          statusCode: 401,
+          code: 'USER_NOT_AUTHENTICATED',
+        },
+      });
+      return;
+    }
+
+    const { name, email } = req.body;
+
+    // Validações básicas
+    if (!name || !email) {
+      res.status(400).json({
+        success: false,
+        error: {
+          message: 'Nome e email são obrigatórios',
+          statusCode: 400,
+          code: 'VALIDATION_ERROR',
+        },
+      });
+      return;
+    }
+
+    // Verificar se o email já está em uso por outro usuário
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email: email.toLowerCase(),
+        id: { not: req.user.id }
+      }
+    });
+
+    if (existingUser) {
+      res.status(409).json({
+        success: false,
+        error: {
+          message: 'Este email já está em uso por outro usuário',
+          statusCode: 409,
+          code: 'EMAIL_EXISTS',
+        },
+      });
+      return;
+    }
+
+    // Atualizar usuário
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+      },
+      include: {
+        userRoles: {
+          include: {
+            role: {
+              include: {
+                module: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Formatar resposta
+    const formattedUser = {
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      active: updatedUser.active,
+      roles: updatedUser.userRoles.map(userRole => ({
+        id: userRole.role.id,
+        name: userRole.role.name,
+        module: {
+          id: userRole.role.module.id,
+          name: userRole.role.module.name
+        }
+      }))
+    };
+
+    res.json({
+      success: true,
+      message: 'Perfil atualizado com sucesso',
+      data: { user: formattedUser },
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar perfil:', error);
+    handleAuthError(error, res);
+  }
+};
+
+/**
+ * Controller para alterar senha do usuário
+ */
+export const changePassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: {
+          message: 'Usuário não autenticado',
+          statusCode: 401,
+          code: 'USER_NOT_AUTHENTICATED',
+        },
+      });
+      return;
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    // Validações básicas
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({
+        success: false,
+        error: {
+          message: 'Senha atual e nova senha são obrigatórias',
+          statusCode: 400,
+          code: 'VALIDATION_ERROR',
+        },
+      });
+      return;
+    }
+
+    // Validar força da nova senha
+    if (newPassword.length < 8) {
+      res.status(400).json({
+        success: false,
+        error: {
+          message: 'Nova senha deve ter pelo menos 8 caracteres',
+          statusCode: 400,
+          code: 'VALIDATION_ERROR',
+        },
+      });
+      return;
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+      res.status(400).json({
+        success: false,
+        error: {
+          message: 'Nova senha deve conter pelo menos uma letra minúscula, uma maiúscula e um número',
+          statusCode: 400,
+          code: 'VALIDATION_ERROR',
+        },
+      });
+      return;
+    }
+
+    // Buscar usuário com senha
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id }
+    });
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        error: {
+          message: 'Usuário não encontrado',
+          statusCode: 404,
+          code: 'USER_NOT_FOUND',
+        },
+      });
+      return;
+    }
+
+    // Verificar senha atual
+    const bcrypt = require('bcryptjs');
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+
+    if (!isCurrentPasswordValid) {
+      res.status(400).json({
+        success: false,
+        error: {
+          message: 'Senha atual incorreta',
+          statusCode: 400,
+          code: 'INVALID_CURRENT_PASSWORD',
+        },
+      });
+      return;
+    }
+
+    // Hash da nova senha
+    const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+
+    // Atualizar senha
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        password: hashedNewPassword,
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Senha alterada com sucesso',
+    });
+  } catch (error) {
+    console.error('Erro ao alterar senha:', error);
+    handleAuthError(error, res);
+  }
+};
+
 // ========== UTILITÁRIOS ==========
 
 /**
@@ -219,4 +429,6 @@ export const authController = {
   logout,
   refreshToken,
   verifyAuth,
+  updateProfile,
+  changePassword,
 };

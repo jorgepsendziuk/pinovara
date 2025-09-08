@@ -25,6 +25,7 @@ import TecnicosModule from './pages/modules/TecnicosModule';
 import MobilizacaoModule from './pages/modules/MobilizacaoModule';
 import TestPermissions from './pages/TestPermissions';
 import AccessDenied from './pages/AccessDenied';
+import Profile from './pages/Profile';
 import './App.css';
 
 function AppRoutes() {
@@ -128,6 +129,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <MobilizacaoModule />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/perfil"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />
