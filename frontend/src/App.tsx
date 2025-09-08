@@ -23,6 +23,7 @@ import MapasModule from './pages/modules/MapasModule';
 import PesquisaModule from './pages/modules/PesquisaModule';
 import TecnicosModule from './pages/modules/TecnicosModule';
 import MobilizacaoModule from './pages/modules/MobilizacaoModule';
+import TestPermissions from './pages/TestPermissions';
 import './App.css';
 
 function AppRoutes() {
@@ -146,6 +147,7 @@ function AppRoutes() {
         <Route path="users" element={<UserManagement />} />
         <Route path="modules" element={<RoleManagement />} />
         <Route path="roles" element={<RoleManagement />} />
+        <Route path="test-permissions" element={<TestPermissions />} />
         <Route path="backup" element={<BackupManager />} />
         <Route path="monitor" element={<SystemMonitor />} />
       </Route>

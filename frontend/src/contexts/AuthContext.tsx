@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authAPI, AuthUser, LoginResponse, RegisterResponse, hasPermission, hasAnyPermission } from '../services/api';
+import AccessDenied from '../pages/AccessDenied';
 
 // ========== INTERFACES ==========
 
@@ -268,13 +269,13 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    // Redirecionar para login ou mostrar mensagem
     return (
-      <div className="access-denied">
-        <h2>Acesso Negado</h2>
-        <p>Você precisa estar logado para acessar esta página.</p>
-        <a href="/login" className="btn btn-primary">Fazer Login</a>
-      </div>
+      <AccessDenied
+        title="Acesso Restrito"
+        message="Você precisa estar logado para acessar esta página."
+        showLoginButton={true}
+        showDashboardButton={false}
+      />
     );
   }
 
@@ -335,7 +336,22 @@ export function PermissionGuard({
   }
 
   if (!hasAccess) {
-    return <>{fallback}</>;
+    if (fallback) {
+      return <>{fallback}</>;
+    }
+
+    // Mostrar página de acesso negado com detalhes específicos
+    return (
+      <AccessDenied
+        title="Permissão Insuficiente"
+        message="Você não tem as permissões necessárias para acessar este conteúdo."
+        showLoginButton={false}
+        showDashboardButton={true}
+        moduleName={module}
+        requiredRole={role}
+        contactAdmin={true}
+      />
+    );
   }
 
   return <>{children}</>;
