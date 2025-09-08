@@ -3,20 +3,111 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["pinovara"]
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String     @id @default(cuid())
+  email     String     @unique
   password  String
   name      String
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relacionamentos
+  userRoles UserRole[]
+  auditLogs AuditLog[]
+
+  @@schema("pinovara")
+  @@map("users")
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  roles Role[]
+
+  @@schema("pinovara")
+  @@map("modules")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  module    Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId  String
+  userRoles UserRole[]
+
+  @@unique([name, moduleId])
+  @@schema("pinovara")
+  @@map("roles")
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("users")
+  // Relacionamentos
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId String
+
+  @@unique([userId, roleId])
+  @@schema("pinovara")
+  @@map("user_roles")
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  type        String   // string, number, boolean, json
+  description String?
+  category    String   @default("general")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@schema("pinovara")
+  @@map("system_settings")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  entity     String   // users, roles, settings, etc.
+  entityId   String?
+  oldData    String?  // JSON
+  newData    String?  // JSON
+  userAgent  String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  // Relacionamentos
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId String?
+
+  @@schema("pinovara")
+  @@map("audit_logs")
 }

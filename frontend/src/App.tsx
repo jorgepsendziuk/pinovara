@@ -1,58 +1,88 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import api from './services/api';
-import './App.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, ProtectedRoute, PublicRoute } from './contexts/AuthContext';
+import Landing from './pages/Landing';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import AdminLayout from './components/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import SystemInfo from './pages/admin/SystemInfo';
+import SystemSettings from './pages/admin/SystemSettings';
+import AuditLogs from './pages/admin/AuditLogs';
+import UserManagement from './pages/admin/UserManagement';
+import RoleManagement from './pages/admin/RoleManagement';
+import BackupManager from './pages/admin/BackupManager';
+import SystemMonitor from './pages/admin/SystemMonitor';
+import './App.css';
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<Landing />} />
+
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/register"
+        element={
+          <PublicRoute>
+            <Register />
+          </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/pinovara"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Routes */}
+      <Route
+        path="/admin/*"
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminDashboard />} />
+        <Route path="system-info" element={<SystemInfo />} />
+        <Route path="settings" element={<SystemSettings />} />
+        <Route path="audit-logs" element={<AuditLogs />} />
+        <Route path="users" element={<UserManagement />} />
+        <Route path="modules" element={<RoleManagement />} />
+        <Route path="roles" element={<RoleManagement />} />
+        <Route path="backup" element={<BackupManager />} />
+        <Route path="monitor" element={<SystemMonitor />} />
+      </Route>
+
+      {/* Redirecionar rotas não encontradas */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
+}
 
 function App() {
   return (
     <Router>
-      <div className="App">
-        <header className="App-header">
-          <h1>PINOVARA</h1>
-          <p>Sistema em desenvolvimento</p>
-        </header>
-        <main>
-          <Routes>
-            <Route path="/" element={<Home />} />
-          </Routes>
-        </main>
-      </div>
+      <AuthProvider>
+        <div className="App">
+          <AppRoutes />
+        </div>
+      </AuthProvider>
     </Router>
-  )
+  );
 }
 
-function Home() {
-  const [apiStatus, setApiStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [apiMessage, setApiMessage] = useState<string>('');
-
-  useEffect(() => {
-    testApiConnection();
-  }, []);
-
-  const testApiConnection = async () => {
-    try {
-      const response = await api.get('/');
-      setApiStatus('success');
-      setApiMessage(response.data.message);
-    } catch (error) {
-      setApiStatus('error');
-      setApiMessage('Erro ao conectar com a API');
-      console.error('Erro na conexão:', error);
-    }
-  };
-
-  return (
-    <div className="home">
-      <h2>Bem-vindo ao PINOVARA</h2>
-      <p>Sistema completo back-end + front-end</p>
-      <div className="status">
-        <p>🔧 Back-end: {apiStatus === 'success' ? '✅ Conectado' : apiStatus === 'error' ? '❌ Erro' : '⏳ Testando...'}</p>
-        <p>🎨 Front-end: ✅ Funcionando</p>
-        <p>🗄️ Database: PostgreSQL configurado</p>
-        {apiMessage && <p className="api-message">{apiMessage}</p>}
-      </div>
-    </div>
-  )
-}
-
-export default App
+export default App;
