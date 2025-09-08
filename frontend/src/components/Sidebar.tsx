@@ -36,18 +36,251 @@ const Sidebar: React.FC = () => {
 
   const menuItems: MenuItem[] = [
     {
-      id: 'sistema',
-      label: 'Sistema',
-      icon: '🏠',
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: '📊',
       path: '/pinovara',
-      module: 'sistema',
+      module: 'dashboard',
       children: [
         {
-          id: 'dashboard',
-          label: 'Dashboard',
-          icon: '📊',
+          id: 'dashboard-main',
+          label: 'Dashboard Principal',
+          icon: '📈',
           path: '/pinovara',
-          module: 'sistema'
+          module: 'dashboard'
+        }
+      ]
+    },
+    {
+      id: 'organizacoes',
+      label: 'Organizações',
+      icon: '🏢',
+      path: '/organizacoes',
+      module: 'organizacoes',
+      children: [
+        {
+          id: 'organizacoes-list',
+          label: 'Lista de Organizações',
+          icon: '📋',
+          path: '/organizacoes',
+          module: 'organizacoes'
+        },
+        {
+          id: 'organizacoes-add',
+          label: 'Adicionar Organização',
+          icon: '➕',
+          path: '/organizacoes/add',
+          module: 'organizacoes'
+        }
+      ]
+    },
+    {
+      id: 'diagnostico',
+      label: 'Diagnóstico',
+      icon: '🔍',
+      path: '/diagnostico',
+      module: 'diagnostico',
+      children: [
+        {
+          id: 'diagnostico-questionarios',
+          label: 'Questionários',
+          icon: '📝',
+          path: '/diagnostico/questionarios',
+          module: 'diagnostico'
+        },
+        {
+          id: 'diagnostico-relatorios',
+          label: 'Relatórios de Diagnóstico',
+          icon: '📊',
+          path: '/diagnostico/relatorios',
+          module: 'diagnostico'
+        }
+      ]
+    },
+    {
+      id: 'associados',
+      label: 'Associados',
+      icon: '👥',
+      path: '/associados',
+      module: 'associados',
+      children: [
+        {
+          id: 'associados-list',
+          label: 'Lista de Associados',
+          icon: '📋',
+          path: '/associados',
+          module: 'associados'
+        },
+        {
+          id: 'associados-add',
+          label: 'Adicionar Associado',
+          icon: '➕',
+          path: '/associados/add',
+          module: 'associados'
+        }
+      ]
+    },
+    {
+      id: 'relatorios',
+      label: 'Relatórios',
+      icon: '📋',
+      path: '/relatorios',
+      module: 'relatorios',
+      children: [
+        {
+          id: 'relatorios-individuais',
+          label: 'Relatórios Individuais',
+          icon: '👤',
+          path: '/relatorios/individuais',
+          module: 'relatorios'
+        },
+        {
+          id: 'relatorios-coletivos',
+          label: 'Relatórios Coletivos',
+          icon: '👥',
+          path: '/relatorios/coletivos',
+          module: 'relatorios'
+        },
+        {
+          id: 'relatorios-area',
+          label: 'Relatórios por Área',
+          icon: '🗺️',
+          path: '/relatorios/area',
+          module: 'relatorios'
+        }
+      ]
+    },
+    {
+      id: 'mapas',
+      label: 'Mapas',
+      icon: '🗺️',
+      path: '/mapas',
+      module: 'mapas',
+      children: [
+        {
+          id: 'mapas-visitas',
+          label: 'Visitas',
+          icon: '📍',
+          path: '/mapas/visitas',
+          module: 'mapas'
+        },
+        {
+          id: 'mapas-areas',
+          label: 'Áreas',
+          icon: '🏗️',
+          path: '/mapas/areas',
+          module: 'mapas'
+        },
+        {
+          id: 'mapas-camadas',
+          label: 'Camadas Temáticas',
+          icon: '📊',
+          path: '/mapas/camadas',
+          module: 'mapas'
+        }
+      ]
+    },
+    {
+      id: 'pesquisa',
+      label: 'Pesquisa',
+      icon: '🔬',
+      path: '/pesquisa',
+      module: 'pesquisa',
+      children: [
+        {
+          id: 'pesquisa-dados',
+          label: 'Dados Tabulares',
+          icon: '📊',
+          path: '/pesquisa/dados',
+          module: 'pesquisa'
+        },
+        {
+          id: 'pesquisa-graficos',
+          label: 'Gráficos e Visualizações',
+          icon: '📈',
+          path: '/pesquisa/graficos',
+          module: 'pesquisa'
+        },
+        {
+          id: 'pesquisa-export',
+          label: 'Exportar Dados',
+          icon: '📥',
+          path: '/pesquisa/export',
+          module: 'pesquisa'
+        }
+      ]
+    },
+    {
+      id: 'tecnicos',
+      label: 'Técnicos',
+      icon: '👷',
+      path: '/tecnicos',
+      module: 'tecnicos',
+      children: [
+        {
+          id: 'tecnicos-list',
+          label: 'Lista de Técnicos',
+          icon: '📋',
+          path: '/tecnicos',
+          module: 'tecnicos'
+        },
+        {
+          id: 'tecnicos-add',
+          label: 'Adicionar Técnico',
+          icon: '➕',
+          path: '/tecnicos/add',
+          module: 'tecnicos'
+        },
+        {
+          id: 'tecnicos-rotas',
+          label: 'Rotas e Localização',
+          icon: '🗺️',
+          path: '/tecnicos/rotas',
+          module: 'tecnicos'
+        },
+        {
+          id: 'tecnicos-performance',
+          label: 'Performance',
+          icon: '📊',
+          path: '/tecnicos/performance',
+          module: 'tecnicos'
+        }
+      ]
+    },
+    {
+      id: 'mobilizacao',
+      label: 'Mobilização',
+      icon: '🚀',
+      path: '/mobilizacao',
+      module: 'mobilizacao',
+      children: [
+        {
+          id: 'mobilizacao-eventos',
+          label: 'Eventos',
+          icon: '🎪',
+          path: '/mobilizacao/eventos',
+          module: 'mobilizacao'
+        },
+        {
+          id: 'mobilizacao-formularios',
+          label: 'Formulários de Campo',
+          icon: '📝',
+          path: '/mobilizacao/formularios',
+          module: 'mobilizacao'
+        },
+        {
+          id: 'mobilizacao-presenca',
+          label: 'Listas de Presença',
+          icon: '📋',
+          path: '/mobilizacao/presenca',
+          module: 'mobilizacao'
+        },
+        {
+          id: 'mobilizacao-midias',
+          label: 'Fotos e Mídias',
+          icon: '📸',
+          path: '/mobilizacao/midias',
+          module: 'mobilizacao'
         }
       ]
     },
@@ -109,40 +342,20 @@ const Sidebar: React.FC = () => {
         },
         {
           id: 'monitor',
-          label: 'Monitor',
+          label: 'Monitor do Sistema',
           icon: '🔍',
           path: '/admin/monitor',
           module: 'sistema',
           permission: 'admin'
-        }
-      ]
-    },
-    {
-      id: 'auditoria',
-      label: 'Auditoria',
-      icon: '🔍',
-      path: '/admin/audit-logs',
-      module: 'sistema',
-      permission: 'admin',
-      children: [
+        },
         {
-          id: 'logs',
+          id: 'audit-logs',
           label: 'Logs de Auditoria',
           icon: '📋',
           path: '/admin/audit-logs',
           module: 'sistema',
           permission: 'admin'
-        }
-      ]
-    },
-    {
-      id: 'monitoramento',
-      label: 'Monitoramento',
-      icon: '📈',
-      path: '/admin/system-info',
-      module: 'sistema',
-      permission: 'admin',
-      children: [
+        },
         {
           id: 'system-info',
           label: 'Informações do Sistema',
@@ -184,6 +397,21 @@ const Sidebar: React.FC = () => {
             )}
           </Link>
         </div>
+
+        {/* User Info Compact */}
+        {!isCollapsed && user && (
+          <div className="user-compact">
+            <div className="user-avatar-mini">
+              <span>{user.name?.charAt(0).toUpperCase()}</span>
+            </div>
+            <div className="user-info-mini">
+              <span className="user-name-mini">
+                {user.name?.split(' ')[0]}
+              </span>
+            </div>
+          </div>
+        )}
+
         <button
           className="sidebar-toggle"
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -192,19 +420,6 @@ const Sidebar: React.FC = () => {
           {isCollapsed ? '→' : '←'}
         </button>
       </div>
-
-      {/* User Info */}
-      {!isCollapsed && (
-        <div className="sidebar-user">
-          <div className="user-avatar">
-            <span>{user?.name?.charAt(0).toUpperCase()}</span>
-          </div>
-          <div className="user-details">
-            <div className="user-name">{user?.name}</div>
-            <div className="user-email">{user?.email}</div>
-          </div>
-        </div>
-      )}
 
       {/* Navigation */}
       <nav className="sidebar-nav">

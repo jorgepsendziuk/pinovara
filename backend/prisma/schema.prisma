@@ -13,7 +13,7 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(cuid())
+  id        Int        @id @default(autoincrement())
   email     String     @unique
   password  String
   name      String
@@ -30,7 +30,7 @@ model User {
 }
 
 model Module {
-  id          String   @id @default(cuid())
+  id          Int      @id @default(autoincrement())
   name        String   @unique
   description String?
   active      Boolean  @default(true)
@@ -45,7 +45,7 @@ model Module {
 }
 
 model Role {
-  id          String   @id @default(cuid())
+  id          Int      @id @default(autoincrement())
   name        String
   description String?
   active      Boolean  @default(true)
@@ -54,7 +54,7 @@ model Role {
 
   // Relacionamentos
   module    Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  moduleId  String
+  moduleId  Int
   userRoles UserRole[]
 
   @@unique([name, moduleId])
@@ -63,15 +63,15 @@ model Role {
 }
 
 model UserRole {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relacionamentos
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
+  userId Int
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  roleId String
+  roleId Int
 
   @@unique([userId, roleId])
   @@schema("pinovara")
@@ -79,7 +79,7 @@ model UserRole {
 }
 
 model SystemSetting {
-  id          String   @id @default(cuid())
+  id          Int      @id @default(autoincrement())
   key         String   @unique
   value       String
   type        String   // string, number, boolean, json
@@ -94,7 +94,7 @@ model SystemSetting {
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
+  id         Int      @id @default(autoincrement())
   action     String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
   entity     String   // users, roles, settings, etc.
   entityId   String?
@@ -106,7 +106,7 @@ model AuditLog {
 
   // Relacionamentos
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId String?
+  userId Int?
 
   @@schema("pinovara")
   @@map("audit_logs")

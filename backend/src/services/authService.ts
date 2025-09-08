@@ -27,7 +27,7 @@ export const loginSchema = z.object({
 // ========== INTERFACES ==========
 
 export interface AuthUser {
-  id: string;
+  id: number;
   email: string;
   name: string;
   active: boolean;
@@ -35,10 +35,10 @@ export interface AuthUser {
 }
 
 export interface AuthRole {
-  id: string;
+  id: number;
   name: string;
   module: {
-    id: string;
+    id: number;
     name: string;
   };
 }
@@ -225,7 +225,7 @@ export const loginUser = async (data: z.infer<typeof loginSchema>): Promise<Logi
 /**
  * Buscar usuário por ID
  */
-export const getUserById = async (userId: string): Promise<AuthUser> => {
+export const getUserById = async (userId: number): Promise<AuthUser> => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {

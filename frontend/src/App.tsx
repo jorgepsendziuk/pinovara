@@ -13,6 +13,16 @@ import UserManagement from './pages/admin/UserManagement';
 import RoleManagement from './pages/admin/RoleManagement';
 import BackupManager from './pages/admin/BackupManager';
 import SystemMonitor from './pages/admin/SystemMonitor';
+
+// Module Pages
+import OrganizacoesModule from './pages/modules/OrganizacoesModule';
+import DiagnosticoModule from './pages/modules/DiagnosticoModule';
+import AssociadosModule from './pages/modules/AssociadosModule';
+import RelatoriosModule from './pages/modules/RelatoriosModule';
+import MapasModule from './pages/modules/MapasModule';
+import PesquisaModule from './pages/modules/PesquisaModule';
+import TecnicosModule from './pages/modules/TecnicosModule';
+import MobilizacaoModule from './pages/modules/MobilizacaoModule';
 import './App.css';
 
 function AppRoutes() {
@@ -43,6 +53,79 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Module Routes */}
+      <Route
+        path="/organizacoes/*"
+        element={
+          <ProtectedRoute>
+            <OrganizacoesModule />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/diagnostico/*"
+        element={
+          <ProtectedRoute>
+            <DiagnosticoModule />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/associados/*"
+        element={
+          <ProtectedRoute>
+            <AssociadosModule />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/relatorios/*"
+        element={
+          <ProtectedRoute>
+            <RelatoriosModule />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/mapas/*"
+        element={
+          <ProtectedRoute>
+            <MapasModule />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/pesquisa/*"
+        element={
+          <ProtectedRoute>
+            <PesquisaModule />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/tecnicos/*"
+        element={
+          <ProtectedRoute>
+            <TecnicosModule />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/mobilizacao/*"
+        element={
+          <ProtectedRoute>
+            <MobilizacaoModule />
           </ProtectedRoute>
         }
       />
