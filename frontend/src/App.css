@@ -4126,12 +4126,12 @@ main, section, article, aside, header, footer {
 .access-denied-title {
   font-size: 2.5rem;
   font-weight: 800;
-  color: var(--text-primary);
   margin: 0 0 1rem 0;
   background: linear-gradient(135deg, #ef4444, #f97316);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  color: #ef4444; /* Fallback para navegadores que não suportam gradiente */
 }
 
 .access-denied-message {
@@ -4210,37 +4210,112 @@ main, section, article, aside, header, footer {
   box-shadow: var(--shadow-lg);
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
-  color: white;
-  border: none;
+/* Botões específicos da página AccessDenied - CORREÇÃO DE CONTRASTE */
+.access-denied-page .btn-primary,
+.access-denied-page .btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  border: 2px solid transparent !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
 
-.btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-hover), var(--primary-color));
+.access-denied-page .btn-primary:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4) !important;
 }
 
-.btn-secondary {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 2px solid var(--border-color);
+.access-denied-page .btn-secondary,
+.access-denied-page .btn-secondary:hover {
+  background: #ffffff !important;
+  color: #2563eb !important;
+  border: 2px solid #2563eb !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1) !important;
 }
 
-.btn-secondary:hover {
-  background: var(--text-primary);
-  color: var(--bg-primary);
-  border-color: var(--text-primary);
+.access-denied-page .btn-secondary:hover {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3) !important;
 }
 
-.btn-outline {
-  background: transparent;
-  color: var(--text-secondary);
-  border: 2px solid var(--border-color);
+.access-denied-page .btn-outline,
+.access-denied-page .btn-outline:hover {
+  background: #f9fafb !important;
+  color: #374151 !important;
+  border: 2px solid #d1d5db !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
 }
 
-.btn-outline:hover {
-  background: var(--text-secondary);
-  color: var(--bg-primary);
+.access-denied-page .btn-outline:hover {
+  background: #374151 !important;
+  color: #ffffff !important;
+  border-color: #374151 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(55, 65, 81, 0.2) !important;
+}
+
+/* Garantir contraste mínimo para acessibilidade */
+.access-denied-page .btn-large {
+  min-height: 50px !important;
+  font-size: 1.1rem !important;
+  line-height: 1.2 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+}
+
+/* Estilos adicionais para garantir visibilidade dos botões */
+.access-denied-page .btn {
+  position: relative;
+  z-index: 10;
+  border-radius: var(--border-radius-lg);
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.025em;
+}
+
+/* Forçar cores específicas para garantir contraste */
+.access-denied-page .btn-primary {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+}
+
+.access-denied-page .btn-secondary {
+  background: #ffffff !important;
+  color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+.access-denied-page .btn-outline {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Hover states garantidos */
+.access-denied-page .btn-primary:hover {
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+}
+
+.access-denied-page .btn-secondary:hover {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.access-denied-page .btn-outline:hover {
+  background: #475569 !important;
+  color: #ffffff !important;
 }
 
 .access-denied-contact {
