@@ -337,4 +337,83 @@ export const userController = {
       });
     }
   },
+
+  async deleteUser(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = parseInt(id, 10);
+
+      if (isNaN(userId)) {
+        res.status(400).json({
+          error: {
+            message: 'ID do usuário inválido',
+            statusCode: 400,
+          },
+        });
+        return;
+      }
+
+      // Verificar se usuário existe
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          userRoles: true,
+        },
+      });
+
+      if (!user) {
+        res.status(404).json({
+          error: {
+            message: 'Usuário não encontrado',
+            statusCode: 404,
+          },
+        });
+        return;
+      }
+
+      // Verificar se é o próprio usuário tentando se deletar
+      if (req.user && req.user.id === userId) {
+        res.status(400).json({
+          error: {
+            message: 'Não é possível deletar seu próprio usuário',
+            statusCode: 400,
+          },
+        });
+        return;
+      }
+
+      // Usar transação para garantir atomicidade
+      await prisma.$transaction(async (tx) => {
+        // 1. Deletar associações de papéis primeiro
+        if (user.userRoles.length > 0) {
+          await tx.userRole.deleteMany({
+            where: { userId: userId },
+          });
+        }
+
+        // 2. Atualizar audit logs para null (remover referência ao usuário)
+        await tx.auditLog.updateMany({
+          where: { userId: userId },
+          data: { userId: null },
+        });
+
+        // 3. Deletar o usuário
+        await tx.user.delete({
+          where: { id: userId },
+        });
+      });
+
+      res.json({
+        message: 'Usuário deletado com sucesso',
+      });
+    } catch (error) {
+      console.error('Erro ao deletar usuário:', error);
+      res.status(500).json({
+        error: {
+          message: 'Erro interno do servidor',
+          statusCode: 500,
+        },
+      });
+    }
+  },
 };

@@ -53,7 +53,7 @@ function AdminDashboard() {
   const fetchSystemInfo = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
 
       const response = await fetch(`${API_BASE}/admin/system-info`, {
         headers: {
@@ -78,7 +78,7 @@ function AdminDashboard() {
   const fetchRecentActivity = async () => {
     try {
       setActivityLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
 
       const response = await fetch(`${API_BASE}/admin/audit-logs?page=1&limit=10`, {
         headers: {

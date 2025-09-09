@@ -6,24 +6,25 @@
 }
 
 :root {
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  --success-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-  --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  /* Cores do Sistema PINOVARA */
+  --primary-gradient: linear-gradient(135deg, #3b2313 0%, #056839 100%);
+  --secondary-gradient: linear-gradient(135deg, #056839 0%, #3b2313 100%);
+  --accent-gradient: linear-gradient(135deg, #ffffff 0%, #056839 100%);
+  --success-gradient: linear-gradient(135deg, #056839 0%, #3b2313 100%);
+  --warning-gradient: linear-gradient(135deg, #3b2313 0%, #056839 100%);
 
-  --primary-color: #667eea;
-  --secondary-color: #764ba2;
-  --accent-color: #4facfe;
-  --success-color: #43e97b;
-  --warning-color: #fa709a;
-  --danger-color: #ff6b6b;
+  --primary-color: #3b2313;
+  --secondary-color: #056839;
+  --accent-color: #ffffff;
+  --success-color: #056839;
+  --warning-color: #3b2313;
+  --danger-color: #8b4513;
 
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-tertiary: #f1f5f9;
 
-  --text-primary: #1e293b;
+  --text-primary: #3b2313;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
 
@@ -169,7 +170,7 @@ main, section, article, aside, header, footer {
 .landing {
   min-height: 100vh;
   width: 100vw;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
   position: relative;
   overflow: hidden;
 }
@@ -188,10 +189,11 @@ main, section, article, aside, header, footer {
 .landing-header {
   position: relative;
   z-index: 10;
-  padding: 2rem 0;
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 1.5rem 0;
+  backdrop-filter: blur(15px);
+  background: rgba(255, 255, 255, 0.98);
+  border-bottom: 1px solid rgba(59, 35, 19, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 .landing-header .container {
@@ -199,30 +201,104 @@ main, section, article, aside, header, footer {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
+  max-width: 1600px !important;
+  margin: 0 auto !important;
+  padding: 0 2rem !important;
 }
 
-.logo {
+/* Brand in Header */
+.brand {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.logo h1 {
+.brand-title {
   margin: 0;
-  font-size: 2.5rem;
+  font-size: 1.5rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%);
+  background: var(--primary-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.02em;
 }
 
+.brand-subtitle {
+  margin: 0;
+  color: var(--primary-color);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.logo-image {
+  height: 120px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2)) drop-shadow(0 4px 12px rgba(59, 35, 19, 0.15));
+  transition: transform 0.4s ease;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(59, 35, 19, 0.1);
+}
+
+.logo-image:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.25)) drop-shadow(0 6px 16px rgba(59, 35, 19, 0.2));
+}
+
+/* Hero Logo */
+.hero-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2.5rem;
+  animation: fadeInUp 1s ease-out;
+}
+
+.hero-logo-image {
+  height: 180px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 40px rgba(0, 0, 0, 0.12)) drop-shadow(0 8px 20px rgba(59, 35, 19, 0.08));
+  transition: transform 0.6s ease;
+}
+
+.hero-logo-image:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 20px 52px rgba(0, 0, 0, 0.15)) drop-shadow(0 10px 26px rgba(59, 35, 19, 0.1));
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.logo h1 {
+  margin: 0;
+  font-size: 3.2rem;
+  font-weight: 900;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
 .logo p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1rem;
-  font-weight: 500;
+  color: var(--primary-color);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.85;
 }
 
 .nav {
@@ -248,7 +324,7 @@ main, section, article, aside, header, footer {
   z-index: 10;
   padding: 8rem 0 6rem;
   text-align: center;
-  color: white;
+  color: var(--primary-color);
 }
 
 .hero::before {
@@ -276,7 +352,7 @@ main, section, article, aside, header, footer {
   margin-bottom: 1.5rem;
   line-height: 1.1;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.9) 100%);
+  background: var(--primary-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -285,9 +361,10 @@ main, section, article, aside, header, footer {
 .hero-content p {
   font-size: 1.25rem;
   margin-bottom: 3rem;
-  opacity: 0.9;
+  opacity: 0.7;
   line-height: 1.6;
   font-weight: 400;
+  color: var(--text-primary);
 }
 
 .hero-actions {
@@ -312,7 +389,7 @@ main, section, article, aside, header, footer {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(59, 35, 19, 0.1), transparent);
 }
 
 .features h3 {
@@ -358,7 +435,7 @@ main, section, article, aside, header, footer {
 .feature:hover {
   transform: translateY(-8px);
   box-shadow: var(--shadow-xl);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
 }
 
 .feature:hover::before {
@@ -412,7 +489,7 @@ main, section, article, aside, header, footer {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(59, 35, 19, 0.1), transparent);
 }
 
 .tech-stack h3 {
@@ -510,8 +587,8 @@ main, section, article, aside, header, footer {
 
 /* Landing Footer */
 .landing-footer {
-  background: var(--text-primary);
-  color: white;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   padding: 4rem 0 2rem;
   text-align: center;
   position: relative;
@@ -524,7 +601,7 @@ main, section, article, aside, header, footer {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(59, 35, 19, 0.1), transparent);
 }
 
 .landing-footer .container {
@@ -666,7 +743,7 @@ main, section, article, aside, header, footer {
 
 .form-group input:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(59, 35, 19, 0.1);
   transform: translateY(-1px);
 }
 
@@ -685,7 +762,7 @@ main, section, article, aside, header, footer {
 }
 
 .error-message {
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(255, 107, 107, 0.05));
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.1), rgba(139, 69, 19, 0.05));
   color: var(--danger-color);
   padding: 1.25rem 1.5rem;
   border-radius: var(--border-radius-lg);
@@ -693,7 +770,7 @@ main, section, article, aside, header, footer {
   margin-bottom: 2rem;
   font-weight: 500;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(139, 69, 19, 0.1);
 }
 
 .auth-footer {
@@ -708,7 +785,7 @@ main, section, article, aside, header, footer {
   border-radius: var(--border-radius-lg);
   margin-top: 2.5rem;
   border-left: 4px solid var(--primary-color);
-  border: 1px solid rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(59, 35, 19, 0.1);
   backdrop-filter: blur(10px);
 }
 
@@ -732,12 +809,12 @@ main, section, article, aside, header, footer {
 }
 
 .health-check {
-  background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(67, 232, 139, 0.02) 100%);
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(5, 104, 57, 0.02) 100%);
   padding: 1.5rem;
   border-radius: var(--border-radius-lg);
   margin-top: 1.5rem;
   border-left: 4px solid var(--success-color);
-  border: 1px solid rgba(67, 232, 139, 0.1);
+  border: 1px solid rgba(5, 104, 57, 0.1);
   backdrop-filter: blur(10px);
 }
 
@@ -806,12 +883,12 @@ main, section, article, aside, header, footer {
 
 .health-indicator.connected {
   color: var(--success-color);
-  background: rgba(67, 232, 139, 0.1);
+  background: rgba(5, 104, 57, 0.1);
 }
 
 .health-indicator.error {
   color: var(--danger-color);
-  background: rgba(255, 107, 107, 0.1);
+  background: rgba(139, 69, 19, 0.1);
 }
 
 .health-refresh {
@@ -838,7 +915,7 @@ main, section, article, aside, header, footer {
 
 .dashboard-header {
   background: var(--primary-gradient);
-  color: white;
+  color: #ffffff;
   padding: 2rem 0;
   position: relative;
   overflow: hidden;
@@ -1023,7 +1100,7 @@ main, section, article, aside, header, footer {
   padding: 1.5rem;
   background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(102, 126, 234, 0.02) 100%);
   border-radius: var(--border-radius-lg);
-  border: 1px solid rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(59, 35, 19, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -1044,7 +1121,7 @@ main, section, article, aside, header, footer {
 .info-item:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
 }
 
 .info-item:hover::before {
@@ -1083,14 +1160,14 @@ main, section, article, aside, header, footer {
 
 .status.active {
   color: var(--success-color);
-  background: rgba(67, 232, 139, 0.1);
-  border: 1px solid rgba(67, 232, 139, 0.2);
+  background: rgba(5, 104, 57, 0.1);
+  border: 1px solid rgba(5, 104, 57, 0.2);
 }
 
 .status.inactive {
   color: var(--danger-color);
-  background: rgba(255, 107, 107, 0.1);
-  border: 1px solid rgba(255, 107, 107, 0.2);
+  background: rgba(139, 69, 19, 0.1);
+  border: 1px solid rgba(139, 69, 19, 0.2);
 }
 
 .roles-grid {
@@ -1104,7 +1181,7 @@ main, section, article, aside, header, footer {
   padding: 2rem;
   border-radius: var(--border-radius-lg);
   border-left: 4px solid var(--primary-color);
-  border: 1px solid rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(59, 35, 19, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -1125,7 +1202,7 @@ main, section, article, aside, header, footer {
 .role-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
 }
 
 .role-card:hover::before {
@@ -1302,14 +1379,14 @@ main, section, article, aside, header, footer {
 }
 
 .btn-primary {
-  background: var(--primary-gradient);
-  color: white;
+  background: var(--primary-color);
+  color: #ffffff;
   border: 2px solid transparent;
 }
 
 .btn-primary:hover {
-  background: var(--primary-gradient);
-  color: white;
+  background: var(--secondary-color);
+  color: #ffffff;
   text-decoration: none;
   border-color: rgba(255, 255, 255, 0.2);
 }
@@ -1322,21 +1399,22 @@ main, section, article, aside, header, footer {
 
 .btn-outline:hover {
   background: var(--primary-color);
-  color: white;
+  color: #ffffff;
   text-decoration: none;
   border-color: var(--primary-color);
 }
 
 .landing-header .btn-outline {
-  color: white;
-  border-color: rgba(255, 255, 255, 0.8);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
 }
 
 .landing-header .btn-outline:hover {
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--primary-color);
-  border-color: rgba(255, 255, 255, 0.9);
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
 }
 
 .btn-full {
@@ -1646,13 +1724,25 @@ main, section, article, aside, header, footer {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(59, 35, 19, 0.1), transparent);
 }
 
 .sidebar-logo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.sidebar-logo-image {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  border-radius: var(--border-radius-sm);
+  transition: transform 0.2s ease;
+}
+
+.sidebar-logo-image:hover {
+  transform: scale(1.1);
 }
 
 .logo-link {
@@ -1848,7 +1938,7 @@ main, section, article, aside, header, footer {
 
 .nav-button:hover,
 .nav-link:hover {
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(59, 35, 19, 0.05);
   color: var(--text-primary);
   transform: translateX(4px);
 }
@@ -1856,7 +1946,7 @@ main, section, article, aside, header, footer {
 .nav-button.active,
 .nav-link.active {
   background: var(--primary-color);
-  color: white;
+  color: #ffffff;
 }
 
 .nav-button.active::before,
@@ -1899,7 +1989,7 @@ main, section, article, aside, header, footer {
   padding: 0;
   margin: 0;
   background: rgba(102, 126, 234, 0.02);
-  border-left: 2px solid rgba(102, 126, 234, 0.1);
+  border-left: 2px solid rgba(59, 35, 19, 0.1);
 }
 
 .nav-submenu .nav-link {
@@ -1914,7 +2004,7 @@ main, section, article, aside, header, footer {
 }
 
 .nav-submenu .nav-link.active {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(59, 35, 19, 0.1);
   color: var(--primary-color);
 }
 
@@ -1933,8 +2023,8 @@ main, section, article, aside, header, footer {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: rgba(255, 107, 107, 0.1);
-  border: 1px solid rgba(255, 107, 107, 0.2);
+  background: rgba(139, 69, 19, 0.1);
+  border: 1px solid rgba(139, 69, 19, 0.2);
   border-radius: var(--border-radius-md);
   color: var(--danger-color);
   text-decoration: none;
@@ -2143,7 +2233,7 @@ main, section, article, aside, header, footer {
 .quick-stat-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
 }
 
 .quick-stat-card:hover::before {
@@ -2191,12 +2281,12 @@ main, section, article, aside, header, footer {
 }
 
 .stat-change.positive {
-  background: rgba(67, 232, 139, 0.1);
+  background: rgba(5, 104, 57, 0.1);
   color: var(--success-color);
 }
 
 .stat-change.negative {
-  background: rgba(255, 107, 107, 0.1);
+  background: rgba(139, 69, 19, 0.1);
   color: var(--danger-color);
 }
 
@@ -2224,7 +2314,7 @@ main, section, article, aside, header, footer {
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+  border-bottom: 2px solid rgba(59, 35, 19, 0.1);
 }
 
 .status-header h2 {
@@ -2249,15 +2339,15 @@ main, section, article, aside, header, footer {
 }
 
 .status-indicator.connected {
-  background: rgba(67, 232, 139, 0.1);
+  background: rgba(5, 104, 57, 0.1);
   color: var(--success-color);
-  border: 1px solid rgba(67, 232, 139, 0.2);
+  border: 1px solid rgba(5, 104, 57, 0.2);
 }
 
 .status-indicator.disconnected {
-  background: rgba(255, 107, 107, 0.1);
+  background: rgba(139, 69, 19, 0.1);
   color: var(--danger-color);
-  border: 1px solid rgba(255, 107, 107, 0.2);
+  border: 1px solid rgba(139, 69, 19, 0.2);
 }
 
 .status-details {
@@ -2345,7 +2435,7 @@ main, section, article, aside, header, footer {
 .action-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
   text-decoration: none;
   color: inherit;
 }
@@ -2527,7 +2617,7 @@ main, section, article, aside, header, footer {
 .overview-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
 }
 
 .overview-card h3 {
@@ -2689,7 +2779,7 @@ main, section, article, aside, header, footer {
 
 .tab-button:hover {
   background: rgba(102, 126, 234, 0.02);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
   color: var(--primary-color);
 }
 
@@ -2740,7 +2830,7 @@ main, section, article, aside, header, footer {
 .status-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
 }
 
 .status-card-header {
@@ -2749,7 +2839,7 @@ main, section, article, aside, header, footer {
   gap: 1rem;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+  border-bottom: 2px solid rgba(59, 35, 19, 0.1);
 }
 
 .status-icon {
@@ -2846,7 +2936,7 @@ main, section, article, aside, header, footer {
 .info-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
 }
 
 .info-card h3 {
@@ -3044,7 +3134,7 @@ main, section, article, aside, header, footer {
 }
 
 .log-level.danger {
-  background: rgba(255, 107, 107, 0.1);
+  background: rgba(139, 69, 19, 0.1);
   color: var(--danger-color);
 }
 
@@ -3064,7 +3154,7 @@ main, section, article, aside, header, footer {
 }
 
 .log-level.primary {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(59, 35, 19, 0.1);
   color: var(--primary-color);
 }
 
@@ -3205,7 +3295,7 @@ main, section, article, aside, header, footer {
 .backup-stats .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
 }
 
 .backup-stats .stat-icon {
@@ -3257,7 +3347,7 @@ main, section, article, aside, header, footer {
   gap: 1rem;
   padding: 1rem 2rem;
   background: rgba(102, 126, 234, 0.05);
-  border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+  border-bottom: 2px solid rgba(59, 35, 19, 0.1);
   font-weight: 600;
   color: var(--text-primary);
   text-transform: uppercase;
@@ -3384,7 +3474,7 @@ main, section, article, aside, header, footer {
 .form-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(59, 35, 19, 0.1);
 }
 
 .form-help {
@@ -3618,7 +3708,7 @@ main, section, article, aside, header, footer {
   background: rgba(102, 126, 234, 0.05);
   border-radius: var(--border-radius-lg);
   padding: 2rem;
-  border: 1px solid rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(59, 35, 19, 0.1);
 }
 
 .module-info h3 {
@@ -3649,7 +3739,7 @@ main, section, article, aside, header, footer {
 
 .module-info li:hover {
   background: rgba(102, 126, 234, 0.02);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
   transform: translateX(4px);
 }
 
@@ -3822,7 +3912,7 @@ main, section, article, aside, header, footer {
 }
 
 .compact-stats span {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(59, 35, 19, 0.1);
   padding: 0.25rem 0.75rem;
   border-radius: var(--border-radius-sm);
   font-weight: 500;
@@ -3862,7 +3952,7 @@ main, section, article, aside, header, footer {
 
 .compact-module-item:hover {
   box-shadow: var(--shadow-md);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
 }
 
 .compact-module-header {
@@ -3943,7 +4033,7 @@ main, section, article, aside, header, footer {
 }
 
 .btn-icon:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(59, 35, 19, 0.1);
 }
 
 .btn-icon.btn-danger:hover {
@@ -4032,7 +4122,7 @@ main, section, article, aside, header, footer {
 }
 
 .btn-icon-small:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(59, 35, 19, 0.1);
 }
 
 .btn-icon-small.btn-danger:hover {
@@ -4051,7 +4141,7 @@ main, section, article, aside, header, footer {
 }
 
 .user-compact-link:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(59, 35, 19, 0.1);
   transform: translateX(2px);
 }
 
@@ -4531,7 +4621,7 @@ main, section, article, aside, header, footer {
 .form-select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(59, 35, 19, 0.1);
 }
 
 .test-result {
@@ -4540,7 +4630,7 @@ main, section, article, aside, header, footer {
   padding: 2rem;
   margin-bottom: 3rem;
   box-shadow: var(--shadow-md);
-  border: 1px solid rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(59, 35, 19, 0.1);
 }
 
 .test-result h3 {
@@ -4648,7 +4738,7 @@ main, section, article, aside, header, footer {
 
 .permission-item {
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.02), rgba(102, 126, 234, 0.01));
-  border: 1px solid rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(59, 35, 19, 0.1);
   border-radius: var(--border-radius-lg);
   padding: 1.5rem;
   transition: all 0.3s ease;
@@ -4778,7 +4868,7 @@ main, section, article, aside, header, footer {
 }
 
 .user-role-badge {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(59, 35, 19, 0.1);
   color: var(--primary-color);
   padding: 0.25rem 0.75rem;
   border-radius: var(--border-radius-sm);
@@ -4811,7 +4901,7 @@ main, section, article, aside, header, footer {
 }
 
 .tab-button:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(59, 35, 19, 0.1);
   color: var(--text-primary);
 }
 
@@ -4874,7 +4964,7 @@ main, section, article, aside, header, footer {
 .form-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(59, 35, 19, 0.1);
 }
 
 .form-input.error {
@@ -4910,7 +5000,7 @@ main, section, article, aside, header, footer {
 }
 
 .password-toggle:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(59, 35, 19, 0.1);
   color: var(--primary-color);
 }
 
@@ -4993,7 +5083,7 @@ main, section, article, aside, header, footer {
 .category-count {
   font-size: 0.9rem;
   color: var(--text-secondary);
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(59, 35, 19, 0.1);
   padding: 0.25rem 0.75rem;
   border-radius: var(--border-radius-sm);
 }
@@ -5015,7 +5105,7 @@ main, section, article, aside, header, footer {
 
 .setting-card:hover {
   box-shadow: var(--shadow-lg);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
   transform: translateY(-2px);
 }
 
@@ -5147,15 +5237,15 @@ main, section, article, aside, header, footer {
 }
 
 .status-badge.active {
-  background: rgba(67, 232, 139, 0.1);
+  background: rgba(5, 104, 57, 0.1);
   color: var(--success-color);
-  border: 1px solid rgba(67, 232, 139, 0.2);
+  border: 1px solid rgba(5, 104, 57, 0.2);
 }
 
 .status-badge.inactive {
-  background: rgba(255, 107, 107, 0.1);
+  background: rgba(139, 69, 19, 0.1);
   color: var(--danger-color);
-  border: 1px solid rgba(255, 107, 107, 0.2);
+  border: 1px solid rgba(139, 69, 19, 0.2);
 }
 
 /* Role Badges */
@@ -5358,7 +5448,7 @@ main, section, article, aside, header, footer {
 }
 
 .alert-error {
-  background: rgba(255, 107, 107, 0.1);
+  background: rgba(139, 69, 19, 0.1);
   color: var(--danger-color);
   border-left-color: var(--danger-color);
 }
@@ -5608,7 +5698,7 @@ main, section, article, aside, header, footer {
 .role-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: rgba(59, 35, 19, 0.15);
 }
 
 .role-header {
@@ -5661,9 +5751,9 @@ main, section, article, aside, header, footer {
 }
 
 .badge-success {
-  background: rgba(67, 232, 139, 0.1);
+  background: rgba(5, 104, 57, 0.1);
   color: var(--success-color);
-  border: 1px solid rgba(67, 232, 139, 0.2);
+  border: 1px solid rgba(5, 104, 57, 0.2);
 }
 
 .badge-warning {
@@ -5673,9 +5763,9 @@ main, section, article, aside, header, footer {
 }
 
 .badge-danger {
-  background: rgba(255, 107, 107, 0.1);
+  background: rgba(139, 69, 19, 0.1);
   color: var(--danger-color);
-  border: 1px solid rgba(255, 107, 107, 0.2);
+  border: 1px solid rgba(139, 69, 19, 0.2);
 }
 
 .badge-info {

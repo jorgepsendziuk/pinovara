@@ -36,7 +36,7 @@ function BackupManager() {
 
   const fetchBackups = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       const response = await fetch(`${API_BASE}/admin/backups`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -55,7 +55,7 @@ function BackupManager() {
 
   const fetchSettings = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       const response = await fetch(`${API_BASE}/admin/backup-settings`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -83,7 +83,7 @@ function BackupManager() {
     setMessage(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       const response = await fetch(`${API_BASE}/admin/backup`, {
         method: 'POST',
         headers: {
@@ -115,7 +115,7 @@ function BackupManager() {
     setMessage(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       const response = await fetch(`${API_BASE}/admin/backup/${backupId}/restore`, {
         method: 'POST',
         headers: {
@@ -146,7 +146,7 @@ function BackupManager() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       const response = await fetch(`${API_BASE}/admin/backup/${backupId}`, {
         method: 'DELETE',
         headers: {
@@ -168,7 +168,7 @@ function BackupManager() {
 
   const updateSettings = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       const response = await fetch(`${API_BASE}/admin/backup-settings`, {
         method: 'PUT',
         headers: {

@@ -55,7 +55,7 @@ function AuditLogs() {
   const fetchLogs = async (page = 1) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const params = new URLSearchParams({
         page: page.toString(),
@@ -88,7 +88,7 @@ function AuditLogs() {
   const fetchStats = async () => {
     try {
       setStatsLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/audit-logs/stats`, {
         headers: {

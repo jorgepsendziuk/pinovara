@@ -50,7 +50,7 @@ function SystemMonitor() {
 
   const fetchMetrics = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       const response = await fetch(`${API_BASE}/admin/system-monitor`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -70,7 +70,7 @@ function SystemMonitor() {
   const fetchLogs = async () => {
     try {
       setLogsLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       const response = await fetch(`${API_BASE}/admin/system-logs?limit=50`, {
         headers: {
           'Authorization': `Bearer ${token}`,

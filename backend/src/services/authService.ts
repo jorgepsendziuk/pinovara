@@ -254,18 +254,42 @@ export const getUserById = async (userId: number): Promise<AuthUser> => {
 export const hasPermission = (user: AuthUser, moduleName: string, roleName?: string): boolean => {
   // Verificar se o usuário tem algum dos tipos de role
   return user.roles.some(role => {
-    const userType = role.name; // O nome do role representa o tipo de usuário
+    const userType = role.name; // O nome do role
+    const roleModule = role.module?.name; // O nome do módulo do role
 
-    // Se especificou um roleName, verificar se coincide
-    if (roleName && userType !== roleName) {
-      return false;
+    // Se especificou um roleName e moduleName, verificar se ambos coincidem
+    if (roleName && moduleName) {
+      if (userType === roleName && roleModule === moduleName) {
+        return true;
+      }
     }
 
-    // Lógica de permissões baseada no tipo de usuário
+    // Se especificou apenas roleName, verificar apenas o role
+    if (roleName && !moduleName) {
+      if (userType === roleName) {
+        return true;
+      }
+    }
+
+    // Se especificou apenas moduleName, verificar apenas o módulo
+    if (moduleName && !roleName) {
+      if (roleModule === moduleName) {
+        return true;
+      }
+    }
+
+    // Lógica de permissões baseada no tipo de usuário (para compatibilidade)
     switch (userType) {
       case 'administracao':
         // Admin tem acesso a tudo
         return true;
+
+      case 'admin':
+        // Papel admin específico do módulo sistema
+        if (roleModule === 'sistema') {
+          return true;
+        }
+        break;
 
       case 'gestao':
         // Gestão tem acesso de visualização a tudo
@@ -290,6 +314,8 @@ export const hasPermission = (user: AuthUser, moduleName: string, roleName?: str
       default:
         return false;
     }
+
+    return false;
   });
 };
 

@@ -2,10 +2,13 @@ import { Router } from 'express';
 import { adminController } from '../controllers/adminController';
 import { userController } from '../controllers/userController';
 import { moduleController } from '../controllers/moduleController';
+import { authenticateToken, requireAdmin } from '../middleware/authMiddleware';
 
 const router = Router();
 
-// Todas as rotas admin são públicas temporariamente
+// Aplicar middleware de autenticação e verificação de permissão admin a todas as rotas
+router.use(authenticateToken);
+router.use(requireAdmin);
 
 /**
  * System Information
@@ -37,6 +40,7 @@ router.get('/users/:id', userController.getUserById);
 router.put('/users/:id/status', userController.updateUserStatus);
 router.post('/users/:id/roles', userController.assignRole);
 router.delete('/users/:id/roles/:roleId', userController.removeRole);
+router.delete('/users/:id', userController.deleteUser);
 
 /**
  * Module & Role Management Routes (from existing moduleController)

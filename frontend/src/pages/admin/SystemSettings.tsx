@@ -37,7 +37,7 @@ function SystemSettings() {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/settings/by-category`, {
         headers: {
@@ -61,7 +61,7 @@ function SystemSettings() {
 
   const handleUpdateSetting = async (setting: SystemSetting) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/settings/${setting.key}`, {
         method: 'PUT',
@@ -90,7 +90,7 @@ function SystemSettings() {
 
   const handleCreateSetting = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/settings`, {
         method: 'POST',
@@ -126,7 +126,7 @@ function SystemSettings() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/settings/${key}`, {
         method: 'DELETE',

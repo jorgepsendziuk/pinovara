@@ -391,7 +391,11 @@ const Sidebar: React.FC = () => {
       <div className="sidebar-header">
         <div className="sidebar-logo">
           <Link to="/pinovara" className="logo-link">
-            <span className="logo-icon">🎯</span>
+            <img
+              src="/pinovara.png"
+              alt="PINOVARA"
+              className="sidebar-logo-image"
+            />
             {!isCollapsed && (
               <span className="logo-text">PINOVARA</span>
             )}

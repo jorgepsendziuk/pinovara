@@ -41,7 +41,7 @@ function RoleManagement() {
 
   const fetchModules = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/modules`, {
         headers: {
@@ -64,7 +64,7 @@ function RoleManagement() {
   const fetchRoles = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/roles`, {
         headers: {
@@ -89,7 +89,7 @@ function RoleManagement() {
   // Module Operations
   const handleCreateModule = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/modules`, {
         method: 'POST',
@@ -117,7 +117,7 @@ function RoleManagement() {
     if (!editingModule) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/modules/${editingModule.id}`, {
         method: 'PUT',
@@ -150,7 +150,7 @@ function RoleManagement() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/modules/${moduleId}`, {
         method: 'DELETE',
@@ -174,7 +174,7 @@ function RoleManagement() {
   // Role Operations
   const handleCreateRole = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/roles`, {
         method: 'POST',
@@ -202,7 +202,7 @@ function RoleManagement() {
     if (!editingRole) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/roles/${editingRole.id}`, {
         method: 'PUT',
@@ -235,7 +235,7 @@ function RoleManagement() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/roles/${roleId}`, {
         method: 'DELETE',

@@ -30,7 +30,7 @@ function SystemInfo() {
   const fetchSystemInfo = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/system-info`, {
         headers: {

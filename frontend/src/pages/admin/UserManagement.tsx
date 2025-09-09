@@ -41,7 +41,7 @@ function UserManagement() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/users`, {
         headers: {
@@ -65,7 +65,7 @@ function UserManagement() {
 
   const fetchAvailableRoles = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/roles`, {
         headers: {
@@ -87,7 +87,7 @@ function UserManagement() {
 
   const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/users/${userId}/status`, {
         method: 'PUT',
@@ -111,7 +111,7 @@ function UserManagement() {
 
   const handleAssignRole = async (userId: string, roleId: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/users/${userId}/roles`, {
         method: 'POST',
@@ -140,8 +140,8 @@ function UserManagement() {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      
+      const token = localStorage.getItem('@pinovara:token');
+
       const response = await fetch(`${API_BASE}/admin/users/${userId}/roles/${roleId}`, {
         method: 'DELETE',
         headers: {
@@ -157,6 +157,37 @@ function UserManagement() {
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao remover papel');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Tem certeza que deseja deletar o usuário "${userName}"?\n\nEsta ação não pode ser desfeita!`)) {
+      return;
+    }
+
+    if (!confirm('Confirmação final: Esta ação irá remover permanentemente o usuário e todos os seus papéis. Continuar?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+
+      const response = await fetch(`${API_BASE}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Falha ao deletar usuário');
+      }
+
+      await fetchUsers();
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao deletar usuário');
     }
   };
 
@@ -312,14 +343,23 @@ function UserManagement() {
                     <td>
                       <div className="action-buttons">
                         {user.id !== currentUser?.id && (
-                          <button
-                            onClick={() => openRoleModal(user)}
-                            className="btn btn-small btn-primary"
-                          >
-                            Gerenciar Papéis
-                          </button>
+                          <>
+                            <button
+                              onClick={() => openRoleModal(user)}
+                              className="btn btn-small btn-primary"
+                            >
+                              Gerenciar Papéis
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user.id, user.name)}
+                              className="btn btn-small btn-danger"
+                              style={{ marginLeft: '8px' }}
+                            >
+                              🗑️ Deletar
+                            </button>
+                          </>
                         )}
-                        
+
                         {user.id === currentUser?.id && (
                           <span className="self-user">Você mesmo</span>
                         )}
