@@ -143,7 +143,7 @@ function Login() {
         <div className="demo-credentials">
           <h4>Credenciais de Demonstração:</h4>
           <p>
-            <strong>Email:</strong> demo@pinovara.com<br />
+            <strong>Email:</strong> demo@pinovara.com.br<br />
             <strong>Senha:</strong> Demo123
           </p>
           <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>

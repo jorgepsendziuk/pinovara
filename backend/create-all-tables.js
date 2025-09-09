@@ -123,7 +123,7 @@ async function createAllTables() {
     
     await prisma.$executeRaw`
       INSERT INTO "users" (id, email, name, password, active, "createdAt", "updatedAt")
-      VALUES ('user-admin', 'admin@pinovara.com', 'Administrador PINOVARA', ${hashedPassword}, true, NOW(), NOW())
+      VALUES ('user-admin', 'admin@pinovara.com.br', 'Administrador PINOVARA', ${hashedPassword}, true, NOW(), NOW())
       ON CONFLICT (email) DO NOTHING;
     `;
     
@@ -144,7 +144,7 @@ async function createAllTables() {
     
     await prisma.$executeRaw`
       INSERT INTO "users" (id, email, name, password, active, "createdAt", "updatedAt")
-      VALUES ('user-regular', 'user@pinovara.com', 'Usuário Demo', ${userPassword}, true, NOW(), NOW())
+      VALUES ('user-regular', 'user@pinovara.com.br', 'Usuário Demo', ${userPassword}, true, NOW(), NOW())
       ON CONFLICT (email) DO NOTHING;
     `;
     
@@ -172,8 +172,8 @@ async function createAllTables() {
     
     console.log('✅ Demo data created successfully!');
     console.log('\nDemo credentials:');
-    console.log('Admin: admin@pinovara.com / admin123');
-    console.log('User:  user@pinovara.com / user123');
+    console.log('Admin: admin@pinovara.com.br / admin123');
+    console.log('User:  user@pinovara.com.br / user123');
     
   } catch (error) {
     console.error('❌ Error:', error);

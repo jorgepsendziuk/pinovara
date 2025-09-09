@@ -40,10 +40,10 @@ async function createSimpleData() {
     // Create admin user
     const hashedPassword = await bcrypt.hash('admin123', 12);
     const adminUser = await prisma.user.upsert({
-      where: { email: 'admin@pinovara.com' },
+      where: { email: 'admin@pinovara.com.br' },
       update: {},
       create: {
-        email: 'admin@pinovara.com',
+        email: 'admin@pinovara.com.br',
         name: 'Administrador PINOVARA',
         password: hashedPassword,
         active: true
@@ -70,10 +70,10 @@ async function createSimpleData() {
     // Create regular user
     const userPassword = await bcrypt.hash('user123', 12);
     const regularUser = await prisma.user.upsert({
-      where: { email: 'user@pinovara.com' },
+      where: { email: 'user@pinovara.com.br' },
       update: {},
       create: {
-        email: 'user@pinovara.com',
+        email: 'user@pinovara.com.br',
         name: 'Usuário Demo',
         password: userPassword,
         active: true
@@ -83,8 +83,8 @@ async function createSimpleData() {
     
     console.log('\n🎉 Demo data created successfully!');
     console.log('\nDemo credentials:');
-    console.log('Admin: admin@pinovara.com / admin123');
-    console.log('User:  user@pinovara.com / user123');
+    console.log('Admin: admin@pinovara.com.br / admin123');
+    console.log('User:  user@pinovara.com.br / user123');
     
   } catch (error) {
     console.error('❌ Error:', error);

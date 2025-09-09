@@ -147,7 +147,7 @@ function AccessDenied({
             <div className="contact-info">
               <div className="contact-item">
                 <span className="contact-label">📧 Email:</span>
-                <span className="contact-value">admin@pinovara.com</span>
+                <span className="contact-value">admin@pinovara.com.br</span>
               </div>
               <div className="contact-item">
                 <span className="contact-label">📞 Telefone:</span>

@@ -8,7 +8,7 @@ async function grantAdminAccess() {
 
     // Buscar usuário demo
     const demoUser = await prisma.user.findUnique({
-      where: { email: 'demo@pinovara.com' }
+      where: { email: 'demo@pinovara.com.br' }
     });
 
     if (!demoUser) {

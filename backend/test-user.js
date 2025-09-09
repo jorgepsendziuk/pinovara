@@ -9,7 +9,7 @@ async function createTestUser() {
     
     await prisma.$executeRaw`
       INSERT INTO "users" (id, email, password, name, active, "createdAt", "updatedAt")
-      VALUES ('test-user-id', 'admin@pinovara.com', ${hashedPassword}, 'Administrador', true, NOW(), NOW())
+      VALUES ('test-user-id', 'admin@pinovara.com.br', ${hashedPassword}, 'Administrador', true, NOW(), NOW())
       ON CONFLICT (email) DO NOTHING;
     `;
     

@@ -12,7 +12,7 @@ async function fixDatabase() {
     
     await prisma.$executeRaw`
       INSERT INTO "users" (id, email, name, password, active, "createdAt", "updatedAt")
-      VALUES ('user-admin', 'admin@pinovara.com', 'Administrador PINOVARA', ${hashedPassword}, true, NOW(), NOW())
+      VALUES ('user-admin', 'admin@pinovara.com.br', 'Administrador PINOVARA', ${hashedPassword}, true, NOW(), NOW())
       ON CONFLICT (email) DO UPDATE SET password = ${hashedPassword};
     `;
     console.log('✅ Admin user created/updated');
@@ -32,7 +32,7 @@ async function fixDatabase() {
       const userRoleId = 'userrole-' + Date.now();
       
       // Get actual user ID  
-      const userResult = await prisma.$queryRaw`SELECT id FROM "users" WHERE email = 'admin@pinovara.com'`;
+      const userResult = await prisma.$queryRaw`SELECT id FROM "users" WHERE email = 'admin@pinovara.com.br'`;
       const actualUserId = userResult[0].id;
       console.log('User ID:', actualUserId);
       
@@ -50,15 +50,15 @@ async function fixDatabase() {
     
     await prisma.$executeRaw`
       INSERT INTO "users" (id, email, name, password, active, "createdAt", "updatedAt")
-      VALUES ('user-regular', 'user@pinovara.com', 'Usuário Demo', ${userPassword}, true, NOW(), NOW())
+      VALUES ('user-regular', 'user@pinovara.com.br', 'Usuário Demo', ${userPassword}, true, NOW(), NOW())
       ON CONFLICT (email) DO UPDATE SET password = ${userPassword};
     `;
     console.log('✅ Regular user created/updated');
     
     console.log('\n🎉 Database setup completed!');
     console.log('\nDemo credentials:');
-    console.log('Admin: admin@pinovara.com / admin123');
-    console.log('User:  user@pinovara.com / user123');
+    console.log('Admin: admin@pinovara.com.br / admin123');
+    console.log('User:  user@pinovara.com.br / user123');
     
   } catch (error) {
     console.error('❌ Error:', error);

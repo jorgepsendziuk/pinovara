@@ -27,7 +27,7 @@ async function demoUserAssignments() {
     console.log('\n📋 Exemplos de atribuição de tipos de usuário:');
 
     const assignments = [
-      { userEmail: 'demo@pinovara.com', userType: 'tecnico', description: 'Técnico de campo' },
+      { userEmail: 'demo@pinovara.com.br', userType: 'tecnico', description: 'Técnico de campo' },
       { userEmail: 'test@example.com', userType: 'pesquisa', description: 'Pesquisador' }
     ];
 

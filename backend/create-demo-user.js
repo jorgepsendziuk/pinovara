@@ -13,7 +13,7 @@ async function createDemoUser() {
     // Criar usuário
     const user = await prisma.user.create({
       data: {
-        email: 'demo@pinovara.com',
+        email: 'demo@pinovara.com.br',
         password: hashedPassword,
         name: 'Usuário Demo',
         active: true,
@@ -21,7 +21,7 @@ async function createDemoUser() {
     });
 
     console.log('✅ Usuário demo criado com sucesso!');
-    console.log('📧 Email: demo@pinovara.com');
+    console.log('📧 Email: demo@pinovara.com.br');
     console.log('🔑 Senha: Demo123');
     console.log('👤 Nome: Usuário Demo');
 

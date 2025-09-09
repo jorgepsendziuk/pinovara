@@ -19,7 +19,7 @@ async function assignUserRoles() {
     console.log(`\n🏷️ Roles disponíveis: ${roles.length}`);
 
     // Exemplo de atribuição de roles por tipo de usuário
-    const adminUser = users.find(u => u.email === 'admin@pinovara.com');
+    const adminUser = users.find(u => u.email === 'admin@pinovara.com.br');
     if (adminUser) {
       console.log(`\n⚙️ Atribuindo roles de ADMINISTRAÇÃO para ${adminUser.name}...`);
 

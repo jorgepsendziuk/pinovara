@@ -8,11 +8,11 @@ async function fixAdminAccess() {
 
     // Buscar usuários admin e demo
     const adminUser = await prisma.user.findUnique({
-      where: { email: 'admin@pinovara.com' }
+      where: { email: 'admin@pinovara.com.br' }
     });
 
     const demoUser = await prisma.user.findUnique({
-      where: { email: 'demo@pinovara.com' }
+      where: { email: 'demo@pinovara.com.br' }
     });
 
     // Buscar role de administração

@@ -8,7 +8,7 @@ async function testPermissions() {
   try {
     // Buscar usuário admin
     const adminUser = await prisma.user.findUnique({
-      where: { email: 'admin@pinovara.com' },
+      where: { email: 'admin@pinovara.com.br' },
       include: {
         userRoles: {
           include: {
