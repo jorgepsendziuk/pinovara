@@ -22,7 +22,7 @@ export const createAuditLogSchema = z.object({
   newData: z.string().optional(),
   userAgent: z.string().optional(),
   ipAddress: z.string().optional(),
-  userId: z.string().optional(),
+  userId: z.number().optional(),
 });
 
 export class AdminService {
@@ -208,7 +208,7 @@ export class AdminService {
     };
   }
 
-  static async getAuditLogById(id: string) {
+  static async getAuditLogById(id: number) {
     const log = await prisma.auditLog.findUnique({
       where: { id },
       include: {
@@ -292,7 +292,7 @@ export class AdminService {
     entityId?: string,
     oldData?: any,
     newData?: any,
-    userId?: string,
+    userId?: number,
     userAgent?: string,
     ipAddress?: string
   ) {

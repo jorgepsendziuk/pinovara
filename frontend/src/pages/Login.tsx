@@ -29,7 +29,7 @@ function Login() {
   const checkSystemHealth = async () => {
     try {
       // Check API connection
-      const response = await api.get('/');
+      await api.get('/');
       setHealthStatus(prev => ({ ...prev, api: 'connected' }));
       
       // Check database connection via health endpoint

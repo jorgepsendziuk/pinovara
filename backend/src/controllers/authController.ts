@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client';
 import {
   AuthService,
   registerSchema,
@@ -9,6 +11,8 @@ import {
   LoginResponse,
   RegisterResponse
 } from '../services/authService';
+
+const prisma = new PrismaClient();
 
 // ========== CONTROLADORES ==========
 
@@ -322,7 +326,6 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
     }
 
     // Verificar senha atual
-    const bcrypt = require('bcryptjs');
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
 
     if (!isCurrentPasswordValid) {

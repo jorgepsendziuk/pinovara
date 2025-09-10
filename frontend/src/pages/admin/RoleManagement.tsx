@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 
 interface Module {
   id: number;
@@ -25,7 +24,6 @@ interface Role {
 }
 
 function RoleManagement() {
-  const { user } = useAuth();
   const [modules, setModules] = useState<Module[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,7 +142,7 @@ function RoleManagement() {
     }
   };
 
-  const handleDeleteModule = async (moduleId: string) => {
+  const handleDeleteModule = async (moduleId: number) => {
     if (!confirm('Tem certeza que deseja excluir este módulo? Todos os papéis associados também serão removidos.')) {
       return;
     }
@@ -229,7 +227,7 @@ function RoleManagement() {
     }
   };
 
-  const handleDeleteRole = async (roleId: string) => {
+  const handleDeleteRole = async (roleId: number) => {
     if (!confirm('Tem certeza que deseja excluir este papel? Usuários com este papel perderão suas permissões.')) {
       return;
     }
@@ -525,7 +523,7 @@ function RoleManagement() {
                 <label>Módulo:</label>
                 <select
                   value={editingRole.moduleId}
-                  onChange={(e) => setEditingRole({...editingRole, moduleId: e.target.value})}
+                  onChange={(e) => setEditingRole({...editingRole, moduleId: parseInt(e.target.value)})}
                 >
                   {modules.filter(m => m.active).map(module => (
                     <option key={module.id} value={module.id}>{module.name}</option>

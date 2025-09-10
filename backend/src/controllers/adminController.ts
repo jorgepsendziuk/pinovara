@@ -102,7 +102,7 @@ export const adminController = {
         await AdminService.logAction(
           'CREATE',
           'system_settings',
-          setting.id,
+          setting.id.toString(),
           null,
           setting,
           req.user.id,
@@ -163,7 +163,7 @@ export const adminController = {
         await AdminService.logAction(
           'UPDATE',
           'system_settings',
-          updatedSetting.id,
+          updatedSetting.id.toString(),
           oldSetting,
           updatedSetting,
           req.user.id,
@@ -224,7 +224,7 @@ export const adminController = {
         await AdminService.logAction(
           'DELETE',
           'system_settings',
-          oldSetting.id,
+          oldSetting.id.toString(),
           oldSetting,
           null,
           req.user.id,
@@ -289,7 +289,7 @@ export const adminController = {
 
   async getAuditLogById(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = parseInt(req.params.id);
       const log = await AdminService.getAuditLogById(id);
       
       res.json({

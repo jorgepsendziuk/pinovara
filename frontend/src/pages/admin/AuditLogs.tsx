@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 
 interface AuditLog {
   id: string;
@@ -33,7 +32,6 @@ interface AuditLogStats {
 }
 
 function AuditLogs() {
-  const { user } = useAuth();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [stats, setStats] = useState<AuditLogStats | null>(null);
   const [loading, setLoading] = useState(true);

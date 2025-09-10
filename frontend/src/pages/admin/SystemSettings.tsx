@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 
 interface SystemSetting {
   id: string;
@@ -18,7 +17,6 @@ interface SettingsByCategory {
 }
 
 function SystemSettings() {
-  const { user } = useAuth();
   const [settings, setSettings] = useState<SettingsByCategory>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

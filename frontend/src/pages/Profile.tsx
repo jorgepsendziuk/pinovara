@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -307,7 +307,6 @@ function Profile() {
 
             <div className="form-info">
               <p><strong>Último acesso:</strong> Agora</p>
-              <p><strong>Conta criada em:</strong> {new Date(user.createdAt || '').toLocaleDateString('pt-BR')}</p>
             </div>
           </div>
 

@@ -5,7 +5,7 @@ import { z } from 'zod';
 const prisma = new PrismaClient();
 
 const assignRoleSchema = z.object({
-  roleId: z.string().cuid('ID do papel inválido'),
+  roleId: z.number().int().positive('ID do papel deve ser um número positivo'),
 });
 
 export const userController = {
@@ -68,7 +68,7 @@ export const userController = {
 
   async getUserById(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = parseInt(req.params.id);
 
       const user = await prisma.user.findUnique({
         where: { id },
@@ -127,7 +127,7 @@ export const userController = {
 
   async updateUserStatus(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = parseInt(req.params.id);
       const { active } = req.body;
 
       if (typeof active !== 'boolean') {
@@ -183,7 +183,7 @@ export const userController = {
 
   async assignRole(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = parseInt(req.params.id);
       const validatedData = assignRoleSchema.parse(req.body);
 
       // Verificar se usuário existe
@@ -295,7 +295,8 @@ export const userController = {
 
   async removeRole(req: Request, res: Response): Promise<void> {
     try {
-      const { id, roleId } = req.params;
+      const id = parseInt(req.params.id);
+      const roleId = parseInt(req.params.roleId);
 
       // Verificar se associação existe
       const userRole = await prisma.userRole.findUnique({
@@ -340,8 +341,7 @@ export const userController = {
 
   async deleteUser(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const userId = parseInt(id, 10);
+      const userId = parseInt(req.params.id, 10);
 
       if (isNaN(userId)) {
         res.status(400).json({
