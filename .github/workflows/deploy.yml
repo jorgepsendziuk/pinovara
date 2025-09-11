@@ -195,6 +195,7 @@ jobs:
         # Copiar arquivos necessários
         echo "📦 Preparando arquivos para deploy..."
         echo "📁 Conteúdo do DEPLOY_DIR antes da cópia: $(ls -la $DEPLOY_DIR 2>/dev/null || echo 'DEPLOY_DIR vazio')"
+        echo "📁 DEPLOY_DIR path: $DEPLOY_DIR"
 
         # Verificar arquivos antes de copiar
         echo "🔍 Verificando arquivos a serem copiados..."
@@ -273,16 +274,18 @@ jobs:
         EOF
 
         # Script de deploy
-        cat > $DEPLOY_DIR/deploy.sh << 'EOF'
+        cat > $DEPLOY_DIR/deploy.sh << EOF
         #!/bin/bash
         set -e
 
         echo "🚀 Iniciando deploy do PINOVARA..."
 
         # Navegar para o diretório dos arquivos de deploy
-        cd /tmp || exit 1
-        echo "📁 Diretório atual: $(pwd)"
-        echo "📁 Arquivos disponíveis: $(ls -la)"
+        DEPLOY_TMP_DIR="/tmp/$(basename $DEPLOY_DIR)"
+        cd \$DEPLOY_TMP_DIR || exit 1
+        echo "📁 Diretório atual: \$(pwd)"
+        echo "📁 DEPLOY_TMP_DIR: \$DEPLOY_TMP_DIR"
+        echo "📁 Arquivos disponíveis: \$(ls -la)"
         echo "📁 Arquivos de deploy encontrados:"
         ls -la | grep -E "(deploy|package|dist|prisma|frontend|\.env)" || echo "⚠️ Alguns arquivos podem estar faltando"
 
@@ -434,13 +437,13 @@ jobs:
         sudo rm -rf /var/www/html/*
 
         # Copy frontend files from deployment directory
-        if [ -d "/tmp/frontend-dist" ]; then
+        if [ -d "frontend-dist" ]; then
           echo "📋 Copiando arquivos do frontend..."
-          sudo cp -r /tmp/frontend-dist/* /var/www/html/
+          sudo cp -r frontend-dist/* /var/www/html/
           echo "✅ Frontend copiado com sucesso"
         else
-          echo "⚠️ Diretório frontend-dist não encontrado em /tmp/"
-          ls -la /tmp/ | grep frontend
+          echo "⚠️ Diretório frontend-dist não encontrado no diretório atual"
+          ls -la | grep frontend
         fi
 
         # Verificar se frontend está acessível
@@ -494,24 +497,28 @@ jobs:
 
         # Enviar arquivos para o servidor
         echo "📤 Enviando arquivos para o servidor..."
-        scp -r $DEPLOY_DIR/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
+        echo "📁 Enviando diretório: $DEPLOY_DIR"
+        scp -r $DEPLOY_DIR ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
 
         # Listar arquivos enviados para debug
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
           echo "📁 Todos os arquivos em /tmp/:"
           ls -la /tmp/
           echo ""
-          echo "📁 Arquivos específicos do deploy:"
-          ls -la /tmp/ | grep -E "(deploy|package|dist|prisma|frontend|\.env|\.js)" || echo "⚠️ Alguns arquivos podem não ter sido encontrados"
+          echo "📁 Conteúdo do diretório de deploy:"
+          ls -la /tmp/pinovara-deploy-* 2>/dev/null || echo "⚠️ Diretório de deploy não encontrado"
+          echo ""
+          echo "📁 Arquivos no diretório de deploy:"
+          ls -la /tmp/pinovara-deploy-*/ 2>/dev/null | grep -E "(deploy|package|dist|prisma|frontend|\.env|\.js)" || echo "⚠️ Alguns arquivos podem não ter sido encontrados"
         '
 
         # Executar deploy no servidor
         echo "🚀 Executando script de deploy..."
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'bash /tmp/deploy.sh'
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'bash /tmp/pinovara-deploy-*/deploy.sh'
 
         # Limpar arquivos temporários
         rm -rf $DEPLOY_DIR
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'rm -rf /tmp/deploy.sh /tmp/ecosystem.config.js /tmp/package*.json /tmp/dist /tmp/frontend-dist /tmp/config.env /tmp/prisma'
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'rm -rf /tmp/pinovara-deploy-*'
 
     - name: Verify deployment
       run: |
