@@ -305,7 +305,7 @@ jobs:
           echo "ℹ️ Isso pode causar problemas com operações de arquivo"
         fi
 
-        # Debug de usuário (para troubleshooting)
+        # Debug de usuário (para troubleshooting)ok
         echo "🔍 Debug: USER='$USER', whoami='$(whoami)', id='$(id -un 2>/dev/null || echo "N/A")'"
 
         # Função para rollback em caso de erro
