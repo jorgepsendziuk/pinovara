@@ -23,6 +23,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Validate Configuration
+      run: |
+        echo "🔧 Validating deployment configuration..."
+        echo "Required GitHub Secrets:"
+        echo "  • SSH_PRIVATE_KEY: Your SSH private key content"
+        echo "  • SERVER_HOST: pinovaraufba.com.br"
+        echo "  • SERVER_USER: Your SSH username (e.g., ubuntu)"
+        echo ""
+        echo "Make sure these secrets are configured in:"
+        echo "Repository Settings → Secrets and variables → Actions"
+
     - name: Checkout code
       uses: actions/checkout@v4
 
@@ -69,6 +80,24 @@ jobs:
 
     - name: Setup SSH
       run: |
+        # Validate required secrets
+        if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+          echo "❌ Error: SSH_PRIVATE_KEY secret is not configured"
+          exit 1
+        fi
+
+        if [ -z "${{ secrets.SERVER_HOST }}" ]; then
+          echo "❌ Error: SERVER_HOST secret is not configured"
+          exit 1
+        fi
+
+        if [ -z "${{ secrets.SERVER_USER }}" ]; then
+          echo "❌ Error: SERVER_USER secret is not configured"
+          exit 1
+        fi
+
+        echo "✅ All required secrets are configured"
+
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
