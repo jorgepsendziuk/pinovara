@@ -380,12 +380,7 @@ jobs:
         # Reabilitar trap após operações de chown
         trap rollback ERR
 
-        # Backup da versão anterior
-        if [ -d "/var/www/pinovara/backend" ]; then
-          echo "📦 Criando backup da versão anterior..."
-          sudo rm -rf /var/www/pinovara/backup || echo "⚠️ Não foi possível remover backup antigo"
-          sudo cp -r /var/www/pinovara/backend /var/www/pinovara/backup || echo "⚠️ Não foi possível criar backup"
-        fi
+        
 
         # Deploy do backend
         echo "📦 Deploying backend..."
