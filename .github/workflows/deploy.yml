@@ -167,6 +167,11 @@ jobs:
 
         echo "🚀 Iniciando deploy do PINOVARA..."
 
+        # Navegar para o diretório dos arquivos de deploy
+        cd /tmp || exit 1
+        echo "📁 Diretório atual: $(pwd)"
+        echo "📁 Arquivos disponíveis: $(ls -la)"
+
         # Verificar se PM2 está instalado
         if ! command -v pm2 &> /dev/null; then
           echo "❌ PM2 não está instalado. Instale com: npm install -g pm2"
@@ -179,12 +184,14 @@ jobs:
         rollback() {
           echo "❌ Erro durante o deploy. Executando rollback..."
           # Stop and delete PM2 process if it exists
-          if pm2 list | grep -q pinovara-backend; then
+          if pm2 list 2>/dev/null | grep -q pinovara-backend; then
             pm2 stop pinovara-backend 2>/dev/null || true
             pm2 delete pinovara-backend 2>/dev/null || true
           fi
           if [ -d "/var/www/pinovara/backup" ]; then
-            cp -r /var/www/pinovara/backup/* /var/www/pinovara/backend/ || true
+            rm -rf /var/www/pinovara/backend
+            cp -r /var/www/pinovara/backup /var/www/pinovara/backend || true
+            cd /var/www/pinovara/backend
             pm2 start ecosystem.config.js --env production 2>/dev/null || true
           fi
           exit 1
@@ -218,8 +225,16 @@ jobs:
         rm -rf /var/www/pinovara/backend
         mkdir -p /var/www/pinovara/backend
 
-        cp -r * /var/www/pinovara/backend/
+        # Copy deployment files to backend directory
+        echo "📋 Copiando arquivos de deploy..."
+        if [ -f "package.json" ]; then cp package*.json /var/www/pinovara/backend/; fi
+        if [ -f "ecosystem.config.js" ]; then cp ecosystem.config.js /var/www/pinovara/backend/; fi
+        if [ -d "dist" ]; then cp -r dist /var/www/pinovara/backend/; fi
+        if [ -d "prisma" ]; then cp -r prisma /var/www/pinovara/backend/; fi
+        if [ -f ".env" ]; then cp .env /var/www/pinovara/backend/; fi
+
         cd /var/www/pinovara/backend
+        echo "📁 Arquivos copiados: $(ls -la)"
 
         # Instalar dependências de produção
         echo "📦 Instalando dependências..."
@@ -232,16 +247,27 @@ jobs:
 
         # Iniciar aplicação com PM2
         echo "🚀 Iniciando aplicação..."
+        echo "📁 Diretório atual: $(pwd)"
+        echo "📁 Arquivos no diretório: $(ls -la)"
+
         # Ensure PM2 daemon is running
         pm2 ping 2>/dev/null || pm2 resurrect 2>/dev/null || true
 
         # Start the application
-        if pm2 start ecosystem.config.js --env production; then
-          echo "✅ Aplicação iniciada com sucesso"
-          pm2 save 2>/dev/null || true
+        if [ -f "ecosystem.config.js" ]; then
+          echo "📄 Encontrado ecosystem.config.js"
+          if pm2 start ecosystem.config.js --env production; then
+            echo "✅ Aplicação iniciada com sucesso"
+            pm2 save 2>/dev/null || true
+            pm2 list
+          else
+            echo "❌ Falha ao iniciar aplicação com PM2"
+            pm2 logs pinovara-backend --lines 10 2>/dev/null || echo "Não foi possível obter logs do PM2"
+            exit 1
+          fi
         else
-          echo "❌ Falha ao iniciar aplicação com PM2"
-          pm2 logs pinovara-backend --lines 10 || true
+          echo "❌ Arquivo ecosystem.config.js não encontrado!"
+          ls -la
           exit 1
         fi
 
@@ -262,7 +288,16 @@ jobs:
         echo "🎨 Deploying frontend..."
         sudo mkdir -p /var/www/html
         sudo rm -rf /var/www/html/*
-        sudo cp -r ../frontend-dist/* /var/www/html/
+
+        # Copy frontend files from deployment directory
+        if [ -d "/tmp/frontend-dist" ]; then
+          echo "📋 Copiando arquivos do frontend..."
+          sudo cp -r /tmp/frontend-dist/* /var/www/html/
+          echo "✅ Frontend copiado com sucesso"
+        else
+          echo "⚠️ Diretório frontend-dist não encontrado em /tmp/"
+          ls -la /tmp/ | grep frontend
+        fi
 
         # Verificar se frontend está acessível
         if curl -f http://localhost/ > /dev/null 2>&1; then
