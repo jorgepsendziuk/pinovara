@@ -89,12 +89,10 @@ jobs:
           cp backend/config.env $DEPLOY_DIR/
         else
           echo "Aviso: config.env não encontrado. Criando configuração básica..."
-          cat > $DEPLOY_DIR/.env << 'EOF'
-NODE_ENV=production
-PORT=3001
-DATABASE_URL="postgresql://user:password@localhost:5432/pinovara"
-JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
-EOF
+          echo 'NODE_ENV=production' > $DEPLOY_DIR/.env
+          echo 'PORT=3001' >> $DEPLOY_DIR/.env
+          echo 'DATABASE_URL="postgresql://user:password@localhost:5432/pinovara"' >> $DEPLOY_DIR/.env
+          echo 'JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"' >> $DEPLOY_DIR/.env
         fi
 
         # Arquivo de configuração do PM2
@@ -236,27 +234,11 @@ EOF
 
         # Verificar se o backend está rodando
         echo "🔧 Verificando backend..."
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
-          if curl -f --max-time 10 http://localhost:3001/health; then
-            echo "✅ Backend está funcionando!"
-          else
-            echo "❌ Backend não está respondendo na porta 3001"
-            pm2 logs pinovara-backend --lines 10
-            exit 1
-          fi
-        '
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "if curl -f --max-time 10 http://localhost:3001/health; then echo '✅ Backend está funcionando!'; else echo '❌ Backend não está respondendo na porta 3001'; pm2 logs pinovara-backend --lines 10; exit 1; fi"
 
         # Verificar se o frontend está acessível
         echo "🎨 Verificando frontend..."
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
-          if curl -f --max-time 10 http://localhost/; then
-            echo "✅ Frontend está funcionando!"
-          else
-            echo "⚠️ Frontend pode não estar configurado (Nginx necessário)"
-            echo "Verificando se os arquivos estão no lugar..."
-            ls -la /var/www/html/ | head -5
-          fi
-        '
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "if curl -f --max-time 10 http://localhost/; then echo '✅ Frontend está funcionando!'; else echo '⚠️ Frontend pode não estar configurado (Nginx necessário)'; echo 'Verificando se os arquivos estão no lugar...'; ls -la /var/www/html/ | head -5; fi"
 
         echo "✅ Deploy verificado com sucesso!"
         echo "🌐 Aplicação disponível em: http://pinovaraufba.com.br"
