@@ -297,21 +297,8 @@ jobs:
 
         echo "✅ PM2 está instalado"
 
-        # Detectar usuário atual antes de qualquer operação
-        echo "🔍 Debug: USER environment variable: '$USER'"
-        echo "🔍 Debug: whoami command: '$(whoami)'"
-        echo "🔍 Debug: id command: '$(id)'"
-
-        CURRENT_USER=$(whoami)
-        echo "👤 Usuário atual no servidor: $CURRENT_USER"
-        echo "👤 Comparação: USER='$USER' vs CURRENT_USER='$CURRENT_USER'"
-
-        # Garantir que CURRENT_USER não seja runner ou vazio
-        if [ "$CURRENT_USER" = "runner" ] || [ -z "$CURRENT_USER" ]; then
-          echo "⚠️ CURRENT_USER detectado como 'runner' ou vazio, tentando alternativas..."
-          CURRENT_USER=$(id -un 2>/dev/null) || CURRENT_USER="ubuntu"
-          echo "👤 Usuário alternativo: $CURRENT_USER"
-        fi
+        # Debug de usuário (para troubleshooting)
+        echo "🔍 Debug: USER='$USER', whoami='$(whoami)', id='$(id -un 2>/dev/null || echo "N/A")'"
 
         # Função para rollback em caso de erro
         rollback() {
@@ -325,13 +312,19 @@ jobs:
             rm -rf /var/www/pinovara/backend
             cp -r /var/www/pinovara/backup /var/www/pinovara/backend || true
             cd /var/www/pinovara/backend
-            # Usar CURRENT_USER se definido e válido, senão tentar detectar novamente
-            ROLLBACK_USER=${CURRENT_USER:-$(whoami)}
-            if [ "$ROLLBACK_USER" = "runner" ] || [ -z "$ROLLBACK_USER" ]; then
-              ROLLBACK_USER=$(id -un 2>/dev/null) || ROLLBACK_USER="ubuntu"
+            # Detectar usuário válido para rollback
+            ROLLBACK_OWNER=$(stat -c '%U' /var/www 2>/dev/null || echo "www-data")
+            if [ "$ROLLBACK_OWNER" = "runner" ] || [ -z "$ROLLBACK_OWNER" ]; then
+              ROLLBACK_OWNER="www-data"
             fi
-            echo "👤 Rollback user: $ROLLBACK_USER"
-            sudo chown -R $ROLLBACK_USER:$ROLLBACK_USER /var/www/pinovara/backend 2>/dev/null || true
+            echo "👤 Rollback owner: $ROLLBACK_OWNER"
+            if sudo chown -R $ROLLBACK_OWNER:$ROLLBACK_OWNER /var/www/pinovara/backend 2>/dev/null; then
+              echo "✅ Rollback permissions set for $ROLLBACK_OWNER"
+            elif sudo chmod -R 755 /var/www/pinovara/backend 2>/dev/null; then
+              echo "ℹ️ Rollback using default permissions (755)"
+            else
+              echo "⚠️ Rollback permission changes failed, continuing..."
+            fi
             pm2 start ecosystem.config.js --env production 2>/dev/null || true
           fi
           exit 1
@@ -342,21 +335,38 @@ jobs:
         # Criar diretórios
         sudo mkdir -p /var/www/pinovara
 
-        # Tentar chown com o usuário atual, múltiplos fallbacks
-        if [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "runner" ]; then
-          if sudo chown -R $CURRENT_USER:$CURRENT_USER /var/www/pinovara 2>/dev/null; then
-            echo "✅ Permissões do diretório configuradas para $CURRENT_USER"
+        # Configurar permissões - abordagem simplificada
+        # Temporariamente desabilitar trap para chown operations
+        trap - ERR
+        echo "🔐 Configurando permissões do diretório..."
+
+        # Método 1: Usar stat para obter o proprietário atual
+        CURRENT_OWNER=$(stat -c '%U' /var/www 2>/dev/null || echo "www-data")
+        echo "👤 Proprietário atual detectado: $CURRENT_OWNER"
+
+        # Método 2: Se for runner ou vazio, tentar detectar o usuário SSH
+        if [ "$CURRENT_OWNER" = "runner" ] || [ -z "$CURRENT_OWNER" ] || [ "$CURRENT_OWNER" = "root" ]; then
+          # Tentar obter o usuário SSH da conexão
+          SSH_USER=$(who | grep -oP '\w+(?=\s+pts)' | head -1 || echo "www-data")
+          if [ -n "$SSH_USER" ] && [ "$SSH_USER" != "runner" ]; then
+            CURRENT_OWNER="$SSH_USER"
           else
-            echo "⚠️ Não foi possível alterar permissões para $CURRENT_USER. Tentando fallbacks..."
-            # Tentar usuários comuns do sistema
-            sudo chown -R www-data:www-data /var/www/pinovara 2>/dev/null || \
-            sudo chown -R ubuntu:ubuntu /var/www/pinovara 2>/dev/null || \
-            sudo chown -R root:root /var/www/pinovara 2>/dev/null || \
-            echo "ℹ️ Não foi possível alterar permissões. Continuando com permissões atuais..."
+            CURRENT_OWNER="www-data"
           fi
-        else
-          echo "⚠️ Usuário não detectado corretamente. Pulando alteração de permissões..."
+          echo "👤 Usuário SSH detectado: $CURRENT_OWNER"
         fi
+
+        # Aplicar permissões de forma segura
+        if sudo chown -R $CURRENT_OWNER:$CURRENT_OWNER /var/www/pinovara 2>/dev/null; then
+          echo "✅ Permissões configuradas para $CURRENT_OWNER"
+        elif sudo chmod -R 755 /var/www/pinovara 2>/dev/null; then
+          echo "ℹ️ Usando permissões padrão (755) - chown não disponível"
+        else
+          echo "⚠️ Não foi possível configurar permissões. Continuando mesmo assim..."
+        fi
+
+        # Reabilitar trap após operações de chown
+        trap rollback ERR
 
         # Backup da versão anterior
         if [ -d "/var/www/pinovara/backend" ]; then
