@@ -316,25 +316,6 @@ jobs:
             pm2 stop pinovara-backend 2>/dev/null || true
             pm2 delete pinovara-backend 2>/dev/null || true
           fi
-          if [ -d "/var/www/pinovara/backup" ]; then
-            sudo rm -rf /var/www/pinovara/backend || echo "⚠️ Rollback: não foi possível remover backend"
-            sudo cp -r /var/www/pinovara/backup /var/www/pinovara/backend || echo "⚠️ Rollback: não foi possível restaurar backup"
-            cd /var/www/pinovara/backend
-            # Detectar usuário válido para rollback
-            ROLLBACK_OWNER=$(stat -c '%U' /var/www 2>/dev/null || echo "www-data")
-            if [ "$ROLLBACK_OWNER" = "runner" ] || [ -z "$ROLLBACK_OWNER" ]; then
-              ROLLBACK_OWNER="www-data"
-            fi
-            echo "👤 Rollback owner: $ROLLBACK_OWNER"
-            if sudo chown -R $ROLLBACK_OWNER:$ROLLBACK_OWNER /var/www/pinovara/backend 2>/dev/null; then
-              echo "✅ Rollback permissions set for $ROLLBACK_OWNER"
-            elif sudo chmod -R 755 /var/www/pinovara/backend 2>/dev/null; then
-              echo "ℹ️ Rollback using default permissions (755)"
-            else
-              echo "⚠️ Rollback permission changes failed, continuing..."
-            fi
-            pm2 start ecosystem.config.js --env production 2>/dev/null || true
-          fi
           exit 1
         }
 
@@ -393,7 +374,7 @@ jobs:
             pm2 delete pinovara-backend 2>/dev/null || true
           fi
         fi
- 
+
         sudo rm -rf /var/www/pinovara/backend || echo "⚠️ Não foi possível remover diretório backend antigo"
         sudo mkdir -p /var/www/pinovara/backend || echo "⚠️ Não foi possível criar diretório backend"
 
@@ -506,9 +487,6 @@ jobs:
         else
           echo "⚠️ Aviso: Frontend pode não estar configurado corretamente"
         fi
-
-        # Limpar backup após deploy bem-sucedido
-        rm -rf /var/www/pinovara/backup
 
         echo ""
         echo "📊 RESUMO DO DEPLOY:"
