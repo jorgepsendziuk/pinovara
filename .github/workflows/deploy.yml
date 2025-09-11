@@ -167,14 +167,25 @@ jobs:
 
         echo "🚀 Iniciando deploy do PINOVARA..."
 
+        # Verificar se PM2 está instalado
+        if ! command -v pm2 &> /dev/null; then
+          echo "❌ PM2 não está instalado. Instale com: npm install -g pm2"
+          exit 1
+        fi
+
+        echo "✅ PM2 está instalado"
+
         # Função para rollback em caso de erro
         rollback() {
           echo "❌ Erro durante o deploy. Executando rollback..."
-          pm2 stop pinovara-backend || true
-          pm2 delete pinovara-backend || true
+          # Stop and delete PM2 process if it exists
+          if pm2 list | grep -q pinovara-backend; then
+            pm2 stop pinovara-backend 2>/dev/null || true
+            pm2 delete pinovara-backend 2>/dev/null || true
+          fi
           if [ -d "/var/www/pinovara/backup" ]; then
             cp -r /var/www/pinovara/backup/* /var/www/pinovara/backend/ || true
-            pm2 start ecosystem.config.js --env production || true
+            pm2 start ecosystem.config.js --env production 2>/dev/null || true
           fi
           exit 1
         }
@@ -196,8 +207,12 @@ jobs:
         echo "📦 Deploying backend..."
         if [ -d "/var/www/pinovara/backend" ]; then
           cd /var/www/pinovara/backend
-          pm2 stop pinovara-backend || true
-          pm2 delete pinovara-backend || true
+          # Stop and delete PM2 process if it exists
+          if pm2 list | grep -q pinovara-backend; then
+            echo "🛑 Stopping existing PM2 process..."
+            pm2 stop pinovara-backend 2>/dev/null || true
+            pm2 delete pinovara-backend 2>/dev/null || true
+          fi
         fi
 
         rm -rf /var/www/pinovara/backend
@@ -217,8 +232,18 @@ jobs:
 
         # Iniciar aplicação com PM2
         echo "🚀 Iniciando aplicação..."
-        pm2 start ecosystem.config.js --env production
-        pm2 save
+        # Ensure PM2 daemon is running
+        pm2 ping 2>/dev/null || pm2 resurrect 2>/dev/null || true
+
+        # Start the application
+        if pm2 start ecosystem.config.js --env production; then
+          echo "✅ Aplicação iniciada com sucesso"
+          pm2 save 2>/dev/null || true
+        else
+          echo "❌ Falha ao iniciar aplicação com PM2"
+          pm2 logs pinovara-backend --lines 10 || true
+          exit 1
+        fi
 
         # Aguardar aplicação iniciar
         echo "⏳ Aguardando aplicação iniciar..."

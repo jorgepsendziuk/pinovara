@@ -20,6 +20,15 @@ sudo apt-get install -y nodejs
 echo "📦 Instalando PM2..."
 sudo npm install -g pm2
 
+# Verificar instalação do PM2
+if command -v pm2 &> /dev/null; then
+    echo "✅ PM2 instalado com sucesso"
+    pm2 --version
+else
+    echo "❌ Falha na instalação do PM2"
+    exit 1
+fi
+
 # Instalar PostgreSQL
 echo "📦 Instalando PostgreSQL..."
 sudo apt install -y postgresql postgresql-contrib
