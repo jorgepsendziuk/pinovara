@@ -1,0 +1,145 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install backend dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Build backend
+      working-directory: ./backend
+      run: npm run build
+
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Build frontend
+      working-directory: ./frontend
+      run: npm run build
+
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to server
+      run: |
+        # Criar diretório temporário para arquivos
+        DEPLOY_DIR="/tmp/pinovara-deploy-$(date +%s)"
+        mkdir -p $DEPLOY_DIR
+
+        # Copiar arquivos necessários
+        cp -r backend/package*.json backend/dist backend/prisma backend/config.env $DEPLOY_DIR/
+        cp -r frontend/dist $DEPLOY_DIR/frontend-dist
+
+        # Arquivo de configuração do PM2
+        cat > $DEPLOY_DIR/ecosystem.config.js << 'EOF'
+        module.exports = {
+          apps: [{
+            name: 'pinovara-backend',
+            script: 'dist/server.js',
+            cwd: '/var/www/pinovara/backend',
+            instances: 1,
+            exec_mode: 'fork',
+            env: {
+              NODE_ENV: 'production',
+              PORT: 3001
+            },
+            env_production: {
+              NODE_ENV: 'production',
+              PORT: 3001
+            }
+          }]
+        };
+        EOF
+
+        # Script de deploy
+        cat > $DEPLOY_DIR/deploy.sh << 'EOF'
+        #!/bin/bash
+        set -e
+
+        echo "🚀 Iniciando deploy do PINOVARA..."
+
+        # Criar diretórios
+        sudo mkdir -p /var/www/pinovara
+        sudo chown -R $USER:$USER /var/www/pinovara
+
+        # Deploy do backend
+        echo "📦 Deploying backend..."
+        if [ -d "/var/www/pinovara/backend" ]; then
+          cd /var/www/pinovara/backend
+          npm run prisma:generate
+          pm2 stop pinovara-backend || true
+          pm2 delete pinovara-backend || true
+        fi
+
+        rm -rf /var/www/pinovara/backend
+        mkdir -p /var/www/pinovara/backend
+
+        cp -r * /var/www/pinovara/backend/
+        cd /var/www/pinovara/backend
+
+        # Instalar dependências de produção
+        npm ci --production
+
+        # Configurar banco de dados
+        npx prisma generate
+        npx prisma db push
+
+        # Iniciar aplicação com PM2
+        pm2 start ecosystem.config.js --env production
+        pm2 save
+
+        # Deploy do frontend
+        echo "🎨 Deploying frontend..."
+        sudo rm -rf /var/www/html/*
+        sudo cp -r ../frontend-dist/* /var/www/html/
+
+        echo "✅ Deploy concluído com sucesso!"
+        EOF
+
+        chmod +x $DEPLOY_DIR/deploy.sh
+
+        # Enviar arquivos para o servidor
+        scp -r $DEPLOY_DIR/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
+
+        # Executar deploy no servidor
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'bash /tmp/deploy.sh'
+
+        # Limpar arquivos temporários
+        rm -rf $DEPLOY_DIR
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'rm -rf /tmp/deploy.sh /tmp/ecosystem.config.js /tmp/package*.json /tmp/dist /tmp/frontend-dist /tmp/config.env /tmp/prisma'
+
+    - name: Verify deployment
+      run: |
+        sleep 10
+        # Verificar se o backend está rodando
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'curl -f http://localhost:3001/health || exit 1'
+        # Verificar se o frontend está acessível
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'curl -f http://localhost/ || exit 1'
+        echo "✅ Deploy verificado com sucesso!"
+
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -rf ~/.ssh/id_rsa
