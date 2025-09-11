@@ -1,6 +1,6 @@
 name: Deploy to Production
 
-# Workflow para deploy automático do PINOVARA
+# Workflow para deploy automático do PINOVARA - v2.0 (sem backup)
 # Pré-requisitos na VM:
 # - Node.js 18+
 # - PM2 instalado globalmente
