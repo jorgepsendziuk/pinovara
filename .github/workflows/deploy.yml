@@ -73,7 +73,34 @@ jobs:
 
     - name: Build backend
       working-directory: ./backend
-      run: npm run build
+      run: |
+        echo "🔨 Construindo backend..."
+        npm run build
+        echo "✅ Build do backend concluído"
+        echo "📁 Arquivos gerados: $(ls -la dist/)"
+
+    - name: Verify backend build
+      run: |
+        echo "🔍 Verificando build do backend..."
+        if [ -d "backend/dist" ]; then
+          echo "✅ Diretório backend/dist encontrado"
+          echo "📄 Arquivos em dist/: $(ls backend/dist/ | wc -l) arquivos"
+          if [ -f "backend/package.json" ]; then
+            echo "✅ package.json encontrado"
+          else
+            echo "❌ package.json não encontrado"
+            exit 1
+          fi
+          if [ -f "backend/package-lock.json" ]; then
+            echo "✅ package-lock.json encontrado"
+          else
+            echo "❌ package-lock.json não encontrado"
+            exit 1
+          fi
+        else
+          echo "❌ Diretório backend/dist não encontrado!"
+          exit 1
+        fi
 
     - name: Cache frontend dependencies
       uses: actions/cache@v3
@@ -91,7 +118,27 @@ jobs:
 
     - name: Build frontend
       working-directory: ./frontend
-      run: npm run build
+      run: |
+        echo "🎨 Construindo frontend..."
+        npm run build
+        echo "✅ Build do frontend concluído"
+        echo "📁 Arquivos gerados: $(ls -la dist/)"
+
+    - name: Verify frontend build
+      run: |
+        echo "🔍 Verificando build do frontend..."
+        if [ -d "frontend/dist" ]; then
+          echo "✅ Diretório frontend/dist encontrado"
+          echo "📄 Arquivos em dist/: $(ls frontend/dist/ | wc -l) arquivos"
+          if [ -f "frontend/dist/index.html" ]; then
+            echo "✅ index.html encontrado"
+          else
+            echo "❌ index.html não encontrado"
+          fi
+        else
+          echo "❌ Diretório frontend/dist não encontrado!"
+          exit 1
+        fi
 
     - name: Setup SSH
       run: |
@@ -120,6 +167,27 @@ jobs:
 
     - name: Deploy to server
       run: |
+        # Verificar estrutura de arquivos antes do deploy
+        echo "🔍 Verificando estrutura de arquivos no repositório..."
+        echo "📁 Diretório atual: $(pwd)"
+        echo "📁 Conteúdo da raiz: $(ls -la)"
+
+        if [ -d "backend" ]; then
+          echo "✅ Diretório backend encontrado"
+          echo "📁 Conteúdo do backend: $(ls -la backend/)"
+        else
+          echo "❌ Diretório backend não encontrado!"
+          exit 1
+        fi
+
+        if [ -d "frontend" ]; then
+          echo "✅ Diretório frontend encontrado"
+          echo "📁 Conteúdo do frontend: $(ls -la frontend/)"
+        else
+          echo "❌ Diretório frontend não encontrado!"
+          exit 1
+        fi
+
         # Criar diretório temporário para arquivos
         DEPLOY_DIR="/tmp/pinovara-deploy-$(date +%s)"
         mkdir -p $DEPLOY_DIR
@@ -128,8 +196,43 @@ jobs:
         echo "📦 Preparando arquivos para deploy..."
         echo "📁 Conteúdo do DEPLOY_DIR antes da cópia: $(ls -la $DEPLOY_DIR 2>/dev/null || echo 'DEPLOY_DIR vazio')"
 
-        cp -r backend/package*.json backend/dist backend/prisma $DEPLOY_DIR/ 2>/dev/null || echo "⚠️ Alguns arquivos do backend podem não ter sido encontrados"
-        cp -r frontend/dist $DEPLOY_DIR/frontend-dist 2>/dev/null || echo "⚠️ Arquivos do frontend podem não ter sido encontrados"
+        # Verificar arquivos antes de copiar
+        echo "🔍 Verificando arquivos a serem copiados..."
+        [ -f "backend/package.json" ] && echo "✅ backend/package.json existe" || echo "❌ backend/package.json não encontrado"
+        [ -f "backend/package-lock.json" ] && echo "✅ backend/package-lock.json existe" || echo "❌ backend/package-lock.json não encontrado"
+        [ -d "backend/dist" ] && echo "✅ backend/dist existe" || echo "❌ backend/dist não encontrado"
+        [ -d "backend/prisma" ] && echo "✅ backend/prisma existe" || echo "❌ backend/prisma não encontrado"
+        [ -f "backend/prisma/schema.prisma" ] && echo "✅ backend/prisma/schema.prisma existe" || echo "❌ backend/prisma/schema.prisma não encontrado"
+        [ -d "frontend/dist" ] && echo "✅ frontend/dist existe" || echo "❌ frontend/dist não encontrado"
+
+        # Copiar arquivos com verificação detalhada
+        echo "📋 Iniciando cópia de arquivos..."
+
+        if [ -f "backend/package.json" ]; then
+          cp backend/package.json $DEPLOY_DIR/ && echo "✅ package.json copiado"
+        fi
+
+        if [ -f "backend/package-lock.json" ]; then
+          cp backend/package-lock.json $DEPLOY_DIR/ && echo "✅ package-lock.json copiado"
+        else
+          echo "⚠️ package-lock.json não encontrado. Gerando..."
+          cd backend && npm install --package-lock-only && cd ..
+          if [ -f "backend/package-lock.json" ]; then
+            cp backend/package-lock.json $DEPLOY_DIR/ && echo "✅ package-lock.json gerado e copiado"
+          fi
+        fi
+
+        if [ -d "backend/dist" ]; then
+          cp -r backend/dist $DEPLOY_DIR/ && echo "✅ backend/dist copiado"
+        fi
+
+        if [ -d "backend/prisma" ]; then
+          cp -r backend/prisma $DEPLOY_DIR/ && echo "✅ backend/prisma copiado"
+        fi
+
+        if [ -d "frontend/dist" ]; then
+          cp -r frontend/dist $DEPLOY_DIR/frontend-dist && echo "✅ frontend/dist copiado"
+        fi
 
         echo "📁 Conteúdo do DEPLOY_DIR após cópia: $(ls -la $DEPLOY_DIR)"
 
@@ -172,7 +275,7 @@ jobs:
         # Script de deploy
         cat > $DEPLOY_DIR/deploy.sh << 'EOF'
         #!/bin/bash
-        # set -e  # Temporarily disabled for debugging
+        set -e
 
         echo "🚀 Iniciando deploy do PINOVARA..."
 
@@ -208,8 +311,7 @@ jobs:
           exit 1
         }
 
-        # trap rollback ERR  # Temporarily disabled for debugging
-        echo "⚠️ Modo debug ativado - erros não interromperão o script automaticamente"
+        trap rollback ERR
 
         # Criar diretórios
         sudo mkdir -p /var/www/pinovara
