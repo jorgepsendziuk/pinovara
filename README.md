@@ -10,6 +10,57 @@ PINOVARA é uma aplicação web full-stack que combina:
 - **Front-end**: React + TypeScript + Vite
 - **Banco de dados**: PostgreSQL hospedado externamente
 
+## 🚀 Deploy Automático
+
+O projeto utiliza GitHub Actions para deploy automático na VM Google Cloud.
+
+### 📋 Pré-requisitos
+
+- VM Google Cloud com Ubuntu/Debian
+- Node.js 18+
+- PostgreSQL
+- PM2 (gerenciador de processos)
+- Nginx (opcional, recomendado)
+
+### ⚙️ Configuração Inicial da VM
+
+1. **Execute o script de configuração:**
+   ```bash
+   # Na sua VM, execute:
+   curl -fsSL https://raw.githubusercontent.com/SEU_USERNAME/pinovara/main/setup-vm.sh | bash
+   ```
+
+2. **Configure as secrets no GitHub:**
+   - `SSH_PRIVATE_KEY`: Conteúdo da chave privada SSH
+   - `SERVER_HOST`: `pinovaraufba.com.br`
+   - `SERVER_USER`: Seu usuário SSH (ex: `ubuntu`)
+
+3. **Configure variáveis de ambiente:**
+   Edite o arquivo `backend/config.env` com suas configurações de produção:
+   ```env
+   NODE_ENV=production
+   PORT=3001
+   DATABASE_URL="postgresql://user:password@localhost:5432/pinovara"
+   JWT_SECRET="sua-chave-secreta-super-segura"
+   ```
+
+### 🚀 Processo de Deploy
+
+O deploy é **automático** quando você faz push na branch `main`:
+
+1. **Build**: Compila backend e frontend
+2. **Deploy**: Envia arquivos via SSH para a VM
+3. **Configuração**: Instala dependências e configura banco
+4. **Verificação**: Testa se aplicação está funcionando
+5. **Notificação**: Status do deploy
+
+### 🌐 Acesso à Aplicação
+
+Após deploy bem-sucedido:
+- **Frontend**: http://pinovaraufba.com.br
+- **Backend API**: http://pinovaraufba.com.br/api/
+- **Health Check**: http://pinovaraufba.com.br/health
+
 ## 🚀 Tecnologias Utilizadas
 
 ### Back-end
