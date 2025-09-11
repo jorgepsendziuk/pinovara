@@ -318,7 +318,18 @@ jobs:
 
         # Criar diretórios
         sudo mkdir -p /var/www/pinovara
-        sudo chown -R $USER:$USER /var/www/pinovara
+        CURRENT_USER=$(whoami)
+        echo "👤 Usuário atual no servidor: $CURRENT_USER"
+
+        # Tentar chown com o usuário atual, fallback se falhar
+        if sudo chown -R $CURRENT_USER:$CURRENT_USER /var/www/pinovara 2>/dev/null; then
+          echo "✅ Permissões do diretório configuradas para $CURRENT_USER"
+        else
+          echo "⚠️ Não foi possível alterar permissões. Tentando com usuário padrão..."
+          sudo chown -R www-data:www-data /var/www/pinovara 2>/dev/null || \
+          sudo chown -R ubuntu:ubuntu /var/www/pinovara 2>/dev/null || \
+          echo "ℹ️ Mantendo permissões padrão do sistema"
+        fi
 
         # Backup da versão anterior
         if [ -d "/var/www/pinovara/backend" ]; then
