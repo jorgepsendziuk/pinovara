@@ -125,19 +125,28 @@ jobs:
         mkdir -p $DEPLOY_DIR
 
         # Copiar arquivos necessários
-        cp -r backend/package*.json backend/dist backend/prisma $DEPLOY_DIR/
-        cp -r frontend/dist $DEPLOY_DIR/frontend-dist
+        echo "📦 Preparando arquivos para deploy..."
+        echo "📁 Conteúdo do DEPLOY_DIR antes da cópia: $(ls -la $DEPLOY_DIR 2>/dev/null || echo 'DEPLOY_DIR vazio')"
+
+        cp -r backend/package*.json backend/dist backend/prisma $DEPLOY_DIR/ 2>/dev/null || echo "⚠️ Alguns arquivos do backend podem não ter sido encontrados"
+        cp -r frontend/dist $DEPLOY_DIR/frontend-dist 2>/dev/null || echo "⚠️ Arquivos do frontend podem não ter sido encontrados"
+
+        echo "📁 Conteúdo do DEPLOY_DIR após cópia: $(ls -la $DEPLOY_DIR)"
 
         # Verificar se arquivo de configuração existe
         if [ -f "backend/config.env" ]; then
           cp backend/config.env $DEPLOY_DIR/
+          echo "✅ config.env encontrado e copiado"
         else
-          echo "Aviso: config.env não encontrado. Criando configuração básica..."
+          echo "⚠️ config.env não encontrado. Criando configuração básica..."
           echo 'NODE_ENV=production' > $DEPLOY_DIR/.env
           echo 'PORT=3001' >> $DEPLOY_DIR/.env
           echo 'DATABASE_URL="postgresql://user:password@localhost:5432/pinovara"' >> $DEPLOY_DIR/.env
           echo 'JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"' >> $DEPLOY_DIR/.env
+          echo "✅ Arquivo .env criado"
         fi
+
+        echo "📁 Arquivos finais no DEPLOY_DIR: $(ls -la $DEPLOY_DIR)"
 
         # Arquivo de configuração do PM2
         cat > $DEPLOY_DIR/ecosystem.config.js << 'EOF'
@@ -163,7 +172,7 @@ jobs:
         # Script de deploy
         cat > $DEPLOY_DIR/deploy.sh << 'EOF'
         #!/bin/bash
-        set -e
+        # set -e  # Temporarily disabled for debugging
 
         echo "🚀 Iniciando deploy do PINOVARA..."
 
@@ -171,6 +180,8 @@ jobs:
         cd /tmp || exit 1
         echo "📁 Diretório atual: $(pwd)"
         echo "📁 Arquivos disponíveis: $(ls -la)"
+        echo "📁 Arquivos de deploy encontrados:"
+        ls -la | grep -E "(deploy|package|dist|prisma|frontend|\.env)" || echo "⚠️ Alguns arquivos podem estar faltando"
 
         # Verificar se PM2 está instalado
         if ! command -v pm2 &> /dev/null; then
@@ -197,7 +208,8 @@ jobs:
           exit 1
         }
 
-        trap rollback ERR
+        # trap rollback ERR  # Temporarily disabled for debugging
+        echo "⚠️ Modo debug ativado - erros não interromperão o script automaticamente"
 
         # Criar diretórios
         sudo mkdir -p /var/www/pinovara
@@ -221,20 +233,50 @@ jobs:
             pm2 delete pinovara-backend 2>/dev/null || true
           fi
         fi
-
+ 
         rm -rf /var/www/pinovara/backend
         mkdir -p /var/www/pinovara/backend
 
         # Copy deployment files to backend directory
         echo "📋 Copiando arquivos de deploy..."
-        if [ -f "package.json" ]; then cp package*.json /var/www/pinovara/backend/; fi
-        if [ -f "ecosystem.config.js" ]; then cp ecosystem.config.js /var/www/pinovara/backend/; fi
-        if [ -d "dist" ]; then cp -r dist /var/www/pinovara/backend/; fi
-        if [ -d "prisma" ]; then cp -r prisma /var/www/pinovara/backend/; fi
-        if [ -f ".env" ]; then cp .env /var/www/pinovara/backend/; fi
+
+        # Debug: Check what files exist
+        echo "🔍 Verificando arquivos disponíveis para cópia:"
+        [ -f "package.json" ] && echo "✅ package.json encontrado" || echo "❌ package.json não encontrado"
+        [ -f "ecosystem.config.js" ] && echo "✅ ecosystem.config.js encontrado" || echo "❌ ecosystem.config.js não encontrado"
+        [ -d "dist" ] && echo "✅ dist/ encontrado" || echo "❌ dist/ não encontrado"
+        [ -d "prisma" ] && echo "✅ prisma/ encontrado" || echo "❌ prisma/ não encontrado"
+        [ -f ".env" ] && echo "✅ .env encontrado" || echo "❌ .env não encontrado"
+
+        # Copy files with detailed logging
+        if [ -f "package.json" ]; then
+          echo "📄 Copiando package.json..."
+          cp package*.json /var/www/pinovara/backend/ && echo "✅ package.json copiado"
+        fi
+
+        if [ -f "ecosystem.config.js" ]; then
+          echo "📄 Copiando ecosystem.config.js..."
+          cp ecosystem.config.js /var/www/pinovara/backend/ && echo "✅ ecosystem.config.js copiado"
+        fi
+
+        if [ -d "dist" ]; then
+          echo "📁 Copiando dist/..."
+          cp -r dist /var/www/pinovara/backend/ && echo "✅ dist/ copiado"
+        fi
+
+        if [ -d "prisma" ]; then
+          echo "📁 Copiando prisma/..."
+          cp -r prisma /var/www/pinovara/backend/ && echo "✅ prisma/ copiado"
+        fi
+
+        if [ -f ".env" ]; then
+          echo "📄 Copiando .env..."
+          cp .env /var/www/pinovara/backend/ && echo "✅ .env copiado"
+        fi
 
         cd /var/www/pinovara/backend
-        echo "📁 Arquivos copiados: $(ls -la)"
+        echo "📁 Diretório final: $(pwd)"
+        echo "📁 Arquivos no diretório backend: $(ls -la)"
 
         # Instalar dependências de produção
         echo "📦 Instalando dependências..."
@@ -309,6 +351,39 @@ jobs:
         # Limpar backup após deploy bem-sucedido
         rm -rf /var/www/pinovara/backup
 
+        echo ""
+        echo "📊 RESUMO DO DEPLOY:"
+        echo "===================="
+
+        # Verificar status final
+        if pm2 list 2>/dev/null | grep -q pinovara-backend; then
+          echo "✅ PM2: Processo pinovara-backend está rodando"
+          pm2 list | grep pinovara-backend || echo "⚠️ Detalhes do PM2 não disponíveis"
+        else
+          echo "❌ PM2: Processo pinovara-backend não encontrado"
+        fi
+
+        if [ -d "/var/www/pinovara/backend" ]; then
+          echo "✅ Backend: Diretório existe"
+          ls -la /var/www/pinovara/backend/ | wc -l | xargs echo "   Arquivos no backend:" || echo "   ⚠️ Não foi possível contar arquivos"
+        else
+          echo "❌ Backend: Diretório não existe"
+        fi
+
+        if [ -d "/var/www/html" ]; then
+          echo "✅ Frontend: Diretório existe"
+          ls -la /var/www/html/ | wc -l | xargs echo "   Arquivos no frontend:" || echo "   ⚠️ Não foi possível contar arquivos"
+        else
+          echo "❌ Frontend: Diretório não existe"
+        fi
+
+        echo ""
+        echo "🌐 URLs esperadas:"
+        echo "   Backend API: http://localhost:3001"
+        echo "   Frontend: http://localhost/"
+        echo "   Health Check: http://localhost:3001/health"
+
+        echo ""
         echo "✅ Deploy concluído com sucesso!"
         echo "🌐 Aplicação disponível em: http://pinovaraufba.com.br"
         EOF
@@ -316,9 +391,20 @@ jobs:
         chmod +x $DEPLOY_DIR/deploy.sh
 
         # Enviar arquivos para o servidor
+        echo "📤 Enviando arquivos para o servidor..."
         scp -r $DEPLOY_DIR/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
 
+        # Listar arquivos enviados para debug
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
+          echo "📁 Todos os arquivos em /tmp/:"
+          ls -la /tmp/
+          echo ""
+          echo "📁 Arquivos específicos do deploy:"
+          ls -la /tmp/ | grep -E "(deploy|package|dist|prisma|frontend|\.env|\.js)" || echo "⚠️ Alguns arquivos podem não ter sido encontrados"
+        '
+
         # Executar deploy no servidor
+        echo "🚀 Executando script de deploy..."
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'bash /tmp/deploy.sh'
 
         # Limpar arquivos temporários
