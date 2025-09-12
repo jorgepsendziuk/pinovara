@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to Production - NO BACKUP v3.0
 
 # Workflow para deploy automático do PINOVARA - v2.1 (backup removido)
 # ✅ SEM SISTEMA DE BACKUP - Deploy direto e simples
@@ -28,6 +28,8 @@ jobs:
     - name: Validate Configuration
       run: |
         echo "🔧 Validating deployment configuration..."
+        echo "📋 WORKFLOW VERSION: Deploy to Production - NO BACKUP v3.0"
+        echo "✅ This version has NO backup system - direct deployment only"
         echo ""
         echo "📋 REQUIRED GitHub Secrets Configuration:"
         echo "=========================================="
