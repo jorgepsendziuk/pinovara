@@ -1,6 +1,8 @@
 name: Deploy to Production
 
-# Workflow para deploy automático do PINOVARA - v2.0 (sem backup)
+# Workflow para deploy automático do PINOVARA - v2.1 (backup removido)
+# ✅ SEM SISTEMA DE BACKUP - Deploy direto e simples
+#
 # Pré-requisitos na VM:
 # - Node.js 18+
 # - PM2 instalado globalmente
@@ -278,7 +280,8 @@ jobs:
         #!/bin/bash
         set -e
 
-        echo "🚀 Iniciando deploy do PINOVARA..."
+        echo "🚀 Iniciando deploy do PINOVARA v2.1 (SEM BACKUP)..."
+        echo "✅ Modo: Deploy direto - sem sistema de backup"
 
         # Navegar para o diretório dos arquivos de deploy
         DEPLOY_TMP_DIR="/tmp/$(basename $DEPLOY_DIR)"
