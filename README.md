@@ -235,6 +235,93 @@ pinovara/
 - [ ] Interface responsiva
 - [ ] Testes automatizados
 
+## 🌐 Servindo com Nginx
+
+O sistema está configurado para funcionar com Nginx como servidor web e proxy reverso.
+
+### Configuração Automática
+
+O script `setup-vm.sh` configura automaticamente:
+- Nginx com configuração otimizada para produção
+- Proxy reverso para a API Node.js
+- Servindo de arquivos estáticos do React
+- Headers de segurança básicos
+- Compressão Gzip
+- Cache otimizado para assets estáticos
+
+### Arquitetura
+
+```
+Cliente → Nginx (porta 80/443)
+    ├── / (root) → /var/www/html (React SPA)
+    ├── /api/* → http://localhost:3001 (Node.js API)
+    └── /health → http://localhost:3001/health
+```
+
+### Monitoramento
+
+#### Script de Monitoramento do Nginx:
+```bash
+# No servidor
+./nginx-monitor.sh
+```
+
+Este script verifica:
+- Status do Nginx
+- Configuração válida
+- Portas abertas
+- Arquivos estáticos
+- Conectividade com backend
+- Logs recentes
+
+#### Script de Verificação Completa de Deploy:
+```bash
+# No servidor - verificação abrangente
+./check-deployment.sh
+```
+
+Este script faz uma auditoria completa:
+- ✅ Estrutura de diretórios
+- ✅ Arquivos do backend (package.json, ecosystem.config.js, dist/, prisma/, .env)
+- ✅ Arquivos do frontend
+- ✅ Processos Node.js e PM2
+- ✅ Conectividade das APIs
+- ✅ Status do Nginx e portas
+
+### Comandos Úteis
+
+```bash
+# Verificar status
+sudo systemctl status nginx
+
+# Recarregar configuração
+sudo systemctl reload nginx
+
+# Reiniciar Nginx
+sudo systemctl restart nginx
+
+# Ver logs
+sudo tail -f /var/log/nginx/pinovara_error.log
+sudo tail -f /var/log/nginx/pinovara_access.log
+
+# Testar configuração
+sudo nginx -t
+```
+
+### HTTPS/SSL (Opcional)
+
+Para configurar HTTPS com Let's Encrypt:
+```bash
+# Instalar certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Obter certificado
+sudo certbot --nginx -d pinovaraufba.com.br -d www.pinovaraufba.com.br
+
+# Testar renovação
+sudo certbot renew --dry-run
+```
+
 ## 📞 Suporte
 
 Para dúvidas ou sugestões, entre em contato com a equipe de desenvolvimento.

@@ -134,15 +134,55 @@ jobs:
         sudo rm -rf /var/www/pinovara/backend
         sudo mkdir -p /var/www/pinovara/backend
 
-        # Copy files
+        # Copy files with explicit paths
         echo "📋 Deploying backend files..."
-        if [ -f "package.json" ]; then sudo cp package*.json /var/www/pinovara/backend/; fi
-        if [ -f ".env" ]; then sudo cp .env /var/www/pinovara/backend/; fi
-        if [ -f "ecosystem.config.js" ]; then sudo cp ecosystem.config.js /var/www/pinovara/backend/; fi
-        if [ -d "dist" ]; then sudo cp -r dist /var/www/pinovara/backend/; fi
-        if [ -d "prisma" ]; then sudo cp -r prisma /var/www/pinovara/backend/; fi
+        DEPLOY_SOURCE="$DEPLOY_TMP_DIR"
+        echo "📂 Source directory: $DEPLOY_SOURCE"
+        echo "📂 Target directory: /var/www/pinovara/backend"
 
-        cd /var/www/pinovara/backend
+        # Navigate to source directory for copying
+        cd "$DEPLOY_SOURCE" || { echo "❌ Failed to cd to $DEPLOY_SOURCE"; exit 1; }
+
+        # Copy files with full paths
+        if [ -f "package.json" ]; then
+            sudo cp package*.json /var/www/pinovara/backend/
+            echo "✅ package.json copied"
+        else
+            echo "❌ package.json not found in $DEPLOY_SOURCE"
+        fi
+
+        if [ -f ".env" ]; then
+            sudo cp .env /var/www/pinovara/backend/
+            echo "✅ .env copied"
+        else
+            echo "❌ .env not found in $DEPLOY_SOURCE"
+        fi
+
+        if [ -f "ecosystem.config.js" ]; then
+            sudo cp ecosystem.config.js /var/www/pinovara/backend/
+            echo "✅ ecosystem.config.js copied"
+        else
+            echo "❌ ecosystem.config.js not found in $DEPLOY_SOURCE"
+            ls -la "$DEPLOY_SOURCE"/
+        fi
+
+        if [ -d "dist" ]; then
+            sudo cp -r dist /var/www/pinovara/backend/
+            echo "✅ dist/ copied"
+        else
+            echo "❌ dist/ not found in $DEPLOY_SOURCE"
+        fi
+
+        if [ -d "prisma" ]; then
+            sudo cp -r prisma /var/www/pinovara/backend/
+            echo "✅ prisma/ copied"
+        else
+            echo "❌ prisma/ not found in $DEPLOY_SOURCE"
+        fi
+
+        # Navigate to target directory for execution
+        cd /var/www/pinovara/backend || { echo "❌ Failed to cd to /var/www/pinovara/backend"; exit 1; }
+        echo "📂 Current directory: $(pwd)"
 
         # Install dependencies
         echo "📦 Installing dependencies..."
@@ -155,8 +195,20 @@ jobs:
 
         # Start application
         echo "🚀 Starting application..."
-        pm2 start ecosystem.config.js --env production
-        pm2 save
+        echo "📂 Current directory: $(pwd)"
+        echo "📄 Files in directory: $(ls -la)"
+
+        if [ -f "ecosystem.config.js" ]; then
+            echo "✅ ecosystem.config.js found, starting PM2..."
+            pm2 start ecosystem.config.js --env production
+            pm2 save
+            echo "✅ Application started successfully"
+        else
+            echo "❌ ecosystem.config.js not found in $(pwd)"
+            echo "📄 Available files:"
+            ls -la
+            exit 1
+        fi
 
         # Deploy frontend
         echo "🎨 Deploying frontend..."
