@@ -1,19 +1,8 @@
-name: Deploy to Production - NO BACKUP v3.0
+name: Deploy to Production
 
-# Workflow para deploy automático do PINOVARA - v2.1 (backup removido)
-# ✅ SEM SISTEMA DE BACKUP - Deploy direto e simples
-#
-# Pré-requisitos na VM:
-# - Node.js 18+
-# - PM2 instalado globalmente
-# - PostgreSQL configurado
-# - Nginx configurado (opcional)
-# - Chaves SSH configuradas
-#
-# Secrets necessárias no GitHub:
-# - SSH_PRIVATE_KEY: Chave privada SSH
-# - SERVER_HOST: pinovaraufba.com.br
-# - SERVER_USER: Usuário SSH (ubuntu, etc.)
+# 🚀 PINOVARA Deploy v4.0 - CLEAN & SIMPLE
+# ✅ NO BACKUP SYSTEM - Direct deployment only
+# ✅ NO COMPLEXITY - Just deploy and go
 
 on:
   push:
@@ -25,238 +14,84 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Validate Configuration
+    - name: 🚀 Starting Clean Deploy v4.0
       run: |
-        echo "🔧 Validating deployment configuration..."
-        echo "📋 WORKFLOW VERSION: Deploy to Production - NO BACKUP v3.0"
-        echo "✅ This version has NO backup system - direct deployment only"
-        echo ""
-        echo "📋 REQUIRED GitHub Secrets Configuration:"
-        echo "=========================================="
-        echo ""
-        echo "Go to: Repository Settings → Secrets and variables → Actions"
-        echo ""
-        echo "Add these secrets:"
-        echo ""
-        echo "1. SSH_PRIVATE_KEY"
-        echo "   How to get the value:"
-        echo "   • Run: cat ~/.ssh/id_rsa"
-        echo "   • Copy the ENTIRE output (including -----BEGIN OPENSSH PRIVATE KEY-----)"
-        echo "   • Make sure to include all lines with proper line breaks"
-        echo ""
-        echo "2. SERVER_HOST"
-        echo "   Value: pinovaraufba.com.br"
-        echo ""
-        echo "3. SERVER_USER"
-        echo "   Value: ubuntu"
-        echo "   (or your SSH username on the server)"
-        echo ""
-        echo "❌ Deployment will fail until these secrets are configured!"
+        echo "🎯 PINOVARA Deploy v4.0 - CLEAN & SIMPLE"
+        echo "✅ NO backup system - Direct deployment only"
+        echo "✅ NO complexity - Just deploy and go"
+        echo "📅 $(date)"
 
-    - name: Checkout code
+    - name: 🔧 Validate Secrets
+      run: |
+        if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+          echo "❌ SSH_PRIVATE_KEY secret not configured"
+          exit 1
+        fi
+        if [ -z "${{ secrets.SERVER_HOST }}" ]; then
+          echo "❌ SERVER_HOST secret not configured"
+          exit 1
+        fi
+        if [ -z "${{ secrets.SERVER_USER }}" ]; then
+          echo "❌ SERVER_USER secret not configured"
+          exit 1
+        fi
+        echo "✅ All secrets configured"
+
+    - name: 📥 Checkout Code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
+    - name: ⚙️ Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
 
-    - name: Cache backend dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.npm
-          ./backend/node_modules
-        key: ${{ runner.os }}-backend-node-${{ hashFiles('backend/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-backend-node-
-
-    - name: Install backend dependencies
-      working-directory: ./backend
-      run: npm ci
-
-    - name: Build backend
+    - name: 🏗️ Build Backend
       working-directory: ./backend
       run: |
-        echo "🔨 Construindo backend..."
+        echo "🔨 Building backend..."
+        npm ci
         npm run build
-        echo "✅ Build do backend concluído"
-        echo "📁 Arquivos gerados: $(ls -la dist/)"
+        echo "✅ Backend built successfully"
 
-    - name: Verify backend build
-      run: |
-        echo "🔍 Verificando build do backend..."
-        if [ -d "backend/dist" ]; then
-          echo "✅ Diretório backend/dist encontrado"
-          echo "📄 Arquivos em dist/: $(ls backend/dist/ | wc -l) arquivos"
-          if [ -f "backend/package.json" ]; then
-            echo "✅ package.json encontrado"
-          else
-            echo "❌ package.json não encontrado"
-            exit 1
-          fi
-          if [ -f "backend/package-lock.json" ]; then
-            echo "✅ package-lock.json encontrado"
-          else
-            echo "❌ package-lock.json não encontrado"
-            exit 1
-          fi
-        else
-          echo "❌ Diretório backend/dist não encontrado!"
-          exit 1
-        fi
-
-    - name: Cache frontend dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.npm
-          ./frontend/node_modules
-        key: ${{ runner.os }}-frontend-node-${{ hashFiles('frontend/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-frontend-node-
-
-    - name: Install frontend dependencies
-      working-directory: ./frontend
-      run: npm ci
-
-    - name: Build frontend
+    - name: 🎨 Build Frontend
       working-directory: ./frontend
       run: |
-        echo "🎨 Construindo frontend..."
+        echo "🎨 Building frontend..."
+        npm ci
         npm run build
-        echo "✅ Build do frontend concluído"
-        echo "📁 Arquivos gerados: $(ls -la dist/)"
+        echo "✅ Frontend built successfully"
 
-    - name: Verify frontend build
+    - name: 🔐 Setup SSH
       run: |
-        echo "🔍 Verificando build do frontend..."
-        if [ -d "frontend/dist" ]; then
-          echo "✅ Diretório frontend/dist encontrado"
-          echo "📄 Arquivos em dist/: $(ls frontend/dist/ | wc -l) arquivos"
-          if [ -f "frontend/dist/index.html" ]; then
-            echo "✅ index.html encontrado"
-          else
-            echo "❌ index.html não encontrado"
-          fi
-        else
-          echo "❌ Diretório frontend/dist não encontrado!"
-          exit 1
-        fi
-
-    - name: Setup SSH
-      run: |
-        # Validate required secrets
-        if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
-          echo "❌ Error: SSH_PRIVATE_KEY secret is not configured"
-          exit 1
-        fi
-
-        if [ -z "${{ secrets.SERVER_HOST }}" ]; then
-          echo "❌ Error: SERVER_HOST secret is not configured"
-          exit 1
-        fi
-
-        if [ -z "${{ secrets.SERVER_USER }}" ]; then
-          echo "❌ Error: SERVER_USER secret is not configured"
-          exit 1
-        fi
-
-        echo "✅ All required secrets are configured"
-
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-    - name: Deploy to server
+    - name: 🚀 Deploy to Server
       run: |
-        # Verificar estrutura de arquivos antes do deploy
-        echo "🔍 Verificando estrutura de arquivos no repositório..."
-        echo "📁 Diretório atual: $(pwd)"
-        echo "📁 Conteúdo da raiz: $(ls -la)"
+        echo "🚀 Starting deployment to ${{ secrets.SERVER_HOST }}..."
 
-        if [ -d "backend" ]; then
-          echo "✅ Diretório backend encontrado"
-          echo "📁 Conteúdo do backend: $(ls -la backend/)"
-        else
-          echo "❌ Diretório backend não encontrado!"
-          exit 1
-        fi
-
-        if [ -d "frontend" ]; then
-          echo "✅ Diretório frontend encontrado"
-          echo "📁 Conteúdo do frontend: $(ls -la frontend/)"
-        else
-          echo "❌ Diretório frontend não encontrado!"
-          exit 1
-        fi
-
-        # Criar diretório temporário para arquivos
+        # Create temp directory
         DEPLOY_DIR="/tmp/pinovara-deploy-$(date +%s)"
         mkdir -p $DEPLOY_DIR
 
-        # Copiar arquivos necessários
-        echo "📦 Preparando arquivos para deploy..."
-        echo "📁 Conteúdo do DEPLOY_DIR antes da cópia: $(ls -la $DEPLOY_DIR 2>/dev/null || echo 'DEPLOY_DIR vazio')"
-        echo "📁 DEPLOY_DIR path: $DEPLOY_DIR"
+        # Copy files
+        echo "📋 Preparing deployment files..."
+        cp -r backend/package*.json backend/dist backend/prisma $DEPLOY_DIR/ 2>/dev/null || true
+        cp -r frontend/dist $DEPLOY_DIR/frontend-dist 2>/dev/null || true
 
-        # Verificar arquivos antes de copiar
-        echo "🔍 Verificando arquivos a serem copiados..."
-        [ -f "backend/package.json" ] && echo "✅ backend/package.json existe" || echo "❌ backend/package.json não encontrado"
-        [ -f "backend/package-lock.json" ] && echo "✅ backend/package-lock.json existe" || echo "❌ backend/package-lock.json não encontrado"
-        [ -d "backend/dist" ] && echo "✅ backend/dist existe" || echo "❌ backend/dist não encontrado"
-        [ -d "backend/prisma" ] && echo "✅ backend/prisma existe" || echo "❌ backend/prisma não encontrado"
-        [ -f "backend/prisma/schema.prisma" ] && echo "✅ backend/prisma/schema.prisma existe" || echo "❌ backend/prisma/schema.prisma não encontrado"
-        [ -d "frontend/dist" ] && echo "✅ frontend/dist existe" || echo "❌ frontend/dist não encontrado"
-
-        # Copiar arquivos com verificação detalhada
-        echo "📋 Iniciando cópia de arquivos..."
-
-        if [ -f "backend/package.json" ]; then
-          cp backend/package.json $DEPLOY_DIR/ && echo "✅ package.json copiado"
-        fi
-
-        if [ -f "backend/package-lock.json" ]; then
-          cp backend/package-lock.json $DEPLOY_DIR/ && echo "✅ package-lock.json copiado"
-        else
-          echo "⚠️ package-lock.json não encontrado. Gerando..."
-          cd backend && npm install --package-lock-only && cd ..
-          if [ -f "backend/package-lock.json" ]; then
-            cp backend/package-lock.json $DEPLOY_DIR/ && echo "✅ package-lock.json gerado e copiado"
-          fi
-        fi
-
-        if [ -d "backend/dist" ]; then
-          cp -r backend/dist $DEPLOY_DIR/ && echo "✅ backend/dist copiado"
-        fi
-
-        if [ -d "backend/prisma" ]; then
-          cp -r backend/prisma $DEPLOY_DIR/ && echo "✅ backend/prisma copiado"
-        fi
-
-        if [ -d "frontend/dist" ]; then
-          cp -r frontend/dist $DEPLOY_DIR/frontend-dist && echo "✅ frontend/dist copiado"
-        fi
-
-        echo "📁 Conteúdo do DEPLOY_DIR após cópia: $(ls -la $DEPLOY_DIR)"
-
-        # Verificar se arquivo de configuração existe
+        # Create env file if config.env exists
         if [ -f "backend/config.env" ]; then
-          cp backend/config.env $DEPLOY_DIR/
-          echo "✅ config.env encontrado e copiado"
+          cp backend/config.env $DEPLOY_DIR/.env
         else
-          echo "⚠️ config.env não encontrado. Criando configuração básica..."
           echo 'NODE_ENV=production' > $DEPLOY_DIR/.env
           echo 'PORT=3001' >> $DEPLOY_DIR/.env
-          echo 'DATABASE_URL="postgresql://user:password@localhost:5432/pinovara"' >> $DEPLOY_DIR/.env
-          echo 'JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"' >> $DEPLOY_DIR/.env
-          echo "✅ Arquivo .env criado"
+          echo 'DATABASE_URL="postgresql://pinovara:pinovara@bd.amarisufv.com.br:5432/pinovara?schema=pinovara"' >> $DEPLOY_DIR/.env
+          echo 'JWT_SECRET="pinovara-secret-key-change-in-production"' >> $DEPLOY_DIR/.env
         fi
 
-        echo "📁 Arquivos finais no DEPLOY_DIR: $(ls -la $DEPLOY_DIR)"
-
-        # Arquivo de configuração do PM2
+        # Create PM2 config
         cat > $DEPLOY_DIR/ecosystem.config.js << 'EOF'
         module.exports = {
           apps: [{
@@ -268,334 +103,102 @@ jobs:
             env: {
               NODE_ENV: 'production',
               PORT: 3001
-            },
-            env_production: {
-              NODE_ENV: 'production',
-              PORT: 3001
             }
           }]
         };
         EOF
 
-        # Script de deploy
-        cat > $DEPLOY_DIR/deploy.sh << EOF
+        # Create deploy script
+        cat > $DEPLOY_DIR/deploy.sh << 'EOF'
         #!/bin/bash
         set -e
 
-        echo "🚀 Iniciando deploy do PINOVARA v2.1 (SEM BACKUP)..."
-        echo "✅ Modo: Deploy direto - sem sistema de backup"
+        echo "🚀 PINOVARA v4.0 - CLEAN DEPLOY STARTING..."
+        echo "✅ NO backup system - Direct deployment"
 
-        # Navegar para o diretório dos arquivos de deploy
-        DEPLOY_TMP_DIR="/tmp/$(basename $DEPLOY_DIR)"
-        cd \$DEPLOY_TMP_DIR || exit 1
-        echo "📁 Diretório atual: \$(pwd)"
-        echo "📁 DEPLOY_TMP_DIR: \$DEPLOY_TMP_DIR"
-        echo "📁 Arquivos disponíveis: \$(ls -la)"
-        echo "📁 Arquivos de deploy encontrados:"
-        ls -la | grep -E "(deploy|package|dist|prisma|frontend|\.env)" || echo "⚠️ Alguns arquivos podem estar faltando"
-
-        # Verificar se PM2 está instalado
+        # Check PM2
         if ! command -v pm2 &> /dev/null; then
-          echo "❌ PM2 não está instalado. Instale com: npm install -g pm2"
+          echo "❌ PM2 not installed"
           exit 1
         fi
+        echo "✅ PM2 available"
 
-        echo "✅ PM2 está instalado"
+        # Create directories
+        sudo mkdir -p /var/www/pinovara
 
-        # Verificar se sudo está disponível
-        if sudo -n true 2>/dev/null; then
-          echo "✅ sudo está disponível e configurado"
-        else
-          echo "⚠️ sudo pode não estar disponível ou requer senha"
-          echo "ℹ️ Isso pode causar problemas com operações de arquivo"
-        fi
+        # Stop existing processes
+        pm2 stop pinovara-backend 2>/dev/null || true
+        pm2 delete pinovara-backend 2>/dev/null || true
 
-        # Debug de usuário (para troubleshooting)ok
-        echo "🔍 Debug: USER='$USER', whoami='$(whoami)', id='$(id -un 2>/dev/null || echo "N/A")'"
+        # Remove old backend
+        sudo rm -rf /var/www/pinovara/backend
+        sudo mkdir -p /var/www/pinovara/backend
 
-        # Função para rollback em caso de erro
-        rollback() {
-          echo "❌ Erro durante o deploy. Executando rollback..."
-          # Stop and delete PM2 process if it exists
-          if pm2 list 2>/dev/null | grep -q pinovara-backend; then
-            pm2 stop pinovara-backend 2>/dev/null || true
-            pm2 delete pinovara-backend 2>/dev/null || true
-          fi
-          exit 1
-        }
-
-        trap rollback ERR
-
-        # Criar diretórios
-        sudo mkdir -p /var/www/pinovara || echo "⚠️ Não foi possível criar diretório base"
-
-        # Configurar permissões - abordagem simplificada
-        # Temporariamente desabilitar trap para chown operations
-        trap - ERR
-        echo "🔐 Configurando permissões do diretório..."
-
-        # Método 1: Usar stat para obter o proprietário atual
-        CURRENT_OWNER=$(stat -c '%U' /var/www 2>/dev/null || echo "www-data")
-        echo "👤 Proprietário atual detectado: $CURRENT_OWNER"
-
-        # Método 2: Se for runner ou vazio, tentar detectar o usuário SSH
-        if [ "$CURRENT_OWNER" = "runner" ] || [ -z "$CURRENT_OWNER" ] || [ "$CURRENT_OWNER" = "root" ]; then
-          # Tentar obter o usuário SSH da conexão
-          SSH_USER=$(who | grep -oP '\w+(?=\s+pts)' | head -1 || echo "www-data")
-          if [ -n "$SSH_USER" ] && [ "$SSH_USER" != "runner" ]; then
-            CURRENT_OWNER="$SSH_USER"
-          else
-            CURRENT_OWNER="www-data"
-          fi
-          echo "👤 Usuário SSH detectado: $CURRENT_OWNER"
-        fi
-
-        # Aplicar permissões de forma segura
-        echo "🔧 Tentando chown -R $CURRENT_OWNER:$CURRENT_OWNER /var/www/pinovara"
-        if sudo chown -R $CURRENT_OWNER:$CURRENT_OWNER /var/www/pinovara 2>/dev/null; then
-          echo "✅ Permissões chown configuradas para $CURRENT_OWNER"
-        else
-          echo "⚠️ chown falhou, tentando chmod -R 755"
-          if sudo chmod -R 755 /var/www/pinovara 2>/dev/null; then
-            echo "ℹ️ Usando permissões padrão (755) - chown não disponível"
-          else
-            echo "❌ Não foi possível configurar permissões. Isso pode causar problemas..."
-          fi
-        fi
-
-        # Reabilitar trap após operações de chown
-        trap rollback ERR
-
-        
-
-        # Deploy do backend
-        echo "📦 Deploying backend..."
-        if [ -d "/var/www/pinovara/backend" ]; then
-          cd /var/www/pinovara/backend
-          # Stop and delete PM2 process if it exists
-          if pm2 list | grep -q pinovara-backend; then
-            echo "🛑 Stopping existing PM2 process..."
-            pm2 stop pinovara-backend 2>/dev/null || true
-            pm2 delete pinovara-backend 2>/dev/null || true
-          fi
-        fi
-
-        sudo rm -rf /var/www/pinovara/backend || echo "⚠️ Não foi possível remover diretório backend antigo"
-        sudo mkdir -p /var/www/pinovara/backend || echo "⚠️ Não foi possível criar diretório backend"
-
-        # Copy deployment files to backend directory
-        echo "📋 Copiando arquivos de deploy..."
-
-        # Debug: Check what files exist
-        echo "🔍 Verificando arquivos disponíveis para cópia:"
-        [ -f "package.json" ] && echo "✅ package.json encontrado" || echo "❌ package.json não encontrado"
-        [ -f "ecosystem.config.js" ] && echo "✅ ecosystem.config.js encontrado" || echo "❌ ecosystem.config.js não encontrado"
-        [ -d "dist" ] && echo "✅ dist/ encontrado" || echo "❌ dist/ não encontrado"
-        [ -d "prisma" ] && echo "✅ prisma/ encontrado" || echo "❌ prisma/ não encontrado"
-        [ -f ".env" ] && echo "✅ .env encontrado" || echo "❌ .env não encontrado"
-
-        # Copy files with detailed logging
-        if [ -f "package.json" ]; then
-          echo "📄 Copiando package.json..."
-          sudo cp package*.json /var/www/pinovara/backend/ && echo "✅ package.json copiado"
-        fi
-
-        if [ -f "ecosystem.config.js" ]; then
-          echo "📄 Copiando ecosystem.config.js..."
-          sudo cp ecosystem.config.js /var/www/pinovara/backend/ && echo "✅ ecosystem.config.js copiado"
-        fi
-
-        if [ -d "dist" ]; then
-          echo "📁 Copiando dist/..."
-          sudo cp -r dist /var/www/pinovara/backend/ && echo "✅ dist/ copiado"
-        fi
-
-        if [ -d "prisma" ]; then
-          echo "📁 Copiando prisma/..."
-          sudo cp -r prisma /var/www/pinovara/backend/ && echo "✅ prisma/ copiado"
-        fi
-
-        if [ -f ".env" ]; then
-          echo "📄 Copiando .env..."
-          sudo cp .env /var/www/pinovara/backend/ && echo "✅ .env copiado"
-        fi
+        # Copy files
+        echo "📋 Deploying backend files..."
+        if [ -f "package.json" ]; then sudo cp package*.json /var/www/pinovara/backend/; fi
+        if [ -f ".env" ]; then sudo cp .env /var/www/pinovara/backend/; fi
+        if [ -f "ecosystem.config.js" ]; then sudo cp ecosystem.config.js /var/www/pinovara/backend/; fi
+        if [ -d "dist" ]; then sudo cp -r dist /var/www/pinovara/backend/; fi
+        if [ -d "prisma" ]; then sudo cp -r prisma /var/www/pinovara/backend/; fi
 
         cd /var/www/pinovara/backend
-        echo "📁 Diretório final: $(pwd)"
-        echo "📁 Arquivos no diretório backend: $(ls -la)"
 
-        # Instalar dependências de produção
-        echo "📦 Instalando dependências..."
+        # Install dependencies
+        echo "📦 Installing dependencies..."
         npm ci --production
 
-        # Configurar banco de dados
-        echo "🗄️ Configurando banco de dados..."
+        # Database setup
+        echo "🗄️ Setting up database..."
         npx prisma generate
         npx prisma db push --accept-data-loss || npx prisma db push
 
-        # Iniciar aplicação com PM2
-        echo "🚀 Iniciando aplicação..."
-        echo "📁 Diretório atual: $(pwd)"
-        echo "📁 Arquivos no diretório: $(ls -la)"
+        # Start application
+        echo "🚀 Starting application..."
+        pm2 start ecosystem.config.js --env production
+        pm2 save
 
-        # Ensure PM2 daemon is running
-        pm2 ping 2>/dev/null || pm2 resurrect 2>/dev/null || true
-
-        # Start the application
-        if [ -f "ecosystem.config.js" ]; then
-          echo "📄 Encontrado ecosystem.config.js"
-          if pm2 start ecosystem.config.js --env production; then
-            echo "✅ Aplicação iniciada com sucesso"
-            pm2 save 2>/dev/null || true
-            pm2 list
-          else
-            echo "❌ Falha ao iniciar aplicação com PM2"
-            pm2 logs pinovara-backend --lines 10 2>/dev/null || echo "Não foi possível obter logs do PM2"
-            exit 1
-          fi
-        else
-          echo "❌ Arquivo ecosystem.config.js não encontrado!"
-          ls -la
-          exit 1
-        fi
-
-        # Aguardar aplicação iniciar
-        echo "⏳ Aguardando aplicação iniciar..."
-        sleep 10
-
-        # Verificar se aplicação está funcionando
-        if curl -f http://localhost:3001/health > /dev/null 2>&1; then
-          echo "✅ Backend está funcionando!"
-        else
-          echo "❌ Backend não está respondendo. Verificando logs..."
-          pm2 logs pinovara-backend --lines 20
-          rollback
-        fi
-
-        # Deploy do frontend
+        # Deploy frontend
         echo "🎨 Deploying frontend..."
         sudo mkdir -p /var/www/html
-        sudo rm -rf /var/www/html/* || echo "⚠️ Não foi possível limpar diretório html"
-
-        # Copy frontend files from deployment directory
-        if [ -d "frontend-dist" ]; then
-          echo "📋 Copiando arquivos do frontend..."
-          sudo cp -r frontend-dist/* /var/www/html/ && echo "✅ Frontend copiado com sucesso"
+        sudo rm -rf /var/www/html/*
+        if [ -d "../frontend-dist" ]; then
+          sudo cp -r ../frontend-dist/* /var/www/html/
+          echo "✅ Frontend deployed"
         else
-          echo "⚠️ Diretório frontend-dist não encontrado no diretório atual"
-          ls -la | grep frontend || echo "Nenhum arquivo frontend encontrado"
+          echo "⚠️ Frontend files not found"
         fi
 
-        # Verificar se frontend está acessível
-        if curl -f http://localhost/ > /dev/null 2>&1; then
-          echo "✅ Frontend está funcionando!"
-        else
-          echo "⚠️ Aviso: Frontend pode não estar configurado corretamente"
-        fi
-
-        echo ""
-        echo "📊 RESUMO DO DEPLOY:"
-        echo "===================="
-
-        # Verificar status final
-        if pm2 list 2>/dev/null | grep -q pinovara-backend; then
-          echo "✅ PM2: Processo pinovara-backend está rodando"
-          pm2 list | grep pinovara-backend || echo "⚠️ Detalhes do PM2 não disponíveis"
-        else
-          echo "❌ PM2: Processo pinovara-backend não encontrado"
-        fi
-
-        if [ -d "/var/www/pinovara/backend" ]; then
-          echo "✅ Backend: Diretório existe"
-          ls -la /var/www/pinovara/backend/ | wc -l | xargs echo "   Arquivos no backend:" || echo "   ⚠️ Não foi possível contar arquivos"
-        else
-          echo "❌ Backend: Diretório não existe"
-        fi
-
-        if [ -d "/var/www/html" ]; then
-          echo "✅ Frontend: Diretório existe"
-          ls -la /var/www/html/ | wc -l | xargs echo "   Arquivos no frontend:" || echo "   ⚠️ Não foi possível contar arquivos"
-        else
-          echo "❌ Frontend: Diretório não existe"
-        fi
-
-        echo ""
-        echo "🌐 URLs esperadas:"
-        echo "   Backend API: http://localhost:3001"
-        echo "   Frontend: http://localhost/"
-        echo "   Health Check: http://localhost:3001/health"
-
-        echo ""
-        echo "✅ Deploy concluído com sucesso!"
-        echo "🌐 Aplicação disponível em: http://pinovaraufba.com.br"
+        echo "✅ DEPLOYMENT COMPLETED SUCCESSFULLY!"
         EOF
 
         chmod +x $DEPLOY_DIR/deploy.sh
 
-        # Enviar arquivos para o servidor
-        echo "📤 Enviando arquivos para o servidor..."
-        echo "📁 Enviando diretório: $DEPLOY_DIR"
+        # Upload and execute
         scp -r $DEPLOY_DIR ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
-
-        # Listar arquivos enviados para debug
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
-          echo "📁 Todos os arquivos em /tmp/:"
-          ls -la /tmp/
-          echo ""
-          echo "📁 Conteúdo do diretório de deploy:"
-          ls -la /tmp/pinovara-deploy-* 2>/dev/null || echo "⚠️ Diretório de deploy não encontrado"
-          echo ""
-          echo "📁 Arquivos no diretório de deploy:"
-          ls -la /tmp/pinovara-deploy-*/ 2>/dev/null | grep -E "(deploy|package|dist|prisma|frontend|\.env|\.js)" || echo "⚠️ Alguns arquivos podem não ter sido encontrados"
-        '
-
-        # Executar deploy no servidor
-        echo "🚀 Executando script de deploy..."
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'bash /tmp/pinovara-deploy-*/deploy.sh'
 
-        # Limpar arquivos temporários
+        # Cleanup
         rm -rf $DEPLOY_DIR
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'rm -rf /tmp/pinovara-deploy-*'
 
-    - name: Verify deployment
+    - name: ✅ Verify Deployment
       run: |
-        echo "🔍 Verificando deploy..."
+        echo "🔍 Verifying deployment..."
+        sleep 10
 
-        # Aguardar um pouco mais para garantir que tudo está funcionando
-        sleep 15
+        # Check backend
+        if ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'curl -f http://localhost:3001/health > /dev/null 2>&1'; then
+          echo "✅ Backend is running"
+        else
+          echo "❌ Backend not responding"
+        fi
 
-        # Verificar status do PM2
-        echo "📊 Verificando status do PM2..."
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'pm2 list'
+        # Check frontend
+        if ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'curl -f http://localhost/ > /dev/null 2>&1'; then
+          echo "✅ Frontend is running"
+        else
+          echo "⚠️ Frontend may need Nginx configuration"
+        fi
 
-        # Verificar se o backend está rodando
-        echo "🔧 Verificando backend..."
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "if curl -f --max-time 10 http://localhost:3001/health; then echo '✅ Backend está funcionando!'; else echo '❌ Backend não está respondendo na porta 3001'; pm2 logs pinovara-backend --lines 10; exit 1; fi"
-
-        # Verificar se o frontend está acessível
-        echo "🎨 Verificando frontend..."
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "if curl -f --max-time 10 http://localhost/; then echo '✅ Frontend está funcionando!'; else echo '⚠️ Frontend pode não estar configurado (Nginx necessário)'; echo 'Verificando se os arquivos estão no lugar...'; ls -la /var/www/html/ | head -5; fi"
-
-        echo "✅ Deploy verificado com sucesso!"
-        echo "🌐 Aplicação disponível em: http://pinovaraufba.com.br"
-
-    - name: Notify on success
-      if: success()
-      run: |
-        echo "🎉 Deploy realizado com sucesso!"
-        echo "📅 $(date)"
-        echo "🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-    - name: Notify on failure
-      if: failure()
-      run: |
-        echo "❌ Deploy falhou!"
-        echo "📅 $(date)"
-        echo "🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        echo ""
-        echo "Verifique os logs para mais detalhes."
-
-    - name: Cleanup
-      if: always()
-      run: |
-        rm -rf ~/.ssh/id_rsa
+        echo "🎉 Deployment verification complete!"
