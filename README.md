@@ -85,6 +85,7 @@ Para deploy manual direto do seu computador:
 | `copy-routes.sh` | 📋 Copiar rotas | `./copy-routes.sh <server> <user>` |
 | `fix-typescript.sh` | 🔧 Corrigir TypeScript | `./fix-typescript.sh <server> <user>` |
 | `fix-permissions.sh` | 🔐 Corrigir permissões | `./fix-permissions.sh <server> <user>` |
+| `build-server.sh` | 🔨 Build no servidor | `./build-server.sh <server> <user> [component]` |
 | `switch-env.sh` | Alternar localhost/produção | `./switch-env.sh` |
 
 ### 📋 Processo dos Scripts
@@ -140,6 +141,18 @@ Se encontrar problemas de build ou deploy, use os scripts de correção:
 ./fix-permissions.sh pinovaraufba.com.br root
 ```
 
+#### **Script para Build no Servidor:**
+```bash
+# Build completo (frontend + backend)
+./build-server.sh pinovaraufba.com.br root all
+
+# Apenas frontend
+./build-server.sh pinovaraufba.com.br root frontend
+
+# Apenas backend
+./build-server.sh pinovaraufba.com.br root backend
+```
+
 **O que o script de correção geral faz:**
 - ✅ Corrige permissões de arquivos
 - ✅ Limpa `node_modules` e `package-lock.json`
@@ -158,6 +171,12 @@ Se encontrar problemas de build ou deploy, use os scripts de correção:
 - ✅ Ajusta permissões para 755
 - ✅ Limpa diretórios dist problemáticos
 - ✅ Recria diretórios com permissões corretas
+
+**O que o script de build no servidor faz:**
+- ✅ Executa build no diretório correto
+- ✅ Corrige permissões automaticamente
+- ✅ Testa múltiplas estratégias de build
+- ✅ Fornece feedback detalhado do processo
 
 ### 🚨 Solução de Problemas
 
@@ -251,6 +270,34 @@ chmod -R 755 dist
 
 # Tentar build novamente
 npm run build
+```
+
+#### Erro: "Could not read package.json" - Diretório errado
+```bash
+# ❌ ERRADO - Não execute no diretório raiz
+cd /var/www/pinovara
+npm run build  # ❌ Falha porque não há package.json aqui
+
+# ✅ CERTO - Execute nos diretórios corretos
+cd /var/www/pinovara/frontend
+npm run build  # ✅ Build do frontend
+
+cd /var/www/pinovara/backend
+npm run build  # ✅ Build do backend
+
+# Ou use o script wrapper (recomendado)
+./build-server.sh pinovaraufba.com.br root all
+```
+
+#### Erro: "Operation not permitted" no package-lock.json
+```bash
+# Este erro é normal - o package-lock.json tem permissões especiais
+# Use o script de correção de permissões
+./fix-permissions.sh pinovaraufba.com.br root
+
+# Ou corrija manualmente (evite alterar package-lock.json)
+ssh root@pinovaraufba.com.br "sudo chown -R $USER:$USER /var/www/pinovara/frontend"
+ssh root@pinovaraufba.com.br "sudo chown -R $USER:$USER /var/www/pinovara/backend"
 ```
 
 #### Arquivos não encontrados no servidor

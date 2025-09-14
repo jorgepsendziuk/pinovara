@@ -29,9 +29,15 @@ sudo mkdir -p /var/www/pinovara/backend
 sudo chown -R $USER:$USER /var/www/pinovara/frontend 2>/dev/null || true
 sudo chown -R $USER:$USER /var/www/pinovara/backend 2>/dev/null || true
 
-# Fix permissions
-sudo chmod -R 755 /var/www/pinovara/frontend 2>/dev/null || true
-sudo chmod -R 755 /var/www/pinovara/backend 2>/dev/null || true
+# Fix permissions (avoid changing package-lock.json permissions)
+sudo find /var/www/pinovara/frontend -type f -name "package-lock.json" -exec chmod 644 {} \; 2>/dev/null || true
+sudo find /var/www/pinovara/backend -type f -name "package-lock.json" -exec chmod 644 {} \; 2>/dev/null || true
+
+# Fix permissions for directories and other files
+sudo find /var/www/pinovara/frontend -type f ! -name "package-lock.json" -exec chmod 644 {} \; 2>/dev/null || true
+sudo find /var/www/pinovara/frontend -type d -exec chmod 755 {} \; 2>/dev/null || true
+sudo find /var/www/pinovara/backend -type f ! -name "package-lock.json" -exec chmod 644 {} \; 2>/dev/null || true
+sudo find /var/www/pinovara/backend -type d -exec chmod 755 {} \; 2>/dev/null || true
 
 # Clean dist directories
 rm -rf /var/www/pinovara/frontend/dist 2>/dev/null || true
