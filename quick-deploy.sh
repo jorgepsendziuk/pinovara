@@ -83,10 +83,10 @@ sudo cp /tmp/deploy-package/backend-src/routes/*.ts /var/www/pinovara/backend/sr
 sudo cp /tmp/*.ts /var/www/pinovara/backend/src/routes/ 2>/dev/null || true
 
 cd /var/www/pinovara/backend
-npm install --production
+npm install
 
 # Build the backend on server
-npm run build
+npm run build || npx tsc || (npm install -g typescript && tsc)
 
 # Copy compiled files
 cp -r /tmp/deploy-package/backend-dist/* /var/www/pinovara/backend/dist/ 2>/dev/null || true

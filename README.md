@@ -83,6 +83,7 @@ Para deploy manual direto do seu computador:
 | `update-prod.sh` | 🔥 Update emergência | `./update-prod.sh` |
 | `fix-deploy.sh` | 🛠️ Corrigir problemas | `./fix-deploy.sh` |
 | `copy-routes.sh` | 📋 Copiar rotas | `./copy-routes.sh <server> <user>` |
+| `fix-typescript.sh` | 🔧 Corrigir TypeScript | `./fix-typescript.sh <server> <user>` |
 | `switch-env.sh` | Alternar localhost/produção | `./switch-env.sh` |
 
 ### 📋 Processo dos Scripts
@@ -115,8 +116,9 @@ Antes de fazer deploy em produção, teste se tudo está funcionando:
 
 ### 🛠️ Correção de Problemas
 
-Se encontrar problemas de build ou deploy, use o script de correção:
+Se encontrar problemas de build ou deploy, use os scripts de correção:
 
+#### **Script Geral de Correção:**
 ```bash
 # Corrige permissões, limpa caches e rebuild
 ./fix-deploy.sh
@@ -125,12 +127,24 @@ Se encontrar problemas de build ou deploy, use o script de correção:
 ./deploy-prod.sh pinovaraufba.com.br root
 ```
 
-**O que o script de correção faz:**
+#### **Script Específico para TypeScript:**
+```bash
+# Corrige especificamente problemas de TypeScript
+./fix-typescript.sh pinovaraufba.com.br root
+```
+
+**O que o script de correção geral faz:**
 - ✅ Corrige permissões de arquivos
 - ✅ Limpa `node_modules` e `package-lock.json`
 - ✅ Reinstala dependências
 - ✅ Rebuild frontend e backend
 - ✅ Cria pacote de deploy limpo
+
+**O que o script de TypeScript faz:**
+- ✅ Instala TypeScript se necessário
+- ✅ Copia arquivos de configuração
+- ✅ Testa diferentes métodos de build
+- ✅ Verifica saída do build
 
 ### 🚨 Solução de Problemas
 
@@ -171,12 +185,30 @@ curl https://pinovaraufba.com.br/health
 # No servidor
 cd /var/www/pinovara/backend
 
-# Copiar arquivos necessários
-sudo cp /path/to/local/backend/tsconfig.json . 2>/dev/null || true
-sudo cp -r /path/to/local/backend/src/routes ./src/ 2>/dev/null || true
+# Instalar TypeScript globalmente
+npm install -g typescript
+
+# Ou usar npx (recomendado)
+npx tsc
+
+# Ou instalar todas as dependências (incluindo devDependencies)
+npm install
 
 # Tentar build novamente
 npm run build
+```
+
+#### Erro: Build falha por falta de devDependencies
+```bash
+# No servidor - instalar TODAS as dependências
+cd /var/www/pinovara/backend
+npm install  # Remove --production para incluir TypeScript
+
+# Ou instalar TypeScript especificamente
+npm install typescript --save-dev
+
+# Verificar instalação
+npx tsc --version
 ```
 
 #### Arquivos não encontrados no servidor
