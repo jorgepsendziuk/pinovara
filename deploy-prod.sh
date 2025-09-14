@@ -13,9 +13,8 @@ export NODE_ENV=production
 cd frontend
 chmod -R 755 . 2>/dev/null || true
 rm -rf dist 2>/dev/null || true
-npm install
-npm install vite@latest
-npm run build
+npm ci
+npx vite build
 cd ..
 
 cd backend
