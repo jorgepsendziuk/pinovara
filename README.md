@@ -77,9 +77,10 @@ Para deploy manual direto do seu computador:
 
 | Script | Descrição | Uso |
 |--------|-----------|-----|
-| `update-prod.sh` | 🔥 Update de emergência | `./update-prod.sh` |
+| `test-deploy.sh` | 🧪 Testar deploy | `./test-deploy.sh` |
 | `deploy-prod.sh` | Deploy ultra-rápido | `./deploy-prod.sh [servidor] [usuario]` |
 | `quick-deploy.sh` | Deploy interativo | `./quick-deploy.sh` |
+| `update-prod.sh` | 🔥 Update emergência | `./update-prod.sh` |
 | `switch-env.sh` | Alternar localhost/produção | `./switch-env.sh` |
 
 ### 📋 Processo dos Scripts
@@ -97,6 +98,43 @@ Após deploy bem-sucedido:
 - **Frontend**: https://pinovaraufba.com.br
 - **Backend API**: https://pinovaraufba.com.br/api/
 - **Health Check**: https://pinovaraufba.com.br/health
+
+### 🧪 Teste Antes do Deploy
+
+Antes de fazer deploy em produção, teste se tudo está funcionando:
+
+```bash
+# Testa se todos os arquivos necessários existem
+./test-deploy.sh
+
+# Se passar, então pode fazer deploy
+./deploy-prod.sh pinovaraufba.com.br root
+```
+
+### 🚨 Solução de Problemas
+
+#### Erro: "npm install" falha no servidor
+```bash
+# Verificar se Node.js está instalado no servidor
+ssh root@pinovaraufba.com.br "node -v && npm -v"
+
+# Se não estiver instalado, instalar:
+ssh root@pinovaraufba.com.br "curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - && sudo apt-get install -y nodejs"
+```
+
+#### Erro: "pm2 command not found"
+```bash
+# Instalar PM2 no servidor
+ssh root@pinovaraufba.com.br "sudo npm install -g pm2"
+```
+
+#### Verificar status após deploy
+```bash
+# No servidor
+pm2 status
+sudo systemctl status nginx
+curl https://pinovaraufba.com.br/health
+```
 
 ## 🚀 Tecnologias Utilizadas
 
