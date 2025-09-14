@@ -113,6 +113,7 @@ Para deploy manual direto do seu computador:
 | `fix-permissions.sh` | 🔐 Corrigir permissões | `./fix-permissions.sh <server> <user>` |
 | `build-server.sh` | 🔨 Build no servidor | `./build-server.sh <server> <user> [component]` |
 | `build-local.sh` | 🏠 Build local + deploy | `./build-local.sh <server> <user> [component]` |
+| `build-server-direct.sh` | ⚡ Build direto no servidor | `./build-server-direct.sh [component]` |
 | `switch-env.sh` | Alternar localhost/produção | `./switch-env.sh` |
 
 ### 📋 Processo dos Scripts
@@ -192,6 +193,18 @@ Se encontrar problemas de build ou deploy, use os scripts de correção:
 ./build-local.sh pinovaraufba.com.br root backend
 ```
 
+#### **Script para Build Direto no Servidor:**
+```bash
+# Build completo (frontend + backend) - EXECUTAR NO SERVIDOR
+./build-server-direct.sh all
+
+# Apenas frontend - EXECUTAR NO SERVIDOR
+./build-server-direct.sh frontend
+
+# Apenas backend - EXECUTAR NO SERVIDOR
+./build-server-direct.sh backend
+```
+
 **O que o script de correção geral faz:**
 - ✅ Corrige permissões de arquivos
 - ✅ Limpa `node_modules` e `package-lock.json`
@@ -222,6 +235,13 @@ Se encontrar problemas de build ou deploy, use os scripts de correção:
 - ✅ Deploy automático para o servidor
 - ✅ Gerenciamento completo do processo
 - ✅ Não requer execução no servidor
+
+**O que o script de build direto no servidor faz:**
+- ✅ Build diretamente no servidor
+- ✅ Executa comandos npm nos diretórios corretos
+- ✅ Corrige permissões automaticamente
+- ✅ Não requer configuração SSH
+- ✅ Ideal quando já está conectado ao servidor
 
 ### 🚨 Solução de Problemas
 
@@ -260,6 +280,20 @@ ssh root@pinovaraufba.com.br "echo 'SSH funcionando!'"
 # Se ainda não funcionar, verificar permissões
 ssh root@pinovaraufba.com.br "chmod 600 ~/.ssh/authorized_keys"
 ssh root@pinovaraufba.com.br "chmod 700 ~/.ssh"
+```
+
+#### Erro: Script tentando conectar ao próprio servidor
+```bash
+# ❌ PROBLEMA: Executar build-server.sh NO SERVIDOR
+jimxxx@www:/var/www/pinovara$ ./build-server.sh pinovaraufba.com.br root all
+# Resultado: "Permission denied (publickey)"
+
+# ✅ SOLUÇÃO: Usar script direto no servidor
+./build-server-direct.sh all
+
+# Ou executar manualmente:
+cd /var/www/pinovara/frontend && npm run build
+cd /var/www/pinovara/backend && npm run build
 ```
 
 #### Erro: "Cannot find module './routes/authRoutes'"
