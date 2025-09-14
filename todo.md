@@ -95,7 +95,7 @@ cor normal mais forte
 - ✅ Criar arquivo TODO.md para gestão de tarefas
 - ✅ Expandir scripts npm com automação completa
 - ✅ Fazer commit inicial da estrutura
-- ✅ Configurar banco PostgreSQL AMARISUFV
+- ✅ Configurar banco PostgreSQL 
 - ✅ Criar scripts de setup e migração
 - ✅ Configurar schema pinovara corretamente
 - ✅ Executar migrações e seed com sucesso
