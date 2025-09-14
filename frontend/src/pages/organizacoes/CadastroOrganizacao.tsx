@@ -44,7 +44,7 @@ interface CadastroOrganizacaoProps {
 }
 
 function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
-  const { user } = useAuth();
+  const { } = useAuth();
   const [stepAtual, setStepAtual] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

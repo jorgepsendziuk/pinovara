@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface Organizacao {
@@ -73,8 +72,8 @@ interface DetalhesOrganizacaoProps {
   onNavigate: (view: 'dashboard' | 'lista' | 'cadastro' | 'detalhes', organizacaoId?: number) => void;
 }
 
-function DetalhesOrganizacao({ organizacaoId, onNavigate }: DetalhesOrganizacaoProps) {
-  const { user } = useAuth();
+function DetalhesOrganizacao({ organizacaoId }: DetalhesOrganizacaoProps) {
+  const { } = useAuth();
   const [organizacao, setOrganizacao] = useState<Organizacao | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

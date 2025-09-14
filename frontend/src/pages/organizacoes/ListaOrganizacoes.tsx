@@ -26,7 +26,7 @@ interface ListaOrganizacoesProps {
 }
 
 function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
-  const { user } = useAuth();
+  const { } = useAuth();
   const [organizacoes, setOrganizacoes] = useState<Organizacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +41,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [itensPorPagina] = useState(10);
-  const [organizacaoSelecionada, setOrganizacaoSelecionada] = useState<Organizacao | null>(null);
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');

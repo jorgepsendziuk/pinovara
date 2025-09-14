@@ -141,7 +141,7 @@ function SystemMonitor() {
     }
   };
 
-  const renderProgressBar = (value: number, max: number = 100, color?: string): JSX.Element => {
+  const renderProgressBar = (value: number, max: number = 100, color?: string): React.JSX.Element => {
     const percentage = Math.min((value / max) * 100, 100);
     const colorClass = color || getUsageColor(percentage);
 
