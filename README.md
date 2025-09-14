@@ -73,6 +73,32 @@ Para deploy manual direto do seu computador:
 ./quick-deploy.sh
 ```
 
+### 🔨 Scripts de Build
+
+#### **Para Executar no Computador Local:**
+```bash
+# Build local + deploy automático (recomendado)
+./build-local.sh pinovaraufba.com.br root all
+
+# Apenas frontend
+./build-local.sh pinovaraufba.com.br root frontend
+
+# Apenas backend
+./build-local.sh pinovaraufba.com.br root backend
+```
+
+#### **Para Executar no Servidor:**
+```bash
+# Build diretamente no servidor (requer SSH configurado)
+./build-server.sh pinovaraufba.com.br root all
+
+# Apenas frontend
+./build-server.sh pinovaraufba.com.br root frontend
+
+# Apenas backend
+./build-server.sh pinovaraufba.com.br root backend
+```
+
 ### 🔧 Scripts Disponíveis
 
 | Script | Descrição | Uso |
@@ -86,6 +112,7 @@ Para deploy manual direto do seu computador:
 | `fix-typescript.sh` | 🔧 Corrigir TypeScript | `./fix-typescript.sh <server> <user>` |
 | `fix-permissions.sh` | 🔐 Corrigir permissões | `./fix-permissions.sh <server> <user>` |
 | `build-server.sh` | 🔨 Build no servidor | `./build-server.sh <server> <user> [component]` |
+| `build-local.sh` | 🏠 Build local + deploy | `./build-local.sh <server> <user> [component]` |
 | `switch-env.sh` | Alternar localhost/produção | `./switch-env.sh` |
 
 ### 📋 Processo dos Scripts
@@ -143,14 +170,26 @@ Se encontrar problemas de build ou deploy, use os scripts de correção:
 
 #### **Script para Build no Servidor:**
 ```bash
-# Build completo (frontend + backend)
+# Build completo (frontend + backend) - EXECUTAR NO SERVIDOR
 ./build-server.sh pinovaraufba.com.br root all
 
-# Apenas frontend
+# Apenas frontend - EXECUTAR NO SERVIDOR
 ./build-server.sh pinovaraufba.com.br root frontend
 
-# Apenas backend
+# Apenas backend - EXECUTAR NO SERVIDOR
 ./build-server.sh pinovaraufba.com.br root backend
+```
+
+#### **Script para Build Local + Deploy:**
+```bash
+# Build completo (frontend + backend) - EXECUTAR NO COMPUTADOR LOCAL
+./build-local.sh pinovaraufba.com.br root all
+
+# Apenas frontend - EXECUTAR NO COMPUTADOR LOCAL
+./build-local.sh pinovaraufba.com.br root frontend
+
+# Apenas backend - EXECUTAR NO COMPUTADOR LOCAL
+./build-local.sh pinovaraufba.com.br root backend
 ```
 
 **O que o script de correção geral faz:**
@@ -178,6 +217,12 @@ Se encontrar problemas de build ou deploy, use os scripts de correção:
 - ✅ Testa múltiplas estratégias de build
 - ✅ Fornece feedback detalhado do processo
 
+**O que o script de build local faz:**
+- ✅ Build local no computador
+- ✅ Deploy automático para o servidor
+- ✅ Gerenciamento completo do processo
+- ✅ Não requer execução no servidor
+
 ### 🚨 Solução de Problemas
 
 #### Erro: "npm install" falha no servidor
@@ -201,6 +246,20 @@ ssh root@pinovaraufba.com.br "sudo npm install -g pm2"
 pm2 status
 sudo systemctl status nginx
 curl https://pinovaraufba.com.br/health
+```
+
+#### Erro: "Permission denied (publickey)"
+```bash
+# Configurar chave SSH para acesso sem senha
+ssh-keygen -t rsa -b 4096 -C "seu-email@exemplo.com"
+ssh-copy-id root@pinovaraufba.com.br
+
+# Testar conexão
+ssh root@pinovaraufba.com.br "echo 'SSH funcionando!'"
+
+# Se ainda não funcionar, verificar permissões
+ssh root@pinovaraufba.com.br "chmod 600 ~/.ssh/authorized_keys"
+ssh root@pinovaraufba.com.br "chmod 700 ~/.ssh"
 ```
 
 #### Erro: "Cannot find module './routes/authRoutes'"
