@@ -54,21 +54,42 @@ cp -r frontend/dist/* deploy-package/
 cp -r backend/dist deploy-package/backend-dist
 cp backend/package.json deploy-package/backend-package.json
 cp backend/package-lock.json deploy-package/ 2>/dev/null || true
+cp backend/tsconfig.json deploy-package/ 2>/dev/null || true
 cp backend/production.config.js deploy-package/backend-dist/ 2>/dev/null || true
 cp -r backend/prisma deploy-package/ 2>/dev/null || true
+cp -r backend/src deploy-package/backend-src/ 2>/dev/null || true
+
+# Also copy route files individually to ensure they exist
+cp backend/src/routes/*.ts deploy-package/backend-src/routes/ 2>/dev/null || true
 
 cat > deploy-package/install.sh << 'EOF'
 #!/bin/bash
 export NODE_ENV=production
 
 sudo mkdir -p /var/www/pinovara/backend
+sudo mkdir -p /var/www/pinovara/backend/src/routes
+
 sudo cp /tmp/deploy-package/backend-package.json /var/www/pinovara/backend/package.json
 sudo cp /tmp/deploy-package/package-lock.json /var/www/pinovara/backend/ 2>/dev/null || true
+sudo cp /tmp/deploy-package/tsconfig.json /var/www/pinovara/backend/ 2>/dev/null || true
+
+# Copy source files ensuring routes are included
+sudo cp -r /tmp/deploy-package/backend-src/* /var/www/pinovara/backend/src/ 2>/dev/null || true
+
+# Ensure route files are copied
+sudo cp /tmp/deploy-package/backend-src/routes/*.ts /var/www/pinovara/backend/src/routes/ 2>/dev/null || true
+
+# Also copy route files from /tmp if they were uploaded directly
+sudo cp /tmp/*.ts /var/www/pinovara/backend/src/routes/ 2>/dev/null || true
 
 cd /var/www/pinovara/backend
 npm install --production
 
-cp -r /tmp/deploy-package/backend-dist/* /var/www/pinovara/backend/dist/
+# Build the backend on server
+npm run build
+
+# Copy compiled files
+cp -r /tmp/deploy-package/backend-dist/* /var/www/pinovara/backend/dist/ 2>/dev/null || true
 
 cat > /var/www/pinovara/backend/.env << 'EOL'
 NODE_ENV=production
@@ -110,6 +131,9 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Error: Failed to copy package"
         exit 1
     fi
+
+    # Copy route files directly to ensure they exist on server
+    scp -P $SERVER_PORT backend/src/routes/*.ts $SERVER_USER@$SERVER_HOST:/tmp/ 2>/dev/null || true
 
     ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST "cd /tmp/deploy-package && ./install.sh"
 

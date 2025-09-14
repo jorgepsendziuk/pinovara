@@ -81,6 +81,8 @@ Para deploy manual direto do seu computador:
 | `deploy-prod.sh` | Deploy ultra-rápido | `./deploy-prod.sh [servidor] [usuario]` |
 | `quick-deploy.sh` | Deploy interativo | `./quick-deploy.sh` |
 | `update-prod.sh` | 🔥 Update emergência | `./update-prod.sh` |
+| `fix-deploy.sh` | 🛠️ Corrigir problemas | `./fix-deploy.sh` |
+| `copy-routes.sh` | 📋 Copiar rotas | `./copy-routes.sh <server> <user>` |
 | `switch-env.sh` | Alternar localhost/produção | `./switch-env.sh` |
 
 ### 📋 Processo dos Scripts
@@ -111,6 +113,25 @@ Antes de fazer deploy em produção, teste se tudo está funcionando:
 ./deploy-prod.sh pinovaraufba.com.br root
 ```
 
+### 🛠️ Correção de Problemas
+
+Se encontrar problemas de build ou deploy, use o script de correção:
+
+```bash
+# Corrige permissões, limpa caches e rebuild
+./fix-deploy.sh
+
+# Depois faça o deploy normalmente
+./deploy-prod.sh pinovaraufba.com.br root
+```
+
+**O que o script de correção faz:**
+- ✅ Corrige permissões de arquivos
+- ✅ Limpa `node_modules` e `package-lock.json`
+- ✅ Reinstala dependências
+- ✅ Rebuild frontend e backend
+- ✅ Cria pacote de deploy limpo
+
 ### 🚨 Solução de Problemas
 
 #### Erro: "npm install" falha no servidor
@@ -134,6 +155,37 @@ ssh root@pinovaraufba.com.br "sudo npm install -g pm2"
 pm2 status
 sudo systemctl status nginx
 curl https://pinovaraufba.com.br/health
+```
+
+#### Erro: "Cannot find module './routes/authRoutes'"
+```bash
+# Copiar arquivos de rotas diretamente
+./copy-routes.sh pinovaraufba.com.br root
+
+# Ou executar deploy completo
+./deploy-prod.sh pinovaraufba.com.br root
+```
+
+#### Erro: "tsc: not found" ou "Cannot find module"
+```bash
+# No servidor
+cd /var/www/pinovara/backend
+
+# Copiar arquivos necessários
+sudo cp /path/to/local/backend/tsconfig.json . 2>/dev/null || true
+sudo cp -r /path/to/local/backend/src/routes ./src/ 2>/dev/null || true
+
+# Tentar build novamente
+npm run build
+```
+
+#### Arquivos não encontrados no servidor
+```bash
+# Verificar se arquivos existem
+ssh root@pinovaraufba.com.br "ls -la /var/www/pinovara/backend/src/routes/"
+
+# Copiar manualmente se necessário
+scp backend/src/routes/*.ts root@pinovaraufba.com.br:/var/www/pinovara/backend/src/routes/
 ```
 
 ## 🚀 Tecnologias Utilizadas
