@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -17,7 +17,11 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(280);
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['sistema']));
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const resizeRef = useRef<HTMLDivElement>(null);
 
   const toggleMenu = (menuId: string) => {
     const newExpanded = new Set(expandedMenus);
@@ -33,6 +37,55 @@ const Sidebar: React.FC = () => {
     logout();
     navigate('/');
   };
+
+  // Função para redimensionar sidebar
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing) return;
+    
+    const newWidth = e.clientX;
+    const minWidth = 200;
+    const maxWidth = 400;
+    
+    if (newWidth >= minWidth && newWidth <= maxWidth) {
+      setSidebarWidth(newWidth);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsResizing(false);
+  };
+
+  // Função para ocultar/mostrar sidebar
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
+  // Event listeners para redimensionamento
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
+  // Ajustar largura quando colapsado
+  useEffect(() => {
+    if (isCollapsed) {
+      setSidebarWidth(70);
+    } else {
+      setSidebarWidth(280);
+    }
+  }, [isCollapsed]);
 
   const menuItems: MenuItem[] = [
     {
@@ -386,52 +439,58 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+    <aside 
+      ref={sidebarRef}
+      className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isResizing ? 'resizing' : ''}`}
+      style={{ width: `${sidebarWidth}px` }}
+    >
       {/* Header */}
       <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <Link to="/pinovara" className="logo-link">
-            <img
-              src="/pinovara.png"
-              alt="PINOVARA"
-              className="sidebar-logo-image"
-            />
-            {!isCollapsed && (
-              <span className="logo-text">PINOVARA</span>
-            )}
-          </Link>
-        </div>
+        <div className="sidebar-logo-section">
+          <div className="sidebar-logo">
+            <Link to="/pinovara" className="logo-link">
+              <img
+                src="/pinovara.png"
+                alt="PINOVARA"
+                className="sidebar-logo-image"
+              />
+              {!isCollapsed && (
+                <span className="logo-text">PINOVARA</span>
+              )}
+            </Link>
+          </div>
 
-        {/* User Info Compact */}
-        {!isCollapsed && user && (
-          <Link to="/perfil" className="user-compact-link">
-            <div className="user-compact">
-              <div className="user-avatar-mini">
-                <span>{user.name?.charAt(0).toUpperCase()}</span>
+          {/* User Info - Embaixo da logo */}
+          {!isCollapsed && user && (
+            <Link to="/perfil" className="user-compact-link">
+              <div className="user-compact">
+                <div className="user-avatar-mini">
+                  <span>{user.name?.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="user-info-mini">
+                  <span className="user-name-mini">
+                    {user.name?.split(' ')[0]}
+                  </span>
+                  <span className="user-role-mini">
+                    {user.roles?.[0]?.name || 'Usuário'}
+                  </span>
+                </div>
               </div>
-              <div className="user-info-mini">
-                <span className="user-name-mini">
-                  {user.name?.split(' ')[0]}
-                </span>
-                <span className="user-role-mini">
-                  {user.roles?.[0]?.name || 'Usuário'}
-                </span>
-              </div>
-            </div>
-          </Link>
-        )}
+            </Link>
+          )}
+        </div>
 
         <button
           className="sidebar-toggle"
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={toggleSidebar}
           aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
         >
           {isCollapsed ? '→' : '←'}
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="sidebar-nav">
+      {/* Navigation - Sem scroll */}
+      <nav className="sidebar-nav no-scroll">
         <ul className="nav-list">
           {menuItems
             .filter(item => hasAccess(item))
@@ -501,6 +560,17 @@ const Sidebar: React.FC = () => {
           )}
         </button>
       </div>
+
+      {/* Redimensionador */}
+      {!isCollapsed && (
+        <div 
+          ref={resizeRef}
+          className="sidebar-resizer"
+          onMouseDown={handleMouseDown}
+        >
+          <div className="resizer-handle"></div>
+        </div>
+      )}
     </aside>
   );
 };

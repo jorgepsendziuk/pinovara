@@ -8,6 +8,7 @@ import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import moduleRoutes from './routes/moduleRoutes';
 import adminRoutes from './routes/adminRoutes';
+import organizacaoRoutes from './routes/organizacaoRoutes';
 
 // Carregar variáveis de ambiente
 // Estratégia de carregamento: produção > desenvolvimento
@@ -80,6 +81,7 @@ app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/modules', moduleRoutes);
 app.use('/admin', adminRoutes);
+app.use('/organizacoes', organizacaoRoutes);
 
 // Rotas básicas
 app.get('/', (req, res) => {
@@ -146,6 +148,12 @@ app.use('*', (req, res) => {
         'GET /users',
         'GET /modules',
         'GET /admin/system-info',
+        'GET /organizacoes/dashboard',
+        'GET /organizacoes',
+        'GET /organizacoes/:id',
+        'POST /organizacoes',
+        'PUT /organizacoes/:id',
+        'DELETE /organizacoes/:id',
         'GET /health'
       ]
     }

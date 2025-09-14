@@ -74,6 +74,13 @@ associados (pessoas associadas as organizacoes), modele a persistencia com infor
 
 sera aplicado um questionario em campo e os dados virao para o banco de dados, onde o sistema mostrara os dados das organizacoes para visualizacao, edicao e cálculo da maturidade.
 em outra fase, serao cadastrados em campo através dos técnicos de campo também as pessoas que participam dessas organizacoes
+
+
+itens do menu no cabecalho da landing page:
+centralizar texto
+diminuir margem dos botoes, tanto na largura quanto na altura
+cor normal mais forte
+
 ---
 
 ## ✅ **TAREFAS CONCLUÍDAS**
