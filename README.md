@@ -54,12 +54,49 @@ O deploy é **automático** quando você faz push na branch `main`:
 4. **Verificação**: Testa se aplicação está funcionando
 5. **Notificação**: Status do deploy
 
+## ⚡ Deploy Manual Rápido
+
+Para deploy manual direto do seu computador:
+
+### 🚀 Script Ultra-Rápido (Recomendado)
+```bash
+# Deploy completo em um comando
+./deploy-prod.sh pinovaraufba.com.br root
+
+# Ou com parâmetros padrão
+./deploy-prod.sh
+```
+
+### 📦 Script Interativo
+```bash
+# Deploy com confirmações e opções
+./quick-deploy.sh
+```
+
+### 🔧 Scripts Disponíveis
+
+| Script | Descrição | Uso |
+|--------|-----------|-----|
+| `update-prod.sh` | 🔥 Update de emergência | `./update-prod.sh` |
+| `deploy-prod.sh` | Deploy ultra-rápido | `./deploy-prod.sh [servidor] [usuario]` |
+| `quick-deploy.sh` | Deploy interativo | `./quick-deploy.sh` |
+| `switch-env.sh` | Alternar localhost/produção | `./switch-env.sh` |
+
+### 📋 Processo dos Scripts
+
+1. **Git Pull**: Atualiza código do GitHub
+2. **Configuração**: Ajusta para produção (IP 10.158.0.2)
+3. **Build**: Compila frontend e backend
+4. **Pacote**: Cria pacote otimizado
+5. **Deploy**: Envia via SSH e instala
+6. **Verificação**: Testa funcionamento
+
 ### 🌐 Acesso à Aplicação
 
 Após deploy bem-sucedido:
-- **Frontend**: http://pinovaraufba.com.br
-- **Backend API**: http://pinovaraufba.com.br/api/
-- **Health Check**: http://pinovaraufba.com.br/health
+- **Frontend**: https://pinovaraufba.com.br
+- **Backend API**: https://pinovaraufba.com.br/api/
+- **Health Check**: https://pinovaraufba.com.br/health
 
 ## 🚀 Tecnologias Utilizadas
 
@@ -188,7 +225,7 @@ pinovara/
 ## 📊 Banco de Dados
 
 ### Conexão PostgreSQL
-- **Host**: bd.amarisufv.com.br
+- **Host**: 10.158.0.2 (IP interno do banco em produção)
 - **Porta**: 5432
 - **Database**: pinovara
 - **Usuário**: pinovara

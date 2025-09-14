@@ -14,7 +14,7 @@ backend/config.env
 ### Conteúdo Atual
 ```env
 # Database
-DATABASE_URL="postgresql://pinovara:pinovara@bd.amarisufv.com.br:5432/pinovara?schema=pinovara"
+DATABASE_URL="postgresql://pinovara:pinovara@10.158.0.2:5432/pinovara?schema=pinovara"
 
 # JWT
 JWT_SECRET="pinovara-secret-key-change-in-production"
@@ -36,7 +36,7 @@ FRONTEND_URL="http://localhost:5173"
 - **Descrição**: URL de conexão com PostgreSQL
 - **Formato**: `postgresql://usuario:senha@host:porta/database?schema=esquema`
 - **Obrigatório**: Sim
-- **Valor Atual**: `postgresql://pinovara:pinovara@bd.amarisufv.com.br:5432/pinovara?schema=pinovara`
+- **Valor Atual**: `postgresql://pinovara:pinovara@10.158.0.2:5432/pinovara?schema=pinovara` (produção) / `postgresql://pinovara:pinovara@localhost:5432/pinovara?schema=pinovara` (desenvolvimento)
 - **Notas**: Deve incluir credenciais válidas e apontar para banco PostgreSQL existente
 
 ### JWT (JSON Web Tokens)
@@ -88,7 +88,7 @@ FRONTEND_URL="http://localhost:5173"
 Arquivo: `backend/config.env` (já existente)
 
 ```env
-DATABASE_URL="postgresql://pinovara:pinovara@bd.amarisufv.com.br:5432/pinovara?schema=pinovara"
+DATABASE_URL="postgresql://pinovara:pinovara@10.158.0.2:5432/pinovara?schema=pinovara"
 JWT_SECRET="development-secret-key-32-characters-minimum"
 JWT_EXPIRES_IN="7d"
 PORT=3001
@@ -100,12 +100,12 @@ FRONTEND_URL="http://localhost:5173"
 Arquivo: `backend/.env` (criar baseado em `config.env`)
 
 ```env
-DATABASE_URL="postgresql://prod_user:prod_password@prod_host:5432/prod_db?schema=public"
-JWT_SECRET="production-super-secure-secret-key-64-characters-minimum"
-JWT_EXPIRES_IN="24h"
+DATABASE_URL="postgresql://pinovara:pinovara@10.158.0.2:5432/pinovara?schema=pinovara"
+JWT_SECRET="pinovara-secret-key-change-in-production"
+JWT_EXPIRES_IN="7d"
 PORT=3001
 NODE_ENV="production"
-FRONTEND_URL="https://meuapp.com"
+FRONTEND_URL="https://pinovaraufba.com.br"
 ```
 
 ## 🛠️ Como Configurar

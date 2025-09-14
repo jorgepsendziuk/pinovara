@@ -96,7 +96,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: process.env.NODE_ENV === 'production' ? 'https://pinovaraufba.com.br' : 'http://localhost:3001',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
@@ -107,7 +107,7 @@ export default defineConfig({
 
 **Configurações importantes:**
 - **Porta**: 5173 (desenvolvimento)
-- **Proxy**: Redireciona `/api/*` para `http://localhost:3001`
+- **Proxy**: Redireciona `/api/*` para produção: `https://pinovaraufba.com.br`, desenvolvimento: `http://localhost:3001`
 - **HMR**: Hot Module Replacement habilitado
 
 ## 🎯 Sistema de Autenticação
@@ -190,7 +190,7 @@ Localização: `src/services/api.ts`
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3001',
+  baseURL: process.env.VITE_API_URL || (process.env.NODE_ENV === 'production' ? 'https://pinovaraufba.com.br' : 'http://localhost:3001'),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -210,7 +210,7 @@ export default api;
 ```
 
 **Configurações:**
-- **Base URL**: `http://localhost:3001` (backend)
+- **Base URL**: Produção: `https://pinovaraufba.com.br`, Desenvolvimento: `http://localhost:3001`
 - **Timeout**: 10 segundos
 - **Content-Type**: JSON automático
 - **Error handling**: Interceptor global para erros
@@ -379,7 +379,7 @@ npm run lint         # Executa ESLint
 ### Desenvolvimento Local
 1. Instalar dependências: `npm install`
 2. Iniciar servidor: `npm run dev`
-3. Acessar: `http://localhost:5173`
+3. Acessar: Produção `https://pinovaraufba.com.br`, Desenvolvimento `http://localhost:5173`
 
 ### Build para Produção
 ```bash

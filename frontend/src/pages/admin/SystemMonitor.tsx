@@ -46,7 +46,7 @@ function SystemMonitor() {
   const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'logs'>('overview');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
   const fetchMetrics = async () => {
     try {

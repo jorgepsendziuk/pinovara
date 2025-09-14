@@ -2,7 +2,7 @@ vou recomecar esse projeto do zero. eis a documentacao abaixo.
 o nome sera mudado para PINOVARA (é uma sigla mas nao sei o que é)
 nao tera deploy na vercel, manterei no meu pc por enquanto.
 hospedarei no github o codigo, no repositorio pinovara
-conexao postgresql (host bd.amarisufv.com.br user pinovara senha pinovara).
+conexao postgresql (host 10.158.0.2 para produção / localhost para desenvolvimento, user pinovara senha pinovara).
 crie um plano de ação e documentacao, vamos construir juntos, partindo do básico.
 
 estruturar e documentar plano de açao para sistema completo back/front.

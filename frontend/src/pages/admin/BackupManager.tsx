@@ -32,7 +32,7 @@ function BackupManager() {
   const [activeTab, setActiveTab] = useState<'backups' | 'settings'>('backups');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
   const fetchBackups = async () => {
     try {

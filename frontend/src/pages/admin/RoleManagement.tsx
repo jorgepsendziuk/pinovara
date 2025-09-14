@@ -35,7 +35,7 @@ function RoleManagement() {
   const [newModule, setNewModule] = useState({ name: '', description: '' });
   const [newRole, setNewRole] = useState({ name: '', description: '', moduleId: '' });
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
   const fetchModules = async () => {
     try {

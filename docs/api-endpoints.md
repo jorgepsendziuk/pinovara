@@ -4,7 +4,7 @@
 
 A API do PINOVARA é uma REST API construída com Express.js e TypeScript. Todos os endpoints retornam respostas em formato JSON padronizado.
 
-**Base URL**: `http://localhost:3001`
+**Base URL**: Produção `https://pinovaraufba.com.br`, Desenvolvimento `http://localhost:3001`
 
 ## 📝 Formato de Resposta
 

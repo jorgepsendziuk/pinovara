@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 PINOVARA is a full-stack TypeScript application with:
 - **Backend**: Node.js + Express + TypeScript + Prisma + PostgreSQL
 - **Frontend**: React + TypeScript + Vite
-- **Database**: PostgreSQL (hosted externally at bd.amarisufv.com.br:5432)
+- **Database**: PostgreSQL (IP interno: 10.158.0.2:5432 em produção, localhost:5432 em desenvolvimento)
 
 ## Development Commands
 

@@ -60,7 +60,7 @@ nano .env
 **Arquivo .env para produção:**
 ```env
 # Database
-DATABASE_URL="postgresql://prod_user:prod_password@bd.amarisufv.com.br:5432/pinovara?schema=pinovara"
+DATABASE_URL="postgresql://pinovara:pinovara@10.158.0.2:5432/pinovara?schema=pinovara"
 
 # JWT
 JWT_SECRET="sua-chave-jwt-super-segura-aqui-64-caracteres-minimo"
@@ -71,7 +71,7 @@ PORT=3001
 NODE_ENV="production"
 
 # CORS
-FRONTEND_URL="https://seu-dominio.com"
+FRONTEND_URL="https://pinovaraufba.com.br"
 ```
 
 ### 3. Configuração do Frontend
@@ -249,7 +249,7 @@ server {
 ### Apache
 ```apache
 <VirtualHost *:80>
-    ServerName seu-dominio.com
+    ServerName pinovaraufba.com.br
     DocumentRoot /var/www/html
 
     # Frontend
@@ -272,7 +272,7 @@ server {
 sudo apt install certbot python3-certbot-nginx
 
 # Gerar certificado
-sudo certbot --nginx -d seu-dominio.com
+sudo certbot --nginx -d pinovaraufba.com.br
 ```
 
 ### Firewall

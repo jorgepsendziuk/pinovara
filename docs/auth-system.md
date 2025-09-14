@@ -508,7 +508,7 @@ Localização: `frontend/src/services/api.ts`
 
 ```typescript
 const api = axios.create({
-  baseURL: 'http://localhost:3001',
+  baseURL: process.env.VITE_API_URL || (process.env.NODE_ENV === 'production' ? 'https://pinovaraufba.com.br' : 'http://localhost:3001'),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

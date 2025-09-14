@@ -3,7 +3,7 @@ import axios, { AxiosResponse } from 'axios';
 // ========== CONFIGURAÇÃO DA API ==========
 
 const api = axios.create({
-  baseURL: 'http://localhost:3001',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
