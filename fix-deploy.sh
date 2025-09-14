@@ -28,6 +28,13 @@ chmod 644 backend/tsconfig.json
 chmod 755 frontend/
 chmod 755 frontend/dist/
 
+# Fix permissions first
+echo "🔐 Fixing permissions..."
+chmod -R 755 backend/ frontend/ 2>/dev/null || true
+
+# Clean dist directories
+rm -rf backend/dist frontend/dist 2>/dev/null || true
+
 # Clean and reinstall dependencies
 echo "🧹 Cleaning dependencies..."
 

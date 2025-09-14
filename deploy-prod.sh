@@ -11,6 +11,8 @@ git pull origin main
 export NODE_ENV=production
 
 cd frontend
+chmod -R 755 . 2>/dev/null || true
+rm -rf dist 2>/dev/null || true
 npm install
 npm run build
 cd ..
@@ -43,6 +45,11 @@ fi
 
 sudo mkdir -p /var/www/pinovara/backend
 sudo mkdir -p /var/www/pinovara/backend/src/routes
+
+# Fix frontend permissions
+sudo mkdir -p /var/www/pinovara/frontend
+sudo chown -R $USER:$USER /var/www/pinovara/frontend 2>/dev/null || true
+sudo chmod -R 755 /var/www/pinovara/frontend 2>/dev/null || true
 
 sudo cp /tmp/deploy-package/backend-package.json /var/www/pinovara/backend/package.json
 sudo cp /tmp/deploy-package/package-lock.json /var/www/pinovara/backend/ 2>/dev/null || true

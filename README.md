@@ -84,6 +84,7 @@ Para deploy manual direto do seu computador:
 | `fix-deploy.sh` | 🛠️ Corrigir problemas | `./fix-deploy.sh` |
 | `copy-routes.sh` | 📋 Copiar rotas | `./copy-routes.sh <server> <user>` |
 | `fix-typescript.sh` | 🔧 Corrigir TypeScript | `./fix-typescript.sh <server> <user>` |
+| `fix-permissions.sh` | 🔐 Corrigir permissões | `./fix-permissions.sh <server> <user>` |
 | `switch-env.sh` | Alternar localhost/produção | `./switch-env.sh` |
 
 ### 📋 Processo dos Scripts
@@ -133,6 +134,12 @@ Se encontrar problemas de build ou deploy, use os scripts de correção:
 ./fix-typescript.sh pinovaraufba.com.br root
 ```
 
+#### **Script Específico para Permissões:**
+```bash
+# Corrige especificamente problemas de permissão
+./fix-permissions.sh pinovaraufba.com.br root
+```
+
 **O que o script de correção geral faz:**
 - ✅ Corrige permissões de arquivos
 - ✅ Limpa `node_modules` e `package-lock.json`
@@ -145,6 +152,12 @@ Se encontrar problemas de build ou deploy, use os scripts de correção:
 - ✅ Copia arquivos de configuração
 - ✅ Testa diferentes métodos de build
 - ✅ Verifica saída do build
+
+**O que o script de permissões faz:**
+- ✅ Corrige ownership dos diretórios
+- ✅ Ajusta permissões para 755
+- ✅ Limpa diretórios dist problemáticos
+- ✅ Recria diretórios com permissões corretas
 
 ### 🚨 Solução de Problemas
 
@@ -209,6 +222,35 @@ npm install typescript --save-dev
 
 # Verificar instalação
 npx tsc --version
+```
+
+#### Erro: "EACCES: permission denied" no frontend
+```bash
+# Usar script específico para permissões
+./fix-permissions.sh pinovaraufba.com.br root
+
+# Ou corrigir manualmente no servidor
+ssh root@pinovaraufba.com.br "sudo chown -R $USER:$USER /var/www/pinovara/frontend && sudo chmod -R 755 /var/www/pinovara/frontend"
+
+# Limpar e tentar novamente
+ssh root@pinovaraufba.com.br "cd /var/www/pinovara/frontend && rm -rf dist && npm run build"
+```
+
+#### Erro: Build falha por permissões no diretório dist
+```bash
+# No servidor - corrigir permissões do diretório
+cd /var/www/pinovara/frontend
+
+# Remover diretório problemático
+sudo rm -rf dist
+
+# Recriar com permissões corretas
+mkdir -p dist
+sudo chown -R $USER:$USER dist
+chmod -R 755 dist
+
+# Tentar build novamente
+npm run build
 ```
 
 #### Arquivos não encontrados no servidor
