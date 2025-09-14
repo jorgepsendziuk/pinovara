@@ -77,6 +77,7 @@ cp -r frontend/dist/* deploy-package/
 # Copiar backend
 cp -r backend/dist deploy-package/backend-dist
 cp backend/package.json deploy-package/backend-package.json
+cp backend/production.config.js deploy-package/backend-dist/ 2>/dev/null || true
 cp backend/ecosystem.config.js deploy-package/ 2>/dev/null || true
 cp -r backend/prisma deploy-package/ 2>/dev/null || true
 
@@ -85,12 +86,31 @@ cat > deploy-package/install.sh << 'EOF'
 #!/bin/bash
 echo "🚀 Instalando PINOVARA no servidor..."
 
+# Definir ambiente de produção
+export NODE_ENV=production
+
 # Instalar dependências do backend
 cd /var/www/pinovara/backend
 npm install
 
 # Copiar arquivos compilados
 cp -r /tmp/deploy-package/backend-dist/* /var/www/pinovara/backend/dist/
+
+# Copiar configuração de produção se existir
+if [ -f "/tmp/deploy-package/backend-dist/production.config.js" ]; then
+    cp /tmp/deploy-package/backend-dist/production.config.js /var/www/pinovara/backend/
+    echo "✅ Configuração de produção copiada"
+fi
+
+# Configurar variáveis de ambiente para produção
+cat > /var/www/pinovara/backend/.env << 'EOL'
+NODE_ENV=production
+DATABASE_URL=postgresql://pinovara:pinovara@10.158.0.2:5432/pinovara?schema=pinovara
+JWT_SECRET=pinovara-secret-key-change-in-production
+JWT_EXPIRES_IN=7d
+PORT=3001
+FRONTEND_URL=https://pinovaraufba.com.br
+EOL
 
 # Copiar frontend
 sudo cp -r /tmp/deploy-package/* /var/www/html/
@@ -103,6 +123,8 @@ pm2 restart pinovara-backend
 sudo systemctl reload nginx
 
 echo "✅ Instalação concluída!"
+echo "🌐 Site disponível em: https://pinovaraufba.com.br"
+echo "🗄️  Banco configurado para: 10.158.0.2"
 EOF
 
 chmod +x deploy-package/install.sh

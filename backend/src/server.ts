@@ -10,7 +10,20 @@ import moduleRoutes from './routes/moduleRoutes';
 import adminRoutes from './routes/adminRoutes';
 
 // Carregar variáveis de ambiente
-dotenv.config({ path: './config.env' });
+// Estratégia de carregamento: produção > desenvolvimento
+if (process.env.NODE_ENV === 'production') {
+  // Tentar .env.production primeiro, depois production.config.js, depois config.env
+  const loaded = dotenv.config({ path: '.env.production' }) ||
+                 dotenv.config({ path: './production.config.js' }) ||
+                 dotenv.config({ path: './config.env' });
+
+  if (!loaded) {
+    console.warn('⚠️  Nenhum arquivo de configuração encontrado para produção');
+  }
+} else {
+  // Desenvolvimento: usar config.env
+  dotenv.config({ path: './config.env' });
+}
 
 // Verificar variáveis de ambiente essenciais
 if (!process.env.DATABASE_URL) {
@@ -27,10 +40,31 @@ const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
 
 // Middleware global
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+// Configuração CORS dinâmica para suportar localhost e produção
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: Function) {
+    // Permitir requests sem origin (como mobile apps)
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'https://pinovaraufba.com.br',
+      'https://www.pinovaraufba.com.br',
+      process.env.FRONTEND_URL
+    ].filter(Boolean); // Remove valores undefined
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`⚠️  Origem não permitida: ${origin}`);
+      callback(null, true); // Em desenvolvimento, permitir tudo para facilitar
+    }
+  },
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
