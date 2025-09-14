@@ -114,6 +114,9 @@ Para deploy manual direto do seu computador:
 | `build-server.sh` | 🔨 Build no servidor | `./build-server.sh <server> <user> [component]` |
 | `build-local.sh` | 🏠 Build local + deploy | `./build-local.sh <server> <user> [component]` |
 | `build-server-direct.sh` | ⚡ Build direto no servidor | `./build-server-direct.sh [component]` |
+| `start-production.sh` | 🚀 Iniciar produção | `./start-production.sh` |
+| `check-database.sh` | 🔍 Verificar banco | `./check-database.sh` |
+| `test-db-connection.sh` | 🧪 Testar DB | `./test-db-connection.sh` |
 | `switch-env.sh` | Alternar localhost/produção | `./switch-env.sh` |
 
 ### 📋 Processo dos Scripts
@@ -205,6 +208,12 @@ Se encontrar problemas de build ou deploy, use os scripts de correção:
 ./build-server-direct.sh backend
 ```
 
+#### **Script para Iniciar Produção:**
+```bash
+# Após build, iniciar produção - EXECUTAR NO SERVIDOR
+./start-production.sh
+```
+
 **O que o script de correção geral faz:**
 - ✅ Corrige permissões de arquivos
 - ✅ Limpa `node_modules` e `package-lock.json`
@@ -242,6 +251,13 @@ Se encontrar problemas de build ou deploy, use os scripts de correção:
 - ✅ Corrige permissões automaticamente
 - ✅ Não requer configuração SSH
 - ✅ Ideal quando já está conectado ao servidor
+
+**O que o script de iniciar produção faz:**
+- ✅ Copia frontend para Nginx (/var/www/html)
+- ✅ Inicia backend com PM2
+- ✅ Configura permissões corretas
+- ✅ Recarrega Nginx
+- ✅ Mostra status dos serviços
 
 ### 🚨 Solução de Problemas
 
@@ -363,6 +379,59 @@ chmod -R 755 dist
 
 # Tentar build novamente
 npm run build
+```
+
+#### Como iniciar produção após build
+```bash
+# No servidor - copiar frontend para Nginx
+sudo cp -r /var/www/pinovara/frontend/dist/* /var/www/html/
+sudo chown -R www-data:www-data /var/www/html
+
+# Iniciar backend com PM2
+cd /var/www/pinovara/backend
+pm2 start dist/server.js --name pinovara-backend
+pm2 save
+
+# Recarregar Nginx
+sudo systemctl reload nginx
+
+# Verificar status
+pm2 status
+curl https://pinovaraufba.com.br/health
+```
+
+#### Diagnosticar problemas de banco de dados
+```bash
+# Script completo de diagnóstico
+./check-database.sh
+
+# Ou teste simples de conexão
+./test-db-connection.sh
+
+# Verificar configuração do backend
+cat /var/www/pinovara/backend/.env
+
+# Testar conexão manual
+psql -h 10.158.0.2 -p 5432 -U pinovara -d pinovara -c "SELECT 1;"
+```
+
+#### Erro: "database": "disconnected" no health check
+```bash
+# Diagnosticar problema de banco
+./check-database.sh
+
+# Verificar se banco está acessível
+ping 10.158.0.2
+nc -zv 10.158.0.2 5432
+
+# Testar credenciais
+psql -h 10.158.0.2 -p 5432 -U pinovara -d pinovara -c "SELECT 1;"
+
+# Verificar configuração do backend
+cat /var/www/pinovara/backend/.env
+
+# Reiniciar backend após correção
+pm2 restart pinovara-backend
 ```
 
 #### Erro: "Could not read package.json" - Diretório errado
