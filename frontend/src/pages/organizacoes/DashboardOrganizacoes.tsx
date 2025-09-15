@@ -140,14 +140,6 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
               <p className="stat-number">{stats?.semQuestionario || 0}</p>
             </div>
           </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">📍</div>
-            <div className="stat-content">
-              <h3>Estados</h3>
-              <p className="stat-number">{stats?.porEstado?.length || 0}</p>
-            </div>
-          </div>
         </div>
 
         {/* Tabela de Organizações Recentes - DESTAQUE PRINCIPAL */}
@@ -159,7 +151,6 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
                 <thead>
                   <tr>
                     <th>Nome</th>
-                    <th>Estado</th>
                     <th>Data da Visita</th>
                     <th>Status</th>
                     <th>Ações</th>
@@ -174,7 +165,6 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
                           <small>ID: {org.id}</small>
                         </div>
                       </td>
-                      <td>{org.estado}</td>
                       <td>{new Date(org.dataVisita).toLocaleDateString('pt-BR')}</td>
                       <td>
                         <span className="status-badge status-pending">Pendente</span>
@@ -205,52 +195,6 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
           </div>
         </div>
 
-        {/* Gráficos - Secundários */}
-        <div className="dashboard-row">
-          {/* Gráfico de Distribuição por Estado */}
-          <div className="dashboard-card">
-            <h3>📊 Por Estado</h3>
-            <div className="chart-container">
-              {stats?.porEstado && stats.porEstado.length > 0 ? (
-                <div className="bar-chart">
-                  {stats.porEstado.slice(0, 5).map((item, index) => (
-                    <div key={index} className="bar-item">
-                      <div className="bar-label">{item.estado}</div>
-                      <div className="bar-wrapper">
-                        <div 
-                          className="bar-fill" 
-                          style={{ 
-                            width: `${(item.total / Math.max(...stats.porEstado.map(s => s.total))) * 100}%` 
-                          }}
-                        ></div>
-                        <span className="bar-value">{item.total}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="no-data">Nenhum dado disponível</p>
-              )}
-            </div>
-          </div>
-
-          {/* Gráfico de Status do Questionário */}
-          <div className="dashboard-card">
-            <h3>📋 Status Questionários</h3>
-            <div className="chart-container">
-              <div className="pie-chart">
-                <div className="pie-slice completed">
-                  <span>Completos</span>
-                  <span>{stats?.comQuestionario || 0}</span>
-                </div>
-                <div className="pie-slice pending">
-                  <span>Pendentes</span>
-                  <span>{stats?.semQuestionario || 0}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Ações Rápidas */}
         <div className="quick-actions">

@@ -203,7 +203,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
           <div className="form-step">
             <h3>📝 Dados Básicos da Organização</h3>
             <div className="form-grid">
-              <div className="form-group">
+              <div className="form-group full-width">
                 <label>Nome da Organização *</label>
                 <input
                   type="text"
@@ -251,7 +251,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
                 />
               </div>
 
-              <div className="form-group">
+              <div className="form-group full-width">
                 <label>Endereço</label>
                 <input
                   type="text"
@@ -549,9 +549,8 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
   return (
     <div className="cadastro-content">
       <div className="content-header">
-        <h2>🏢 Cadastro de Organização</h2>
-        <p>Preencha as informações da nova organização</p>
-      </div>
+        <h2>Cadastro de Organização</h2>
+        </div>
 
       <div className="cadastro-body">
         {/* Progress Steps */}
