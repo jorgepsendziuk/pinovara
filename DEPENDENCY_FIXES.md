@@ -36,7 +36,7 @@ Adicionado script de instalação com flag:
 ### 📋 Versões Atuais (Frontend)
 - React: `^18.2.0`
 - React-DOM: `^18.2.0`
-- React-Leaflet: `^5.0.0`
+- React-Leaflet: `^4.2.1` (compatível com React 18)
 - Leaflet: `^1.9.4`
 
 ### 🎯 Status
@@ -44,6 +44,21 @@ Adicionado script de instalação com flag:
 - ✅ Servidor rodando
 - ✅ Dependências resolvidas
 - ✅ Produção pronta
+
+### 🚀 Comandos para Produção
+
+**Build Limpo (Recomendado):**
+```bash
+cd frontend
+npm run build:prod  # Instala dependências e faz build
+```
+
+**Build Manual:**
+```bash
+cd frontend
+npm ci --legacy-peer-deps  # Instala dependências limpas
+npm run build              # Faz o build
+```
 
 ### 💡 Recomendações Futuras
 1. Monitorar atualizações do `react-leaflet` para compatibilidade com React 18
