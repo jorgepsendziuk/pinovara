@@ -155,8 +155,8 @@ function Landing() {
                     <path d="M8 12l2 2 4-4"/>
                   </svg>
                 </div>
-                <h4>Desenvolvimento Socioeconômico e Ambiental</h4>
-                <p>Mapeamento socioeconômico e ambiental, formação, capacitação e elaboração de planos de gestão.</p>
+                <h4>Mapeamento Socioeconômico e Ambiental</h4>
+                <p>Elaboração de diagnóstico para apoiar a transição agroecológica em Assentamentos e Territórios Quilombolas.</p> 
               </div>
 
               <div className="feature">
@@ -431,11 +431,10 @@ function Landing() {
                   <h4 className="coordinator-name">Prof. Dr. Olivan da Silva Rabêlo</h4>
                   <p className="coordinator-institution">Escola de Administração da UFBA</p>
                   <p className="coordinator-specialty">
-                    Especialista em gestão pública e desenvolvimento sustentável
+                  Doutor em Economia Aplicada 
                   </p>
                   <p className="coordinator-description">
-                    Responsável pela coordenação geral e estratégica do projeto PINOVARA,
-                    garantindo a excelência acadêmica e o impacto social.
+                    Responsável pela coordenação geral e estratégica do projeto PINOVARA, garantindo a excelência acadêmica e o impacto social.
                   </p>
                 </div>
               </div>
@@ -455,11 +454,10 @@ function Landing() {
                   <h4 className="coordinator-name">Prof. Dr. Artur Caldas Brandão</h4>
                   <p className="coordinator-institution">Escola Politécnica da UFBA</p>
                   <p className="coordinator-specialty">
-                    Especialista em geoprocessamento e sistemas de informação
+                  Doutor em Engenharia da Produção
                   </p>
                   <p className="coordinator-description">
-                    Responsável pelo suporte técnico e metodológico, garantindo
-                    a inovação tecnológica e a precisão dos processos.
+                    Responsável pela supervisão das atividades e tecnologias voltadas ao Geoprocessamento.
                   </p>
                 </div>
               </div>
