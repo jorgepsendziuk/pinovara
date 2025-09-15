@@ -381,6 +381,22 @@ const Sidebar: React.FC = () => {
       ]
     },
     {
+      id: 'configuracao-odk',
+      label: 'Configuração ODK',
+      icon: '📱',
+      path: '/configuracao-odk',
+      module: 'configuracao',
+      children: [
+        {
+          id: 'configuracao-odk-main',
+          label: 'Configuração ODK Collect',
+          icon: '🔗',
+          path: '/configuracao-odk',
+          module: 'configuracao'
+        }
+      ]
+    },
+    {
       id: 'administracao',
       label: 'Administração',
       icon: '⚙️',
