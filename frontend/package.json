@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:prod": "npm ci --legacy-peer-deps && vite build",
+    "build:prod": "npm ci && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "install": "npm install --legacy-peer-deps"
+    "install": "npm install"
   },
   "dependencies": {
     "@types/leaflet": "^1.9.20",
