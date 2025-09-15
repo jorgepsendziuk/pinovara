@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware';
 import {
-  getDashboard,
+  getDashboardStats,
   getOrganizacoes,
   getOrganizacaoById,
   createOrganizacao,
@@ -15,7 +15,7 @@ const router = Router();
 router.use(authenticateToken);
 
 // Dashboard de organizações
-router.get('/dashboard', getDashboard);
+router.get('/dashboard', getDashboardStats);
 
 // Listar organizações com filtros
 router.get('/', getOrganizacoes);
