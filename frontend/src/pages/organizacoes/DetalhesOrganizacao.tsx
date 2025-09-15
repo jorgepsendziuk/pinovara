@@ -434,11 +434,6 @@ function DetalhesOrganizacao({ organizacaoId }: DetalhesOrganizacaoProps) {
             <span>Última visita: {organizacao.dataVisita ? new Date(organizacao.dataVisita).toLocaleDateString('pt-BR') : '-'}</span>
           </div>
         </div>
-        <div className="header-actions">
-          <button className="btn btn-secondary">✏️ Editar</button>
-          <button className="btn btn-primary">📝 Questionário</button>
-          <button className="btn btn-success">📊 Relatório</button>
-        </div>
       </div>
 
       <div className="detalhes-body">

@@ -23,6 +23,7 @@ import MapasModule from './pages/modules/MapasModule';
 import PesquisaModule from './pages/modules/PesquisaModule';
 import TecnicosModule from './pages/modules/TecnicosModule';
 import MobilizacaoModule from './pages/modules/MobilizacaoModule';
+import PerfilModule from './pages/modules/PerfilModule';
 import TestPermissions from './pages/TestPermissions';
 import AccessDenied from './pages/AccessDenied';
 import Profile from './pages/Profile';
@@ -61,6 +62,15 @@ function AppRoutes() {
       />
 
       {/* Module Routes */}
+      <Route
+        path="/perfil/*"
+        element={
+          <ProtectedRoute>
+            <PerfilModule />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/organizacoes/*"
         element={
@@ -133,14 +143,6 @@ function AppRoutes() {
         }
       />
 
-      <Route
-        path="/perfil"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
 
       {/* Admin Routes */}
       <Route

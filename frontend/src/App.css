@@ -2819,12 +2819,48 @@ main, section, article, aside, header, footer {
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
-    z-index: -1;
+    z-index: 999;
   }
 
   .sidebar.open::before {
     opacity: 1;
     visibility: visible;
+  }
+
+  /* Mobile hamburger button */
+  .mobile-hamburger {
+    display: none;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1002;
+    background: var(--bg-primary);
+    border: 1px solid var(--text-muted);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: all 0.2s ease;
+    font-size: 1.2rem;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+  }
+
+  .mobile-hamburger:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: scale(1.05);
+  }
+
+  /* Show hamburger button only on mobile */
+  @media (max-width: 768px) {
+    .mobile-hamburger {
+      display: flex;
+    }
   }
 }
 

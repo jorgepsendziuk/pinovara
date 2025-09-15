@@ -208,7 +208,7 @@ function Profile() {
 
   if (!user) {
     return (
-      <div className="admin-page">
+      <div className="profile-content">
         <div className="loading-state">
           <p>Carregando perfil...</p>
         </div>
@@ -217,7 +217,7 @@ function Profile() {
   }
 
   return (
-    <div className="admin-page">
+    <div className="profile-content">
       <div className="page-header">
         <div className="header-content">
           <h1>Meu Perfil</h1>

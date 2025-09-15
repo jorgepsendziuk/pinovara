@@ -154,20 +154,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           <h2>🏢 Lista de Organizações</h2>
           <p>Gerencie todas as organizações cadastradas no sistema</p>
         </div>
-        <div className="header-actions">
-          <button 
-            className="btn btn-secondary"
-            onClick={() => setMostrarFiltros(!mostrarFiltros)}
-          >
-            🔍 {mostrarFiltros ? 'Ocultar' : 'Mostrar'} Filtros
-          </button>
-          <button 
-            className="btn btn-primary"
-            onClick={() => onNavigate('cadastro')}
-          >
-            ➕ Nova Organização
-          </button>
-        </div>
       </div>
 
       <div className="lista-body">
@@ -294,12 +280,14 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                           <button 
                             className="btn btn-sm btn-primary"
                             onClick={() => onNavigate('detalhes', org.id)}
+                            title="Ver Detalhes"
                           >
                             👁️
                           </button>
                           <button 
                             className="btn btn-sm btn-secondary"
-                            onClick={() => {/* Navegar para edição */}}
+                            onClick={() => onNavigate('edicao', org.id)}
+                            title="Editar"
                           >
                             ✏️
                           </button>

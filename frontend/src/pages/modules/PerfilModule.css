@@ -1,0 +1,91 @@
+/* ===== MÓDULO DE PERFIL ===== */
+
+.perfil-module {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 120px);
+  background: #f8f9fa;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+/* Container principal */
+.perfil-container {
+  padding: 1rem;
+  background: transparent;
+  min-height: 100%;
+}
+
+/* Ajustes para o perfil dentro do módulo */
+.perfil-main {
+  background: transparent;
+  min-height: 100%;
+}
+
+/* Garantir que o dashboard-layout funcione corretamente */
+.dashboard-layout {
+  display: flex !important;
+  min-height: 100vh !important;
+}
+
+.dashboard-layout .main-content {
+  flex: 1;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+}
+
+.perfil-main .admin-page {
+  background: transparent;
+  padding: 0;
+}
+
+.perfil-main .page-header {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+  padding: 1.25rem;
+}
+
+.perfil-main .page-header .header-content h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.perfil-main .page-header .header-content p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.perfil-main .profile-avatar-section {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+  padding: 1.5rem;
+}
+
+.perfil-main .profile-tabs {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+}
+
+.perfil-main .profile-form {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .perfil-container {
+    padding: 1rem;
+  }
+}

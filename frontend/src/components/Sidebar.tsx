@@ -2,6 +2,22 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
+// Hook personalizado para detectar se está em mobile
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return isMobile;
+};
+
 interface MenuItem {
   id: string;
   label: string;
@@ -16,7 +32,9 @@ const Sidebar: React.FC = () => {
   const { user, hasPermission, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['sistema']));
@@ -62,7 +80,11 @@ const Sidebar: React.FC = () => {
 
   // Função para ocultar/mostrar sidebar
   const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
+    if (isMobile) {
+      setIsMobileOpen(!isMobileOpen);
+    } else {
+      setIsCollapsed(!isCollapsed);
+    }
   };
 
   // Event listeners para redimensionamento
@@ -86,6 +108,13 @@ const Sidebar: React.FC = () => {
       setSidebarWidth(280);
     }
   }, [isCollapsed]);
+
+  // Fechar menu mobile automaticamente quando volta para desktop
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileOpen(false);
+    }
+  }, [isMobile]);
 
   const menuItems: MenuItem[] = [
     {
@@ -112,17 +141,31 @@ const Sidebar: React.FC = () => {
       module: 'organizacoes',
       children: [
         {
+          id: 'organizacoes-dashboard',
+          label: 'Dashboard',
+          icon: '📊',
+          path: '/organizacoes/dashboard',
+          module: 'organizacoes'
+        },
+        {
           id: 'organizacoes-list',
           label: 'Lista de Organizações',
           icon: '📋',
-          path: '/organizacoes',
+          path: '/organizacoes/lista',
           module: 'organizacoes'
         },
         {
           id: 'organizacoes-add',
           label: 'Adicionar Organização',
           icon: '➕',
-          path: '/organizacoes/add',
+          path: '/organizacoes/cadastro',
+          module: 'organizacoes'
+        },
+        {
+          id: 'organizacoes-mapa',
+          label: 'Mapa',
+          icon: '🗺️',
+          path: '/organizacoes/mapa',
           module: 'organizacoes'
         }
       ]
@@ -438,13 +481,47 @@ const Sidebar: React.FC = () => {
     return false;
   };
 
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    // Fechar menu apenas se clicar no overlay ou no fundo do sidebar
+    if (isMobile && e.target === e.currentTarget) {
+      // Verifica se o clique foi em um elemento que deveria fechar o menu
+      const target = e.target as HTMLElement;
+      const isClickableElement = target.closest('.nav-button, .nav-link, .sidebar-toggle, .sidebar-logo, .user-compact-link');
+
+      // Só fecha se não foi em um elemento clicável
+      if (!isClickableElement) {
+        setIsMobileOpen(false);
+      }
+    }
+  };
+
+  const handleNavLinkClick = () => {
+    // Em mobile, fechar o menu após clicar em um link
+    if (isMobile) {
+      setIsMobileOpen(false);
+    }
+  };
+
   return (
-    <aside 
-      ref={sidebarRef}
-      className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isResizing ? 'resizing' : ''}`}
-      style={{ width: `${sidebarWidth}px` }}
-    >
-      {/* Header */}
+    <>
+      {/* Mobile hamburger button - always visible on mobile */}
+      {isMobile && (
+        <button
+          className="mobile-hamburger"
+          onClick={toggleSidebar}
+          aria-label={isMobileOpen ? 'Fechar menu' : 'Abrir menu'}
+        >
+          {isMobileOpen ? '✕' : '☰'}
+        </button>
+      )}
+
+      <aside
+        ref={sidebarRef}
+        className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobile && isMobileOpen ? 'open' : ''} ${isResizing ? 'resizing' : ''}`}
+        style={{ width: isMobile ? '280px' : `${sidebarWidth}px` }}
+        onClick={handleOverlayClick}
+      >
+        {/* Header */}
       <div className="sidebar-header">
         <div className="sidebar-logo-section">
           <div className="sidebar-logo">
@@ -483,9 +560,13 @@ const Sidebar: React.FC = () => {
         <button
           className="sidebar-toggle"
           onClick={toggleSidebar}
-          aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
+          aria-label={isMobile ? (isMobileOpen ? 'Fechar menu' : 'Abrir menu') : (isCollapsed ? 'Expandir menu' : 'Recolher menu')}
         >
-          {isCollapsed ? '→' : '←'}
+          {isMobile ? (
+            isMobileOpen ? '✕' : '☰'
+          ) : (
+            isCollapsed ? '→' : '←'
+          )}
         </button>
       </div>
 
@@ -522,6 +603,10 @@ const Sidebar: React.FC = () => {
                               <Link
                                 to={child.path}
                                 className={`nav-link ${isActive(child.path) ? 'active' : ''}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleNavLinkClick();
+                                }}
                               >
                                 <span className="nav-icon">{child.icon}</span>
                                 <span className="nav-label">{child.label}</span>
@@ -535,6 +620,10 @@ const Sidebar: React.FC = () => {
                   <Link
                     to={item.path}
                     className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleNavLinkClick();
+                    }}
                   >
                     <span className="nav-icon">{item.icon}</span>
                     {!isCollapsed && (
@@ -561,9 +650,9 @@ const Sidebar: React.FC = () => {
         </button>
       </div>
 
-      {/* Redimensionador */}
-      {!isCollapsed && (
-        <div 
+      {/* Redimensionador - só mostrar no desktop */}
+      {!isCollapsed && !isMobile && (
+        <div
           ref={resizeRef}
           className="sidebar-resizer"
           onMouseDown={handleMouseDown}
@@ -572,6 +661,7 @@ const Sidebar: React.FC = () => {
         </div>
       )}
     </aside>
+    </>
   );
 };
 

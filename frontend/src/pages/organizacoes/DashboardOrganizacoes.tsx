@@ -98,20 +98,6 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
           <h2>🏢 Dashboard - Organizações</h2>
           <p>Visão geral das organizações cadastradas no sistema</p>
         </div>
-        <div className="header-actions">
-          <button 
-            className="btn btn-primary"
-            onClick={() => onNavigate('cadastro')}
-          >
-            ➕ Nova Organização
-          </button>
-          <button 
-            className="btn btn-secondary"
-            onClick={() => onNavigate('lista')}
-          >
-            📋 Ver Lista
-          </button>
-        </div>
       </div>
 
       <div className="dashboard-body">
