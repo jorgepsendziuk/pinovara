@@ -27,6 +27,7 @@ import PerfilModule from './pages/modules/PerfilModule';
 import TestPermissions from './pages/TestPermissions';
 import AccessDenied from './pages/AccessDenied';
 import Profile from './pages/Profile';
+import ConfiguracaoODK from './pages/ConfiguracaoODK';
 import './App.css';
 
 function AppRoutes() {
@@ -143,6 +144,14 @@ function AppRoutes() {
         }
       />
 
+      <Route
+        path="/configuracao-odk"
+        element={
+          <ProtectedRoute>
+            <ConfiguracaoODK />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Admin Routes */}
       <Route
