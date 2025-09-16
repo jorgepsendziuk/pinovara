@@ -1,16 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
-  binaryTargets = ["native", "darwin-arm64", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["pinovara", "public"]
+  schemas  = ["pinovara", "pinovara_aux"]
 }
 
 model User {
@@ -42,14 +38,14 @@ model Module {
 }
 
 model Role {
-  id          Int      @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   name        String
   description String?
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   moduleId    Int
-  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  module      Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   userRoles   UserRole[]
 
   @@unique([name, moduleId])
@@ -87,17 +83,17 @@ model SystemSetting {
 }
 
 model AuditLog {
-  id         Int      @id @default(autoincrement())
-  action     String
-  entity     String
-  entityId   String?
-  oldData    String?
-  newData    String?
-  userAgent  String?
-  ipAddress  String?
-  createdAt  DateTime @default(now())
-  userId     Int?
-  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id        Int      @id @default(autoincrement())
+  action    String
+  entity    String
+  entityId  String? @map("entity_id")
+  oldData   String? @map("old_data")
+  newData   String? @map("new_data")
+  userAgent String? @map("user_agent")
+  ipAddress String? @map("ip_address")
+  createdAt DateTime @default(now())
+  userId    Int? @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
   @@schema("pinovara")
