@@ -11,14 +11,12 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       proxy: {
-        '/api': {
-          // Em produção, não usar proxy (o frontend fará chamadas diretas para o backend)
-          // Em desenvolvimento, usar proxy para localhost
+        // Proxy para todas as rotas da API (exceto arquivos estáticos)
+        '^/(?!assets|favicon|pinovara|icon|@vite|@fs|node_modules).*$': {
           target: isProduction
             ? 'https://pinovaraufba.com.br'
             : 'http://localhost:3001',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
           // Configurações adicionais para produção
           secure: isProduction,
           headers: {
