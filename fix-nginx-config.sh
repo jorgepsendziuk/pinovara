@@ -35,9 +35,170 @@ server {
         add_header Expires "0";
     }
 
+    # Certificados SSL
+    ssl_certificate /etc/letsencrypt/live/pinovaraufba.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pinovaraufba.com.br/privkey.pem;
+
+    # Configurações SSL
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
     # API Proxy - redirecionar /api/* para backend
     location /api/ {
         proxy_pass http://localhost:3001/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # CORS headers
+        add_header Access-Control-Allow-Origin "https://pinovaraufba.com.br" always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+        add_header Access-Control-Allow-Credentials "true" always;
+        
+        # Handle preflight requests
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Allow-Origin "https://pinovaraufba.com.br";
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
+            add_header Access-Control-Allow-Headers "Content-Type, Authorization";
+            add_header Access-Control-Allow-Credentials "true";
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            return 204;
+        }
+    }
+
+    # Auth Proxy - redirecionar /auth/* para backend
+    location /auth/ {
+        proxy_pass http://localhost:3001/auth/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # CORS headers
+        add_header Access-Control-Allow-Origin "https://pinovaraufba.com.br" always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+        add_header Access-Control-Allow-Credentials "true" always;
+        
+        # Handle preflight requests
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Allow-Origin "https://pinovaraufba.com.br";
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
+            add_header Access-Control-Allow-Headers "Content-Type, Authorization";
+            add_header Access-Control-Allow-Credentials "true";
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            return 204;
+        }
+    }
+
+    # Admin Proxy - redirecionar /admin/* para backend
+    location /admin/ {
+        proxy_pass http://localhost:3001/admin/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # CORS headers
+        add_header Access-Control-Allow-Origin "https://pinovaraufba.com.br" always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+        add_header Access-Control-Allow-Credentials "true" always;
+        
+        # Handle preflight requests
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Allow-Origin "https://pinovaraufba.com.br";
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
+            add_header Access-Control-Allow-Headers "Content-Type, Authorization";
+            add_header Access-Control-Allow-Credentials "true";
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            return 204;
+        }
+    }
+
+    # Users Proxy - redirecionar /users/* para backend
+    location /users/ {
+        proxy_pass http://localhost:3001/users/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # CORS headers
+        add_header Access-Control-Allow-Origin "https://pinovaraufba.com.br" always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+        add_header Access-Control-Allow-Credentials "true" always;
+        
+        # Handle preflight requests
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Allow-Origin "https://pinovaraufba.com.br";
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
+            add_header Access-Control-Allow-Headers "Content-Type, Authorization";
+            add_header Access-Control-Allow-Credentials "true";
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            return 204;
+        }
+    }
+
+    # Modules Proxy - redirecionar /modules/* para backend
+    location /modules/ {
+        proxy_pass http://localhost:3001/modules/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # CORS headers
+        add_header Access-Control-Allow-Origin "https://pinovaraufba.com.br" always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+        add_header Access-Control-Allow-Credentials "true" always;
+        
+        # Handle preflight requests
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Allow-Origin "https://pinovaraufba.com.br";
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
+            add_header Access-Control-Allow-Headers "Content-Type, Authorization";
+            add_header Access-Control-Allow-Credentials "true";
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            return 204;
+        }
+    }
+
+    # Organizacoes Proxy - redirecionar /organizacoes/* para backend
+    location /organizacoes/ {
+        proxy_pass http://localhost:3001/organizacoes/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -139,9 +300,18 @@ echo "🔍 API via Nginx:"
 curl -s https://pinovaraufba.com.br/api/health | jq . 2>/dev/null || curl -s https://pinovaraufba.com.br/api/health
 
 echo ""
+echo "🔍 Auth endpoint:"
+curl -s -X POST https://pinovaraufba.com.br/auth/login -H "Content-Type: application/json" -d '{"email":"test@example.com","password":"test"}' | jq . 2>/dev/null || curl -s -X POST https://pinovaraufba.com.br/auth/login -H "Content-Type: application/json" -d '{"email":"test@example.com","password":"test"}'
+
+echo ""
 echo "🎉 Configuração do Nginx corrigida!"
 echo "🌐 Site: https://pinovaraufba.com.br"
 echo "🔧 API: https://pinovaraufba.com.br/api/"
+echo "🔐 Auth: https://pinovaraufba.com.br/auth/"
+echo "👑 Admin: https://pinovaraufba.com.br/admin/"
+echo "👥 Users: https://pinovaraufba.com.br/users/"
+echo "📦 Modules: https://pinovaraufba.com.br/modules/"
+echo "🏢 Organizacoes: https://pinovaraufba.com.br/organizacoes/"
 echo "❤️ Health: https://pinovaraufba.com.br/health"
 echo ""
 echo "🔍 Para verificar logs:"
