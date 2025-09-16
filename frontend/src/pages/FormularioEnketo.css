@@ -1,0 +1,231 @@
+/* Estilos específicos para a página do Formulário Enketo usando ID */
+
+/* Layout próprio sem grid - usando ID específico */
+#formulario-enketo-page {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+
+#formulario-enketo-page .main-content {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+#formulario-enketo-page .dashboard-main {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+#formulario-enketo-page .container {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0.25rem !important;
+  max-width: none !important;
+  overflow: hidden !important;
+}
+
+/* Header igual ao da página Configuração ODK */
+#formulario-enketo-page .header {
+  text-align: center !important;
+  margin-bottom: 3rem !important;
+  color: var(--text-primary) !important;
+}
+
+#formulario-enketo-page .header h1 {
+  font-size: 2.5rem !important;
+  margin-bottom: 0.5rem !important;
+  color: var(--text-primary) !important;
+}
+
+#formulario-enketo-page .header .subtitle {
+  font-size: 1.2rem !important;
+  color: var(--text-secondary) !important;
+  max-width: 600px !important;
+  margin: 0 auto !important;
+}
+
+#formulario-enketo-page .content {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.formulario-section {
+  flex: 1 !important;
+  background: white;
+  border-radius: 15px;
+  padding: 0.25rem !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.enketo-iframe {
+  flex: 1 !important;
+  width: 100% !important;
+  border: none !important;
+  border-radius: 10px;
+  background: white;
+  transition: all 0.3s ease;
+  overflow: auto !important;
+}
+
+/* Estilização da barra de scroll do iframe */
+.enketo-iframe::-webkit-scrollbar {
+  width: 8px;
+}
+
+.enketo-iframe::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.enketo-iframe::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.enketo-iframe::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.enketo-iframe.loading {
+  opacity: 0;
+}
+
+.enketo-iframe.error {
+  display: none;
+}
+
+.loading-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-container p {
+  color: #666;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.error-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  z-index: 10;
+}
+
+.error-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.error-container h3 {
+  color: #dc3545;
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+}
+
+.error-container p {
+  color: #666;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+}
+
+
+/* Responsividade - igual à página Configuração ODK */
+@media (max-width: 768px) {
+  #formulario-enketo-page .container {
+    padding: 0.25rem !important;
+  }
+  
+  #formulario-enketo-page .header {
+    margin-bottom: 2rem !important;
+  }
+  
+  #formulario-enketo-page .header h1 {
+    font-size: 2rem !important;
+  }
+  
+  #formulario-enketo-page .header .subtitle {
+    font-size: 1rem !important;
+  }
+  
+  .formulario-section {
+    padding: 0.25rem !important;
+  }
+  
+  .loading-container,
+  .error-container {
+    padding: 1.5rem;
+    margin: 0 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  #formulario-enketo-page .container {
+    padding: 0.25rem !important;
+  }
+  
+  #formulario-enketo-page .header {
+    margin-bottom: 1.5rem !important;
+  }
+  
+  #formulario-enketo-page .header h1 {
+    font-size: 1.8rem !important;
+  }
+  
+  #formulario-enketo-page .header .subtitle {
+    font-size: 0.9rem !important;
+  }
+  
+  .formulario-section {
+    padding: 0.25rem !important;
+  }
+  
+  .loading-container,
+  .error-container {
+    padding: 1rem;
+  }
+}
