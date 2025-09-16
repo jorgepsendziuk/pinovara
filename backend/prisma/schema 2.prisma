@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["pinovara"]
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String
+  name      String
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relacionamentos
+  userRoles UserRole[]
+  auditLogs AuditLog[]
+
+  @@schema("pinovara")
+  @@map("users")
+}
+
+model Module {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  roles Role[]
+
+  @@schema("pinovara")
+  @@map("modules")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  module    Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId  Int
+  userRoles UserRole[]
+
+  @@unique([name, moduleId])
+  @@schema("pinovara")
+  @@map("roles")
+}
+
+model UserRole {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId Int
+
+  @@unique([userId, roleId])
+  @@schema("pinovara")
+  @@map("user_roles")
+}
+
+model SystemSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  type        String   // string, number, boolean, json
+  description String?
+  category    String   @default("general")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@schema("pinovara")
+  @@map("system_settings")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  action     String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  entity     String   // users, roles, settings, etc.
+  entityId   String?
+  oldData    String?  // JSON
+  newData    String?  // JSON
+  userAgent  String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  // Relacionamentos
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId Int?
+
+  @@schema("pinovara")
+  @@map("audit_logs")
+}
