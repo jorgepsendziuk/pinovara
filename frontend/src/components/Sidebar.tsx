@@ -397,6 +397,22 @@ const Sidebar: React.FC = () => {
       ]
     },
     {
+      id: 'visualizacao-formulario',
+      label: 'Visualização do Formulário',
+      icon: '📄',
+      path: '/formulario-enketo',
+      module: 'configuracao',
+      children: [
+        {
+          id: 'visualizacao-formulario-main',
+          label: 'Formulário Enketo',
+          icon: '📝',
+          path: '/formulario-enketo',
+          module: 'configuracao'
+        }
+      ]
+    },
+    {
       id: 'administracao',
       label: 'Administração',
       icon: '⚙️',
@@ -586,8 +602,8 @@ const Sidebar: React.FC = () => {
         </button>
       </div>
 
-      {/* Navigation - Sem scroll */}
-      <nav className="sidebar-nav no-scroll">
+      {/* Navigation - Com scroll */}
+      <nav className="sidebar-nav">
         <ul className="nav-list">
           {menuItems
             .filter(item => hasAccess(item))

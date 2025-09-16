@@ -28,6 +28,7 @@ import TestPermissions from './pages/TestPermissions';
 import AccessDenied from './pages/AccessDenied';
 import Profile from './pages/Profile';
 import ConfiguracaoODK from './pages/ConfiguracaoODK';
+import FormularioEnketo from './pages/FormularioEnketo';
 import './App.css';
 
 function AppRoutes() {
@@ -149,6 +150,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ConfiguracaoODK />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/formulario-enketo"
+        element={
+          <ProtectedRoute>
+            <FormularioEnketo />
           </ProtectedRoute>
         }
       />
