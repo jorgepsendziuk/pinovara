@@ -195,19 +195,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   /**
-   * Verificar validade do token periodicamente
+   * Verificar validade do token periodicamente (menos frequente)
    */
   useEffect(() => {
     if (!token) return;
 
     const interval = setInterval(async () => {
       try {
-        await authAPI.verify();
+        const response = await authAPI.verify();
+        if (!response.authenticated) {
+          console.warn('⚠️ Token inválido, fazendo logout');
+          logout();
+        }
       } catch (error) {
-        console.warn('⚠️ Token inválido, fazendo logout');
-        logout();
+        // Só fazer logout se for erro específico de token expirado
+        if (error instanceof Error &&
+            (error.message.includes('Token expirado') ||
+             error.message.includes('Token inválido'))) {
+          console.warn('⚠️ Token expirado/inválido, fazendo logout');
+          logout();
+        } else {
+          console.warn('⚠️ Erro temporário na verificação de token, mantendo sessão');
+        }
       }
-    }, 5 * 60 * 1000); // Verificar a cada 5 minutos
+    }, 60 * 60 * 1000); // Verificar a cada 1 hora
 
     return () => clearInterval(interval);
   }, [token]);
