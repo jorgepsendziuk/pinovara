@@ -1,8 +1,8 @@
 name: Deploy to Production
 
-# 🚀 PINOVARA Deploy v4.0 - CLEAN & SIMPLE
-# ✅ NO BACKUP SYSTEM - Direct deployment only
-# ✅ NO COMPLEXITY - Just deploy and go
+# 🚀 PINOVARA Deploy v4.0 - CLEAN & SIMPLE (Versão Corrigida)
+# ✅ Lógica de deploy robusta com caminhos corrigidos.
+# ✅ Script de execução no servidor mais claro e seguro.
 
 on:
   push:
@@ -72,16 +72,17 @@ jobs:
       run: |
         echo "🚀 Starting deployment to ${{ secrets.SERVER_HOST }}..."
 
-        # Create temp directory
+        # 1. Criar um diretório temporário no runner do GitHub Actions
         DEPLOY_DIR="/tmp/pinovara-deploy-$(date +%s)"
         mkdir -p $DEPLOY_DIR
 
-        # Copy files
+        # 2. Copiar todos os artefatos de build para o diretório temporário
         echo "📋 Preparing deployment files..."
         cp -r backend/package*.json backend/dist backend/prisma $DEPLOY_DIR/ 2>/dev/null || true
-        cp -r frontend/dist $DEPLOY_DIR/frontend-dist 2>/dev/null || true
+        mkdir -p $DEPLOY_DIR/frontend-dist
+        cp -r frontend/dist/* $DEPLOY_DIR/frontend-dist/ 2>/dev/null || true
 
-        # Create env file if config.env exists
+        # 3. Criar o arquivo .env no diretório temporário
         if [ -f "backend/config.env" ]; then
           cp backend/config.env $DEPLOY_DIR/.env
         else
@@ -91,7 +92,7 @@ jobs:
           echo 'JWT_SECRET="pinovara-secret-key-change-in-production"' >> $DEPLOY_DIR/.env
         fi
 
-        # Create PM2 config
+        # 4. Criar a configuração do PM2 no diretório temporário
         cat > $DEPLOY_DIR/ecosystem.config.js << 'EOF'
         module.exports = {
           apps: [{
@@ -100,137 +101,87 @@ jobs:
             cwd: '/var/www/pinovara/backend',
             instances: 1,
             exec_mode: 'fork',
-            env: {
-              NODE_ENV: 'production',
-              PORT: 3001
+            env_production: {
+              NODE_ENV: 'production'
             }
           }]
         };
         EOF
 
-        # Create deploy script
+        # 5. Criar o script de deploy (com a lógica corrigida) no diretório temporário
         cat > $DEPLOY_DIR/deploy.sh << 'EOF'
         #!/bin/bash
         set -e
 
-        echo "🚀 PINOVARA v4.0 - CLEAN DEPLOY STARTING..."
-        echo "✅ NO backup system - Direct deployment"
+        echo "🚀 PINOVARA v4.0 - CLEAN DEPLOY SCRIPT STARTING ON SERVER..."
 
-        # Check PM2
+        # --- CORREÇÃO PRINCIPAL ---
+        # Navega para o diretório onde o script foi salvo no servidor.
+        # Isso garante que todos os caminhos relativos (./dist, ./prisma) funcionem.
+        cd "$(dirname "$0")"
+        echo "📂 Working from temporary directory: $(pwd)"
+
+        # Verifica se o PM2 está instalado
         if ! command -v pm2 &> /dev/null; then
-          echo "❌ PM2 not installed"
-          exit 1
-        fi
-        echo "✅ PM2 available"
-
-        # Create directories
-        sudo mkdir -p /var/www/pinovara
-
-        # Stop existing processes
-        pm2 stop pinovara-backend 2>/dev/null || true
-        pm2 delete pinovara-backend 2>/dev/null || true
-
-        # Remove old backend
-        sudo rm -rf /var/www/pinovara/backend
-        sudo mkdir -p /var/www/pinovara/backend
-
-        # Copy files with explicit paths
-        echo "📋 Deploying backend files..."
-        DEPLOY_SOURCE="$DEPLOY_TMP_DIR"
-        echo "📂 Source directory: $DEPLOY_SOURCE"
-        echo "📂 Target directory: /var/www/pinovara/backend"
-
-        # Navigate to source directory for copying
-        cd "$DEPLOY_SOURCE" || { echo "❌ Failed to cd to $DEPLOY_SOURCE"; exit 1; }
-
-        # Copy files with full paths
-        if [ -f "package.json" ]; then
-            sudo cp package*.json /var/www/pinovara/backend/
-            echo "✅ package.json copied"
-        else
-            echo "❌ package.json not found in $DEPLOY_SOURCE"
-        fi
-
-        if [ -f ".env" ]; then
-            sudo cp .env /var/www/pinovara/backend/
-            echo "✅ .env copied"
-        else
-            echo "❌ .env not found in $DEPLOY_SOURCE"
-        fi
-
-        if [ -f "ecosystem.config.js" ]; then
-            sudo cp ecosystem.config.js /var/www/pinovara/backend/
-            echo "✅ ecosystem.config.js copied"
-        else
-            echo "❌ ecosystem.config.js not found in $DEPLOY_SOURCE"
-            ls -la "$DEPLOY_SOURCE"/
-        fi
-
-        if [ -d "dist" ]; then
-            sudo cp -r dist /var/www/pinovara/backend/
-            echo "✅ dist/ copied"
-        else
-            echo "❌ dist/ not found in $DEPLOY_SOURCE"
-        fi
-
-        if [ -d "prisma" ]; then
-            sudo cp -r prisma /var/www/pinovara/backend/
-            echo "✅ prisma/ copied"
-        else
-            echo "❌ prisma/ not found in $DEPLOY_SOURCE"
-        fi
-
-        # Navigate to target directory for execution
-        cd /var/www/pinovara/backend || { echo "❌ Failed to cd to /var/www/pinovara/backend"; exit 1; }
-        echo "📂 Current directory: $(pwd)"
-
-        # Install dependencies
-        echo "📦 Installing dependencies..."
-        npm ci --production
-
-        # Database setup
-        echo "🗄️ Setting up database..."
-        npx prisma generate
-        npx prisma db push --accept-data-loss || npx prisma db push
-
-        # Start application
-        echo "🚀 Starting application..."
-        echo "📂 Current directory: $(pwd)"
-        echo "📄 Files in directory: $(ls -la)"
-
-        if [ -f "ecosystem.config.js" ]; then
-            echo "✅ ecosystem.config.js found, starting PM2..."
-            pm2 start ecosystem.config.js --env production
-            pm2 save
-            echo "✅ Application started successfully"
-        else
-            echo "❌ ecosystem.config.js not found in $(pwd)"
-            echo "📄 Available files:"
-            ls -la
+            echo "❌ PM2 not found. Please install it with 'npm install -g pm2'."
             exit 1
         fi
+        echo "✅ PM2 is available."
 
-        # Deploy frontend
+        # --- DEPLOY DO FRONTEND ---
         echo "🎨 Deploying frontend..."
         sudo mkdir -p /var/www/html
         sudo rm -rf /var/www/html/*
-        if [ -d "../frontend-dist" ]; then
-          sudo cp -r ../frontend-dist/* /var/www/html/
-          echo "✅ Frontend deployed"
+        if [ -d "./frontend-dist" ]; then
+          sudo cp -r ./frontend-dist/* /var/www/html/
+          echo "✅ Frontend deployed successfully."
         else
-          echo "⚠️ Frontend files not found"
+          echo "⚠️ Frontend build files not found in deployment package."
         fi
 
-        echo "✅ DEPLOYMENT COMPLETED SUCCESSFULLY!"
+        # --- DEPLOY DO BACKEND ---
+        echo "🚀 Deploying backend..."
+        # Para e deleta o processo antigo para garantir um início limpo
+        pm2 stop pinovara-backend 2>/dev/null || true
+        pm2 delete pinovara-backend 2>/dev/null || true
+
+        # Prepara o diretório final do backend
+        sudo rm -rf /var/www/pinovara/backend
+        sudo mkdir -p /var/www/pinovara/backend
+
+        # Copia todos os arquivos do backend do diretório temporário para o destino final
+        echo "📋 Copying backend files to /var/www/pinovara/backend..."
+        sudo cp -r package*.json dist prisma .env ecosystem.config.js /var/www/pinovara/backend/
+
+        # Navega para o diretório final do backend para executar os próximos comandos
+        cd /var/www/pinovara/backend
+        echo "📂 Working from final backend directory: $(pwd)"
+        
+        # Instala dependências de produção
+        echo "📦 Installing production dependencies..."
+        npm ci --omit=dev
+
+        # Configura o banco de dados com Prisma
+        echo "🗄️ Setting up database..."
+        npx prisma generate
+        npx prisma db push --accept-data-loss
+
+        # Inicia a aplicação com PM2
+        echo "🚀 Starting application with PM2..."
+        pm2 start ecosystem.config.js --env production
+        pm2 save # Salva a configuração para reiniciar junto com o servidor
+
+        echo "🎉 DEPLOYMENT COMPLETED SUCCESSFULLY!"
         EOF
 
+        # 6. Tornar o script executável
         chmod +x $DEPLOY_DIR/deploy.sh
 
-        # Upload and execute
+        # 7. Enviar o pacote de deploy para o servidor e executar o script
         scp -r $DEPLOY_DIR ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'bash /tmp/pinovara-deploy-*/deploy.sh'
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "bash /tmp/pinovara-deploy-*/deploy.sh"
 
-        # Cleanup
+        # 8. Limpeza dos arquivos temporários no runner e no servidor
         rm -rf $DEPLOY_DIR
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'rm -rf /tmp/pinovara-deploy-*'
 
@@ -239,18 +190,19 @@ jobs:
         echo "🔍 Verifying deployment..."
         sleep 10
 
-        # Check backend
+        # Verifica o backend
         if ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'curl -f http://localhost:3001/health > /dev/null 2>&1'; then
-          echo "✅ Backend is running"
+          echo "✅ Backend is running and healthy"
         else
-          echo "❌ Backend not responding"
+          echo "❌ Backend not responding on http://localhost:3001/health"
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'pm2 logs pinovara-backend --lines 20'
         fi
 
-        # Check frontend
+        # Verifica o frontend
         if ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'curl -f http://localhost/ > /dev/null 2>&1'; then
-          echo "✅ Frontend is running"
+          echo "✅ Frontend is serving content on port 80"
         else
-          echo "⚠️ Frontend may need Nginx configuration"
+          echo "⚠️ Frontend not responding. This might be expected if a web server like Nginx is not configured to serve from /var/www/html."
         fi
 
         echo "🎉 Deployment verification complete!"
