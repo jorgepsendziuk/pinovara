@@ -86,13 +86,13 @@ model AuditLog {
   id        Int      @id @default(autoincrement())
   action    String
   entity    String
-  entityId  String? @map("entity_id")
-  oldData   String? @map("old_data")
-  newData   String? @map("new_data")
-  userAgent String? @map("user_agent")
-  ipAddress String? @map("ip_address")
+  entityId  String?
+  oldData   String?
+  newData   String?
+  userAgent String?
+  ipAddress String?
   createdAt DateTime @default(now())
-  userId    Int? @map("user_id")
+  userId    Int?
   user      User?    @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
@@ -101,49 +101,134 @@ model AuditLog {
 
 model Organizacao {
   id                                Int                @id @default(autoincrement())
-  inicio                            DateTime?
-  fim                               DateTime?
-  deviceid                          String?
-  dataVisita                        DateTime? @map("data_visita")
+  nome                              String?
+  cnpj                              String?
+  telefone                          String?
+  email                             String?
   estado                            Int?
   municipio                         Int?
   gpsLat                            Float?   @map("gps_lat")
   gpsLng                            Float?   @map("gps_lng")
+  dataFundacao                      DateTime? @map("data_fundacao")
+  inicio                            DateTime?
+  fim                               DateTime?
+  deviceid                          String?
+  dataVisita                        DateTime? @map("data_visita")
   gpsAlt                            Float?   @map("gps_alt")
   gpsAcc                            Float?   @map("gps_acc")
-  nome                              String?
-  cnpj                              String?
-  dataFundacao                      DateTime? @map("data_fundacao")
-  caracteristicasNTotalSocios       Int? @map("caracteristicas_n_total_socios")
-  caracteristicasNTotalSociosCaf    Int? @map("caracteristicas_n_total_socios_caf")
-  caracteristicasNDistintosCaf      Int? @map("caracteristicas_n_distintos_caf")
-  caracteristicasNSociosPaa         Int? @map("caracteristicas_n_socios_paa")
-  caracteristicasNNaosociosPaa      Int? @map("caracteristicas_n_naosocios_paa")
-  caracteristicasNSociosPnae        Int? @map("caracteristicas_n_socios_pnae")
-  caracteristicasNNaosociosPnae     Int? @map("caracteristicas_n_naosocios_pnae")
-  caracteristicasNAtivosTotal       Int? @map("caracteristicas_n_ativos_total")
-  caracteristicasNAtivosCaf         Int? @map("caracteristicas_n_ativos_caf")
-  caracteristicasNNaosocioOpTotal   Int? @map("caracteristicas_n_naosocio_op_total")
-  caracteristicasNNaosocioOpCaf     Int? @map("caracteristicas_n_naosocio_op_caf")
-  caracteristicasTaAMulher          Int? @map("caracteristicas_ta_a_mulher")
-  caracteristicasTaAHomem           Int? @map("caracteristicas_ta_a_homem")
-  caracteristicasTaEMulher          Int? @map("caracteristicas_ta_e_mulher")
-  caracteristicasTaEHomem           Int? @map("caracteristicas_ta_e_homem")
-  caracteristicasTaOMulher          Int? @map("caracteristicas_ta_o_mulher")
-  caracteristicasTaOHomem           Int? @map("caracteristicas_ta_o_homem")
-  caracteristicasTaIMulher          Int? @map("caracteristicas_ta_i_mulher")
-  caracteristicasTaIHomem           Int? @map("caracteristicas_ta_i_homem")
-  caracteristicasTaPMulher          Int? @map("caracteristicas_ta_p_mulher")
-  caracteristicasTaPHomem           Int? @map("caracteristicas_ta_p_homem")
-  caracteristicasTaAfMulher         Int? @map("caracteristicas_ta_af_mulher")
-  caracteristicasTaAfHomem          Int? @map("caracteristicas_ta_af_homem")
-  caracteristicasTaQMulher          Int? @map("caracteristicas_ta_q_mulher")
-  caracteristicasTaQHomem           Int? @map("caracteristicas_ta_q_homem")
-  caracteristicasTaCafConvencional  Int? @map("caracteristicas_ta_caf_convencional")
-  caracteristicasTaCafAgroecologico Int? @map("caracteristicas_ta_caf_agroecologico")
-  caracteristicasTaCafTransicao     Int? @map("caracteristicas_ta_caf_transicao")
-  caracteristicasTaCafOrganico      Int? @map("caracteristicas_ta_caf_organico")
+  metaInstanceId                    String? @map("meta_instance_id")
+  metaInstanceName                  String? @map("meta_instance_name")
+  removido                          Boolean            @default(false)
+  idTecnico                         Int?    @map("id_tecnico")
+  abrangenciaPj                     AbrangenciaPj[]
+  abrangenciaSocio                  AbrangenciaSocio[]
+  arquivos                          Arquivo[]
+  fotos                             Foto[]
+  producoes                         Producao[]
 
-  @@map("pinovara")
+  @@map("organizacao")
+  @@schema("pinovara")
+}
+
+model AbrangenciaPj {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  razaoSocial       String?
+  sigla             String?
+  cnpjPj            String?
+  numSociosCaf      Int?
+  numSociosTotal    Int?
+  estado            Int?
+  municipio         Int?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_abrangencia_pj")
+  @@schema("pinovara")
+}
+
+model AbrangenciaSocio {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  numSocios         Int?
+  estado            Int?
+  municipio         Int?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_abrangencia_socio")
+  @@schema("pinovara")
+}
+
+model Arquivo {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  arquivo           String?
+  obs               String?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_arquivo")
+  @@schema("pinovara")
+}
+
+model Foto {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  grupo             Int?
+  foto              String?
+  obs               String?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_foto")
+  @@schema("pinovara")
+}
+
+model Producao {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  cultura           String?
+  anual             Decimal?    @db.Decimal(16, 2)
+  mensal            Decimal?    @db.Decimal(16, 2)
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_producao")
   @@schema("pinovara")
 }
