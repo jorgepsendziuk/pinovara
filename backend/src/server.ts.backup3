@@ -179,59 +179,6 @@ app.get('/organizacoes', async (req, res) => {
   }
 });
 
-// Buscar organização por ID
-app.get("/organizacoes/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const organizacao = await prisma.organizacao.findUnique({
-      where: { id: parseInt(id) },
-      select: {
-        id: true,
-        nome: true,
-        cnpj: true,
-        telefone: true,
-        email: true,
-        estado: true,
-        municipio: true,
-        gpsLat: true,
-        gpsLng: true,
-        gpsAlt: true,
-        gpsAcc: true,
-        dataFundacao: true,
-        inicio: true,
-        fim: true,
-        deviceid: true,
-        dataVisita: true,
-        metaInstanceId: true,
-        metaInstanceName: true,
-        removido: true,
-        idTecnico: true
-      }
-    });
-    
-    if (!organizacao) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: "Organização não encontrada",
-          statusCode: 404
-        }
-      });
-    }
-    
-    res.json(organizacao);
-  } catch (error) {
-    console.error("Erro ao buscar organização:", error);
-    res.status(500).json({
-      success: false,
-      error: {
-        message: "Erro ao buscar organização",
-        statusCode: 500
-      }
-    });
-  }
-});
-
 // Cadastrar organização
 app.post('/organizacoes', async (req, res) => {
   try {

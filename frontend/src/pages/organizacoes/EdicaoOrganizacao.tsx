@@ -5,31 +5,23 @@ interface Organizacao {
   id: number;
   nome: string;
   cnpj: string;
-  dataFundacao: string;
-  telefone: string;
-  email: string;
-  endereco: string;
-  bairro: string;
-  cep: string;
-  estado: string;
-  municipio: string;
-  gpsLat: number;
-  gpsLng: number;
-  gpsAlt: number;
-  gpsAcc: number;
-  dataVisita: string;
-  status: string;
-  caracteristicas: {
-    totalSocios: number;
-    totalSociosCaf: number;
-    distintosCaf: number;
-    sociosPaa: number;
-    naosociosPaa: number;
-    sociosPnae: number;
-    naosociosPnae: number;
-    ativosTotal: number;
-    ativosCaf: number;
-  };
+  telefone: string | null;
+  email: string | null;
+  estado: number | null;
+  municipio: number | null;
+  gpsLat: number | null;
+  gpsLng: number | null;
+  gpsAlt: number | null;
+  gpsAcc: number | null;
+  dataFundacao: string | null;
+  inicio: string | null;
+  fim: string | null;
+  deviceid: string | null;
+  dataVisita: string | null;
+  metaInstanceId: string | null;
+  metaInstanceName: string | null;
+  removido: boolean;
+  idTecnico: number | null;
 }
 
 interface EdicaoOrganizacaoProps {
@@ -159,30 +151,29 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       });
 
       setDadosLocalizacao({
-        endereco: data.endereco || '',
-        bairro: data.bairro || '',
-        cep: data.cep || '',
-        estado: data.estado || '',
-        municipio: data.municipio || '',
+        endereco: '', // Campo não existe na API
+        bairro: '', // Campo não existe na API
+        cep: '', // Campo não existe na API
+        estado: data.estado?.toString() || '',
+        municipio: data.municipio?.toString() || '',
         gpsLat: data.gpsLat || 0,
         gpsLng: data.gpsLng || 0,
         gpsAlt: data.gpsAlt || 0,
         gpsAcc: data.gpsAcc || 0
       });
 
-      if (data.caracteristicas) {
-        setDadosCaracteristicas({
-          totalSocios: data.caracteristicas.totalSocios || 0,
-          totalSociosCaf: data.caracteristicas.totalSociosCaf || 0,
-          distintosCaf: data.caracteristicas.distintosCaf || 0,
-          sociosPaa: data.caracteristicas.sociosPaa || 0,
-          naosociosPaa: data.caracteristicas.naosociosPaa || 0,
-          sociosPnae: data.caracteristicas.sociosPnae || 0,
-          naosociosPnae: data.caracteristicas.naosociosPnae || 0,
-          ativosTotal: data.caracteristicas.ativosTotal || 0,
-          ativosCaf: data.caracteristicas.ativosCaf || 0
-        });
-      }
+      // Características não existem na API atual, manter valores padrão
+      setDadosCaracteristicas({
+        totalSocios: 0,
+        totalSociosCaf: 0,
+        distintosCaf: 0,
+        sociosPaa: 0,
+        naosociosPaa: 0,
+        sociosPnae: 0,
+        naosociosPnae: 0,
+        ativosTotal: 0,
+        ativosCaf: 0
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
