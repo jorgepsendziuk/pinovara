@@ -1,8 +1,45 @@
 {
-  "dependencies": {
-    "@prisma/client": "^6.16.2",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0"
+  "name": "pinovara-project",
+  "version": "2.0.0",
+  "description": "Sistema PINOVARA - Full Stack TypeScript Application",
+  "private": true,
+  "type": "commonjs",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:start": "./scripts/dev/dev-start.sh",
+    "dev:stop": "./scripts/dev/dev-stop.sh",
+    "dev:status": "./scripts/dev/dev-status.sh",
+    "dev:logs": "./scripts/dev/dev-logs.sh",
+    "dev:logs:backend": "./scripts/dev/dev-logs.sh backend",
+    "dev:logs:frontend": "./scripts/dev/dev-logs.sh frontend",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "clean": "rm -rf logs/ && rm -rf backend/node_modules && rm -rf frontend/node_modules && rm -rf node_modules",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run preview"
+  },
+  "keywords": [
+    "typescript",
+    "react",
+    "nodejs",
+    "express",
+    "prisma",
+    "postgresql",
+    "full-stack"
+  ],
+  "author": "PINOVARA Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3"
   }
 }
