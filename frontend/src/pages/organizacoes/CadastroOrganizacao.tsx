@@ -185,9 +185,9 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
       }
 
       const result = await response.json();
-      
-      // Navegar para a página de detalhes da organização criada
-      onNavigate('detalhes', result.id);
+
+      // Navegar para a página de edição da organização criada
+      onNavigate('edicao', result.id);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao cadastrar organização');
