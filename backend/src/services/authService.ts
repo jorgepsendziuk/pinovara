@@ -1,0 +1,302 @@
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
+import { LoginData, RegisterData, LoginResponse, JWTPayload, UserWithRoles } from '../types/auth';
+import { ApiError, ErrorCode, HttpStatus } from '../types/api';
+
+const prisma = new PrismaClient();
+
+class AuthService {
+  /**
+   * Fazer login do usuário
+   */
+  async login(data: LoginData): Promise<LoginResponse> {
+    const { email, password } = data;
+
+    // Validações básicas
+    if (!email || !password) {
+      throw new ApiError({
+        message: 'Email e senha são obrigatórios',
+        statusCode: HttpStatus.BAD_REQUEST,
+        code: ErrorCode.MISSING_REQUIRED_FIELD
+      });
+    }
+
+    // Buscar usuário
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      include: {
+        userRoles: {
+          include: {
+            role: {
+              include: {
+                module: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      throw new ApiError({
+        message: 'Credenciais inválidas',
+        statusCode: HttpStatus.UNAUTHORIZED,
+        code: ErrorCode.INVALID_CREDENTIALS
+      });
+    }
+
+    // Verificar senha
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new ApiError({
+        message: 'Credenciais inválidas',
+        statusCode: HttpStatus.UNAUTHORIZED,
+        code: ErrorCode.INVALID_CREDENTIALS
+      });
+    }
+
+    // Verificar se usuário está ativo
+    if (!user.active) {
+      throw new ApiError({
+        message: 'Usuário inativo',
+        statusCode: HttpStatus.UNAUTHORIZED,
+        code: ErrorCode.INSUFFICIENT_PERMISSIONS
+      });
+    }
+
+    // Gerar token
+    const token = this.generateToken({ userId: user.id, email: user.email });
+    const expiresIn = 7 * 24 * 60 * 60; // 7 dias
+
+    // Formatar resposta
+    const userWithRoles: UserWithRoles = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      active: user.active,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      roles: user.userRoles.map(ur => ({
+        id: ur.role.id,
+        name: ur.role.name,
+        module: {
+          id: ur.role.module.id,
+          name: ur.role.module.name
+        }
+      }))
+    };
+
+    return {
+      user: userWithRoles,
+      token,
+      expiresIn
+    };
+  }
+
+  /**
+   * Registrar novo usuário
+   */
+  async register(data: RegisterData): Promise<LoginResponse> {
+    const { email, password, name } = data;
+
+    // Validações
+    if (!email || !password || !name) {
+      throw new ApiError({
+        message: 'Email, senha e nome são obrigatórios',
+        statusCode: HttpStatus.BAD_REQUEST,
+        code: ErrorCode.MISSING_REQUIRED_FIELD
+      });
+    }
+
+    if (password.length < 6) {
+      throw new ApiError({
+        message: 'Senha deve ter pelo menos 6 caracteres',
+        statusCode: HttpStatus.BAD_REQUEST,
+        code: ErrorCode.VALIDATION_ERROR
+      });
+    }
+
+    // Verificar se email já existe
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
+
+    if (existingUser) {
+      throw new ApiError({
+        message: 'Email já cadastrado',
+        statusCode: HttpStatus.CONFLICT,
+        code: ErrorCode.RESOURCE_ALREADY_EXISTS
+      });
+    }
+
+    // Hash da senha
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Criar usuário
+    const user = await prisma.user.create({
+      data: {
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        name: name.trim(),
+        active: true
+      },
+      include: {
+        userRoles: {
+          include: {
+            role: {
+              include: {
+                module: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Gerar token
+    const token = this.generateToken({ userId: user.id, email: user.email });
+    const expiresIn = 7 * 24 * 60 * 60; // 7 dias
+
+    // Formatar resposta
+    const userWithRoles: UserWithRoles = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      active: user.active,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      roles: user.userRoles.map(ur => ({
+        id: ur.role.id,
+        name: ur.role.name,
+        module: {
+          id: ur.role.module.id,
+          name: ur.role.module.name
+        }
+      }))
+    };
+
+    return {
+      user: userWithRoles,
+      token,
+      expiresIn
+    };
+  }
+
+  /**
+   * Obter dados do usuário por ID
+   */
+  async getUserById(userId: number): Promise<UserWithRoles> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        userRoles: {
+          include: {
+            role: {
+              include: {
+                module: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      throw new ApiError({
+        message: 'Usuário não encontrado',
+        statusCode: HttpStatus.NOT_FOUND,
+        code: ErrorCode.RESOURCE_NOT_FOUND
+      });
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      active: user.active,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      roles: user.userRoles.map(ur => ({
+        id: ur.role.id,
+        name: ur.role.name,
+        module: {
+          id: ur.role.module.id,
+          name: ur.role.module.name
+        }
+      }))
+    };
+  }
+
+  /**
+   * Verificar se token é válido
+   */
+  async verifyToken(token: string): Promise<UserWithRoles> {
+    if (!process.env.JWT_SECRET) {
+      throw new ApiError({
+        message: 'Configuração de JWT inválida',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.INTERNAL_ERROR
+      });
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
+      return await this.getUserById(decoded.userId);
+    } catch (error) {
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new ApiError({
+          message: 'Token inválido',
+          statusCode: HttpStatus.UNAUTHORIZED,
+          code: ErrorCode.TOKEN_INVALID
+        });
+      }
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new ApiError({
+          message: 'Token expirado',
+          statusCode: HttpStatus.UNAUTHORIZED,
+          code: ErrorCode.TOKEN_EXPIRED
+        });
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Gerar token JWT
+   */
+  private generateToken(payload: JWTPayload): string {
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET não configurado');
+    }
+
+    return jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '7d',
+      issuer: 'pinovara-api',
+      audience: 'pinovara-frontend'
+    });
+  }
+}
+
+// Classe personalizada para erros da API
+class ApiError extends Error {
+  public statusCode: number;
+  public code?: string;
+  public details?: any[];
+
+  constructor(options: {
+    message: string;
+    statusCode: number;
+    code?: string;
+    details?: any[];
+  }) {
+    super(options.message);
+    this.statusCode = options.statusCode;
+    this.code = options.code;
+    this.details = options.details;
+    this.name = 'ApiError';
+  }
+}
+
+export const authService = new AuthService();
+export { ApiError };

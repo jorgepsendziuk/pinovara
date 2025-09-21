@@ -5,43 +5,48 @@ import react from '@vitejs/plugin-react'
 export default defineConfig(({ mode }) => {
   // Detectar ambiente
   const isProduction = mode === 'production';
+  const isDevelopment = mode === 'development';
 
   return {
     plugins: [react()],
     server: {
       port: 5173,
-      proxy: {
-        // Proxy para todas as rotas da API (exceto arquivos estáticos)
-        '^/(?!assets|favicon|pinovara|icon|@vite|@fs|node_modules).*$': {
-          target: isProduction
-            ? 'https://pinovaraufba.com.br'
-            : 'http://localhost:3001',
+      host: true, // Permitir acesso externo em desenvolvimento
+      proxy: isDevelopment ? {
+        // Proxy apenas em desenvolvimento
+        '/api': {
+          target: 'http://localhost:3001',
           changeOrigin: true,
-          // Configurações adicionais para produção
-          secure: isProduction,
-          headers: {
-            'X-Forwarded-Proto': isProduction ? 'https' : 'http'
-          }
+          rewrite: (path) => path.replace(/^\/api/, ''),
         }
-      }
+      } : undefined
     },
     // Configurações de build
     build: {
       outDir: 'dist',
-      // Configurar para produção
+      assetsDir: 'assets',
+      // Otimizações para produção
       ...(isProduction && {
         minify: 'esbuild',
-        sourcemap: false
+        sourcemap: false,
+        target: 'es2015',
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              vendor: ['react', 'react-dom'],
+              router: ['react-router-dom']
+            }
+          }
+        }
+      }),
+      // Sourcemap em desenvolvimento
+      ...(isDevelopment && {
+        sourcemap: true
       })
     },
-    // Variáveis de ambiente
-    define: {
-      __APP_ENV__: JSON.stringify(mode),
-      __API_BASE_URL__: JSON.stringify(
-        isProduction
-          ? 'https://pinovaraufba.com.br'
-          : 'http://localhost:3001'
-      )
+    // Otimizações de dependências
+    optimizeDeps: {
+      include: ['react', 'react-dom', 'react-router-dom', 'axios']
     }
   }
 })

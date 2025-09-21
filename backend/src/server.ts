@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import routes from './routes';
+import { accessLogger, errorLogger, appLogger, rateLimiter } from './middleware/logging';
 
 // Load environment variables
 dotenv.config();
@@ -12,259 +12,133 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const prisma = new PrismaClient();
 
-// Middleware
+// ========== MIDDLEWARE ==========
+
+// CORS configuration
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://pinovaraufba.com.br'],
-  credentials: true
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:8080',
+    'https://pinovaraufba.com.br'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-app.use(express.json());
 
-// Routes
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'PINOVARA Backend API', 
-    status: 'running',
+// Body parser
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Logging middleware
+app.use(accessLogger);
+
+// Rate limiting (mais restritivo em produção)
+const rateLimitWindow = process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 60 * 1000; // 15min em prod, 1min em dev
+const rateLimitMax = process.env.NODE_ENV === 'production' ? 100 : 1000; // 100 em prod, 1000 em dev
+app.use(rateLimiter(rateLimitWindow, rateLimitMax));
+
+// ========== ROUTES ==========
+
+// API routes
+app.use('/', routes);
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: {
+      message: 'Endpoint não encontrado',
+      statusCode: 404,
+      path: req.originalUrl
+    },
     timestamp: new Date().toISOString()
   });
 });
 
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy',
+// ========== ERROR HANDLER ==========
+
+app.use(errorLogger);
+
+app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  // O errorLogger já fez o log, apenas responder
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  
+  res.status(error.statusCode || 500).json({
+    success: false,
+    error: {
+      message: error.message || 'Erro interno do servidor',
+      statusCode: error.statusCode || 500,
+      requestId: req.requestId,
+      ...(isDevelopment && { stack: error.stack })
+    },
     timestamp: new Date().toISOString()
   });
 });
 
-// Auth routes
-app.post('/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    // Validação básica
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Email e senha são obrigatórios',
-          statusCode: 400
-        }
-      });
-    }
-    
-    // Buscar usuário no banco
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: {
-        userRoles: {
-          include: {
-            role: {
-              include: {
-                module: true
-              }
-            }
-          }
-        }
-      }
-    });
-    
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          message: 'Credenciais inválidas',
-          statusCode: 401
-        }
-      });
-    }
-    
-    // Verificar senha
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          message: 'Credenciais inválidas',
-          statusCode: 401
-        }
-      });
-    }
-    
-    // Verificar se usuário está ativo
-    if (!user.active) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          message: 'Usuário inativo',
-          statusCode: 401
-        }
-      });
-    }
-    
-    // Gerar token JWT
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email 
-      },
-      process.env.JWT_SECRET!,
-      { 
-        expiresIn: '7d'
-      }
-    );
-    
-    // Formatar resposta no formato esperado pelo frontend
-    res.json({
-      success: true,
-      data: {
-        user: {
-          id: user.id.toString(),
-          email: user.email,
-          name: user.name,
-          active: user.active,
-          roles: user.userRoles.map(userRole => ({
-            id: userRole.role.id.toString(),
-            name: userRole.role.name,
-            module: {
-              id: userRole.role.module.id.toString(),
-              name: userRole.role.module.name
-            }
-          }))
-        },
-        token,
-        expiresIn: 7 * 24 * 60 * 60 // 7 dias em segundos
-      }
-    });
-    
-  } catch (error) {
-    console.error('Erro no login:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        message: 'Erro interno do servidor',
-        statusCode: 500
-      }
-    });
-  }
-});
+// ========== SERVER STARTUP ==========
 
-// Organizações endpoints
-app.get('/organizacoes', async (req, res) => {
+async function startServer() {
   try {
-    const organizacoes = await prisma.organizacao.findMany({
-      select: {
-        id: true,
-        nome: true,
-        cnpj: true,
-        estado: true,
-        municipio: true,
-        gpsLat: true,
-        gpsLng: true
-      }
-    });
-    res.json(organizacoes);
-  } catch (error) {
-    console.error('Erro ao buscar organizações:', error);
-    res.json([
-      {
-        id: 1,
-        nome: "Organização Teste",
-        cnpj: "123456789",
-        estado: 1,
-        municipio: 1,
-        gpsLat: -12.9714,
-        gpsLng: -38.5014
-      }
-    ]);
-  }
-});
+    // Test database connection
+    await prisma.$connect();
+    appLogger.info('Database connected successfully');
 
-// Buscar organização por ID
-app.get("/organizacoes/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const organizacao = await prisma.organizacao.findUnique({
-      where: { id: parseInt(id) },
-      select: {
-        id: true,
-        nome: true,
-        cnpj: true,
-        telefone: true,
-        email: true,
-        estado: true,
-        municipio: true,
-        gpsLat: true,
-        gpsLng: true,
-        gpsAlt: true,
-        gpsAcc: true,
-        dataFundacao: true,
-        inicio: true,
-        fim: true,
-        deviceid: true,
-        dataVisita: true,
-        metaInstanceId: true,
-        metaInstanceName: true,
-        removido: true,
-        idTecnico: true
-      }
-    });
-    
-    if (!organizacao) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: "Organização não encontrada",
-          statusCode: 404
-        }
-      });
-    }
-    
-    res.json(organizacao);
-  } catch (error) {
-    console.error("Erro ao buscar organização:", error);
-    res.status(500).json({
-      success: false,
-      error: {
-        message: "Erro ao buscar organização",
-        statusCode: 500
-      }
-    });
-  }
-});
-
-// Cadastrar organização
-app.post('/organizacoes', async (req, res) => {
-  try {
-    const { nome, cnpj, telefone, email } = req.body;
-    
-    const organizacao = await prisma.organizacao.create({
-      data: {
-        nome: nome || "Organização Nova",
-        cnpj: cnpj || "000000000",
-        telefone: telefone,
-        email: email
-      }
-    });
-    
-    res.json({
-      success: true,
-      message: "Organização criada com sucesso",
-      data: organizacao
+    // Start server
+    app.listen(PORT, () => {
+      appLogger.info('🚀 PINOVARA Backend Server Started');
+      appLogger.info(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+      appLogger.info(`🌐 Server: http://localhost:${PORT}`);
+      appLogger.info(`🎯 Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+      appLogger.info(`🗄️ Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
+      appLogger.info(`🔑 JWT Secret: ${process.env.JWT_SECRET ? 'Configured' : '❌ NOT CONFIGURED'}`);
+      
+      // Log em console também
+      console.log('🚀 PINOVARA Backend Server Started');
+      console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🌐 Server: http://localhost:${PORT}`);
+      console.log(`🎯 Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+      console.log(`🗄️  Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
+      console.log(`🔑 JWT Secret: ${process.env.JWT_SECRET ? 'Configured' : '❌ NOT CONFIGURED'}`);
+      console.log('=====================================');
     });
   } catch (error) {
-    console.error('Erro ao criar organização:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        message: 'Erro ao criar organização',
-        statusCode: 500
-      }
-    });
+    appLogger.error('Failed to start server', error);
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
   }
+}
+
+// ========== GRACEFUL SHUTDOWN ==========
+
+process.on('SIGINT', async () => {
+  appLogger.info('Received SIGINT, shutting down gracefully');
+  console.log('\n🛑 Shutting down server...');
+  await prisma.$disconnect();
+  appLogger.info('Database disconnected');
+  process.exit(0);
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+process.on('SIGTERM', async () => {
+  appLogger.info('Received SIGTERM, shutting down gracefully');
+  console.log('\n🛑 Shutting down server...');
+  await prisma.$disconnect();
+  appLogger.info('Database disconnected');
+  process.exit(0);
 });
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  appLogger.error('Uncaught Exception', error);
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  appLogger.error('Unhandled Rejection', { reason, promise });
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Start the server
+startServer();
