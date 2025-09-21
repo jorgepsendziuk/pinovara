@@ -114,35 +114,35 @@ model Organizacao {
   nome                              String?
   cnpj                              String?
   dataFundacao                      DateTime? @map("data_fundacao")
-  caracteristicasNTotalSocios       Int? @map("caracteristicas_n_total_socios")
-  caracteristicasNTotalSociosCaf    Int? @map("caracteristicas_n_total_socios_caf")
-  caracteristicasNDistintosCaf      Int? @map("caracteristicas_n_distintos_caf")
-  caracteristicasNSociosPaa         Int? @map("caracteristicas_n_socios_paa")
-  caracteristicasNNaosociosPaa      Int? @map("caracteristicas_n_naosocios_paa")
-  caracteristicasNSociosPnae        Int? @map("caracteristicas_n_socios_pnae")
-  caracteristicasNNaosociosPnae     Int? @map("caracteristicas_n_naosocios_pnae")
-  caracteristicasNAtivosTotal       Int? @map("caracteristicas_n_ativos_total")
-  caracteristicasNAtivosCaf         Int? @map("caracteristicas_n_ativos_caf")
-  caracteristicasNNaosocioOpTotal   Int? @map("caracteristicas_n_naosocio_op_total")
-  caracteristicasNNaosocioOpCaf     Int? @map("caracteristicas_n_naosocio_op_caf")
-  caracteristicasTaAMulher          Int? @map("caracteristicas_ta_a_mulher")
-  caracteristicasTaAHomem           Int? @map("caracteristicas_ta_a_homem")
-  caracteristicasTaEMulher          Int? @map("caracteristicas_ta_e_mulher")
-  caracteristicasTaEHomem           Int? @map("caracteristicas_ta_e_homem")
-  caracteristicasTaOMulher          Int? @map("caracteristicas_ta_o_mulher")
-  caracteristicasTaOHomem           Int? @map("caracteristicas_ta_o_homem")
-  caracteristicasTaIMulher          Int? @map("caracteristicas_ta_i_mulher")
-  caracteristicasTaIHomem           Int? @map("caracteristicas_ta_i_homem")
-  caracteristicasTaPMulher          Int? @map("caracteristicas_ta_p_mulher")
-  caracteristicasTaPHomem           Int? @map("caracteristicas_ta_p_homem")
-  caracteristicasTaAfMulher         Int? @map("caracteristicas_ta_af_mulher")
-  caracteristicasTaAfHomem          Int? @map("caracteristicas_ta_af_homem")
-  caracteristicasTaQMulher          Int? @map("caracteristicas_ta_q_mulher")
-  caracteristicasTaQHomem           Int? @map("caracteristicas_ta_q_homem")
-  caracteristicasTaCafConvencional  Int? @map("caracteristicas_ta_caf_convencional")
-  caracteristicasTaCafAgroecologico Int? @map("caracteristicas_ta_caf_agroecologico")
-  caracteristicasTaCafTransicao     Int? @map("caracteristicas_ta_caf_transicao")
-  caracteristicasTaCafOrganico      Int? @map("caracteristicas_ta_caf_organico")
+  caracteristicasNTotalSocios       Int?
+  caracteristicasNTotalSociosCaf    Int?
+  caracteristicasNDistintosCaf      Int?
+  caracteristicasNSociosPaa         Int?
+  caracteristicasNNaosociosPaa      Int?
+  caracteristicasNSociosPnae        Int?
+  caracteristicasNNaosociosPnae     Int?
+  caracteristicasNAtivosTotal       Int?
+  caracteristicasNAtivosCaf         Int?
+  caracteristicasNNaosocioOpTotal   Int?
+  caracteristicasNNaosocioOpCaf     Int?
+  caracteristicasTaAMulher          Int?
+  caracteristicasTaAHomem           Int?
+  caracteristicasTaEMulher          Int?
+  caracteristicasTaEHomem           Int?
+  caracteristicasTaOMulher          Int?
+  caracteristicasTaOHomem           Int?
+  caracteristicasTaIMulher          Int?
+  caracteristicasTaIHomem           Int?
+  caracteristicasTaPMulher          Int?
+  caracteristicasTaPHomem           Int?
+  caracteristicasTaAfMulher         Int?
+  caracteristicasTaAfHomem          Int?
+  caracteristicasTaQMulher          Int?
+  caracteristicasTaQHomem           Int?
+  caracteristicasTaCafConvencional  Int?
+  caracteristicasTaCafAgroecologico Int?
+  caracteristicasTaCafTransicao     Int?
+  caracteristicasTaCafOrganico      Int?
   goOrganizacao7Resposta            Int?
   goOrganizacao7Comentario          String?
   goOrganizacao7Proposta            String?
