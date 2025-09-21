@@ -1,0 +1,822 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["pinovara", "pinovara_aux"]
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String
+  name      String
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  auditLogs AuditLog[]
+  userRoles UserRole[]
+
+  @@map("users")
+  @@schema("pinovara")
+}
+
+model Module {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roles       Role[]
+
+  @@map("modules")
+  @@schema("pinovara")
+}
+
+model Role {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  moduleId    Int
+  module      Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  userRoles   UserRole[]
+
+  @@unique([name, moduleId])
+  @@map("roles")
+  @@schema("pinovara")
+}
+
+model UserRole {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    Int
+  roleId    Int
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+  @@schema("pinovara")
+}
+
+model SystemSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  type        String
+  description String?
+  category    String   @default("general")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+  @@schema("pinovara")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  entity    String
+  entityId  String?
+  oldData   String?
+  newData   String?
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+  @@schema("pinovara")
+}
+
+model Organizacao {
+  id                                Int                @id @default(autoincrement())
+  inicio                            DateTime?
+  fim                               DateTime?
+  deviceid                          String?
+  dataVisita                        DateTime? @map("data_visita")
+  estado                            Int?
+  municipio                         Int?
+  gpsLat                            Float?   @map("gps_lat")
+  gpsLng                            Float?   @map("gps_lng")
+  gpsAlt                            Float?   @map("gps_alt")
+  gpsAcc                            Float?   @map("gps_acc")
+  nome                              String?
+  cnpj                              String?
+  dataFundacao                      DateTime? @map("data_fundacao")
+  caracteristicasNTotalSocios       Int?
+  caracteristicasNTotalSociosCaf    Int?
+  caracteristicasNDistintosCaf      Int?
+  caracteristicasNSociosPaa         Int?
+  caracteristicasNNaosociosPaa      Int?
+  caracteristicasNSociosPnae        Int?
+  caracteristicasNNaosociosPnae     Int?
+  caracteristicasNAtivosTotal       Int?
+  caracteristicasNAtivosCaf         Int?
+  caracteristicasNNaosocioOpTotal   Int?
+  caracteristicasNNaosocioOpCaf     Int?
+  caracteristicasTaAMulher          Int?
+  caracteristicasTaAHomem           Int?
+  caracteristicasTaEMulher          Int?
+  caracteristicasTaEHomem           Int?
+  caracteristicasTaOMulher          Int?
+  caracteristicasTaOHomem           Int?
+  caracteristicasTaIMulher          Int?
+  caracteristicasTaIHomem           Int?
+  caracteristicasTaPMulher          Int?
+  caracteristicasTaPHomem           Int?
+  caracteristicasTaAfMulher         Int?
+  caracteristicasTaAfHomem          Int?
+  caracteristicasTaQMulher          Int?
+  caracteristicasTaQHomem           Int?
+  caracteristicasTaCafConvencional  Int?
+  caracteristicasTaCafAgroecologico Int?
+  caracteristicasTaCafTransicao     Int?
+  caracteristicasTaCafOrganico      Int?
+  goOrganizacao7Resposta            Int?
+  goOrganizacao7Comentario          String?
+  goOrganizacao7Proposta            String?
+  goOrganizacao8Resposta            Int?
+  goOrganizacao8Comentario          String?
+  goOrganizacao8Proposta            String?
+  goOrganizacao9Resposta            Int?
+  goOrganizacao9Comentario          String?
+  goOrganizacao9Proposta            String?
+  goOrganizacao10Resposta           Int?
+  goOrganizacao10Comentario         String?
+  goOrganizacao10Proposta           String?
+  goOrganizacao11Resposta           Int?
+  goOrganizacao11Comentario         String?
+  goOrganizacao11Proposta           String?
+  goOrganizacao12Resposta           Int?
+  goOrganizacao12Comentario         String?
+  goOrganizacao12Proposta           String?
+  goOrganizacao13Resposta           Int?
+  goOrganizacao13Comentario         String?
+  goOrganizacao13Proposta           String?
+  goDirecao14Resposta               Int?
+  goDirecao14Comentario             String?
+  goDirecao14Proposta               String?
+  goDirecao15Resposta               Int?
+  goDirecao15Comentario             String?
+  goDirecao15Proposta               String?
+  goDirecao16Resposta               Int?
+  goDirecao16Comentario             String?
+  goDirecao16Proposta               String?
+  goDirecao17Resposta               Int?
+  goDirecao17Comentario             String?
+  goDirecao17Proposta               String?
+  goDirecao18Resposta               Int?
+  goDirecao18Comentario             String?
+  goDirecao18Proposta               String?
+  goDirecao19Resposta               Int?
+  goDirecao19Comentario             String?
+  goDirecao19Proposta               String?
+  goDirecao20Resposta               Int?
+  goDirecao20Comentario             String?
+  goDirecao20Proposta               String?
+  goDirecao21Resposta               Int?
+  goDirecao21Comentario             String?
+  goDirecao21Proposta               String?
+  goControle20Resposta              Int?
+  goControle20Comentario            String?
+  goControle20Proposta              String?
+  goControle21Resposta              Int?
+  goControle21Comentario            String?
+  goControle21Proposta              String?
+  goControle22Resposta              Int?
+  goControle22Comentario            String?
+  goControle22Proposta              String?
+  goControle23Resposta              Int?
+  goControle23Comentario            String?
+  goControle23Proposta              String?
+  goControle24Resposta              Int?
+  goControle24Comentario            String?
+  goControle24Proposta              String?
+  goControle25Resposta              Int?
+  goControle25Comentario            String?
+  goControle25Proposta              String?
+  goEducacao26Resposta              Int?
+  goEducacao26Comentario            String?
+  goEducacao26Proposta              String?
+  goEducacao27Resposta              Int?
+  goEducacao27Comentario            String?
+  goEducacao27Proposta              String?
+  goEducacao28Resposta              Int?
+  goEducacao28Comentario            String?
+  goEducacao28Proposta              String?
+  goEstrategia5Resposta             Int?
+  goEstrategia5Comentario           String?
+  goEstrategia5Proposta             String?
+  goEstrategia6Resposta             Int?
+  goEstrategia6Comentario           String?
+  goEstrategia6Proposta             String?
+  goEstrutura1Resposta              Int?
+  goEstrutura1Comentario            String?
+  goEstrutura1Proposta              String?
+  goEstrutura2Resposta              Int?
+  goEstrutura2Comentario            String?
+  goEstrutura2Proposta              String?
+  goEstrutura3Resposta              Int?
+  goEstrutura3Comentario            String?
+  goEstrutura3Proposta              String?
+  goEstrutura4Resposta              Int?
+  goEstrutura4Comentario            String?
+  goEstrutura4Proposta              String?
+  gppPlanejamento4Resposta          Int?
+  gppPlanejamento4Comentario        String?
+  gppPlanejamento4Proposta          String?
+  gppPlanejamento5Resposta          Int?
+  gppPlanejamento5Comentario        String?
+  gppPlanejamento5Proposta          String?
+  gppPlanejamento6Resposta          Int?
+  gppPlanejamento6Comentario        String?
+  gppPlanejamento6Proposta          String?
+  gppLogistica7Resposta             Int?
+  gppLogistica7Comentario           String?
+  gppLogistica7Proposta             String?
+  gppLogistica8Resposta             Int?
+  gppLogistica8Comentario           String?
+  gppLogistica8Proposta             String?
+  gppLogistica9Resposta             Int?
+  gppLogistica9Comentario           String?
+  gppLogistica9Proposta             String?
+  gppLogistica10Resposta            Int?
+  gppLogistica10Comentario          String?
+  gppLogistica10Proposta            String?
+  gppLogistica11Resposta            Int?
+  gppLogistica11Comentario          String?
+  gppLogistica11Proposta            String?
+  gppLogistica12Resposta            Int?
+  gppLogistica12Comentario          String?
+  gppLogistica12Proposta            String?
+  gppValor13Resposta                Int?
+  gppValor13Comentario              String?
+  gppValor13Proposta                String?
+  gppValor14Resposta                Int?
+  gppValor14Comentario              String?
+  gppValor14Proposta                String?
+  gppValor15Resposta                Int?
+  gppValor15Comentario              String?
+  gppValor15Proposta                String?
+  gppFluxo16Resposta                Int?
+  gppFluxo16Comentario              String?
+  gppFluxo16Proposta                String?
+  gppFluxo17Resposta                Int?
+  gppFluxo17Comentario              String?
+  gppFluxo17Proposta                String?
+  gppFluxo18Resposta                Int?
+  gppFluxo18Comentario              String?
+  gppFluxo18Proposta                String?
+  gppFluxo19Resposta                Int?
+  gppFluxo19Comentario              String?
+  gppFluxo19Proposta                String?
+  gppFluxo20Resposta                Int?
+  gppFluxo20Comentario              String?
+  gppFluxo20Proposta                String?
+  gppFluxo21Resposta                Int?
+  gppFluxo21Comentario              String?
+  gppFluxo21Proposta                String?
+  gppFluxo22Resposta                Int?
+  gppFluxo22Comentario              String?
+  gppFluxo22Proposta                String?
+  gppQualidade23Resposta            Int?
+  gppQualidade23Comentario          String?
+  gppQualidade23Proposta            String?
+  gppQualidade24Resposta            Int?
+  gppQualidade24Comentario          String?
+  gppQualidade24Proposta            String?
+  gppQualidade25Resposta            Int?
+  gppQualidade25Comentario          String?
+  gppQualidade25Proposta            String?
+  gppQualidade26Resposta            Int?
+  gppQualidade26Comentario          String?
+  gppQualidade26Proposta            String?
+  gppQualidade27Resposta            Int?
+  gppQualidade27Comentario          String?
+  gppQualidade27Proposta            String?
+  gppQualidade28Resposta            Int?
+  gppQualidade28Comentario          String?
+  gppQualidade28Proposta            String?
+  gppProducao29Resposta             Int?
+  gppProducao29Comentario           String?
+  gppProducao29Proposta             String?
+  gppRegSanitaria1Resposta          Int?
+  gppRegSanitaria1Comentario        String?
+  gppRegSanitaria1Proposta          String?
+  gppRegSanitaria2Resposta          Int?
+  gppRegSanitaria2Comentario        String?
+  gppRegSanitaria2Proposta          String?
+  gppRegSanitaria3Resposta          Int?
+  gppRegSanitaria3Comentario        String?
+  gppRegSanitaria3Proposta          String?
+  gcEComercial1Resposta             Int?
+  gcEComercial1Comentario           String?
+  gcEComercial1Proposta             String?
+  gcEComercial2Resposta             Int?
+  gcEComercial2Comentario           String?
+  gcEComercial2Proposta             String?
+  gcEComercial3Resposta             Int?
+  gcEComercial3Comentario           String?
+  gcEComercial3Proposta             String?
+  gcEComercial4Resposta             Int?
+  gcEComercial4Comentario           String?
+  gcEComercial4Proposta             String?
+  gcEComercial5Resposta             Int?
+  gcEComercial5Comentario           String?
+  gcEComercial5Proposta             String?
+  gcEComercial6Resposta             Int?
+  gcEComercial6Comentario           String?
+  gcEComercial6Proposta             String?
+  gcEComercial7Resposta             Int?
+  gcEComercial7Comentario           String?
+  gcEComercial7Proposta             String?
+  gcEComercial8Resposta             Int?
+  gcEComercial8Comentario           String?
+  gcEComercial8Proposta             String?
+  gcEComercial9Resposta             Int?
+  gcEComercial9Comentario           String?
+  gcEComercial9Proposta             String?
+  gcMercado10Resposta               Int?
+  gcMercado10Comentario             String?
+  gcMercado10Proposta               String?
+  gcMercado11Resposta               Int?
+  gcMercado11Comentario             String?
+  gcMercado11Proposta               String?
+  gcMercado12Resposta               Int?
+  gcMercado12Comentario             String?
+  gcMercado12Proposta               String?
+  gcMercado13Resposta               Int?
+  gcMercado13Comentario             String?
+  gcMercado13Proposta               String?
+  gcMercado14Resposta               Int?
+  gcMercado14Comentario             String?
+  gcMercado14Proposta               String?
+  gcMercado15Resposta               Int?
+  gcMercado15Comentario             String?
+  gcMercado15Proposta               String?
+  gcComercial15Resposta             Int?
+  gcComercial15Comentario           String?
+  gcComercial15Proposta             String?
+  gcComercial16Resposta             Int?
+  gcComercial16Comentario           String?
+  gcComercial16Proposta             String?
+  gcComercial17Resposta             Int?
+  gcComercial17Comentario           String?
+  gcComercial17Proposta             String?
+  gcComercial18Resposta             Int?
+  gcComercial18Comentario           String?
+  gcComercial18Proposta             String?
+  gcComercial19Resposta             Int?
+  gcComercial19Comentario           String?
+  gcComercial19Proposta             String?
+  gcComercial20Resposta             Int?
+  gcComercial20Comentario           String?
+  gcComercial20Proposta             String?
+  gcModelo21Resposta                Int?
+  gcModelo21Comentario              String?
+  gcModelo21Proposta                String?
+  gcModelo22Resposta                Int?
+  gcModelo22Comentario              String?
+  gcModelo22Proposta                String?
+  gcModelo23Resposta                Int?
+  gcModelo23Comentario              String?
+  gcModelo23Proposta                String?
+  gcModelo24Resposta                Int?
+  gcModelo24Comentario              String?
+  gcModelo24Proposta                String?
+  gcModelo25Resposta                Int?
+  gcModelo25Comentario              String?
+  gcModelo25Proposta                String?
+  gcModelo26Resposta                Int?
+  gcModelo26Comentario              String?
+  gcModelo26Proposta                String?
+  gcModelo27Resposta                Int?
+  gcModelo27Comentario              String?
+  gcModelo27Proposta                String?
+  gfContas5Resposta                 Int?
+  gfContas5Comentario               String?
+  gfContas5Proposta                 String?
+  gfContas6Resposta                 Int?
+  gfContas6Comentario               String?
+  gfContas6Proposta                 String?
+  gfContas7Resposta                 Int?
+  gfContas7Comentario               String?
+  gfContas7Proposta                 String?
+  gfContas8Resposta                 Int?
+  gfContas8Comentario               String?
+  gfContas8Proposta                 String?
+  gfContas9Resposta                 Int?
+  gfContas9Comentario               String?
+  gfContas9Proposta                 String?
+  gfContas10Resposta                Int?
+  gfContas10Comentario              String?
+  gfContas10Proposta                String?
+  gfContas11Resposta                Int?
+  gfContas11Comentario              String?
+  gfContas11Proposta                String?
+  gfContas12Resposta                Int?
+  gfContas12Comentario              String?
+  gfContas12Proposta                String?
+  gfContas13Resposta                Int?
+  gfContas13Comentario              String?
+  gfContas13Proposta                String?
+  gfCaixa14Resposta                 Int?
+  gfCaixa14Comentario               String?
+  gfCaixa14Proposta                 String?
+  gfCaixa15Resposta                 Int?
+  gfCaixa15Comentario               String?
+  gfCaixa15Proposta                 String?
+  gfCaixa16Resposta                 Int?
+  gfCaixa16Comentario               String?
+  gfCaixa16Proposta                 String?
+  gfEstoque17Resposta               Int?
+  gfEstoque17Comentario             String?
+  gfEstoque17Proposta               String?
+  gfEstoque18Resposta               Int?
+  gfEstoque18Comentario             String?
+  gfEstoque18Proposta               String?
+  gfEstoque19Resposta               Int?
+  gfEstoque19Comentario             String?
+  gfEstoque19Proposta               String?
+  gfResultado20Resposta             Int?
+  gfResultado20Comentario           String?
+  gfResultado20Proposta             String?
+  gfResultado21Resposta             Int?
+  gfResultado21Comentario           String?
+  gfResultado21Proposta             String?
+  gfAnalise22Resposta               Int?
+  gfAnalise22Comentario             String?
+  gfAnalise22Proposta               String?
+  gfAnalise23Resposta               Int?
+  gfAnalise23Comentario             String?
+  gfAnalise23Proposta               String?
+  gfAnalise24Resposta               Int?
+  gfAnalise24Comentario             String?
+  gfAnalise24Proposta               String?
+  gfFiscal25Resposta                Int?
+  gfFiscal25Comentario              String?
+  gfFiscal25Proposta                String?
+  gfFiscal26Resposta                Int?
+  gfFiscal26Comentario              String?
+  gfFiscal26Proposta                String?
+  gfBalanco1Resposta                Int?
+  gfBalanco1Comentario              String?
+  gfBalanco1Proposta                String?
+  gfBalanco2Resposta                Int?
+  gfBalanco2Comentario              String?
+  gfBalanco2Proposta                String?
+  gfBalanco3Resposta                Int?
+  gfBalanco3Comentario              String?
+  gfBalanco3Proposta                String?
+  gfBalanco4Resposta                Int?
+  gfBalanco4Comentario              String?
+  gfBalanco4Proposta                String?
+  gpPOrganizacao1Resposta           Int?
+  gpPOrganizacao1Comentario         String?
+  gpPOrganizacao1Proposta           String?
+  gpPOrganizacao2Resposta           Int?
+  gpPOrganizacao2Comentario         String?
+  gpPOrganizacao2Proposta           String?
+  gpPOrganizacao3Resposta           Int?
+  gpPOrganizacao3Comentario         String?
+  gpPOrganizacao3Proposta           String?
+  gpPOrganizacao4Resposta           Int?
+  gpPOrganizacao4Comentario         String?
+  gpPOrganizacao4Proposta           String?
+  gpPOrganizacao5Resposta           Int?
+  gpPOrganizacao5Comentario         String?
+  gpPOrganizacao5Proposta           String?
+  gpPOrganizacao6Resposta           Int?
+  gpPOrganizacao6Comentario         String?
+  gpPOrganizacao6Proposta           String?
+  gpPOrganizacao7Resposta           Int?
+  gpPOrganizacao7Comentario         String?
+  gpPOrganizacao7Proposta           String?
+  gpPOrganizacao8Resposta           Int?
+  gpPOrganizacao8Comentario         String?
+  gpPOrganizacao8Proposta           String?
+  gpPOrganizacao9Resposta           Int?
+  gpPOrganizacao9Comentario         String?
+  gpPOrganizacao9Proposta           String?
+  gpPDesenvolvimento10Resposta      Int?
+  gpPDesenvolvimento10Comentario    String?
+  gpPDesenvolvimento10Proposta      String?
+  gpPDesenvolvimento11Resposta      Int?
+  gpPDesenvolvimento11Comentario    String?
+  gpPDesenvolvimento11Proposta      String?
+  gpPDesenvolvimento12Resposta      Int?
+  gpPDesenvolvimento12Comentario    String?
+  gpPDesenvolvimento12Proposta      String?
+  gpPDesenvolvimento13Resposta      Int?
+  gpPDesenvolvimento13Comentario    String?
+  gpPDesenvolvimento13Proposta      String?
+  gpTrabalho14Resposta              Int?
+  gpTrabalho14Comentario            String?
+  gpTrabalho14Proposta              String?
+  gpTrabalho15Resposta              Int?
+  gpTrabalho15Comentario            String?
+  gpTrabalho15Proposta              String?
+  gpTrabalho16Resposta              Int?
+  gpTrabalho16Comentario            String?
+  gpTrabalho16Proposta              String?
+  gpTrabalho17Resposta              Int?
+  gpTrabalho17Comentario            String?
+  gpTrabalho17Proposta              String?
+  gpGeracao18Resposta               Int?
+  gpGeracao18Comentario             String?
+  gpGeracao18Proposta               String?
+  gpGeracao19Resposta               Int?
+  gpGeracao19Comentario             String?
+  gpGeracao19Proposta               String?
+  gpGeracao20Resposta               Int?
+  gpGeracao20Comentario             String?
+  gpGeracao20Proposta               String?
+  gsSocioambiental1Resposta         Int?
+  gsSocioambiental1Comentario       String?
+  gsSocioambiental1Proposta         String?
+  gsSocioambiental2Resposta         Int?
+  gsSocioambiental2Comentario       String?
+  gsSocioambiental2Proposta         String?
+  gsSocioambiental3Resposta         Int?
+  gsSocioambiental3Comentario       String?
+  gsSocioambiental3Proposta         String?
+  gsSocioambiental4Resposta         Int?
+  gsSocioambiental4Comentario       String?
+  gsSocioambiental4Proposta         String?
+  gsSocioambiental5Resposta         Int?
+  gsSocioambiental5Comentario       String?
+  gsSocioambiental5Proposta         String?
+  gsAmbiental6Resposta              Int?
+  gsAmbiental6Comentario            String?
+  gsAmbiental6Proposta              String?
+  gsAmbiental7Resposta              Int?
+  gsAmbiental7Comentario            String?
+  gsAmbiental7Proposta              String?
+  gsAmbiental8Resposta              Int?
+  gsAmbiental8Comentario            String?
+  gsAmbiental8Proposta              String?
+  gsAmbiental9Resposta              Int?
+  gsAmbiental9Comentario            String?
+  gsAmbiental9Proposta              String?
+  gsRegAmbiental10Resposta          Int?
+  gsRegAmbiental10Comentario        String?
+  gsRegAmbiental10Proposta          String?
+  gsRegAmbiental11Resposta          Int?
+  gsRegAmbiental11Comentario        String?
+  gsRegAmbiental11Proposta          String?
+  gsRegAmbiental12Resposta          Int?
+  gsRegAmbiental12Comentario        String?
+  gsRegAmbiental12Proposta          String?
+  gsRegAmbiental13Resposta          Int?
+  gsRegAmbiental13Comentario        String?
+  gsRegAmbiental13Proposta          String?
+  gsRegAmbiental14Resposta          Int?
+  gsRegAmbiental14Comentario        String?
+  gsRegAmbiental14Proposta          String?
+  gsImpactosAmbiental15Resposta     Int?
+  gsImpactosAmbiental15Comentario   String?
+  gsImpactosAmbiental15Proposta     String?
+  gsImpactosAmbiental16Resposta     Int?
+  gsImpactosAmbiental16Comentario   String?
+  gsImpactosAmbiental16Proposta     String?
+  gsImpactosAmbiental17Resposta     Int?
+  gsImpactosAmbiental17Comentario   String?
+  gsImpactosAmbiental17Proposta     String?
+  gsImpactosAmbiental18Resposta     Int?
+  gsImpactosAmbiental18Comentario   String?
+  gsImpactosAmbiental18Proposta     String?
+  gsImpactosAmbiental19Resposta     Int?
+  gsImpactosAmbiental19Comentario   String?
+  gsImpactosAmbiental19Proposta     String?
+  gsImpactosAmbiental20Resposta     Int?
+  gsImpactosAmbiental20Comentario   String?
+  gsImpactosAmbiental20Proposta     String?
+  gsImpactosAmbiental21Resposta     Int?
+  gsImpactosAmbiental21Comentario   String?
+  gsImpactosAmbiental21Proposta     String?
+  gsImpactosAmbiental22Resposta     Int?
+  gsImpactosAmbiental22Comentario   String?
+  gsImpactosAmbiental22Proposta     String?
+  giIic1Resposta                    Int?
+  giIic1Comentario                  String?
+  giIic1Proposta                    String?
+  giIic2Resposta                    Int?
+  giIic2Comentario                  String?
+  giIic2Proposta                    String?
+  giIic3Resposta                    Int?
+  giIic3Comentario                  String?
+  giIic3Proposta                    String?
+  giIic4Resposta                    Int?
+  giIic4Comentario                  String?
+  giIic4Proposta                    String?
+  giIic5Resposta                    Int?
+  giIic5Comentario                  String?
+  giIic5Proposta                    String?
+  giMar6Resposta                    Int?
+  giMar6Comentario                  String?
+  giMar6Proposta                    String?
+  giMar7Resposta                    Int?
+  giMar7Comentario                  String?
+  giMar7Proposta                    String?
+  giMar8Resposta                    Int?
+  giMar8Comentario                  String?
+  giMar8Proposta                    String?
+  giMar9Resposta                    Int?
+  giMar9Comentario                  String?
+  giMar9Proposta                    String?
+  giTime10Resposta                  Int?
+  giTime10Comentario                String?
+  giTime10Proposta                  String?
+  giTime11Resposta                  Int?
+  giTime11Comentario                String?
+  giTime11Proposta                  String?
+  giTime12Resposta                  Int?
+  giTime12Comentario                String?
+  giTime12Proposta                  String?
+  giTime13Resposta                  Int?
+  giTime13Comentario                String?
+  giTime13Proposta                  String?
+  giTime14Resposta                  Int?
+  giTime14Comentario                String?
+  giTime14Proposta                  String?
+  isRecursosNaturais5Resposta       Int?
+  isRecursosNaturais5Comentario     String?
+  isRecursosNaturais5Proposta       String?
+  isRecursosNaturais6Resposta       Int?
+  isRecursosNaturais6Comentario     String?
+  isRecursosNaturais6Proposta       String?
+  isRecursosNaturais7Resposta       Int?
+  isRecursosNaturais7Comentario     String?
+  isRecursosNaturais7Proposta       String?
+  isRecursosNaturais8Resposta       Int?
+  isRecursosNaturais8Comentario     String?
+  isRecursosNaturais8Proposta       String?
+  isAgua9Resposta                   Int?
+  isAgua9Comentario                 String?
+  isAgua9Proposta                   String?
+  isAgua10Resposta                  Int?
+  isAgua10Comentario                String?
+  isAgua10Proposta                  String?
+  isConfortoAmbiental11Resposta     Int?
+  isConfortoAmbiental11Comentario   String?
+  isConfortoAmbiental11Proposta     String?
+  isConfortoAmbiental12Resposta     Int?
+  isConfortoAmbiental12Comentario   String?
+  isConfortoAmbiental12Proposta     String?
+  isConfortoAmbiental13Resposta     Int?
+  isConfortoAmbiental13Comentario   String?
+  isConfortoAmbiental13Proposta     String?
+  isConfortoAmbiental14Resposta     Int?
+  isConfortoAmbiental14Comentario   String?
+  isConfortoAmbiental14Proposta     String?
+  isResiduos15Resposta              Int?
+  isResiduos15Comentario            String?
+  isResiduos15Proposta              String?
+  isResiduos16Resposta              Int?
+  isResiduos16Comentario            String?
+  isResiduos16Proposta              String?
+  isResiduos17Resposta              Int?
+  isResiduos17Comentario            String?
+  isResiduos17Proposta              String?
+  isResiduos18Resposta              Int?
+  isResiduos18Comentario            String?
+  isResiduos18Proposta              String?
+  isEficienciaEnergetica1Resposta   Int?
+  isEficienciaEnergetica1Comentario String?
+  isEficienciaEnergetica1Proposta   String?
+  isEficienciaEnergetica2Resposta   Int?
+  isEficienciaEnergetica2Comentario String?
+  isEficienciaEnergetica2Proposta   String?
+  isEficienciaEnergetica3Resposta   Int?
+  isEficienciaEnergetica3Comentario String?
+  isEficienciaEnergetica3Proposta   String?
+  isEficienciaEnergetica4Resposta   Int?
+  isEficienciaEnergetica4Comentario String?
+  isEficienciaEnergetica4Proposta   String?
+  metaInstanceId                    String? @map("meta_instance_id")
+  metaInstanceName                  String? @map("meta_instance_name")
+  removido                          Boolean            @default(false)
+  idTecnico                         Int?    @map("id_tecnico")
+  abrangenciaPj                     AbrangenciaPj[]
+  abrangenciaSocio                  AbrangenciaSocio[]
+  arquivos                          Arquivo[]
+  fotos                             Foto[]
+  producoes                         Producao[]
+
+  @@map("pinovara")
+  @@schema("pinovara")
+}
+
+model AbrangenciaPj {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  razaoSocial       String?
+  sigla             String?
+  cnpjPj            String?
+  numSociosCaf      Int?
+  numSociosTotal    Int?
+  estado            Int?
+  municipio         Int?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_abrangencia_pj")
+  @@schema("pinovara")
+}
+
+model AbrangenciaSocio {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  numSocios         Int?
+  estado            Int?
+  municipio         Int?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_abrangencia_socio")
+  @@schema("pinovara")
+}
+
+model Arquivo {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  arquivo           String?
+  obs               String?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_arquivo")
+  @@schema("pinovara")
+}
+
+model Foto {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  grupo             Int?
+  foto              String?
+  obs               String?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_foto")
+  @@schema("pinovara")
+}
+
+model Producao {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  cultura           String?
+  anual             Decimal?    @db.Decimal(16, 2)
+  mensal            Decimal?    @db.Decimal(16, 2)
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_producao")
+  @@schema("pinovara")
+}

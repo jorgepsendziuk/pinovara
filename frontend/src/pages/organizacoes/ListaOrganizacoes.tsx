@@ -5,11 +5,12 @@ interface Organizacao {
   id: number;
   nome: string;
   cnpj: string;
-  estado: string;
-  municipio: string;
-  dataVisita: string;
-  status: 'completo' | 'pendente' | 'rascunho';
-  idTecnico: number;
+  estado: number | null;
+  municipio: number | null;
+  gpsLat: number | null;
+  gpsLng: number | null;
+  telefone: string | null;
+  email: string | null;
 }
 
 interface Filtros {
@@ -54,13 +55,8 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       setLoading(true);
       const token = localStorage.getItem('@pinovara:token');
       
-      const queryParams = new URLSearchParams({
-        pagina: paginaAtual.toString(),
-        limite: itensPorPagina.toString(),
-        ...filtros
-      });
-
-      const response = await fetch(`${API_BASE}/organizacoes?${queryParams}`, {
+      // Por enquanto, não usar query parameters pois o backend não suporta
+      const response = await fetch(`${API_BASE}/organizacoes`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -72,8 +68,9 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       }
 
       const data = await response.json();
-      setOrganizacoes(data.organizacoes || []);
-      setTotalPaginas(data.totalPaginas || 1);
+      // A API retorna um array direto, não um objeto com propriedade organizacoes
+      setOrganizacoes(Array.isArray(data) ? data : []);
+      setTotalPaginas(1); // Por enquanto, sem paginação
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -123,17 +120,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusMap = {
-      'completo': { text: 'Completo', class: 'status-complete' },
-      'pendente': { text: 'Pendente', class: 'status-pending' },
-      'rascunho': { text: 'Rascunho', class: 'status-draft' }
-    };
-    
-    const statusInfo = statusMap[status as keyof typeof statusMap] || { text: status, class: 'status-unknown' };
-    
-    return <span className={`status-badge ${statusInfo.class}`}>{statusInfo.text}</span>;
-  };
 
   if (loading) {
     return (
@@ -250,7 +236,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                     <th>Nome</th>
                     <th>CNPJ</th>
                     <th>Localização</th>
-                    <th>Data Visita</th>
+                    <th>Telefone</th>
                     <th>Status</th>
                     <th>Ações</th>
                   </tr>
@@ -267,14 +253,16 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                       <td>{org.cnpj || '-'}</td>
                       <td>
                         <div className="location-info">
-                          <span>{org.municipio}</span>
-                          <small>{org.estado}</small>
+                          <span>{org.municipio || '-'}</span>
+                          <small>{org.estado || '-'}</small>
                         </div>
                       </td>
                       <td>
-                        {org.dataVisita ? new Date(org.dataVisita).toLocaleDateString('pt-BR') : '-'}
+                        {org.telefone || '-'}
                       </td>
-                      <td>{getStatusBadge(org.status)}</td>
+                      <td>
+                        <span className="status-badge status-complete">Ativo</span>
+                      </td>
                       <td>
                         <div className="action-buttons">
                           <button 
