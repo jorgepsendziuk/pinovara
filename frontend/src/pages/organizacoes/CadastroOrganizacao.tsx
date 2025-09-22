@@ -1,616 +1,1183 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { organizacaoAPI } from '../../services/api';
 
-interface DadosBasicos {
+interface Estado {
+  id: number;
   nome: string;
-  cnpj: string;
-  dataFundacao: string;
-  telefone: string;
-  email: string;
-  endereco: string;
-  bairro: string;
-  cep: string;
+  uf: string;
 }
 
-interface Caracteristicas {
-  totalSocios: number;
-  totalSociosCaf: number;
-  distintosCaf: number;
-  sociosPaa: number;
-  naosociosPaa: number;
-  sociosPnae: number;
-  naosociosPnae: number;
-  ativosTotal: number;
-  ativosCaf: number;
+interface Municipio {
+  id: number;
+  nome: string;
+  codigo_ibge: number;
+  estadoId: number;
 }
 
-interface Localizacao {
-  estado: string;
-  municipio: string;
-  gpsLat: number;
-  gpsLng: number;
-  gpsAlt: number;
-  gpsAcc: number;
-}
-
-interface Arquivos {
-  fotos: File[];
-  documentos: File[];
-  observacoes: string;
+interface Funcao {
+  id: number;
+  nome: string;
+  descricao?: string;
 }
 
 interface CadastroOrganizacaoProps {
   onNavigate: (view: 'dashboard' | 'lista' | 'cadastro' | 'detalhes', organizacaoId?: number) => void;
 }
 
-function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
-  const { } = useAuth();
-  const [stepAtual, setStepAtual] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+type AbaAtiva = 'basicos' | 'endereco' | 'representante' | 'caracteristicas' | 'questionarios';
 
-  const [dadosBasicos, setDadosBasicos] = useState<DadosBasicos>({
+function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('basicos');
+  const [erros, setErros] = useState<Record<string, string>>({});
+
+  // Estados auxiliares
+  const [estados, setEstados] = useState<Estado[]>([]);
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
+  const [funcoes, setFuncoes] = useState<Funcao[]>([]);
+
+  // Dados do formulário
+  const [formData, setFormData] = useState({
+    // ========== DADOS BÁSICOS ==========
     nome: '',
     cnpj: '',
-    dataFundacao: '',
     telefone: '',
     email: '',
-    endereco: '',
-    bairro: '',
-    cep: ''
-  });
-
-  const [caracteristicas, setCaracteristicas] = useState<Caracteristicas>({
-    totalSocios: 0,
-    totalSociosCaf: 0,
-    distintosCaf: 0,
-    sociosPaa: 0,
-    naosociosPaa: 0,
-    sociosPnae: 0,
-    naosociosPnae: 0,
-    ativosTotal: 0,
-    ativosCaf: 0
-  });
-
-  const [localizacao, setLocalizacao] = useState<Localizacao>({
+    dataFundacao: '',
+    
+    // ========== LOCALIZAÇÃO ==========
     estado: '',
     municipio: '',
-    gpsLat: 0,
-    gpsLng: 0,
-    gpsAlt: 0,
-    gpsAcc: 0
+    gpsLat: '',
+    gpsLng: '',
+    gpsAlt: '',
+    gpsAcc: '',
+    
+    // ========== ENDEREÇO ORGANIZAÇÃO ==========
+    organizacaoEndLogradouro: '',
+    organizacaoEndBairro: '',
+    organizacaoEndComplemento: '',
+    organizacaoEndNumero: '',
+    organizacaoEndCep: '',
+    
+    // ========== REPRESENTANTE ==========
+    representanteNome: '',
+    representanteCpf: '',
+    representanteRg: '',
+    representanteTelefone: '',
+    representanteEmail: '',
+    representanteEndLogradouro: '',
+    representanteEndBairro: '',
+    representanteEndComplemento: '',
+    representanteEndNumero: '',
+    representanteEndCep: '',
+    representanteFuncao: '',
+    
+    // ========== CARACTERÍSTICAS SOCIAIS ==========
+    caracteristicasNTotalSocios: '',
+    caracteristicasNTotalSociosCaf: '',
+    caracteristicasNDistintosCaf: '',
+    caracteristicasNSociosPaa: '',
+    caracteristicasNNaosociosPaa: '',
+    caracteristicasNSociosPnae: '',
+    caracteristicasNNaosociosPnae: '',
+    caracteristicasNAtivosTotal: '',
+    caracteristicasNAtivosCaf: '',
+    caracteristicasNNaosocioOpTotal: '',
+    caracteristicasNNaosocioOpCaf: '',
+    caracteristicasNIngressaramTotal12Meses: '',
+    caracteristicasNIngressaramCaf12Meses: '',
+    
+    // ========== CARACTERÍSTICAS POR GÊNERO ==========
+    caracteristicasTaAMulher: '',
+    caracteristicasTaAHomem: '',
+    caracteristicasTaEMulher: '',
+    caracteristicasTaEHomem: '',
+    caracteristicasTaOMulher: '',
+    caracteristicasTaOHomem: '',
+    caracteristicasTaIMulher: '',
+    caracteristicasTaIHomem: '',
+    caracteristicasTaPMulher: '',
+    caracteristicasTaPHomem: '',
+    caracteristicasTaAfMulher: '',
+    caracteristicasTaAfHomem: '',
+    caracteristicasTaQMulher: '',
+    caracteristicasTaQHomem: '',
+    
+    // ========== CARACTERÍSTICAS CAFÉ ==========
+    caracteristicasTaCafConvencional: '',
+    caracteristicasTaCafAgroecologico: '',
+    caracteristicasTaCafTransicao: '',
+    caracteristicasTaCafOrganico: '',
+    
+    // ========== FLAGS ==========
+    simNaoProducao: '',
+    simNaoFile: '',
+    simNaoPj: '',
+    simNaoSocio: '',
+    
+    // ========== OBSERVAÇÕES ==========
+    obs: ''
   });
 
-  const [arquivos, setArquivos] = useState<Arquivos>({
-    fotos: [],
-    documentos: [],
-    observacoes: ''
-  });
+  // Carregar dados auxiliares
+  useEffect(() => {
+    carregarDadosAuxiliares();
+  }, []);
 
-  const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
+  const carregarDadosAuxiliares = async () => {
+    try {
+      // Simular carregamento de estados, municípios e funções
+      // Em produção, viria de APIs específicas
+      setEstados([
+        { id: 1, nome: 'Minas Gerais', uf: 'MG' },
+        { id: 2, nome: 'Bahia', uf: 'BA' },
+        { id: 3, nome: 'Espírito Santo', uf: 'ES' },
+        { id: 4, nome: 'São Paulo', uf: 'SP' }
+      ]);
 
-  const steps = [
-    { id: 1, title: 'Dados Básicos', icon: '📝' },
-    { id: 2, title: 'Características', icon: '📊' },
-    { id: 3, title: 'Localização', icon: '📍' },
-    { id: 4, title: 'Arquivos', icon: '📎' }
-  ];
+      setMunicipios([
+        { id: 1, nome: 'Diamantina', codigo_ibge: 3120904, estadoId: 1 },
+        { id: 2, nome: 'Belo Horizonte', codigo_ibge: 3106200, estadoId: 1 },
+        { id: 3, nome: 'Salvador', codigo_ibge: 2927408, estadoId: 2 },
+        { id: 4, nome: 'Vitória', codigo_ibge: 3205309, estadoId: 3 }
+      ]);
 
-  const handleDadosBasicosChange = (campo: keyof DadosBasicos, valor: string) => {
-    setDadosBasicos(prev => ({ ...prev, [campo]: valor }));
-  };
-
-  const handleCaracteristicasChange = (campo: keyof Caracteristicas, valor: number) => {
-    setCaracteristicas(prev => ({ ...prev, [campo]: valor }));
-  };
-
-  const handleLocalizacaoChange = (campo: keyof Localizacao, valor: string | number) => {
-    setLocalizacao(prev => ({ ...prev, [campo]: valor }));
-  };
-
-  const handleFileUpload = (tipo: 'fotos' | 'documentos', files: FileList | null) => {
-    if (files) {
-      setArquivos(prev => ({
-        ...prev,
-        [tipo]: [...prev[tipo], ...Array.from(files)]
-      }));
+      setFuncoes([
+        { id: 1, nome: 'Presidente', descricao: 'Presidente da organização' },
+        { id: 2, nome: 'Vice-Presidente', descricao: 'Vice-Presidente da organização' },
+        { id: 3, nome: 'Secretário', descricao: 'Secretário da organização' },
+        { id: 4, nome: 'Tesoureiro', descricao: 'Tesoureiro da organização' },
+        { id: 5, nome: 'Diretor', descricao: 'Diretor da organização' },
+        { id: 6, nome: 'Coordenador', descricao: 'Coordenador da organização' },
+        { id: 7, nome: 'Outro', descricao: 'Outra função' }
+      ]);
+    } catch (error) {
+      console.error('Erro ao carregar dados auxiliares:', error);
     }
   };
 
-  const removeFile = (tipo: 'fotos' | 'documentos', index: number) => {
-    setArquivos(prev => ({
+  const handleInputChange = (campo: string, valor: string) => {
+    setFormData(prev => ({
       ...prev,
-      [tipo]: prev[tipo].filter((_, i) => i !== index)
+      [campo]: valor
     }));
-  };
-
-  const nextStep = () => {
-    if (stepAtual < steps.length) {
-      setStepAtual(stepAtual + 1);
+    
+    // Limpar erro do campo quando usuário começar a digitar
+    if (erros[campo]) {
+      setErros(prev => {
+        const novosErros = { ...prev };
+        delete novosErros[campo];
+        return novosErros;
+      });
     }
   };
 
-  const prevStep = () => {
-    if (stepAtual > 1) {
-      setStepAtual(stepAtual - 1);
+  const validarFormulario = (): boolean => {
+    const novosErros: Record<string, string> = {};
+
+    // Validações básicas
+    if (!formData.nome.trim()) {
+      novosErros.nome = 'Nome da organização é obrigatório';
     }
+
+    // Validação de CNPJ (se fornecido)
+    if (formData.cnpj && formData.cnpj.length !== 14) {
+      novosErros.cnpj = 'CNPJ deve ter 14 dígitos';
+    }
+
+    // Validação de CPF do representante (se fornecido)
+    if (formData.representanteCpf && formData.representanteCpf.length !== 11) {
+      novosErros.representanteCpf = 'CPF deve ter 11 dígitos';
+    }
+
+    // Validação de email
+    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+      novosErros.email = 'Email inválido';
+    }
+
+    if (formData.representanteEmail && !/\S+@\S+\.\S+/.test(formData.representanteEmail)) {
+      novosErros.representanteEmail = 'Email do representante inválido';
+    }
+
+    // Validação de CEP
+    if (formData.organizacaoEndCep && formData.organizacaoEndCep.length !== 8) {
+      novosErros.organizacaoEndCep = 'CEP deve ter 8 dígitos';
+    }
+
+    if (formData.representanteEndCep && formData.representanteEndCep.length !== 8) {
+      novosErros.representanteEndCep = 'CEP do representante deve ter 8 dígitos';
+    }
+
+    setErros(novosErros);
+    return Object.keys(novosErros).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validarFormulario()) {
+      return;
+    }
+
     try {
       setLoading(true);
-      setError(null);
 
-      const token = localStorage.getItem('@pinovara:token');
+      // Preparar dados para envio
+      const dadosParaEnvio: any = {
+        nome: formData.nome.trim(),
+        cnpj: formData.cnpj || null,
+        telefone: formData.telefone || null,
+        email: formData.email || null,
+        dataFundacao: formData.dataFundacao || null,
+        estado: formData.estado ? parseInt(formData.estado) : null,
+        municipio: formData.municipio ? parseInt(formData.municipio) : null,
+        gpsLat: formData.gpsLat ? parseFloat(formData.gpsLat) : null,
+        gpsLng: formData.gpsLng ? parseFloat(formData.gpsLng) : null,
+        gpsAlt: formData.gpsAlt ? parseFloat(formData.gpsAlt) : null,
+        gpsAcc: formData.gpsAcc ? parseFloat(formData.gpsAcc) : null,
+        
+        // Endereço
+        organizacaoEndLogradouro: formData.organizacaoEndLogradouro || null,
+        organizacaoEndBairro: formData.organizacaoEndBairro || null,
+        organizacaoEndComplemento: formData.organizacaoEndComplemento || null,
+        organizacaoEndNumero: formData.organizacaoEndNumero || null,
+        organizacaoEndCep: formData.organizacaoEndCep || null,
+        
+        // Representante
+        representanteNome: formData.representanteNome || null,
+        representanteCpf: formData.representanteCpf || null,
+        representanteRg: formData.representanteRg || null,
+        representanteTelefone: formData.representanteTelefone || null,
+        representanteEmail: formData.representanteEmail || null,
+        representanteEndLogradouro: formData.representanteEndLogradouro || null,
+        representanteEndBairro: formData.representanteEndBairro || null,
+        representanteEndComplemento: formData.representanteEndComplemento || null,
+        representanteEndNumero: formData.representanteEndNumero || null,
+        representanteEndCep: formData.representanteEndCep || null,
+        representanteFuncao: formData.representanteFuncao ? parseInt(formData.representanteFuncao) : null,
+        
+        // Características
+        caracteristicasNTotalSocios: formData.caracteristicasNTotalSocios ? parseInt(formData.caracteristicasNTotalSocios) : null,
+        caracteristicasNTotalSociosCaf: formData.caracteristicasNTotalSociosCaf ? parseInt(formData.caracteristicasNTotalSociosCaf) : null,
+        caracteristicasNAtivosTotal: formData.caracteristicasNAtivosTotal ? parseInt(formData.caracteristicasNAtivosTotal) : null,
+        
+        // Observações
+        obs: formData.obs || null
+      };
+
+      const novaOrganizacao = await organizacaoAPI.create(dadosParaEnvio);
       
-      const formData = new FormData();
-      
-      // Adicionar dados básicos
-      Object.entries(dadosBasicos).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
+      alert('✅ Organização cadastrada com sucesso!');
+      onNavigate('detalhes', novaOrganizacao.id);
 
-      // Adicionar características
-      Object.entries(caracteristicas).forEach(([key, value]) => {
-        formData.append(key, value.toString());
-      });
-
-      // Adicionar localização
-      Object.entries(localizacao).forEach(([key, value]) => {
-        formData.append(key, value.toString());
-      });
-
-      // Adicionar arquivos
-      arquivos.fotos.forEach((file, index) => {
-        formData.append(`fotos[${index}]`, file);
-      });
-
-      arquivos.documentos.forEach((file, index) => {
-        formData.append(`documentos[${index}]`, file);
-      });
-
-      formData.append('observacoes', arquivos.observacoes);
-
-      const response = await fetch(`${API_BASE}/organizacoes`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao cadastrar organização');
-      }
-
-      const result = await response.json();
-
-      // Navegar para a página de edição da organização criada
-      onNavigate('edicao', result.id);
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao cadastrar organização');
+    } catch (error) {
+      console.error('Erro ao cadastrar organização:', error);
+      alert('❌ Erro ao cadastrar organização: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     } finally {
       setLoading(false);
     }
   };
 
-  const renderStepContent = () => {
-    switch (stepAtual) {
-      case 1:
-        return (
-          <div className="form-step">
-            <h3>📝 Dados Básicos da Organização</h3>
-            <div className="form-grid">
-              <div className="form-group full-width">
-                <label>Nome da Organização *</label>
-                <input
-                  type="text"
-                  value={dadosBasicos.nome}
-                  onChange={(e) => handleDadosBasicosChange('nome', e.target.value)}
-                  required
-                />
-              </div>
+  const municipiosFiltrados = municipios.filter(
+    m => !formData.estado || m.estadoId === parseInt(formData.estado)
+  );
 
-              <div className="form-group">
-                <label>CNPJ</label>
-                <input
-                  type="text"
-                  value={dadosBasicos.cnpj}
-                  onChange={(e) => handleDadosBasicosChange('cnpj', e.target.value)}
-                  placeholder="00.000.000/0000-00"
-                />
-              </div>
+  const renderAbaDadosBasicos = () => (
+    <div className="aba-content">
+      <h3>📋 Dados Básicos da Organização</h3>
+      
+      <div className="form-grid">
+        <div className="form-group">
+          <label htmlFor="nome">Nome da Organização *</label>
+          <input
+            type="text"
+            id="nome"
+            value={formData.nome}
+            onChange={(e) => handleInputChange('nome', e.target.value)}
+            className={erros.nome ? 'error' : ''}
+            placeholder="Ex: Cooperativa de Agricultores Familiares"
+            maxLength={255}
+          />
+          {erros.nome && <span className="error-message">{erros.nome}</span>}
+        </div>
 
-              <div className="form-group">
-                <label>Data de Fundação</label>
-                <input
-                  type="date"
-                  value={dadosBasicos.dataFundacao}
-                  onChange={(e) => handleDadosBasicosChange('dataFundacao', e.target.value)}
-                />
-              </div>
+        <div className="form-group">
+          <label htmlFor="cnpj">CNPJ</label>
+          <input
+            type="text"
+            id="cnpj"
+            value={formData.cnpj}
+            onChange={(e) => handleInputChange('cnpj', e.target.value.replace(/\D/g, ''))}
+            className={erros.cnpj ? 'error' : ''}
+            placeholder="00000000000000"
+            maxLength={14}
+          />
+          {erros.cnpj && <span className="error-message">{erros.cnpj}</span>}
+        </div>
 
-              <div className="form-group">
-                <label>Telefone</label>
-                <input
-                  type="tel"
-                  value={dadosBasicos.telefone}
-                  onChange={(e) => handleDadosBasicosChange('telefone', e.target.value)}
-                  placeholder="(00) 00000-0000"
-                />
-              </div>
+        <div className="form-group">
+          <label htmlFor="telefone">Telefone</label>
+          <input
+            type="text"
+            id="telefone"
+            value={formData.telefone}
+            onChange={(e) => handleInputChange('telefone', e.target.value)}
+            placeholder="(XX) XXXXX-XXXX"
+            maxLength={15}
+          />
+        </div>
 
-              <div className="form-group">
-                <label>E-mail</label>
-                <input
-                  type="email"
-                  value={dadosBasicos.email}
-                  onChange={(e) => handleDadosBasicosChange('email', e.target.value)}
-                />
-              </div>
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            value={formData.email}
+            onChange={(e) => handleInputChange('email', e.target.value)}
+            className={erros.email ? 'error' : ''}
+            placeholder="organizacao@exemplo.com"
+          />
+          {erros.email && <span className="error-message">{erros.email}</span>}
+        </div>
 
-              <div className="form-group full-width">
-                <label>Endereço</label>
-                <input
-                  type="text"
-                  value={dadosBasicos.endereco}
-                  onChange={(e) => handleDadosBasicosChange('endereco', e.target.value)}
-                />
-              </div>
+        <div className="form-group">
+          <label htmlFor="dataFundacao">Data de Fundação</label>
+          <input
+            type="date"
+            id="dataFundacao"
+            value={formData.dataFundacao}
+            onChange={(e) => handleInputChange('dataFundacao', e.target.value)}
+          />
+        </div>
 
-              <div className="form-group">
-                <label>Bairro</label>
-                <input
-                  type="text"
-                  value={dadosBasicos.bairro}
-                  onChange={(e) => handleDadosBasicosChange('bairro', e.target.value)}
-                />
-              </div>
+        <div className="form-group">
+          <label htmlFor="estado">Estado</label>
+          <select
+            id="estado"
+            value={formData.estado}
+            onChange={(e) => {
+              handleInputChange('estado', e.target.value);
+              handleInputChange('municipio', ''); // Reset município
+            }}
+          >
+            <option value="">Selecione o estado</option>
+            {estados.map(estado => (
+              <option key={estado.id} value={estado.id}>
+                {estado.nome} ({estado.uf})
+              </option>
+            ))}
+          </select>
+        </div>
 
-              <div className="form-group">
-                <label>CEP</label>
-                <input
-                  type="text"
-                  value={dadosBasicos.cep}
-                  onChange={(e) => handleDadosBasicosChange('cep', e.target.value)}
-                  placeholder="00000-000"
-                />
-              </div>
+        <div className="form-group">
+          <label htmlFor="municipio">Município</label>
+          <select
+            id="municipio"
+            value={formData.municipio}
+            onChange={(e) => handleInputChange('municipio', e.target.value)}
+            disabled={!formData.estado}
+          >
+            <option value="">Selecione o município</option>
+            {municipiosFiltrados.map(municipio => (
+              <option key={municipio.id} value={municipio.id}>
+                {municipio.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <h4>📍 Coordenadas GPS</h4>
+      <div className="form-grid">
+        <div className="form-group">
+          <label htmlFor="gpsLat">Latitude</label>
+          <input
+            type="number"
+            id="gpsLat"
+            value={formData.gpsLat}
+            onChange={(e) => handleInputChange('gpsLat', e.target.value)}
+            placeholder="-18.24068"
+            step="any"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="gpsLng">Longitude</label>
+          <input
+            type="number"
+            id="gpsLng"
+            value={formData.gpsLng}
+            onChange={(e) => handleInputChange('gpsLng', e.target.value)}
+            placeholder="-43.60235"
+            step="any"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="gpsAlt">Altitude</label>
+          <input
+            type="number"
+            id="gpsAlt"
+            value={formData.gpsAlt}
+            onChange={(e) => handleInputChange('gpsAlt', e.target.value)}
+            placeholder="1200"
+            step="any"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="gpsAcc">Precisão GPS</label>
+          <input
+            type="number"
+            id="gpsAcc"
+            value={formData.gpsAcc}
+            onChange={(e) => handleInputChange('gpsAcc', e.target.value)}
+            placeholder="5.0"
+            step="any"
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAbaEndereco = () => (
+    <div className="aba-content">
+      <h3>🏠 Endereço da Organização</h3>
+      
+      <div className="form-grid">
+        <div className="form-group">
+          <label htmlFor="organizacaoEndLogradouro">Logradouro</label>
+          <input
+            type="text"
+            id="organizacaoEndLogradouro"
+            value={formData.organizacaoEndLogradouro}
+            onChange={(e) => handleInputChange('organizacaoEndLogradouro', e.target.value)}
+            placeholder="Rua, Avenida, etc."
+            maxLength={255}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="organizacaoEndNumero">Número</label>
+          <input
+            type="text"
+            id="organizacaoEndNumero"
+            value={formData.organizacaoEndNumero}
+            onChange={(e) => handleInputChange('organizacaoEndNumero', e.target.value)}
+            placeholder="123"
+            maxLength={10}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="organizacaoEndBairro">Bairro</label>
+          <input
+            type="text"
+            id="organizacaoEndBairro"
+            value={formData.organizacaoEndBairro}
+            onChange={(e) => handleInputChange('organizacaoEndBairro', e.target.value)}
+            placeholder="Centro"
+            maxLength={100}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="organizacaoEndComplemento">Complemento</label>
+          <input
+            type="text"
+            id="organizacaoEndComplemento"
+            value={formData.organizacaoEndComplemento}
+            onChange={(e) => handleInputChange('organizacaoEndComplemento', e.target.value)}
+            placeholder="Sala 101, Andar 2, etc."
+            maxLength={100}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="organizacaoEndCep">CEP</label>
+          <input
+            type="text"
+            id="organizacaoEndCep"
+            value={formData.organizacaoEndCep}
+            onChange={(e) => handleInputChange('organizacaoEndCep', e.target.value.replace(/\D/g, ''))}
+            className={erros.organizacaoEndCep ? 'error' : ''}
+            placeholder="00000000"
+            maxLength={8}
+          />
+          {erros.organizacaoEndCep && <span className="error-message">{erros.organizacaoEndCep}</span>}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAbaRepresentante = () => (
+    <div className="aba-content">
+      <h3>👤 Dados do Representante</h3>
+      
+      <div className="form-grid">
+        <div className="form-group">
+          <label htmlFor="representanteNome">Nome do Representante</label>
+          <input
+            type="text"
+            id="representanteNome"
+            value={formData.representanteNome}
+            onChange={(e) => handleInputChange('representanteNome', e.target.value)}
+            placeholder="Nome completo"
+            maxLength={255}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="representanteCpf">CPF</label>
+          <input
+            type="text"
+            id="representanteCpf"
+            value={formData.representanteCpf}
+            onChange={(e) => handleInputChange('representanteCpf', e.target.value.replace(/\D/g, ''))}
+            className={erros.representanteCpf ? 'error' : ''}
+            placeholder="00000000000"
+            maxLength={11}
+          />
+          {erros.representanteCpf && <span className="error-message">{erros.representanteCpf}</span>}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="representanteRg">RG</label>
+          <input
+            type="text"
+            id="representanteRg"
+            value={formData.representanteRg}
+            onChange={(e) => handleInputChange('representanteRg', e.target.value)}
+            placeholder="00.000.000-0"
+            maxLength={20}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="representanteTelefone">Telefone</label>
+          <input
+            type="text"
+            id="representanteTelefone"
+            value={formData.representanteTelefone}
+            onChange={(e) => handleInputChange('representanteTelefone', e.target.value)}
+            placeholder="(XX) XXXXX-XXXX"
+            maxLength={15}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="representanteEmail">Email</label>
+          <input
+            type="email"
+            id="representanteEmail"
+            value={formData.representanteEmail}
+            onChange={(e) => handleInputChange('representanteEmail', e.target.value)}
+            className={erros.representanteEmail ? 'error' : ''}
+            placeholder="representante@exemplo.com"
+          />
+          {erros.representanteEmail && <span className="error-message">{erros.representanteEmail}</span>}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="representanteFuncao">Função</label>
+          <select
+            id="representanteFuncao"
+            value={formData.representanteFuncao}
+            onChange={(e) => handleInputChange('representanteFuncao', e.target.value)}
+          >
+            <option value="">Selecione a função</option>
+            {funcoes.map(funcao => (
+              <option key={funcao.id} value={funcao.id}>
+                {funcao.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <h4>🏠 Endereço do Representante</h4>
+      <div className="form-grid">
+        <div className="form-group">
+          <label htmlFor="representanteEndLogradouro">Logradouro</label>
+          <input
+            type="text"
+            id="representanteEndLogradouro"
+            value={formData.representanteEndLogradouro}
+            onChange={(e) => handleInputChange('representanteEndLogradouro', e.target.value)}
+            placeholder="Rua, Avenida, etc."
+            maxLength={255}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="representanteEndNumero">Número</label>
+          <input
+            type="text"
+            id="representanteEndNumero"
+            value={formData.representanteEndNumero}
+            onChange={(e) => handleInputChange('representanteEndNumero', e.target.value)}
+            placeholder="123"
+            maxLength={10}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="representanteEndBairro">Bairro</label>
+          <input
+            type="text"
+            id="representanteEndBairro"
+            value={formData.representanteEndBairro}
+            onChange={(e) => handleInputChange('representanteEndBairro', e.target.value)}
+            placeholder="Centro"
+            maxLength={100}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="representanteEndComplemento">Complemento</label>
+          <input
+            type="text"
+            id="representanteEndComplemento"
+            value={formData.representanteEndComplemento}
+            onChange={(e) => handleInputChange('representanteEndComplemento', e.target.value)}
+            placeholder="Apto 101, Casa, etc."
+            maxLength={100}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="representanteEndCep">CEP</label>
+          <input
+            type="text"
+            id="representanteEndCep"
+            value={formData.representanteEndCep}
+            onChange={(e) => handleInputChange('representanteEndCep', e.target.value.replace(/\D/g, ''))}
+            className={erros.representanteEndCep ? 'error' : ''}
+            placeholder="00000000"
+            maxLength={8}
+          />
+          {erros.representanteEndCep && <span className="error-message">{erros.representanteEndCep}</span>}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAbaCaracteristicas = () => (
+    <div className="aba-content">
+      <h3>📊 Características da Organização</h3>
+      
+      <h4>👥 Sócios e Associados</h4>
+      <div className="form-grid">
+        <div className="form-group">
+          <label htmlFor="caracteristicasNTotalSocios">Total de Sócios</label>
+          <input
+            type="number"
+            id="caracteristicasNTotalSocios"
+            value={formData.caracteristicasNTotalSocios}
+            onChange={(e) => handleInputChange('caracteristicasNTotalSocios', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasNTotalSociosCaf">Sócios Cafeicultores</label>
+          <input
+            type="number"
+            id="caracteristicasNTotalSociosCaf"
+            value={formData.caracteristicasNTotalSociosCaf}
+            onChange={(e) => handleInputChange('caracteristicasNTotalSociosCaf', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasNDistintosCaf">Distintos Cafeicultores</label>
+          <input
+            type="number"
+            id="caracteristicasNDistintosCaf"
+            value={formData.caracteristicasNDistintosCaf}
+            onChange={(e) => handleInputChange('caracteristicasNDistintosCaf', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasNAtivosTotal">Total de Ativos</label>
+          <input
+            type="number"
+            id="caracteristicasNAtivosTotal"
+            value={formData.caracteristicasNAtivosTotal}
+            onChange={(e) => handleInputChange('caracteristicasNAtivosTotal', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasNAtivosCaf">Ativos Cafeicultores</label>
+          <input
+            type="number"
+            id="caracteristicasNAtivosCaf"
+            value={formData.caracteristicasNAtivosCaf}
+            onChange={(e) => handleInputChange('caracteristicasNAtivosCaf', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+      </div>
+
+      <h4>🌱 Programas de Aquisição</h4>
+      <div className="form-grid">
+        <div className="form-group">
+          <label htmlFor="caracteristicasNSociosPaa">Sócios PAA</label>
+          <input
+            type="number"
+            id="caracteristicasNSociosPaa"
+            value={formData.caracteristicasNSociosPaa}
+            onChange={(e) => handleInputChange('caracteristicasNSociosPaa', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasNNaosociosPaa">Não-Sócios PAA</label>
+          <input
+            type="number"
+            id="caracteristicasNNaosociosPaa"
+            value={formData.caracteristicasNNaosociosPaa}
+            onChange={(e) => handleInputChange('caracteristicasNNaosociosPaa', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasNSociosPnae">Sócios PNAE</label>
+          <input
+            type="number"
+            id="caracteristicasNSociosPnae"
+            value={formData.caracteristicasNSociosPnae}
+            onChange={(e) => handleInputChange('caracteristicasNSociosPnae', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasNNaosociosPnae">Não-Sócios PNAE</label>
+          <input
+            type="number"
+            id="caracteristicasNNaosociosPnae"
+            value={formData.caracteristicasNNaosociosPnae}
+            onChange={(e) => handleInputChange('caracteristicasNNaosociosPnae', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+      </div>
+
+      <h4>☕ Características do Café</h4>
+      <div className="form-grid">
+        <div className="form-group">
+          <label htmlFor="caracteristicasTaCafConvencional">Café Convencional</label>
+          <input
+            type="number"
+            id="caracteristicasTaCafConvencional"
+            value={formData.caracteristicasTaCafConvencional}
+            onChange={(e) => handleInputChange('caracteristicasTaCafConvencional', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasTaCafAgroecologico">Café Agroecológico</label>
+          <input
+            type="number"
+            id="caracteristicasTaCafAgroecologico"
+            value={formData.caracteristicasTaCafAgroecologico}
+            onChange={(e) => handleInputChange('caracteristicasTaCafAgroecologico', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasTaCafTransicao">Café em Transição</label>
+          <input
+            type="number"
+            id="caracteristicasTaCafTransicao"
+            value={formData.caracteristicasTaCafTransicao}
+            onChange={(e) => handleInputChange('caracteristicasTaCafTransicao', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasTaCafOrganico">Café Orgânico</label>
+          <input
+            type="number"
+            id="caracteristicasTaCafOrganico"
+            value={formData.caracteristicasTaCafOrganico}
+            onChange={(e) => handleInputChange('caracteristicasTaCafOrganico', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+      </div>
+
+      <h4>👫 Distribuição por Gênero - Associados</h4>
+      <div className="form-grid">
+        <div className="form-group">
+          <label htmlFor="caracteristicasTaAMulher">Associadas (Mulheres)</label>
+          <input
+            type="number"
+            id="caracteristicasTaAMulher"
+            value={formData.caracteristicasTaAMulher}
+            onChange={(e) => handleInputChange('caracteristicasTaAMulher', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasTaAHomem">Associados (Homens)</label>
+          <input
+            type="number"
+            id="caracteristicasTaAHomem"
+            value={formData.caracteristicasTaAHomem}
+            onChange={(e) => handleInputChange('caracteristicasTaAHomem', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+      </div>
+
+      <h4>🏭 Distribuição por Gênero - Empresários</h4>
+      <div className="form-grid">
+        <div className="form-group">
+          <label htmlFor="caracteristicasTaEMulher">Empresárias (Mulheres)</label>
+          <input
+            type="number"
+            id="caracteristicasTaEMulher"
+            value={formData.caracteristicasTaEMulher}
+            onChange={(e) => handleInputChange('caracteristicasTaEMulher', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasTaEHomem">Empresários (Homens)</label>
+          <input
+            type="number"
+            id="caracteristicasTaEHomem"
+            value={formData.caracteristicasTaEHomem}
+            onChange={(e) => handleInputChange('caracteristicasTaEHomem', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+      </div>
+
+      <h4>🌾 Agricultura Familiar</h4>
+      <div className="form-grid">
+        <div className="form-group">
+          <label htmlFor="caracteristicasTaAfMulher">Agricultoras Familiares</label>
+          <input
+            type="number"
+            id="caracteristicasTaAfMulher"
+            value={formData.caracteristicasTaAfMulher}
+            onChange={(e) => handleInputChange('caracteristicasTaAfMulher', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="caracteristicasTaAfHomem">Agricultores Familiares</label>
+          <input
+            type="number"
+            id="caracteristicasTaAfHomem"
+            value={formData.caracteristicasTaAfHomem}
+            onChange={(e) => handleInputChange('caracteristicasTaAfHomem', e.target.value)}
+            min="0"
+            placeholder="0"
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAbaQuestionarios = () => (
+    <div className="aba-content">
+      <h3>📝 Questionários e Observações</h3>
+      
+      <div className="questionarios-info">
+        <div className="info-card">
+          <h4>📋 Módulos de Questionários</h4>
+          <p>Os questionários detalhados (GO, GPP, GC, GF, GP, GS, GI, IS) serão preenchidos posteriormente através dos módulos específicos.</p>
+          
+          <div className="modulos-grid">
+            <div className="modulo-item">
+              <strong>GO</strong> - Gestão Organizacional
+            </div>
+            <div className="modulo-item">
+              <strong>GPP</strong> - Gestão de Processos Produtivos
+            </div>
+            <div className="modulo-item">
+              <strong>GC</strong> - Gestão Comercial
+            </div>
+            <div className="modulo-item">
+              <strong>GF</strong> - Gestão Financeira
+            </div>
+            <div className="modulo-item">
+              <strong>GP</strong> - Gestão de Pessoas
+            </div>
+            <div className="modulo-item">
+              <strong>GS</strong> - Gestão Socioambiental
+            </div>
+            <div className="modulo-item">
+              <strong>GI</strong> - Gestão da Inovação
+            </div>
+            <div className="modulo-item">
+              <strong>IS</strong> - Infraestrutura e Sustentabilidade
             </div>
           </div>
-        );
+        </div>
+      </div>
 
-      case 2:
-        return (
-          <div className="form-step">
-            <h3>📊 Características da Organização</h3>
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Total de Sócios</label>
-                <input
-                  type="number"
-                  value={caracteristicas.totalSocios}
-                  onChange={(e) => handleCaracteristicasChange('totalSocios', parseInt(e.target.value) || 0)}
-                  min="0"
-                />
-              </div>
+      <h4>📝 Observações Gerais</h4>
+      <div className="form-group">
+        <label htmlFor="obs">Observações</label>
+        <textarea
+          id="obs"
+          value={formData.obs}
+          onChange={(e) => handleInputChange('obs', e.target.value)}
+          placeholder="Observações gerais sobre a organização..."
+          rows={6}
+          maxLength={8192}
+        />
+        <small className="char-count">
+          {formData.obs.length}/8192 caracteres
+        </small>
+      </div>
 
-              <div className="form-group">
-                <label>Sócios CAF</label>
-                <input
-                  type="number"
-                  value={caracteristicas.totalSociosCaf}
-                  onChange={(e) => handleCaracteristicasChange('totalSociosCaf', parseInt(e.target.value) || 0)}
-                  min="0"
-                />
-              </div>
+      <h4>✅ Informações Adicionais</h4>
+      <div className="form-grid">
+        <div className="form-group">
+          <label htmlFor="simNaoProducao">Tem Produção?</label>
+          <select
+            id="simNaoProducao"
+            value={formData.simNaoProducao}
+            onChange={(e) => handleInputChange('simNaoProducao', e.target.value)}
+          >
+            <option value="">Selecione</option>
+            <option value="1">Sim</option>
+            <option value="2">Não</option>
+          </select>
+        </div>
 
-              <div className="form-group">
-                <label>Distintos CAF</label>
-                <input
-                  type="number"
-                  value={caracteristicas.distintosCaf}
-                  onChange={(e) => handleCaracteristicasChange('distintosCaf', parseInt(e.target.value) || 0)}
-                  min="0"
-                />
-              </div>
+        <div className="form-group">
+          <label htmlFor="simNaoFile">Tem Arquivos?</label>
+          <select
+            id="simNaoFile"
+            value={formData.simNaoFile}
+            onChange={(e) => handleInputChange('simNaoFile', e.target.value)}
+          >
+            <option value="">Selecione</option>
+            <option value="1">Sim</option>
+            <option value="2">Não</option>
+          </select>
+        </div>
 
-              <div className="form-group">
-                <label>Sócios PAA</label>
-                <input
-                  type="number"
-                  value={caracteristicas.sociosPaa}
-                  onChange={(e) => handleCaracteristicasChange('sociosPaa', parseInt(e.target.value) || 0)}
-                  min="0"
-                />
-              </div>
+        <div className="form-group">
+          <label htmlFor="simNaoPj">É Pessoa Jurídica?</label>
+          <select
+            id="simNaoPj"
+            value={formData.simNaoPj}
+            onChange={(e) => handleInputChange('simNaoPj', e.target.value)}
+          >
+            <option value="">Selecione</option>
+            <option value="1">Sim</option>
+            <option value="2">Não</option>
+          </select>
+        </div>
 
-              <div className="form-group">
-                <label>Não-sócios PAA</label>
-                <input
-                  type="number"
-                  value={caracteristicas.naosociosPaa}
-                  onChange={(e) => handleCaracteristicasChange('naosociosPaa', parseInt(e.target.value) || 0)}
-                  min="0"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Sócios PNAE</label>
-                <input
-                  type="number"
-                  value={caracteristicas.sociosPnae}
-                  onChange={(e) => handleCaracteristicasChange('sociosPnae', parseInt(e.target.value) || 0)}
-                  min="0"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Não-sócios PNAE</label>
-                <input
-                  type="number"
-                  value={caracteristicas.naosociosPnae}
-                  onChange={(e) => handleCaracteristicasChange('naosociosPnae', parseInt(e.target.value) || 0)}
-                  min="0"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Ativos Total</label>
-                <input
-                  type="number"
-                  value={caracteristicas.ativosTotal}
-                  onChange={(e) => handleCaracteristicasChange('ativosTotal', parseInt(e.target.value) || 0)}
-                  min="0"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Ativos CAF</label>
-                <input
-                  type="number"
-                  value={caracteristicas.ativosCaf}
-                  onChange={(e) => handleCaracteristicasChange('ativosCaf', parseInt(e.target.value) || 0)}
-                  min="0"
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="form-step">
-            <h3>📍 Localização da Organização</h3>
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Estado *</label>
-                <select
-                  value={localizacao.estado}
-                  onChange={(e) => handleLocalizacaoChange('estado', e.target.value)}
-                  required
-                >
-                  <option value="">Selecione o estado</option>
-                  <option value="BA">Bahia</option>
-                  <option value="MG">Minas Gerais</option>
-                  <option value="ES">Espírito Santo</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Município *</label>
-                <input
-                  type="text"
-                  value={localizacao.municipio}
-                  onChange={(e) => handleLocalizacaoChange('municipio', e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Latitude GPS</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={localizacao.gpsLat}
-                  onChange={(e) => handleLocalizacaoChange('gpsLat', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Longitude GPS</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={localizacao.gpsLng}
-                  onChange={(e) => handleLocalizacaoChange('gpsLng', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Altitude GPS</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={localizacao.gpsAlt}
-                  onChange={(e) => handleLocalizacaoChange('gpsAlt', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Precisão GPS</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={localizacao.gpsAcc}
-                  onChange={(e) => handleLocalizacaoChange('gpsAcc', parseFloat(e.target.value) || 0)}
-                />
-              </div>
-
-              <div className="form-group full-width">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    // Implementar captura de GPS
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition((position) => {
-                        setLocalizacao(prev => ({
-                          ...prev,
-                          gpsLat: position.coords.latitude,
-                          gpsLng: position.coords.longitude,
-                          gpsAlt: position.coords.altitude || 0,
-                          gpsAcc: position.coords.accuracy
-                        }));
-                      });
-                    }
-                  }}
-                >
-                  📍 Capturar Localização Atual
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="form-step">
-            <h3>📎 Arquivos e Documentos</h3>
-            <div className="form-grid">
-              <div className="form-group full-width">
-                <label>Fotos da Organização</label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => handleFileUpload('fotos', e.target.files)}
-                />
-                <div className="file-list">
-                  {arquivos.fotos.map((file, index) => (
-                    <div key={index} className="file-item">
-                      <span>📷 {file.name}</span>
-                      <button 
-                        type="button"
-                        onClick={() => removeFile('fotos', index)}
-                        className="btn btn-sm btn-danger"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-group full-width">
-                <label>Documentos</label>
-                <input
-                  type="file"
-                  multiple
-                  accept=".pdf,.doc,.docx"
-                  onChange={(e) => handleFileUpload('documentos', e.target.files)}
-                />
-                <div className="file-list">
-                  {arquivos.documentos.map((file, index) => (
-                    <div key={index} className="file-item">
-                      <span>📄 {file.name}</span>
-                      <button 
-                        type="button"
-                        onClick={() => removeFile('documentos', index)}
-                        className="btn btn-sm btn-danger"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-group full-width">
-                <label>Observações</label>
-                <textarea
-                  value={arquivos.observacoes}
-                  onChange={(e) => setArquivos(prev => ({ ...prev, observacoes: e.target.value }))}
-                  rows={4}
-                  placeholder="Observações adicionais sobre a organização..."
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
+        <div className="form-group">
+          <label htmlFor="simNaoSocio">Tem Sócios?</label>
+          <select
+            id="simNaoSocio"
+            value={formData.simNaoSocio}
+            onChange={(e) => handleInputChange('simNaoSocio', e.target.value)}
+          >
+            <option value="">Selecione</option>
+            <option value="1">Sim</option>
+            <option value="2">Não</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="cadastro-content">
       <div className="content-header">
-        <h2>Cadastro de Organização</h2>
+        <div className="header-info">
+          <h2>➕ Cadastro de Organização</h2>
+          <p>Preencha os dados da nova organização</p>
         </div>
+        
+        <div className="header-actions">
+          <button 
+            type="button"
+            onClick={() => onNavigate('lista')}
+            className="btn btn-secondary"
+          >
+            ← Voltar para Lista
+          </button>
+        </div>
+      </div>
 
       <div className="cadastro-body">
-        {/* Progress Steps */}
-        <div className="steps-container">
-          {steps.map((step) => (
-            <div 
-              key={step.id} 
-              className={`step ${step.id === stepAtual ? 'active' : step.id < stepAtual ? 'completed' : ''}`}
-            >
-              <div className="step-icon">{step.icon}</div>
-              <div className="step-title">{step.title}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Form Content */}
-        <div className="form-container">
-          {error && (
-            <div className="error-message">
-              <p>❌ {error}</p>
-            </div>
-          )}
-
-          {renderStepContent()}
-
-          {/* Navigation Buttons */}
-          <div className="form-navigation">
+        <form onSubmit={handleSubmit} className="cadastro-form">
+          {/* Navegação por abas */}
+          <div className="tabs-navigation">
             <button
               type="button"
-              className="btn btn-secondary"
-              onClick={prevStep}
-              disabled={stepAtual === 1}
+              className={`tab-button ${abaAtiva === 'basicos' ? 'active' : ''}`}
+              onClick={() => setAbaAtiva('basicos')}
             >
-              ← Anterior
+              📋 Dados Básicos
             </button>
+            <button
+              type="button"
+              className={`tab-button ${abaAtiva === 'endereco' ? 'active' : ''}`}
+              onClick={() => setAbaAtiva('endereco')}
+            >
+              🏠 Endereço
+            </button>
+            <button
+              type="button"
+              className={`tab-button ${abaAtiva === 'representante' ? 'active' : ''}`}
+              onClick={() => setAbaAtiva('representante')}
+            >
+              👤 Representante
+            </button>
+            <button
+              type="button"
+              className={`tab-button ${abaAtiva === 'caracteristicas' ? 'active' : ''}`}
+              onClick={() => setAbaAtiva('caracteristicas')}
+            >
+              📊 Características
+            </button>
+            <button
+              type="button"
+              className={`tab-button ${abaAtiva === 'questionarios' ? 'active' : ''}`}
+              onClick={() => setAbaAtiva('questionarios')}
+            >
+              📝 Questionários
+            </button>
+          </div>
 
-            <div className="step-info">
-              Passo {stepAtual} de {steps.length}
+          {/* Conteúdo das abas */}
+          <div className="tab-content">
+            {abaAtiva === 'basicos' && renderAbaDadosBasicos()}
+            {abaAtiva === 'endereco' && renderAbaEndereco()}
+            {abaAtiva === 'representante' && renderAbaRepresentante()}
+            {abaAtiva === 'caracteristicas' && renderAbaCaracteristicas()}
+            {abaAtiva === 'questionarios' && renderAbaQuestionarios()}
+          </div>
+
+          {/* Navegação entre abas */}
+          <div className="form-navigation">
+            <div className="nav-buttons">
+              {abaAtiva !== 'basicos' && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    const abas: AbaAtiva[] = ['basicos', 'endereco', 'representante', 'caracteristicas', 'questionarios'];
+                    const indexAtual = abas.indexOf(abaAtiva);
+                    if (indexAtual > 0) {
+                      setAbaAtiva(abas[indexAtual - 1]);
+                    }
+                  }}
+                >
+                  ← Anterior
+                </button>
+              )}
+
+              {abaAtiva !== 'questionarios' && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    const abas: AbaAtiva[] = ['basicos', 'endereco', 'representante', 'caracteristicas', 'questionarios'];
+                    const indexAtual = abas.indexOf(abaAtiva);
+                    if (indexAtual < abas.length - 1) {
+                      setAbaAtiva(abas[indexAtual + 1]);
+                    }
+                  }}
+                >
+                  Próxima →
+                </button>
+              )}
+
+              {abaAtiva === 'questionarios' && (
+                <button
+                  type="submit"
+                  className="btn btn-success"
+                  disabled={loading}
+                >
+                  {loading ? 'Salvando...' : '💾 Salvar Organização'}
+                </button>
+              )}
             </div>
 
-            {stepAtual < steps.length ? (
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={nextStep}
-              >
-                Próximo →
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={handleSubmit}
-                disabled={loading}
-              >
-                {loading ? '⏳ Salvando...' : '✅ Finalizar Cadastro'}
-              </button>
-            )}
+            <div className="progress-indicator">
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill" 
+                  style={{ 
+                    width: `${((['basicos', 'endereco', 'representante', 'caracteristicas', 'questionarios'].indexOf(abaAtiva) + 1) / 5) * 100}%` 
+                  }}
+                ></div>
+              </div>
+              <span className="progress-text">
+                Etapa {['basicos', 'endereco', 'representante', 'caracteristicas', 'questionarios'].indexOf(abaAtiva) + 1} de 5
+              </span>
+            </div>
           </div>
-        </div>
+
+          {/* Botão de salvar fixo no final */}
+          <div className="form-actions">
+            <button
+              type="submit"
+              className="btn btn-success btn-large"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  Salvando Organização...
+                </>
+              ) : (
+                <>
+                  💾 Salvar Organização
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
