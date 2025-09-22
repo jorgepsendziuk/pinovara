@@ -1,0 +1,731 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["pinovara", "pinovara_aux"]
+}
+
+// ========== TABELAS AUXILIARES (pinovara_aux) ==========
+
+model Estado {
+  id            Int           @id @default(autoincrement())
+  nome          String        @unique
+  uf            String        @unique @db.VarChar(2)
+  codigo_ibge   Int?
+  ativo         Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relacionamentos
+  municipios    MunicipioIbge[]
+  organizacoes  Organizacao[]
+
+  @@map("estado")
+  @@schema("pinovara_aux")
+}
+
+model MunicipioIbge {
+  id            Int           @id @default(autoincrement())
+  nome          String
+  codigo_ibge   Int           @unique
+  estadoId      Int
+  ativo         Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relacionamentos
+  estado        Estado        @relation(fields: [estadoId], references: [id])
+  organizacoes  Organizacao[]
+
+  @@map("municipio_ibge")
+  @@schema("pinovara_aux")
+}
+
+model Resposta {
+  id                    Int     @id @default(autoincrement())
+  valor                 String
+  descricao             String?
+  ordem                 Int     @default(0)
+  ativo                 Boolean @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relacionamentos com questionários (organizações)
+  // GO - Gestão Organizacional
+  go_organizacao_7      Organizacao[] @relation("GoOrganizacao7")
+  go_organizacao_8      Organizacao[] @relation("GoOrganizacao8")
+  go_organizacao_9      Organizacao[] @relation("GoOrganizacao9")
+  go_organizacao_10     Organizacao[] @relation("GoOrganizacao10")
+  go_organizacao_11     Organizacao[] @relation("GoOrganizacao11")
+  go_organizacao_12     Organizacao[] @relation("GoOrganizacao12")
+  go_organizacao_13     Organizacao[] @relation("GoOrganizacao13")
+  
+  // GO - Direção
+  go_direcao_14         Organizacao[] @relation("GoDirecao14")
+  go_direcao_15         Organizacao[] @relation("GoDirecao15")
+  go_direcao_16         Organizacao[] @relation("GoDirecao16")
+  go_direcao_17         Organizacao[] @relation("GoDirecao17")
+  go_direcao_18         Organizacao[] @relation("GoDirecao18")
+  go_direcao_19         Organizacao[] @relation("GoDirecao19")
+  go_direcao_20         Organizacao[] @relation("GoDirecao20")
+  go_direcao_21         Organizacao[] @relation("GoDirecao21")
+  
+  // GO - Controle
+  go_controle_20        Organizacao[] @relation("GoControle20")
+  go_controle_21        Organizacao[] @relation("GoControle21")
+  go_controle_22        Organizacao[] @relation("GoControle22")
+  go_controle_23        Organizacao[] @relation("GoControle23")
+  go_controle_24        Organizacao[] @relation("GoControle24")
+  go_controle_25        Organizacao[] @relation("GoControle25")
+  
+  // GO - Educação
+  go_educacao_26        Organizacao[] @relation("GoEducacao26")
+  go_educacao_27        Organizacao[] @relation("GoEducacao27")
+  go_educacao_28        Organizacao[] @relation("GoEducacao28")
+  
+  // GO - Estratégia
+  go_estrategia_5       Organizacao[] @relation("GoEstrategia5")
+  go_estrategia_6       Organizacao[] @relation("GoEstrategia6")
+  
+  // GO - Estrutura
+  go_estrutura_1        Organizacao[] @relation("GoEstrutura1")
+  go_estrutura_2        Organizacao[] @relation("GoEstrutura2")
+  go_estrutura_3        Organizacao[] @relation("GoEstrutura3")
+  go_estrutura_4        Organizacao[] @relation("GoEstrutura4")
+
+  // GPP - Gestão de Processos Produtivos
+  gpp_planejamento_4    Organizacao[] @relation("GppPlanejamento4")
+  gpp_planejamento_5    Organizacao[] @relation("GppPlanejamento5")
+  gpp_planejamento_6    Organizacao[] @relation("GppPlanejamento6")
+  
+  gpp_logistica_7       Organizacao[] @relation("GppLogistica7")
+  gpp_logistica_8       Organizacao[] @relation("GppLogistica8")
+  gpp_logistica_9       Organizacao[] @relation("GppLogistica9")
+  gpp_logistica_10      Organizacao[] @relation("GppLogistica10")
+  gpp_logistica_11      Organizacao[] @relation("GppLogistica11")
+  gpp_logistica_12      Organizacao[] @relation("GppLogistica12")
+  
+  gpp_valor_13          Organizacao[] @relation("GppValor13")
+  gpp_valor_14          Organizacao[] @relation("GppValor14")
+  gpp_valor_15          Organizacao[] @relation("GppValor15")
+  
+  gpp_fluxo_16          Organizacao[] @relation("GppFluxo16")
+  gpp_fluxo_17          Organizacao[] @relation("GppFluxo17")
+  gpp_fluxo_18          Organizacao[] @relation("GppFluxo18")
+  gpp_fluxo_19          Organizacao[] @relation("GppFluxo19")
+  gpp_fluxo_20          Organizacao[] @relation("GppFluxo20")
+  gpp_fluxo_21          Organizacao[] @relation("GppFluxo21")
+  gpp_fluxo_22          Organizacao[] @relation("GppFluxo22")
+  
+  gpp_qualidade_23      Organizacao[] @relation("GppQualidade23")
+  gpp_qualidade_24      Organizacao[] @relation("GppQualidade24")
+  gpp_qualidade_25      Organizacao[] @relation("GppQualidade25")
+  gpp_qualidade_26      Organizacao[] @relation("GppQualidade26")
+  gpp_qualidade_27      Organizacao[] @relation("GppQualidade27")
+  gpp_qualidade_28      Organizacao[] @relation("GppQualidade28")
+  
+  gpp_producao_29       Organizacao[] @relation("GppProducao29")
+  
+  gpp_reg_sanitaria_1   Organizacao[] @relation("GppRegSanitaria1")
+  gpp_reg_sanitaria_2   Organizacao[] @relation("GppRegSanitaria2")
+  gpp_reg_sanitaria_3   Organizacao[] @relation("GppRegSanitaria3")
+
+  // GC - Gestão Comercial
+  gc_e_comercial_1      Organizacao[] @relation("GcEComercial1")
+  gc_e_comercial_2      Organizacao[] @relation("GcEComercial2")
+  gc_e_comercial_3      Organizacao[] @relation("GcEComercial3")
+  gc_e_comercial_4      Organizacao[] @relation("GcEComercial4")
+  gc_e_comercial_5      Organizacao[] @relation("GcEComercial5")
+  gc_e_comercial_6      Organizacao[] @relation("GcEComercial6")
+  gc_e_comercial_7      Organizacao[] @relation("GcEComercial7")
+  gc_e_comercial_8      Organizacao[] @relation("GcEComercial8")
+  gc_e_comercial_9      Organizacao[] @relation("GcEComercial9")
+  
+  gc_mercado_10         Organizacao[] @relation("GcMercado10")
+  gc_mercado_11         Organizacao[] @relation("GcMercado11")
+  gc_mercado_12         Organizacao[] @relation("GcMercado12")
+  gc_mercado_13         Organizacao[] @relation("GcMercado13")
+  gc_mercado_14         Organizacao[] @relation("GcMercado14")
+  gc_mercado_15         Organizacao[] @relation("GcMercado15")
+  
+  gc_comercial_15       Organizacao[] @relation("GcComercial15")
+  gc_comercial_16       Organizacao[] @relation("GcComercial16")
+  gc_comercial_17       Organizacao[] @relation("GcComercial17")
+  gc_comercial_18       Organizacao[] @relation("GcComercial18")
+  gc_comercial_19       Organizacao[] @relation("GcComercial19")
+  gc_comercial_20       Organizacao[] @relation("GcComercial20")
+  
+  gc_modelo_21          Organizacao[] @relation("GcModelo21")
+  gc_modelo_22          Organizacao[] @relation("GcModelo22")
+  gc_modelo_23          Organizacao[] @relation("GcModelo23")
+  gc_modelo_24          Organizacao[] @relation("GcModelo24")
+  gc_modelo_25          Organizacao[] @relation("GcModelo25")
+  gc_modelo_26          Organizacao[] @relation("GcModelo26")
+  gc_modelo_27          Organizacao[] @relation("GcModelo27")
+
+  // GF - Gestão Financeira
+  gf_contas_5           Organizacao[] @relation("GfContas5")
+  gf_contas_6           Organizacao[] @relation("GfContas6")
+  gf_contas_7           Organizacao[] @relation("GfContas7")
+  gf_contas_8           Organizacao[] @relation("GfContas8")
+  gf_contas_9           Organizacao[] @relation("GfContas9")
+  gf_contas_10          Organizacao[] @relation("GfContas10")
+  gf_contas_11          Organizacao[] @relation("GfContas11")
+  gf_contas_12          Organizacao[] @relation("GfContas12")
+  gf_contas_13          Organizacao[] @relation("GfContas13")
+  
+  gf_caixa_14           Organizacao[] @relation("GfCaixa14")
+  gf_caixa_15           Organizacao[] @relation("GfCaixa15")
+  gf_caixa_16           Organizacao[] @relation("GfCaixa16")
+  
+  gf_estoque_17         Organizacao[] @relation("GfEstoque17")
+  gf_estoque_18         Organizacao[] @relation("GfEstoque18")
+  gf_estoque_19         Organizacao[] @relation("GfEstoque19")
+  
+  gf_resultado_20       Organizacao[] @relation("GfResultado20")
+  gf_resultado_21       Organizacao[] @relation("GfResultado21")
+  
+  gf_analise_22         Organizacao[] @relation("GfAnalise22")
+  gf_analise_23         Organizacao[] @relation("GfAnalise23")
+  gf_analise_24         Organizacao[] @relation("GfAnalise24")
+  
+  gf_fiscal_25          Organizacao[] @relation("GfFiscal25")
+  gf_fiscal_26          Organizacao[] @relation("GfFiscal26")
+  
+  gf_balanco_1          Organizacao[] @relation("GfBalanco1")
+  gf_balanco_2          Organizacao[] @relation("GfBalanco2")
+  gf_balanco_3          Organizacao[] @relation("GfBalanco3")
+  gf_balanco_4          Organizacao[] @relation("GfBalanco4")
+
+  // GP - Gestão de Pessoas
+  gp_p_organizacao_1    Organizacao[] @relation("GpPOrganizacao1")
+  gp_p_organizacao_2    Organizacao[] @relation("GpPOrganizacao2")
+  gp_p_organizacao_3    Organizacao[] @relation("GpPOrganizacao3")
+  gp_p_organizacao_4    Organizacao[] @relation("GpPOrganizacao4")
+  gp_p_organizacao_5    Organizacao[] @relation("GpPOrganizacao5")
+  gp_p_organizacao_6    Organizacao[] @relation("GpPOrganizacao6")
+  gp_p_organizacao_7    Organizacao[] @relation("GpPOrganizacao7")
+  gp_p_organizacao_8    Organizacao[] @relation("GpPOrganizacao8")
+  gp_p_organizacao_9    Organizacao[] @relation("GpPOrganizacao9")
+  
+  gp_p_desenvolvimento_10 Organizacao[] @relation("GpPDesenvolvimento10")
+  gp_p_desenvolvimento_11 Organizacao[] @relation("GpPDesenvolvimento11")
+  gp_p_desenvolvimento_12 Organizacao[] @relation("GpPDesenvolvimento12")
+  gp_p_desenvolvimento_13 Organizacao[] @relation("GpPDesenvolvimento13")
+  
+  gp_trabalho_14        Organizacao[] @relation("GpTrabalho14")
+  gp_trabalho_15        Organizacao[] @relation("GpTrabalho15")
+  gp_trabalho_16        Organizacao[] @relation("GpTrabalho16")
+  gp_trabalho_17        Organizacao[] @relation("GpTrabalho17")
+  
+  gp_geracao_18         Organizacao[] @relation("GpGeracao18")
+  gp_geracao_19         Organizacao[] @relation("GpGeracao19")
+  gp_geracao_20         Organizacao[] @relation("GpGeracao20")
+
+  // GS - Gestão Socioambiental
+  gs_socioambiental_1   Organizacao[] @relation("GsSocioambiental1")
+  gs_socioambiental_2   Organizacao[] @relation("GsSocioambiental2")
+  gs_socioambiental_3   Organizacao[] @relation("GsSocioambiental3")
+  gs_socioambiental_4   Organizacao[] @relation("GsSocioambiental4")
+  gs_socioambiental_5   Organizacao[] @relation("GsSocioambiental5")
+  
+  gs_ambiental_6        Organizacao[] @relation("GsAmbiental6")
+  gs_ambiental_7        Organizacao[] @relation("GsAmbiental7")
+  gs_ambiental_8        Organizacao[] @relation("GsAmbiental8")
+  gs_ambiental_9        Organizacao[] @relation("GsAmbiental9")
+  
+  gs_reg_ambiental_10   Organizacao[] @relation("GsRegAmbiental10")
+  gs_reg_ambiental_11   Organizacao[] @relation("GsRegAmbiental11")
+  gs_reg_ambiental_12   Organizacao[] @relation("GsRegAmbiental12")
+  gs_reg_ambiental_13   Organizacao[] @relation("GsRegAmbiental13")
+  gs_reg_ambiental_14   Organizacao[] @relation("GsRegAmbiental14")
+  
+  gs_impactos_ambiental_15 Organizacao[] @relation("GsImpactosAmbiental15")
+  gs_impactos_ambiental_16 Organizacao[] @relation("GsImpactosAmbiental16")
+  gs_impactos_ambiental_17 Organizacao[] @relation("GsImpactosAmbiental17")
+  gs_impactos_ambiental_18 Organizacao[] @relation("GsImpactosAmbiental18")
+  gs_impactos_ambiental_19 Organizacao[] @relation("GsImpactosAmbiental19")
+  gs_impactos_ambiental_20 Organizacao[] @relation("GsImpactosAmbiental20")
+  gs_impactos_ambiental_21 Organizacao[] @relation("GsImpactosAmbiental21")
+  gs_impactos_ambiental_22 Organizacao[] @relation("GsImpactosAmbiental22")
+
+  // GI - Gestão da Inovação
+  gi_iic_1              Organizacao[] @relation("GiIic1")
+  gi_iic_2              Organizacao[] @relation("GiIic2")
+  gi_iic_3              Organizacao[] @relation("GiIic3")
+  gi_iic_4              Organizacao[] @relation("GiIic4")
+  gi_iic_5              Organizacao[] @relation("GiIic5")
+  
+  gi_mar_6              Organizacao[] @relation("GiMar6")
+  gi_mar_7              Organizacao[] @relation("GiMar7")
+  gi_mar_8              Organizacao[] @relation("GiMar8")
+  gi_mar_9              Organizacao[] @relation("GiMar9")
+  
+  gi_time_10            Organizacao[] @relation("GiTime10")
+  gi_time_11            Organizacao[] @relation("GiTime11")
+  gi_time_12            Organizacao[] @relation("GiTime12")
+  gi_time_13            Organizacao[] @relation("GiTime13")
+  gi_time_14            Organizacao[] @relation("GiTime14")
+
+  // IS - Infraestrutura e Sustentabilidade
+  is_recursos_naturais_5 Organizacao[] @relation("IsRecursosNaturais5")
+  is_recursos_naturais_6 Organizacao[] @relation("IsRecursosNaturais6")
+  is_recursos_naturais_7 Organizacao[] @relation("IsRecursosNaturais7")
+  is_recursos_naturais_8 Organizacao[] @relation("IsRecursosNaturais8")
+  
+  is_agua_9             Organizacao[] @relation("IsAgua9")
+  is_agua_10            Organizacao[] @relation("IsAgua10")
+  
+  is_conforto_ambiental_11 Organizacao[] @relation("IsConfortoAmbiental11")
+  is_conforto_ambiental_12 Organizacao[] @relation("IsConfortoAmbiental12")
+  is_conforto_ambiental_13 Organizacao[] @relation("IsConfortoAmbiental13")
+  is_conforto_ambiental_14 Organizacao[] @relation("IsConfortoAmbiental14")
+  
+  is_residuos_15        Organizacao[] @relation("IsResiduos15")
+  is_residuos_16        Organizacao[] @relation("IsResiduos16")
+  is_residuos_17        Organizacao[] @relation("IsResiduos17")
+  is_residuos_18        Organizacao[] @relation("IsResiduos18")
+  
+  is_eficiencia_energetica_1 Organizacao[] @relation("IsEficienciaEnergetica1")
+  is_eficiencia_energetica_2 Organizacao[] @relation("IsEficienciaEnergetica2")
+  is_eficiencia_energetica_3 Organizacao[] @relation("IsEficienciaEnergetica3")
+  is_eficiencia_energetica_4 Organizacao[] @relation("IsEficienciaEnergetica4")
+
+  @@map("resposta")
+  @@schema("pinovara_aux")
+}
+
+model Funcao {
+  id            Int           @id @default(autoincrement())
+  nome          String        @unique
+  descricao     String?
+  ativo         Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relacionamentos
+  organizacoes  Organizacao[]
+
+  @@map("funcao")
+  @@schema("pinovara_aux")
+}
+
+model SimNao {
+  id                    Int     @id @default(autoincrement())
+  valor                 String  @unique // "Sim" ou "Não"
+  ativo                 Boolean @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relacionamentos
+  org_producao          Organizacao[] @relation("SimNaoProducao")
+  org_file              Organizacao[] @relation("SimNaoFile")
+  org_pj                Organizacao[] @relation("SimNaoPj")
+  org_socio             Organizacao[] @relation("SimNaoSocio")
+
+  @@map("sim_nao")
+  @@schema("pinovara_aux")
+}
+
+// ========== TABELAS PRINCIPAIS (pinovara) ==========
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String
+  name      String
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  auditLogs AuditLog[]
+  userRoles UserRole[]
+
+  @@map("users")
+  @@schema("pinovara")
+}
+
+model Module {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roles       Role[]
+
+  @@map("modules")
+  @@schema("pinovara")
+}
+
+model Role {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  moduleId    Int
+  module      Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  userRoles   UserRole[]
+
+  @@unique([name, moduleId])
+  @@map("roles")
+  @@schema("pinovara")
+}
+
+model UserRole {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    Int
+  roleId    Int
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+  @@schema("pinovara")
+}
+
+model SystemSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  type        String
+  description String?
+  category    String   @default("general")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+  @@schema("pinovara")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  entity    String
+  entityId  String?
+  oldData   String?
+  newData   String?
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+  @@schema("pinovara")
+}
+
+// ========== ORGANIZACAO - TABELA PRINCIPAL ==========
+
+model Organizacao {
+  id                                Int      @id @default(autoincrement())
+  
+  // ========== DADOS BÁSICOS ==========
+  nome                              String?
+  cnpj                              String?
+  telefone                          String?
+  email                             String?
+  dataFundacao                      DateTime? @map("data_fundacao")
+  
+  // ========== LOCALIZAÇÃO ==========
+  estadoId                          Int?     @map("estado")
+  municipioId                       Int?     @map("municipio")
+  gpsLat                            Float?   @map("gps_lat")
+  gpsLng                            Float?   @map("gps_lng")
+  gpsAlt                            Float?   @map("gps_alt")
+  gpsAcc                            Float?   @map("gps_acc")
+  
+  // ========== ENDEREÇO ORGANIZAÇÃO ==========
+  organizacaoEndLogradouro          String?  @map("organizacao_end_logradouro")
+  organizacaoEndBairro              String?  @map("organizacao_end_bairro")
+  organizacaoEndComplemento         String?  @map("organizacao_end_complemento")
+  organizacaoEndNumero              String?  @map("organizacao_end_numero")
+  organizacaoEndCep                 String?  @map("organizacao_end_cep") @db.VarChar(8)
+  
+  // ========== REPRESENTANTE ==========
+  representanteNome                 String?  @map("representante_nome")
+  representanteCpf                  String?  @map("representante_cpf") @db.VarChar(11)
+  representanteRg                   String?  @map("representante_rg")
+  representanteTelefone             String?  @map("representante_telefone")
+  representanteEmail                String?  @map("representante_email")
+  representanteEndLogradouro        String?  @map("representante_end_logradouro")
+  representanteEndBairro            String?  @map("representante_end_bairro")
+  representanteEndComplemento       String?  @map("representante_end_complemento")
+  representanteEndNumero            String?  @map("representante_end_numero")
+  representanteEndCep               String?  @map("representante_end_cep") @db.VarChar(8)
+  representanteFuncaoId             Int?     @map("representante_funcao")
+  
+  // ========== CARACTERISTICAS SOCIAIS ==========
+  caracteristicasNTotalSocios             Int? @map("caracteristicas_n_total_socios")
+  caracteristicasNTotalSociosCaf          Int? @map("caracteristicas_n_total_socios_caf")
+  caracteristicasNDistintosCaf            Int? @map("caracteristicas_n_distintos_caf")
+  caracteristicasNSociosPaa               Int? @map("caracteristicas_n_socios_paa")
+  caracteristicasNNaosociosPaa            Int? @map("caracteristicas_n_naosocios_paa")
+  caracteristicasNSociosPnae              Int? @map("caracteristicas_n_socios_pnae")
+  caracteristicasNNaosociosPnae           Int? @map("caracteristicas_n_naosocios_pnae")
+  caracteristicasNAtivosTotal             Int? @map("caracteristicas_n_ativos_total")
+  caracteristicasNAtivosCaf               Int? @map("caracteristicas_n_ativos_caf")
+  caracteristicasNNaosocioOpTotal         Int? @map("caracteristicas_n_naosocio_op_total")
+  caracteristicasNNaosocioOpCaf           Int? @map("caracteristicas_n_naosocio_op_caf")
+  caracteristicasNIngressaramTotal12Meses Int? @map("caracteristicas_n_ingressaram_total_12_meses")
+  caracteristicasNIngressaramCaf12Meses   Int? @map("caracteristicas_n_ingressaram_caf_12_meses")
+
+  // ========== CARACTERISTICAS POR TIPO E GÊNERO ==========
+  caracteristicasTaAMulher          Int? @map("caracteristicas_ta_a_mulher")
+  caracteristicasTaAHomem           Int? @map("caracteristicas_ta_a_homem")
+  caracteristicasTaEMulher          Int? @map("caracteristicas_ta_e_mulher")
+  caracteristicasTaEHomem           Int? @map("caracteristicas_ta_e_homem")
+  caracteristicasTaOMulher          Int? @map("caracteristicas_ta_o_mulher")
+  caracteristicasTaOHomem           Int? @map("caracteristicas_ta_o_homem")
+  caracteristicasTaIMulher          Int? @map("caracteristicas_ta_i_mulher")
+  caracteristicasTaIHomem           Int? @map("caracteristicas_ta_i_homem")
+  caracteristicasTaPMulher          Int? @map("caracteristicas_ta_p_mulher")
+  caracteristicasTaPHomem           Int? @map("caracteristicas_ta_p_homem")
+  caracteristicasTaAfMulher         Int? @map("caracteristicas_ta_af_mulher")
+  caracteristicasTaAfHomem          Int? @map("caracteristicas_ta_af_homem")
+  caracteristicasTaQMulher          Int? @map("caracteristicas_ta_q_mulher")
+  caracteristicasTaQHomem           Int? @map("caracteristicas_ta_q_homem")
+
+  // ========== CARACTERISTICAS CAFÉ ==========
+  caracteristicasTaCafConvencional  Int? @map("caracteristicas_ta_caf_convencional")
+  caracteristicasTaCafAgroecologico Int? @map("caracteristicas_ta_caf_agroecologico")
+  caracteristicasTaCafTransicao     Int? @map("caracteristicas_ta_caf_transicao")
+  caracteristicasTaCafOrganico      Int? @map("caracteristicas_ta_caf_organico")
+
+  // ========== CAMPOS DE CONTROLE ==========
+  inicio                            DateTime?
+  fim                               DateTime?
+  deviceid                          String?
+  dataVisita                        DateTime? @map("data_visita")
+  metaInstanceId                    String?   @map("meta_instance_id")
+  metaInstanceName                  String?   @map("meta_instance_name")
+  removido                          Boolean   @default(false)
+  idTecnico                         Int?      @map("id_tecnico")
+  
+  // ========== FLAGS SIMPLIFICADAS ==========
+  simNaoProducaoId                  Int? @map("sim_nao_producao")
+  simNaoFileId                      Int? @map("sim_nao_file")
+  simNaoPjId                        Int? @map("sim_nao_pj")
+  simNaoSocioId                     Int? @map("sim_nao_socio")
+  
+  // ========== OBSERVAÇÕES ==========
+  obs                               String? @db.VarChar(8192)
+
+  // ========== RELACIONAMENTOS GEOGRÁFICOS ==========
+  estado                            Estado?       @relation(fields: [estadoId], references: [id])
+  municipio                         MunicipioIbge? @relation(fields: [municipioId], references: [id])
+  representanteFuncao               Funcao?       @relation(fields: [representanteFuncaoId], references: [id])
+  
+  // ========== RELACIONAMENTOS SIM/NÃO ==========
+  simNaoProducao                    SimNao? @relation("SimNaoProducao", fields: [simNaoProducaoId], references: [id])
+  simNaoFile                        SimNao? @relation("SimNaoFile", fields: [simNaoFileId], references: [id])
+  simNaoPj                          SimNao? @relation("SimNaoPj", fields: [simNaoPjId], references: [id])
+  simNaoSocio                       SimNao? @relation("SimNaoSocio", fields: [simNaoSocioId], references: [id])
+
+  // ========== RELACIONAMENTOS DE QUESTIONÁRIOS ==========
+  // GO - Gestão Organizacional
+  goOrganizacao7RespostaId      Int? @map("go_organizacao_7_resposta")
+  goOrganizacao7Comentario      String? @map("go_organizacao_7_comentario")
+  goOrganizacao7Proposta        String? @map("go_organizacao_7_proposta")
+  goOrganizacao7Resposta        Resposta? @relation("GoOrganizacao7", fields: [goOrganizacao7RespostaId], references: [id])
+
+  goOrganizacao8RespostaId      Int? @map("go_organizacao_8_resposta")
+  goOrganizacao8Comentario      String? @map("go_organizacao_8_comentario")
+  goOrganizacao8Proposta        String? @map("go_organizacao_8_proposta")
+  goOrganizacao8Resposta        Resposta? @relation("GoOrganizacao8", fields: [goOrganizacao8RespostaId], references: [id])
+
+  goOrganizacao9RespostaId      Int? @map("go_organizacao_9_resposta")
+  goOrganizacao9Comentario      String? @map("go_organizacao_9_comentario")
+  goOrganizacao9Proposta        String? @map("go_organizacao_9_proposta")
+  goOrganizacao9Resposta        Resposta? @relation("GoOrganizacao9", fields: [goOrganizacao9RespostaId], references: [id])
+
+  goOrganizacao10RespostaId     Int? @map("go_organizacao_10_resposta")
+  goOrganizacao10Comentario     String? @map("go_organizacao_10_comentario")
+  goOrganizacao10Proposta       String? @map("go_organizacao_10_proposta")
+  goOrganizacao10Resposta       Resposta? @relation("GoOrganizacao10", fields: [goOrganizacao10RespostaId], references: [id])
+
+  goOrganizacao11RespostaId     Int? @map("go_organizacao_11_resposta")
+  goOrganizacao11Comentario     String? @map("go_organizacao_11_comentario")
+  goOrganizacao11Proposta       String? @map("go_organizacao_11_proposta")
+  goOrganizacao11Resposta       Resposta? @relation("GoOrganizacao11", fields: [goOrganizacao11RespostaId], references: [id])
+
+  goOrganizacao12RespostaId     Int? @map("go_organizacao_12_resposta")
+  goOrganizacao12Comentario     String? @map("go_organizacao_12_comentario")
+  goOrganizacao12Proposta       String? @map("go_organizacao_12_proposta")
+  goOrganizacao12Resposta       Resposta? @relation("GoOrganizacao12", fields: [goOrganizacao12RespostaId], references: [id])
+
+  goOrganizacao13RespostaId     Int? @map("go_organizacao_13_resposta")
+  goOrganizacao13Comentario     String? @map("go_organizacao_13_comentario")
+  goOrganizacao13Proposta       String? @map("go_organizacao_13_proposta")
+  goOrganizacao13Resposta       Resposta? @relation("GoOrganizacao13", fields: [goOrganizacao13RespostaId], references: [id])
+
+  // GO - Direção
+  goDirecao14RespostaId         Int? @map("go_direcao_14_resposta")
+  goDirecao14Comentario         String? @map("go_direcao_14_comentario")
+  goDirecao14Proposta           String? @map("go_direcao_14_proposta")
+  goDirecao14Resposta           Resposta? @relation("GoDirecao14", fields: [goDirecao14RespostaId], references: [id])
+
+  goDirecao15RespostaId         Int? @map("go_direcao_15_resposta")
+  goDirecao15Comentario         String? @map("go_direcao_15_comentario")
+  goDirecao15Proposta           String? @map("go_direcao_15_proposta")
+  goDirecao15Resposta           Resposta? @relation("GoDirecao15", fields: [goDirecao15RespostaId], references: [id])
+
+  goDirecao16RespostaId         Int? @map("go_direcao_16_resposta")
+  goDirecao16Comentario         String? @map("go_direcao_16_comentario")
+  goDirecao16Proposta           String? @map("go_direcao_16_proposta")
+  goDirecao16Resposta           Resposta? @relation("GoDirecao16", fields: [goDirecao16RespostaId], references: [id])
+
+  goDirecao17RespostaId         Int? @map("go_direcao_17_resposta")
+  goDirecao17Comentario         String? @map("go_direcao_17_comentario")
+  goDirecao17Proposta           String? @map("go_direcao_17_proposta")
+  goDirecao17Resposta           Resposta? @relation("GoDirecao17", fields: [goDirecao17RespostaId], references: [id])
+
+  goDirecao18RespostaId         Int? @map("go_direcao_18_resposta")
+  goDirecao18Comentario         String? @map("go_direcao_18_comentario")
+  goDirecao18Proposta           String? @map("go_direcao_18_proposta")
+  goDirecao18Resposta           Resposta? @relation("GoDirecao18", fields: [goDirecao18RespostaId], references: [id])
+
+  goDirecao19RespostaId         Int? @map("go_direcao_19_resposta")
+  goDirecao19Comentario         String? @map("go_direcao_19_comentario")
+  goDirecao19Proposta           String? @map("go_direcao_19_proposta")
+  goDirecao19Resposta           Resposta? @relation("GoDirecao19", fields: [goDirecao19RespostaId], references: [id])
+
+  goDirecao20RespostaId         Int? @map("go_direcao_20_resposta")
+  goDirecao20Comentario         String? @map("go_direcao_20_comentario")
+  goDirecao20Proposta           String? @map("go_direcao_20_proposta")
+  goDirecao20Resposta           Resposta? @relation("GoDirecao20", fields: [goDirecao20RespostaId], references: [id])
+
+  goDirecao21RespostaId         Int? @map("go_direcao_21_resposta")
+  goDirecao21Comentario         String? @map("go_direcao_21_comentario")
+  goDirecao21Proposta           String? @map("go_direcao_21_proposta")
+  goDirecao21Resposta           Resposta? @relation("GoDirecao21", fields: [goDirecao21RespostaId], references: [id])
+
+  // ... (Continua no próximo arquivo para não ficar muito grande)
+
+  // ========== CAMPOS DE AUDITORIA ==========
+  createdAt                         DateTime @default(now())
+  updatedAt                         DateTime @updatedAt
+
+  // ========== RELACIONAMENTOS COM OUTRAS TABELAS ==========
+  abrangenciaPj                     AbrangenciaPj[]
+  abrangenciaSocio                  AbrangenciaSocio[]
+  arquivos                          Arquivo[]
+  fotos                             Foto[]
+  producoes                         Producao[]
+
+  @@map("organizacao")
+  @@schema("pinovara")
+}
+
+// ========== TABELAS RELACIONADAS EXISTENTES ==========
+
+model AbrangenciaPj {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  razaoSocial       String?
+  sigla             String?
+  cnpjPj            String?
+  numSociosCaf      Int?
+  numSociosTotal    Int?
+  estado            Int?
+  municipio         Int?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_abrangencia_pj")
+  @@schema("pinovara")
+}
+
+model AbrangenciaSocio {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  numSocios         Int?
+  estado            Int?
+  municipio         Int?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_abrangencia_socio")
+  @@schema("pinovara")
+}
+
+model Arquivo {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  arquivo           String?
+  obs               String?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_arquivo")
+  @@schema("pinovara")
+}
+
+model Foto {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  grupo             Int?
+  foto              String?
+  obs               String?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_foto")
+  @@schema("pinovara")
+}
+
+model Producao {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  cultura           String?
+  anual             Decimal?    @db.Decimal(16, 2)
+  mensal            Decimal?    @db.Decimal(16, 2)
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_producao")
+  @@schema("pinovara")
+}

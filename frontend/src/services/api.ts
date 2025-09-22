@@ -1,4 +1,15 @@
 import axios, { AxiosResponse } from 'axios';
+import { 
+  OrganizacaoCompleta, 
+  ListaOrganizacoesResponse, 
+  FiltrosOrganizacao,
+  CadastroOrganizacaoForm,
+  DashboardStats,
+  Estado,
+  Municipio,
+  Funcao,
+  RespostaQuestionario
+} from '../types/organizacao';
 
 // ========== CONFIGURAÇÃO DA API ==========
 
@@ -224,79 +235,20 @@ export const hasAnyPermission = (user: AuthUser | null, permissions: { module: s
 
 // ========== SERVIÇOS DE ORGANIZAÇÕES ==========
 
-export interface OrganizacaoData {
-  id: number;
-  nome?: string;
-  cnpj?: string;
-  telefone?: string;
-  email?: string;
-  estado?: number;
-  municipio?: number;
-  dataFundacao?: string;
-  dataVisita?: string;
-}
-
-export interface OrganizacaoCompleta extends OrganizacaoData {
-  abrangenciaPj: Array<{
-    id: number;
-    razaoSocial?: string;
-    cnpjPj?: string;
-    numSociosCaf?: number;
-    numSociosTotal?: number;
-  }>;
-  abrangenciaSocio: Array<{
-    id: number;
-    numSocios?: number;
-    estado?: number;
-    municipio?: number;
-  }>;
-  arquivos: Array<{
-    id: number;
-    arquivo?: string;
-    obs?: string;
-  }>;
-  fotos: Array<{
-    id: number;
-    foto?: string;
-    obs?: string;
-  }>;
-  producoes: Array<{
-    id: number;
-    cultura?: string;
-    anual?: number;
-    mensal?: number;
-  }>;
-}
-
-export interface OrganizacaoListResponse {
-  organizacoes: OrganizacaoData[];
-  total: number;
-  pagina: number;
-  totalPaginas: number;
-  limit: number;
-}
-
 export const organizacaoAPI = {
   /**
-   * Listar organizações
+   * Listar organizações com filtros avançados
    */
-  list: async (filters: {
-    nome?: string;
-    cnpj?: string;
-    estado?: number;
-    municipio?: number;
-    page?: number;
-    limit?: number;
-  } = {}): Promise<OrganizacaoListResponse> => {
+  list: async (filters: FiltrosOrganizacao = {}): Promise<ListaOrganizacoesResponse> => {
     const params = new URLSearchParams();
     
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined) {
+      if (value !== undefined && value !== '') {
         params.append(key, value.toString());
       }
     });
 
-    const response = await api.get<ApiResponse<OrganizacaoListResponse>>(`/organizacoes?${params}`);
+    const response = await api.get<ApiResponse<ListaOrganizacoesResponse>>(`/organizacoes?${params}`);
 
     if (!response.data.success) {
       throw new Error(response.data.error?.message || 'Erro ao listar organizações');
@@ -306,7 +258,7 @@ export const organizacaoAPI = {
   },
 
   /**
-   * Buscar organização por ID
+   * Buscar organização completa por ID
    */
   getById: async (id: number): Promise<OrganizacaoCompleta> => {
     const response = await api.get<ApiResponse<OrganizacaoCompleta>>(`/organizacoes/${id}`);
@@ -321,8 +273,8 @@ export const organizacaoAPI = {
   /**
    * Criar nova organização
    */
-  create: async (data: Partial<OrganizacaoData>): Promise<OrganizacaoData> => {
-    const response = await api.post<ApiResponse<OrganizacaoData>>('/organizacoes', data);
+  create: async (data: Partial<CadastroOrganizacaoForm>): Promise<OrganizacaoCompleta> => {
+    const response = await api.post<ApiResponse<OrganizacaoCompleta>>('/organizacoes', data);
 
     if (!response.data.success) {
       throw new Error(response.data.error?.message || 'Erro ao criar organização');
@@ -332,10 +284,10 @@ export const organizacaoAPI = {
   },
 
   /**
-   * Atualizar organização
+   * Atualizar organização existente
    */
-  update: async (id: number, data: Partial<OrganizacaoData>): Promise<OrganizacaoData> => {
-    const response = await api.put<ApiResponse<OrganizacaoData>>(`/organizacoes/${id}`, data);
+  update: async (id: number, data: Partial<CadastroOrganizacaoForm>): Promise<OrganizacaoCompleta> => {
+    const response = await api.put<ApiResponse<OrganizacaoCompleta>>(`/organizacoes/${id}`, data);
 
     if (!response.data.success) {
       throw new Error(response.data.error?.message || 'Erro ao atualizar organização');
@@ -345,7 +297,7 @@ export const organizacaoAPI = {
   },
 
   /**
-   * Remover organização
+   * Remover organização (soft delete)
    */
   delete: async (id: number): Promise<void> => {
     const response = await api.delete<ApiResponse>(`/organizacoes/${id}`);
@@ -358,14 +310,128 @@ export const organizacaoAPI = {
   /**
    * Obter estatísticas do dashboard
    */
-  getDashboard: async () => {
-    const response = await api.get<ApiResponse<any>>('/organizacoes/dashboard');
+  getDashboard: async (): Promise<DashboardStats> => {
+    const response = await api.get<ApiResponse<DashboardStats>>('/organizacoes/dashboard');
 
     if (!response.data.success) {
       throw new Error(response.data.error?.message || 'Erro ao carregar dashboard');
     }
 
     return response.data.data!;
+  }
+};
+
+// ========== SERVIÇOS AUXILIARES ==========
+
+export const auxiliarAPI = {
+  /**
+   * Obter lista de estados
+   */
+  getEstados: async (): Promise<Estado[]> => {
+    try {
+      const response = await api.get<ApiResponse<Estado[]>>('/auxiliar/estados');
+      
+      if (!response.data.success) {
+        throw new Error(response.data.error?.message || 'Erro ao carregar estados');
+      }
+      
+      return response.data.data!;
+    } catch (error) {
+      // Fallback para dados padrão se API não estiver disponível
+      console.warn('Usando dados padrão para estados:', error);
+      
+      return [
+        { id: 1, nome: 'Minas Gerais', uf: 'MG', codigo_ibge: 31 },
+        { id: 2, nome: 'Bahia', uf: 'BA', codigo_ibge: 29 },
+        { id: 3, nome: 'Espírito Santo', uf: 'ES', codigo_ibge: 32 },
+        { id: 4, nome: 'São Paulo', uf: 'SP', codigo_ibge: 35 }
+      ];
+    }
+  },
+
+  /**
+   * Obter municípios por estado
+   */
+  getMunicipios: async (estadoId?: number): Promise<Municipio[]> => {
+    try {
+      const params = estadoId ? `?estadoId=${estadoId}` : '';
+      const response = await api.get<ApiResponse<Municipio[]>>(`/auxiliar/municipios${params}`);
+      
+      if (!response.data.success) {
+        throw new Error(response.data.error?.message || 'Erro ao carregar municípios');
+      }
+      
+      return response.data.data!;
+    } catch (error) {
+      // Fallback para dados padrão
+      console.warn('Usando dados padrão para municípios:', error);
+      
+      const municipiosPadrao = [
+        { id: 1, nome: 'Diamantina', codigo_ibge: 3120904, estadoId: 1 },
+        { id: 2, nome: 'Belo Horizonte', codigo_ibge: 3106200, estadoId: 1 },
+        { id: 3, nome: 'Salvador', codigo_ibge: 2927408, estadoId: 2 },
+        { id: 4, nome: 'Vitória', codigo_ibge: 3205309, estadoId: 3 }
+      ];
+      
+      return estadoId 
+        ? municipiosPadrao.filter(m => m.estadoId === estadoId)
+        : municipiosPadrao;
+    }
+  },
+
+  /**
+   * Obter lista de funções
+   */
+  getFuncoes: async (): Promise<Funcao[]> => {
+    try {
+      const response = await api.get<ApiResponse<Funcao[]>>('/auxiliar/funcoes');
+      
+      if (!response.data.success) {
+        throw new Error(response.data.error?.message || 'Erro ao carregar funções');
+      }
+      
+      return response.data.data!;
+    } catch (error) {
+      // Fallback para dados padrão
+      console.warn('Usando dados padrão para funções:', error);
+      
+      return [
+        { id: 1, nome: 'Presidente', descricao: 'Presidente da organização' },
+        { id: 2, nome: 'Vice-Presidente', descricao: 'Vice-Presidente da organização' },
+        { id: 3, nome: 'Secretário', descricao: 'Secretário da organização' },
+        { id: 4, nome: 'Tesoureiro', descricao: 'Tesoureiro da organização' },
+        { id: 5, nome: 'Diretor', descricao: 'Diretor da organização' },
+        { id: 6, nome: 'Coordenador', descricao: 'Coordenador da organização' },
+        { id: 7, nome: 'Outro', descricao: 'Outra função' }
+      ];
+    }
+  },
+
+  /**
+   * Obter respostas de questionário por categoria
+   */
+  getRespostasQuestionario: async (categoria?: string): Promise<RespostaQuestionario[]> => {
+    try {
+      const params = categoria ? `?categoria=${categoria}` : '';
+      const response = await api.get<ApiResponse<RespostaQuestionario[]>>(`/auxiliar/respostas${params}`);
+      
+      if (!response.data.success) {
+        throw new Error(response.data.error?.message || 'Erro ao carregar respostas');
+      }
+      
+      return response.data.data!;
+    } catch (error) {
+      // Fallback para dados padrão
+      console.warn('Usando dados padrão para respostas:', error);
+      
+      return [
+        { id: 1, valor: 'Excelente', descricao: 'Totalmente implementado', categoria: 'avaliacao' },
+        { id: 2, valor: 'Bom', descricao: 'Parcialmente implementado', categoria: 'avaliacao' },
+        { id: 3, valor: 'Regular', descricao: 'Em desenvolvimento', categoria: 'avaliacao' },
+        { id: 4, valor: 'Ruim', descricao: 'Não implementado', categoria: 'avaliacao' },
+        { id: 5, valor: 'Não se aplica', descricao: 'Não aplicável', categoria: 'avaliacao' }
+      ];
+    }
   }
 };
 
