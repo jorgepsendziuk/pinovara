@@ -63,10 +63,79 @@ jobs:
 
     - name: 🔐 Setup SSH
       run: |
+        echo "🔐 Setting up SSH connection..."
         mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 700 ~/.ssh
+        
+        # Write the private key and ensure correct format
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
+        
+        # Check key format and convert if needed
+        KEY_HEADER=$(head -n1 ~/.ssh/id_rsa)
+        echo "🔍 Key format detected: $KEY_HEADER"
+        
+        if [[ "$KEY_HEADER" == *"BEGIN RSA PRIVATE KEY"* ]]; then
+          echo "📋 RSA format detected - ensuring compatibility..."
+          # For RSA format, we may need to convert to OpenSSH format
+          if command -v ssh-keygen >/dev/null 2>&1; then
+            # Try to convert RSA to OpenSSH format
+            if ssh-keygen -p -m OpenSSH -f ~/.ssh/id_rsa -N "" > /dev/null 2>&1; then
+              echo "✅ Converted RSA key to OpenSSH format"
+            else
+              echo "ℹ️ Using RSA key as-is (conversion not needed)"
+            fi
+          fi
+        elif [[ "$KEY_HEADER" == *"BEGIN OPENSSH PRIVATE KEY"* ]]; then
+          echo "✅ OpenSSH format detected"
+        else
+          echo "⚠️ Unknown key format: $KEY_HEADER"
+        fi
+        
+        # Validate the key can be used
+        if ! ssh-keygen -l -f ~/.ssh/id_rsa > /dev/null 2>&1; then
+          echo "❌ SSH key validation failed"
+          echo "🔍 Key starts with: $(head -n1 ~/.ssh/id_rsa | cut -c1-50)"
+          echo "🔍 Key ends with: $(tail -n1 ~/.ssh/id_rsa | cut -c1-50)"
+          # Try alternative validation
+          echo "🔧 Trying alternative key validation..."
+          if openssl rsa -in ~/.ssh/id_rsa -check -noout > /dev/null 2>&1; then
+            echo "✅ Key validated with OpenSSL"
+          else
+            echo "❌ Key validation failed completely"
+            exit 1
+          fi
+        else
+          echo "✅ SSH private key format is valid"
+        fi
+        
+        # Add server to known hosts
         ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+        
+        # Create SSH config for better connection handling
+        cat >> ~/.ssh/config << EOF
+        Host deploy-server
+            HostName ${{ secrets.SERVER_HOST }}
+            User ${{ secrets.SERVER_USER }}
+            IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking accept-new
+            ConnectTimeout 30
+            ServerAliveInterval 60
+            ServerAliveCountMax 3
+        EOF
+        chmod 600 ~/.ssh/config
+        
+        # Test SSH connection
+        echo "🔍 Testing SSH connection..."
+        if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'echo "SSH connection successful"'; then
+          echo "✅ SSH connection test passed"
+        else
+          echo "❌ SSH connection test failed"
+          echo "🔍 Debugging SSH connection..."
+          ssh -vvv -o ConnectTimeout=10 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'echo "Debug connection"' || true
+          exit 1
+        fi
 
     - name: 🚀 Deploy to Server
       run: |
@@ -249,38 +318,62 @@ jobs:
 
         chmod +x $DEPLOY_DIR/deploy.sh
 
-        # Upload and execute
-        scp -r $DEPLOY_DIR ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+        # Upload and execute with retry mechanism
+        echo "📤 Uploading files to server..."
+        for i in {1..3}; do
+          if scp -o ConnectTimeout=30 -o ServerAliveInterval=60 -r $DEPLOY_DIR ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/; then
+            echo "✅ Files uploaded successfully"
+            break
+          else
+            echo "⚠️ Upload attempt $i failed, retrying..."
+            sleep 5
+          fi
+        done
+        
+        echo "🚀 Executing deployment script..."
+        ssh -o ConnectTimeout=30 -o ServerAliveInterval=60 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
         echo '👤 SSH User: ${{ secrets.SERVER_USER }}'
         echo '👤 Current user in SSH session: \$(whoami)'
         echo '👤 \$USER variable in SSH: '\$USER
         DEPLOY_TMP_DIR=\$(ls -d /tmp/pinovara-deploy-* | head -1)
         export DEPLOY_TMP_DIR
-        bash \$DEPLOY_TMP_DIR/deploy.sh
+        timeout 300 bash \$DEPLOY_TMP_DIR/deploy.sh
         "
 
         # Cleanup
         rm -rf $DEPLOY_DIR
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'rm -rf /tmp/pinovara-deploy-*'
+        echo "🧹 Cleaning up temporary files..."
+        ssh -o ConnectTimeout=30 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'rm -rf /tmp/pinovara-deploy-*'
 
     - name: ✅ Verify Deployment
       run: |
         echo "🔍 Verifying deployment..."
-        sleep 10
+        sleep 15
 
-        # Check backend
-        if ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'curl -f http://localhost:3001/health > /dev/null 2>&1'; then
-          echo "✅ Backend is running"
-        else
-          echo "❌ Backend not responding"
-        fi
+        # Check backend with retry
+        echo "🔍 Checking backend service..."
+        for i in {1..5}; do
+          if ssh -o ConnectTimeout=30 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'curl -f http://localhost:3001/health > /dev/null 2>&1'; then
+            echo "✅ Backend is running and healthy"
+            break
+          else
+            echo "⏳ Backend check attempt $i/5 failed, waiting..."
+            sleep 10
+          fi
+        done
+
+        # Check PM2 status
+        echo "🔍 Checking PM2 processes..."
+        ssh -o ConnectTimeout=30 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'pm2 list | grep pinovara || echo "⚠️ PM2 process not found"'
 
         # Check frontend
-        if ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'curl -f http://localhost/ > /dev/null 2>&1'; then
+        echo "🔍 Checking frontend service..."
+        if ssh -o ConnectTimeout=30 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'curl -f http://localhost/ > /dev/null 2>&1'; then
           echo "✅ Frontend is running"
         else
           echo "⚠️ Frontend may need Nginx configuration"
+          # Show basic diagnostics
+          ssh -o ConnectTimeout=30 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'ls -la /var/www/html/ | head -5 || echo "Frontend directory not found"'
         fi
 
         echo "🎉 Deployment verification complete!"
