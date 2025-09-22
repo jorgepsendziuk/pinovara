@@ -184,22 +184,31 @@ jobs:
         # Navigate to target directory for execution
         cd /var/www/pinovara/backend || { echo "❌ Failed to cd to /var/www/pinovara/backend"; exit 1; }
         echo "📂 Current directory: $(pwd)"
+        echo "📁 Directory contents: $(ls -la)"
 
-        # Install dependencies
+        # Ensure we're in the correct directory and it has the right files
+        if [ ! -f "package.json" ]; then
+          echo "❌ package.json not found in current directory"
+          echo "📂 Current dir: $(pwd)"
+          echo "📁 Contents: $(ls -la)"
+          exit 1
+        fi
+
+        # Install dependencies with explicit working directory
         echo "📦 Installing dependencies..."
-        sudo npm ci --production --unsafe-perm
+        cd /var/www/pinovara/backend && sudo npm ci --production --unsafe-perm
 
-        # Database setup
+        # Database setup with explicit directory
         echo "🗄️ Setting up database..."
-        sudo npx prisma generate
+        cd /var/www/pinovara/backend && sudo npx prisma generate
         
         # Use migrations for production safety (no data loss)
-        if sudo npx prisma migrate status; then
+        if cd /var/www/pinovara/backend && sudo npx prisma migrate status; then
           echo "📊 Applying pending migrations..."
-          sudo npx prisma migrate deploy
+          cd /var/www/pinovara/backend && sudo npx prisma migrate deploy
         else
           echo "⚠️ No migrations found, using db push (CAREFUL!)"
-          sudo npx prisma db push
+          cd /var/www/pinovara/backend && sudo npx prisma db push
         fi
 
         # Start application
