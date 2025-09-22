@@ -19,6 +19,7 @@
     "env:remote": "./scripts/dev/switch-environment.sh remote", 
     "env:mixed": "./scripts/dev/switch-environment.sh mixed",
     "env:status": "./scripts/dev/switch-environment.sh status",
+    "test:db": "./scripts/test/test-db-connection.sh",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "clean": "rm -rf logs/ && rm -rf backend/node_modules && rm -rf frontend/node_modules && rm -rf node_modules",
     "build": "cd backend && npm run build && cd ../frontend && npm run build",
