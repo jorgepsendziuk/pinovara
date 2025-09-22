@@ -187,12 +187,12 @@ jobs:
 
         # Install dependencies
         echo "📦 Installing dependencies..."
-        npm ci --production
+        sudo npm ci --production --unsafe-perm
 
         # Database setup
         echo "🗄️ Setting up database..."
-        npx prisma generate
-        npx prisma db push --accept-data-loss || npx prisma db push
+        sudo npx prisma generate
+        sudo npx prisma db push --accept-data-loss || sudo npx prisma db push
 
         # Start application
         echo "🚀 Starting application..."
