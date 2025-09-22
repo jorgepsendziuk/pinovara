@@ -193,6 +193,8 @@ jobs:
           echo "📁 Contents: $(ls -la)"
           exit 1
         fi
+        
+        sudo chmod -R 777 /var/www/pinovara/backend 
 
         # Install dependencies with explicit working directory
         echo "📦 Installing dependencies..."
