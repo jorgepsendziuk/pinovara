@@ -124,6 +124,8 @@ jobs:
         echo "✅ PM2 available"
 
         # Create directories with proper ownership from start
+        echo "👤 Current user: $(whoami)"
+        echo "👤 \$USER variable: $USER"
         sudo mkdir -p /var/www/pinovara
         sudo chown -R $USER:$USER /var/www/pinovara
 
@@ -250,6 +252,9 @@ jobs:
         # Upload and execute
         scp -r $DEPLOY_DIR ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+        echo '👤 SSH User: ${{ secrets.SERVER_USER }}'
+        echo '👤 Current user in SSH session: \$(whoami)'
+        echo '👤 \$USER variable in SSH: '\$USER
         DEPLOY_TMP_DIR=\$(ls -d /tmp/pinovara-deploy-* | head -1)
         export DEPLOY_TMP_DIR
         bash \$DEPLOY_TMP_DIR/deploy.sh
