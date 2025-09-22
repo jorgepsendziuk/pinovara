@@ -192,7 +192,15 @@ jobs:
         # Database setup
         echo "🗄️ Setting up database..."
         sudo npx prisma generate
-        sudo npx prisma db push --accept-data-loss || sudo npx prisma db push
+        
+        # Use migrations for production safety (no data loss)
+        if sudo npx prisma migrate status; then
+          echo "📊 Applying pending migrations..."
+          sudo npx prisma migrate deploy
+        else
+          echo "⚠️ No migrations found, using db push (CAREFUL!)"
+          sudo npx prisma db push
+        fi
 
         # Start application
         echo "🚀 Starting application..."
