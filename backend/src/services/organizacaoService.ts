@@ -59,7 +59,9 @@ class OrganizacaoService {
     return {
       organizacoes,
       total,
-      totalPaginas
+      totalPaginas,
+      pagina: page,
+      limit
     };
   }
 
