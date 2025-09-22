@@ -1,0 +1,234 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["pinovara", "pinovara_aux"]
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String
+  name      String
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  auditLogs AuditLog[]
+  userRoles UserRole[]
+
+  @@map("users")
+  @@schema("pinovara")
+}
+
+model Module {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roles       Role[]
+
+  @@map("modules")
+  @@schema("pinovara")
+}
+
+model Role {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  moduleId    Int
+  module      Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  userRoles   UserRole[]
+
+  @@unique([name, moduleId])
+  @@map("roles")
+  @@schema("pinovara")
+}
+
+model UserRole {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    Int
+  roleId    Int
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+  @@schema("pinovara")
+}
+
+model SystemSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  type        String
+  description String?
+  category    String   @default("general")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+  @@schema("pinovara")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  entity    String
+  entityId  String?
+  oldData   String?
+  newData   String?
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+  @@schema("pinovara")
+}
+
+model Organizacao {
+  id                                Int                @id @default(autoincrement())
+  nome                              String?
+  cnpj                              String?
+  telefone                          String?
+  email                             String?
+  estado                            Int?
+  municipio                         Int?
+  gpsLat                            Float?   @map("gps_lat")
+  gpsLng                            Float?   @map("gps_lng")
+  dataFundacao                      DateTime? @map("data_fundacao")
+  inicio                            DateTime?
+  fim                               DateTime?
+  deviceid                          String?
+  dataVisita                        DateTime? @map("data_visita")
+  gpsAlt                            Float?   @map("gps_alt")
+  gpsAcc                            Float?   @map("gps_acc")
+  metaInstanceId                    String? @map("meta_instance_id")
+  metaInstanceName                  String? @map("meta_instance_name")
+  removido                          Boolean            @default(false)
+  idTecnico                         Int?    @map("id_tecnico")
+  abrangenciaPj                     AbrangenciaPj[]
+  abrangenciaSocio                  AbrangenciaSocio[]
+  arquivos                          Arquivo[]
+  fotos                             Foto[]
+  producoes                         Producao[]
+
+  @@map("organizacao")
+  @@schema("pinovara")
+}
+
+model AbrangenciaPj {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  razaoSocial       String?
+  sigla             String?
+  cnpjPj            String?
+  numSociosCaf      Int?
+  numSociosTotal    Int?
+  estado            Int?
+  municipio         Int?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_abrangencia_pj")
+  @@schema("pinovara")
+}
+
+model AbrangenciaSocio {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  numSocios         Int?
+  estado            Int?
+  municipio         Int?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_abrangencia_socio")
+  @@schema("pinovara")
+}
+
+model Arquivo {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  arquivo           String?
+  obs               String?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_arquivo")
+  @@schema("pinovara")
+}
+
+model Foto {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  grupo             Int?
+  foto              String?
+  obs               String?
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_foto")
+  @@schema("pinovara")
+}
+
+model Producao {
+  id                Int         @id @default(autoincrement())
+  uri               String      @unique @map("_uri")
+  creatorUriUser    String      @map("_creator_uri_user")
+  creationDate      DateTime    @map("_creation_date")
+  lastUpdateUriUser String?     @map("_last_update_uri_user")
+  lastUpdateDate    DateTime    @map("_last_update_date")
+  parentAuri        String?     @map("_parent_auri")
+  ordinalNumber     Int         @map("_ordinal_number")
+  topLevelAuri      String?     @map("_top_level_auri")
+  cultura           String?
+  anual             Decimal?    @db.Decimal(16, 2)
+  mensal            Decimal?    @db.Decimal(16, 2)
+  idPinovara        Int
+  organizacao       Organizacao @relation(fields: [idPinovara], references: [id])
+
+  @@map("pinovara_producao")
+  @@schema("pinovara")
+}
