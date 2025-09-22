@@ -107,7 +107,7 @@ class Logger {
   public logAccess(entry: LogEntry): void {
     // Log no console em desenvolvimento
     if (process.env.NODE_ENV !== 'production') {
-      const color = entry.statusCode >= 400 ? '\x1b[31m' : '\x1b[32m';
+      const color = (entry.statusCode || 0) >= 400 ? '\x1b[31m' : '\x1b[32m';
       const reset = '\x1b[0m';
       console.log(
         `${color}[${entry.timestamp}] ${entry.method} ${entry.url} - ${entry.statusCode} - ${entry.responseTime}ms${reset}`
@@ -139,7 +139,7 @@ export const accessLogger = (req: Request, res: Response, next: NextFunction): v
   // Capturar o método original res.end para calcular tempo de resposta
   const originalEnd = res.end;
   
-  res.end = function(this: Response, ...args: any[]) {
+  res.end = function(this: Response, ...args: any[]): any {
     const responseTime = Date.now() - (req.startTime || 0);
     
     const logEntry: LogEntry = {
@@ -158,7 +158,7 @@ export const accessLogger = (req: Request, res: Response, next: NextFunction): v
     logger.logAccess(logEntry);
     
     // Chamar o método original
-    originalEnd.apply(this, args);
+    return (originalEnd as any).apply(this, args);
   };
 
   // Adicionar requestId aos headers da resposta (útil para debugging)

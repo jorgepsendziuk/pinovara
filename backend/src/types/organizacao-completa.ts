@@ -429,11 +429,11 @@ export interface OrganizacaoCompleta extends
   obs?: string;
   
   // Relacionamentos
-  abrangenciaPj?: AbrangenciaPj[];
-  abrangenciaSocio?: AbrangenciaSocio[];
-  arquivos?: Arquivo[];
-  fotos?: Foto[];
-  producoes?: Producao[];
+  abrangenciaPj?: any[];
+  abrangenciaSocio?: any[];
+  arquivos?: any[];
+  fotos?: any[];
+  producoes?: any[];
 }
 
 // ========== INTERFACES PARA FORMULÁRIOS ==========
