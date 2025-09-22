@@ -62,19 +62,8 @@ export const authenticateToken = async (
     };
 
     // Buscar usuário completo no banco
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      include: {
-        userRoles: {
-          include: {
-            role: {
-              include: {
-                module: true
-              }
-            }
-          }
-        }
-      }
+    const user = await prisma.users.findUnique({
+      where: { id: decoded.userId }
     });
 
     if (!user || !user.active) {
@@ -93,14 +82,7 @@ export const authenticateToken = async (
       id: user.id,
       email: user.email,
       name: user.name,
-      roles: user.userRoles.map(ur => ({
-        id: ur.role.id,
-        name: ur.role.name,
-        module: {
-          id: ur.role.module.id,
-          name: ur.role.module.name
-        }
-      }))
+        roles: [] // Temporariamente vazio
     };
 
     next();
@@ -192,19 +174,8 @@ export const optionalAuth = async (
       email: string;
     };
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      include: {
-        userRoles: {
-          include: {
-            role: {
-              include: {
-                module: true
-              }
-            }
-          }
-        }
-      }
+    const user = await prisma.users.findUnique({
+      where: { id: decoded.userId }
     });
 
     if (user && user.active) {
@@ -212,14 +183,7 @@ export const optionalAuth = async (
         id: user.id,
         email: user.email,
         name: user.name,
-        roles: user.userRoles.map(ur => ({
-          id: ur.role.id,
-          name: ur.role.name,
-          module: {
-            id: ur.role.module.id,
-            name: ur.role.module.name
-          }
-        }))
+        roles: [] // Temporariamente vazio
       };
     }
 

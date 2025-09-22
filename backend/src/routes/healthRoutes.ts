@@ -81,7 +81,7 @@ router.get('/health/detailed', async (req: Request, res: Response) => {
 
     // 2. Database schema validation
     try {
-      const userCount = await prisma.user.count();
+      const userCount = await prisma.users.count();
       const orgCount = await prisma.organizacao.count();
       
       checks.schema = {
@@ -226,7 +226,7 @@ router.get('/metrics', async (req: Request, res: Response) => {
     // Métricas básicas do banco
     let dbMetrics = {};
     try {
-      const userCount = await prisma.user.count();
+      const userCount = await prisma.users.count();
       const orgCount = await prisma.organizacao.count();
       dbMetrics = { userCount, orgCount };
     } catch (error) {

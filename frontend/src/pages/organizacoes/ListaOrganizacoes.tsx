@@ -23,7 +23,7 @@ interface Filtros {
 }
 
 interface ListaOrganizacoesProps {
-  onNavigate: (view: 'dashboard' | 'lista' | 'cadastro' | 'detalhes', organizacaoId?: number) => void;
+  onNavigate: (view: 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa', organizacaoId?: number) => void;
 }
 
 function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
@@ -55,8 +55,13 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       setLoading(true);
       const token = localStorage.getItem('@pinovara:token');
       
-      // Por enquanto, não usar query parameters pois o backend não suporta
-      const response = await fetch(`${API_BASE}/organizacoes`, {
+      // Construir URL com parâmetros de paginação
+      const params = new URLSearchParams({
+        page: paginaAtual.toString(),
+        limit: itensPorPagina.toString()
+      });
+      
+      const response = await fetch(`${API_BASE}/organizacoes?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -68,9 +73,15 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       }
 
       const data = await response.json();
-      // A API retorna um array direto, não um objeto com propriedade organizacoes
-      setOrganizacoes(Array.isArray(data) ? data : []);
-      setTotalPaginas(1); // Por enquanto, sem paginação
+      
+      if (data.success && data.data) {
+        // API retorna: { success: true, data: { organizacoes: [], total: X, pagina: Y, ... } }
+        setOrganizacoes(data.data.organizacoes || []);
+        setTotalPaginas(data.data.totalPaginas || 1);
+      } else {
+        console.error('Formato de resposta inesperado:', data);
+        setOrganizacoes([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -267,17 +278,10 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                         <div className="action-buttons">
                           <button 
                             className="btn btn-sm btn-primary"
-                            onClick={() => onNavigate('detalhes', org.id)}
-                            title="Ver Detalhes"
-                          >
-                            👁️
-                          </button>
-                          <button 
-                            className="btn btn-sm btn-secondary"
                             onClick={() => onNavigate('edicao', org.id)}
                             title="Editar"
                           >
-                            ✏️
+                            ✏️ Editar
                           </button>
                           <button 
                             className="btn btn-sm btn-danger"

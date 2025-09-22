@@ -4,49 +4,49 @@
 
 export interface Organizacao {
   id: number;
-  nome?: string;
-  cnpj?: string;
-  telefone?: string;
-  email?: string;
-  estado?: number;
-  municipio?: number;
-  gpsLat?: number;
-  gpsLng?: number;
-  gpsAlt?: number;
-  gpsAcc?: number;
-  dataFundacao?: Date;
-  inicio?: Date;
-  fim?: Date;
-  deviceid?: string;
-  dataVisita?: Date;
-  metaInstanceId?: string;
-  metaInstanceName?: string;
-  removido: boolean;
-  idTecnico?: number;
+  nome?: string | null;
+  cnpj?: string | null;
+  telefone?: string | null;
+  email?: string | null;
+  estado?: number | null;
+  municipio?: number | null;
+  gps_lat?: number | null;
+  gps_lng?: number | null;
+  gps_alt?: number | null;
+  gps_acc?: number | null;
+  data_fundacao?: Date | null;
+  inicio?: Date | null;
+  fim?: Date | null;
+  deviceid?: string | null;
+  data_visita?: Date | null;
+  meta_instance_id?: string | null;
+  meta_instance_name?: string | null;
+  removido?: boolean | null;
+  id_tecnico?: number | null;
 }
 
 export interface OrganizacaoCompleta extends Organizacao {
-  abrangenciaPj: AbrangenciaPj[];
-  abrangenciaSocio: AbrangenciaSocio[];
-  arquivos: Arquivo[];
-  fotos: Foto[];
-  producoes: Producao[];
+  organizacao_abrangencia_pj: AbrangenciaPj[];
+  organizacao_abrangencia_socio: AbrangenciaSocio[];
+  organizacao_arquivo: Arquivo[];
+  organizacao_foto: Foto[];
+  organizacao_producao: Producao[];
 }
 
 export interface AbrangenciaPj {
   id: number;
-  razaoSocial?: string;
+  razao_social?: string;
   sigla?: string;
-  cnpjPj?: string;
-  numSociosCaf?: number;
-  numSociosTotal?: number;
+  cnpj_pj?: string;
+  num_socios_caf?: number;
+  num_socios_total?: number;
   estado?: number;
   municipio?: number;
 }
 
 export interface AbrangenciaSocio {
   id: number;
-  numSocios?: number;
+  num_socios?: number;
   estado?: number;
   municipio?: number;
 }

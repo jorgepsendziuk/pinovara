@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { organizacaoService } from '../services/organizacaoService';
+import organizacaoService from '../services/organizacaoService';
 import { ApiError } from '../services/authService';
 import { OrganizacaoFilters } from '../types/organizacao';
 import { HttpStatus } from '../types/api';

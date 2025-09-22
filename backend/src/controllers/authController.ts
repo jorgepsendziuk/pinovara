@@ -138,6 +138,37 @@ class AuthController {
   }
 
   /**
+   * PUT /auth/profile
+   */
+  async updateProfile(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(HttpStatus.UNAUTHORIZED).json({
+          success: false,
+          error: {
+            message: 'Usuário não autenticado',
+            statusCode: HttpStatus.UNAUTHORIZED
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const { name, email } = req.body;
+      const updatedUser = await authService.updateProfile(req.user.id, { name, email });
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        message: 'Perfil atualizado com sucesso',
+        data: { user: updatedUser },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
    * Tratar erros de forma padronizada
    */
   private handleError(error: any, res: Response): void {

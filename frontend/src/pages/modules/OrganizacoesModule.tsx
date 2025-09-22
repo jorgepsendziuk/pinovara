@@ -5,12 +5,12 @@ import Sidebar from '../../components/Sidebar';
 import DashboardOrganizacoes from '../organizacoes/DashboardOrganizacoes';
 import ListaOrganizacoes from '../organizacoes/ListaOrganizacoes';
 import CadastroOrganizacao from '../organizacoes/CadastroOrganizacao';
-import DetalhesOrganizacao from '../organizacoes/DetalhesOrganizacao';
+// import DetalhesOrganizacao from '../organizacoes/DetalhesOrganizacao'; // Removido
 import EdicaoOrganizacao from '../organizacoes/EdicaoOrganizacao';
 import MapaOrganizacoes from '../organizacoes/MapaOrganizacoes';
 import '../organizacoes/OrganizacoesModule.css';
 
-type ViewType = 'dashboard' | 'lista' | 'cadastro' | 'detalhes' | 'edicao' | 'mapa';
+type ViewType = 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa';
 
 function OrganizacoesModule() {
   const { } = useAuth();
@@ -33,12 +33,6 @@ function OrganizacoesModule() {
     } else if (path.includes('/edicao/')) {
       setViewAtiva('edicao');
       const id = path.split('/edicao/')[1];
-      if (id) {
-        setOrganizacaoSelecionada(parseInt(id));
-      }
-    } else if (path.includes('/detalhes/')) {
-      setViewAtiva('detalhes');
-      const id = path.split('/detalhes/')[1];
       if (id) {
         setOrganizacaoSelecionada(parseInt(id));
       }
@@ -73,11 +67,7 @@ function OrganizacoesModule() {
           navigate(`/organizacoes/edicao/${organizacaoId}`);
         }
         break;
-      case 'detalhes':
-        if (organizacaoId) {
-          navigate(`/organizacoes/detalhes/${organizacaoId}`);
-        }
-        break;
+      // case 'detalhes': removido
     }
   };
 
@@ -102,17 +92,7 @@ function OrganizacoesModule() {
             </button>
           </div>
         );
-      case 'detalhes':
-        return organizacaoSelecionada ? (
-          <DetalhesOrganizacao organizacaoId={organizacaoSelecionada} onNavigate={handleNavegacao} />
-        ) : (
-          <div className="error-message">
-            <p>❌ ID da organização não fornecido</p>
-            <button onClick={() => setViewAtiva('lista')} className="btn btn-primary">
-              Voltar para Lista
-            </button>
-          </div>
-        );
+      // case 'detalhes': removido
       default:
         return <DashboardOrganizacoes onNavigate={handleNavegacao} />;
     }
