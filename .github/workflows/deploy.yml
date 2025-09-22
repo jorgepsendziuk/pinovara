@@ -180,6 +180,11 @@ jobs:
             echo "❌ prisma/ not found in $DEPLOY_SOURCE"
         fi
 
+        # Fix permissions for current user
+        echo "🔧 Fixing permissions..."
+        sudo chown -R $(whoami):$(whoami) /var/www/pinovara/backend
+        sudo chmod -R 755 /var/www/pinovara/backend
+
         # Navigate to target directory for execution
         cd /var/www/pinovara/backend || { echo "❌ Failed to cd to /var/www/pinovara/backend"; exit 1; }
         echo "📂 Current directory: $(pwd)"
