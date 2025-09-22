@@ -228,7 +228,11 @@ jobs:
 
         # Upload and execute
         scp -r $DEPLOY_DIR ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'bash /tmp/pinovara-deploy-*/deploy.sh'
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+        DEPLOY_TMP_DIR=\$(ls -d /tmp/pinovara-deploy-* | head -1)
+        export DEPLOY_TMP_DIR
+        bash \$DEPLOY_TMP_DIR/deploy.sh
+        "
 
         # Cleanup
         rm -rf $DEPLOY_DIR
