@@ -1,871 +1,324 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-
-interface Organizacao {
-  id: number;
-  nome: string;
-  cnpj: string;
-  telefone: string | null;
-  email: string | null;
-  estado: number | null;
-  municipio: number | null;
-  gpsLat: number | null;
-  gpsLng: number | null;
-  gpsAlt: number | null;
-  gpsAcc: number | null;
-  dataFundacao: string | null;
-  inicio: string | null;
-  fim: string | null;
-  deviceid: string | null;
-  dataVisita: string | null;
-  metaInstanceId: string | null;
-  metaInstanceName: string | null;
-  removido: boolean;
-  idTecnico: number | null;
-}
+import { AbaAtiva } from '../../types/organizacao';
+import { useOrganizacaoData } from '../../hooks/useOrganizacaoData';
+import { useRepresentanteData } from '../../hooks/useRepresentanteData';
+import { useDiagnosticoData } from '../../hooks/useDiagnosticoData';
+import { DadosBasicos } from '../../components/organizacoes/DadosBasicos';
+import { DadosRepresentanteComponent } from '../../components/organizacoes/DadosRepresentante';
+import { CaracteristicasOrganizacao } from '../../components/organizacoes/CaracteristicasOrganizacao';
+import { DiagnosticoArea } from '../../components/organizacoes/DiagnosticoArea';
 
 interface EdicaoOrganizacaoProps {
   organizacaoId: number;
-  onNavigate: (view: 'dashboard' | 'lista' | 'cadastro' | 'detalhes', organizacaoId?: number) => void;
+  onNavigate: (pagina: string, dados?: any) => void;
 }
 
 function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps) {
-  const { } = useAuth();
-  const [organizacao, setOrganizacao] = useState<Organizacao | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [abaAtiva, setAbaAtiva] = useState<'organizacao' | 'diagnostico'>('organizacao');
+  
+  // Estados principais
+  const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('organizacao');
   const [accordionAberto, setAccordionAberto] = useState<string | null>('dados-basicos');
+  const [success, setSuccess] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  // Dados do formulário
-  const [dadosBasicos, setDadosBasicos] = useState({
-    nome: '',
-    cnpj: '',
-    dataFundacao: '',
-    telefone: '',
-    email: ''
-  });
+  // Hooks customizados
+  const {
+    organizacao,
+    loading,
+    error,
+    updateOrganizacao,
+    loadOrganizacao,
+    setError
+  } = useOrganizacaoData();
 
-  const [dadosLocalizacao, setDadosLocalizacao] = useState({
-    endereco: '',
-    bairro: '',
-    cep: '',
-    estado: '',
-    municipio: '',
-    gpsLat: 0,
-    gpsLng: 0,
-    gpsAlt: 0,
-    gpsAcc: 0
-  });
+  const {
+    dadosRepresentante,
+    updateRepresentante,
+    loadFromOrganizacao: loadRepresentanteFromOrganizacao
+  } = useRepresentanteData();
 
-  const [dadosCaracteristicas, setDadosCaracteristicas] = useState({
-    totalSocios: 0,
-    totalSociosCaf: 0,
-    distintosCaf: 0,
-    sociosPaa: 0,
-    naosociosPaa: 0,
-    sociosPnae: 0,
-    naosociosPnae: 0,
-    ativosTotal: 0,
-    ativosCaf: 0
-  });
+  const {
+    governancaOrganizacional,
+    gestaoPessoas,
+    gestaoFinanceira,
+    diagnosticoAberto,
+    updateGovernanca,
+    updateGestaoPessoas,
+    updateGestaoFinanceira,
+    toggleDiagnostico,
+    loadFromOrganizacao: loadDiagnosticoFromOrganizacao
+  } = useDiagnosticoData();
 
-  const [dadosAssociadosCARF, setDadosAssociadosCARF] = useState({
-    // AGR.FAM
-    taAfMulher: 0,
-    taAfHomem: 0,
-    // ASSENTADO
-    taAMulher: 0,
-    taAHomem: 0,
-    // PESCADOR
-    taPMulher: 0,
-    taPHomem: 0,
-    // INDÍGENA
-    taIMulher: 0,
-    taIHomem: 0,
-    // QUILOMBOLA
-    taQMulher: 0,
-    taQHomem: 0,
-    // EXTRATIVISTA
-    taEMulher: 0,
-    taEHomem: 0,
-    // OUTRO
-    taOMulher: 0,
-    taOHomem: 0
-  });
-
-  const [dadosCafTipos, setDadosCafTipos] = useState({
-    // ORGÂNICO
-    taCafOrganico: 0,
-    // AGROECOLÓGICO
-    taCafAgroecologico: 0,
-    // EM TRANSIÇÃO
-    taCafTransicao: 0,
-    // CONVENCIONAL
-    taCafConvencional: 0
-  });
-
-  const [dadosNaosocios, setDadosNaosocios] = useState({
-    // NÃO SÓCIOS TOTAL
-    naosocioOpTotal: 0,
-    // NÃO SÓCIOS COM DAP
-    naosocioOpCaf: 0
-  });
-
-  const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
-
+  // Carregar dados inicial
   useEffect(() => {
     if (organizacaoId) {
-      fetchOrganizacao();
+      loadOrganizacao(organizacaoId);
     }
-  }, [organizacaoId]);
+  }, [organizacaoId, loadOrganizacao]);
 
-  const fetchOrganizacao = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('@pinovara:token');
-      
-      const response = await fetch(`${API_BASE}/organizacoes/${organizacaoId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao carregar organização');
-      }
-
-      const data = await response.json();
-      setOrganizacao(data);
-      
-      // Preencher formulário com dados existentes
-      setDadosBasicos({
-        nome: data.nome || '',
-        cnpj: data.cnpj || '',
-        dataFundacao: data.dataFundacao ? data.dataFundacao.split('T')[0] : '',
-        telefone: data.telefone || '',
-        email: data.email || ''
-      });
-
-      setDadosLocalizacao({
-        endereco: '', // Campo não existe na API
-        bairro: '', // Campo não existe na API
-        cep: '', // Campo não existe na API
-        estado: data.estado?.toString() || '',
-        municipio: data.municipio?.toString() || '',
-        gpsLat: data.gpsLat || 0,
-        gpsLng: data.gpsLng || 0,
-        gpsAlt: data.gpsAlt || 0,
-        gpsAcc: data.gpsAcc || 0
-      });
-
-      // Características não existem na API atual, manter valores padrão
-      setDadosCaracteristicas({
-        totalSocios: 0,
-        totalSociosCaf: 0,
-        distintosCaf: 0,
-        sociosPaa: 0,
-        naosociosPaa: 0,
-        sociosPnae: 0,
-        naosociosPnae: 0,
-        ativosTotal: 0,
-        ativosCaf: 0
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
-    } finally {
-      setLoading(false);
+  // Sincronizar dados quando organização carrega
+  useEffect(() => {
+    if (organizacao) {
+      loadRepresentanteFromOrganizacao(organizacao);
+      loadDiagnosticoFromOrganizacao(organizacao);
     }
-  };
+  }, [organizacao, loadRepresentanteFromOrganizacao, loadDiagnosticoFromOrganizacao]);
 
-  const handleDadosBasicosChange = (field: string, value: string) => {
-    setDadosBasicos(prev => ({ ...prev, [field]: value }));
+  // Handlers
+  const toggleAccordion = (accordion: string) => {
+    setAccordionAberto(accordionAberto === accordion ? null : accordion);
   };
-
-  const handleDadosLocalizacaoChange = (field: string, value: string | number) => {
-    setDadosLocalizacao(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleDadosAssociadosCARFChange = (field: string, value: number) => {
-    setDadosAssociadosCARF(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleDadosCaracteristicasChange = (field: string, value: number) => {
-    setDadosCaracteristicas(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleDadosCafTiposChange = (field: string, value: number) => {
-    setDadosCafTipos(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleDadosNaosociosChange = (field: string, value: number) => {
-    setDadosNaosocios(prev => ({ ...prev, [field]: value }));
-  };
-
 
   const handleSubmit = async () => {
+    if (!organizacao) return;
+
     try {
       setSaving(true);
       setError(null);
       
-      const token = localStorage.getItem('@pinovara:token');
-      
+      // Preparar dados completos
       const dadosCompletos = {
-        ...dadosBasicos,
-        ...dadosLocalizacao,
-        caracteristicas: dadosCaracteristicas,
-        ...dadosAssociadosCARF,
-        ...dadosCafTipos,
-        ...dadosNaosocios
+        ...organizacao,
+        // Dados do representante
+        representante_nome: dadosRepresentante.nome || null,
+        representante_cpf: dadosRepresentante.cpf || null,
+        representante_rg: dadosRepresentante.rg || null,
+        representante_telefone: dadosRepresentante.telefone || null,
+        representante_email: dadosRepresentante.email || null,
+        representante_end_logradouro: dadosRepresentante.endLogradouro || null,
+        representante_end_bairro: dadosRepresentante.endBairro || null,
+        representante_end_complemento: dadosRepresentante.endComplemento || null,
+        representante_end_numero: dadosRepresentante.endNumero || null,
+        representante_end_cep: dadosRepresentante.endCep || null,
+        representante_funcao: dadosRepresentante.funcao || null,
+        // Dados de diagnóstico
+        ...Object.fromEntries(
+          Object.entries(governancaOrganizacional).map(([key, value]) => [key, value.resposta || value.comentario || value.proposta])
+        ),
+        ...Object.fromEntries(
+          Object.entries(gestaoPessoas).map(([key, value]) => [key, value.resposta || value.comentario || value.proposta])
+        ),
+        ...Object.fromEntries(
+          Object.entries(gestaoFinanceira).map(([key, value]) => [key, value.resposta || value.comentario || value.proposta])
+        ),
       };
 
-      const response = await fetch(`${API_BASE}/organizacoes/${organizacaoId}`, {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Token de autenticação não encontrado');
+      }
+
+      const response = await fetch(`http://localhost:3001/organizacoes/${organizacao.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(dadosCompletos)
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao atualizar organização');
+        throw new Error('Erro ao salvar organização');
       }
 
-      setSuccess('Organização atualizada com sucesso!');
+      setSuccess('✅ Organização salva com sucesso!');
       
-      // Navegar para detalhes após 2 segundos
       setTimeout(() => {
-        onNavigate('detalhes', organizacaoId);
-      }, 2000);
+        setSuccess(null);
+      }, 3000);
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar organização');
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setSaving(false);
     }
   };
 
-  const toggleAccordion = (accordionId: string) => {
-    setAccordionAberto(accordionAberto === accordionId ? null : accordionId);
+  // Perguntas REAIS de Governança Organizacional organizadas em sub-acordeões
+    const gruposGovernanca = {
+    estrutura: [
+      { numero: 1, texto: "O empreendimento possui um organograma geral?" },
+      { numero: 2, texto: "Este organograma está de acordo com a realidade do empreendimento?" },
+      { numero: 3, texto: "Dispõe de documentos com a descrição das atribuições, funções, responsabilidades, requisitos, direitos e deveres?" },
+      { numero: 4, texto: "Essas descrições correspondem à realidade da vida organizacional?" }
+    ],
+    estrategia: [
+      { numero: 5, texto: "Possui um Planejamento Estratégico, com missão, visão, valores e objetivos estratégicos (econômicos, financeiros e comerciais)?" },
+      { numero: 6, texto: "Este planejamento é implementado, monitorado e avaliado periodicamente?" }
+    ],
+    organizacao: [
+      { numero: 7, texto: "Aplica as normas estatutárias para admissão e exclusão de associados?" },
+      { numero: 8, texto: "Na visão da diretoria, os associados confiam na diretoria?" },
+      { numero: 9, texto: "A diretoria confia no quadro de associados?" },
+      { numero: 10, texto: "O empreendimento possui uma estratégia para lidar com os conflitos e desentendimentos entre a direção e os associados?" },
+      { numero: 11, texto: "Os associados se organizam para discutir os problemas e ajudar na tomada de decisão?" },
+      { numero: 12, texto: "O empreendimento se utiliza de práticas formalizadas de integração de novos associados?" },
+      { numero: 13, texto: "Possui livro de matrícula dos associados atualizado?" }
+    ],
+    direcao: [
+      { numero: 14, texto: "Remunera financeiramente os dirigentes no cumprimento de suas funções (diária, subsídio, salário)?" },
+      { numero: 15, texto: "A direção mantém periodicidade em suas reuniões?" },
+      { numero: 16, texto: "Além das assembleias, o empreendimento dispõe de outros espaços de participação dos associados nas decisões?" },
+      { numero: 17, texto: "O empreendimento dispõe de estratégias definidas para o fortalecimento da participação das mulheres no empreendimento?" },
+      { numero: 18, texto: "O empreendimento dispõe de estratégias definidas para o fortalecimento da participação de jovens e idosos no empreendimento?" },
+      { numero: 19, texto: "O empreendimento possui instrumentos formais de estímulo da participação dos colaboradores e associados nas tomadas de decisões?" },
+      { numero: 20, texto: "Existem comitês consultivos ou setoriais para engajar os membros nas discussões e na formulação de propostas?" },
+      { numero: 21, texto: "Existem mecanismos internos claros para mediar e resolver disputas entre os associados e entre os órgãos do empreendimento?" }
+    ],
+    controle: [
+      { numero: 20, texto: "O conselho fiscal é atuante no empreendimento?" },
+      { numero: 21, texto: "A direção se reúne periodicamente com o conselho fiscal?" },
+      { numero: 22, texto: "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?" },
+      { numero: 23, texto: "Realiza assembleias anuais para prestação de contas?" },
+      { numero: 24, texto: "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?" },
+      { numero: 25, texto: "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?" }
+    ],
+    educacao: [
+      { numero: 26, texto: "Os cooperados são capacitados em princípios do cooperativismo?" },
+      { numero: 27, texto: "Os cooperados são capacitados em gestão de cooperativas?" },
+      { numero: 28, texto: "Há planos para identificar, capacitar e preparar novos líderes?" }
+    ]
   };
 
+    const gruposGestaoPessoas = {
+    capacitacao: [
+      { numero: 1, texto: "Existe programa de capacitação dos associados?" },
+      { numero: 2, texto: "Os dirigentes participam de cursos de gestão?" }
+    ],
+    comunicacao: [
+      { numero: 3, texto: "A comunicação interna é eficiente?" },
+      { numero: 4, texto: "Existe canal de comunicação com associados?" }
+    ]
+  };
+
+    const gruposGestaoFinanceira = {
+    controle: [
+      { numero: 1, texto: "Existe controle financeiro formalizado?" },
+      { numero: 2, texto: "São elaborados relatórios financeiros?" }
+    ],
+    planejamento: [
+      { numero: 3, texto: "Existe orçamento anual aprovado?" },
+      { numero: 4, texto: "O fluxo de caixa é controlado?" }
+    ]
+  };
+
+  // Renderização das abas
   const renderAbaOrganizacao = () => (
     <div className="aba-content">
       <div className="accordions-container">
-        {/* Accordion Dados Básicos */}
-        <div className="accordion-item">
-          <button
-            className="accordion-header"
-            onClick={() => toggleAccordion('dados-basicos')}
-          >
-            <h3>📝 Dados Básicos da Organização</h3>
-            <span className={`accordion-icon ${accordionAberto === 'dados-basicos' ? 'open' : ''}`}>
-              ▼
-            </span>
-          </button>
-          <div className={`accordion-content ${accordionAberto === 'dados-basicos' ? 'open' : ''}`}>
-            <div className="accordion-section">
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label>Nome da Organização *</label>
-                  <input
-                    type="text"
-                    value={dadosBasicos.nome}
-                    onChange={(e) => handleDadosBasicosChange('nome', e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>CNPJ</label>
-                  <input
-                    type="text"
-                    value={dadosBasicos.cnpj}
-                    onChange={(e) => handleDadosBasicosChange('cnpj', e.target.value)}
-                    placeholder="00.000.000/0000-00"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Data de Fundação</label>
-                  <input
-                    type="date"
-                    value={dadosBasicos.dataFundacao}
-                    onChange={(e) => handleDadosBasicosChange('dataFundacao', e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Telefone</label>
-                  <input
-                    type="tel"
-                    value={dadosBasicos.telefone}
-                    onChange={(e) => handleDadosBasicosChange('telefone', e.target.value)}
-                    placeholder="(00) 00000-0000"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>E-mail</label>
-                  <input
-                    type="email"
-                    value={dadosBasicos.email}
-                    onChange={(e) => handleDadosBasicosChange('email', e.target.value)}
-                    placeholder="contato@organizacao.com"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Accordion Localização */}
-        <div className="accordion-item">
-          <button
-            className="accordion-header"
-            onClick={() => toggleAccordion('localizacao')}
-          >
-            <h3>📍 Localização</h3>
-            <span className={`accordion-icon ${accordionAberto === 'localizacao' ? 'open' : ''}`}>
-              ▼
-            </span>
-          </button>
-          <div className={`accordion-content ${accordionAberto === 'localizacao' ? 'open' : ''}`}>
-            <div className="accordion-section">
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label>Endereço</label>
-                  <input
-                    type="text"
-                    value={dadosLocalizacao.endereco}
-                    onChange={(e) => handleDadosLocalizacaoChange('endereco', e.target.value)}
-                    placeholder="Rua, número, complemento"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Bairro</label>
-                  <input
-                    type="text"
-                    value={dadosLocalizacao.bairro}
-                    onChange={(e) => handleDadosLocalizacaoChange('bairro', e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>CEP</label>
-                  <input
-                    type="text"
-                    value={dadosLocalizacao.cep}
-                    onChange={(e) => handleDadosLocalizacaoChange('cep', e.target.value)}
-                    placeholder="00000-000"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Estado</label>
-                  <input
-                    type="text"
-                    value={dadosLocalizacao.estado}
-                    onChange={(e) => handleDadosLocalizacaoChange('estado', e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Município</label>
-                  <input
-                    type="text"
-                    value={dadosLocalizacao.municipio}
-                    onChange={(e) => handleDadosLocalizacaoChange('municipio', e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Latitude GPS</label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={dadosLocalizacao.gpsLat}
-                    onChange={(e) => handleDadosLocalizacaoChange('gpsLat', parseFloat(e.target.value) || 0)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Longitude GPS</label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={dadosLocalizacao.gpsLng}
-                    onChange={(e) => handleDadosLocalizacaoChange('gpsLng', parseFloat(e.target.value) || 0)}
-                  />
-                </div>
-
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Accordion Características dos Associados */}
-        <div className="accordion-item">
-          <button
-            className="accordion-header"
-            onClick={() => toggleAccordion('caracteristicas-associados')}
-          >
-            <h3>👥 Características dos Associados Pessoa Física e da Base Produtiva</h3>
-            <span className={`accordion-icon ${accordionAberto === 'caracteristicas-associados' ? 'open' : ''}`}>
-              ▼
-            </span>
-          </button>
-          <div className={`accordion-content ${accordionAberto === 'caracteristicas-associados' ? 'open' : ''}`}>
-            <div className="accordion-section">
-        {/* Campos de Sócios */}
-        <div className="socios-summary">
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Nº. Total de Sócios no Presente Momento (com e sem CARF)</label>
-              <input
-                type="number"
-                value={dadosCaracteristicas.totalSocios}
-                onChange={(e) => handleDadosCaracteristicasChange('totalSocios', parseInt(e.target.value) || 0)}
-                min="0"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Nº. Total de Sócios no Presente Momento com CARF ("nº. de CPF")</label>
-              <input
-                type="number"
-                value={dadosCaracteristicas.totalSociosCaf}
-                onChange={(e) => handleDadosCaracteristicasChange('totalSociosCaf', parseInt(e.target.value) || 0)}
-                min="0"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>% Sócios com CARF</label>
-              <input
-                type="text"
-                value={dadosCaracteristicas.totalSocios > 0 ? 
-                  ((dadosCaracteristicas.totalSociosCaf / dadosCaracteristicas.totalSocios) * 100).toFixed(1) + '%' : '0%'}
-                readOnly
-                className="form-input readonly"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Nº. de CARF Distintas no Empreendimento ("nº. de Famílias")</label>
-              <input
-                type="number"
-                value={dadosCaracteristicas.distintosCaf}
-                onChange={(e) => handleDadosCaracteristicasChange('distintosCaf', parseInt(e.target.value) || 0)}
-                min="0"
-                className="form-input"
-              />
-            </div>
-
-          </div>
-        </div>
-
-        {/* Tabela Total de Associados com CARF */}
-        <div className="table-container">
-          <table className="associados-carf-table">
-            <thead>
-              <tr>
-                <th rowSpan={3} className="header-cell">Total de Associados com CARF</th>
-                <th>AGR.FAM</th>
-                <th>ASSENTADO</th>
-                <th>PESCADOR</th>
-                <th>INDÍGENA</th>
-                <th>QUILOMBOLA</th>
-                <th>EXTRATIVISTA</th>
-                <th>OUTRO</th>
-                <th rowSpan={3} className="header-cell">TOTAL</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="data-row">
-                <td className="row-label">Nº. de Homens</td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taAfHomem}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taAfHomem', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taAHomem}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taAHomem', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taPHomem}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taPHomem', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taIHomem}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taIHomem', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taQHomem}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taQHomem', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taEHomem}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taEHomem', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taOHomem}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taOHomem', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td className="total-cell">
-                  {dadosAssociadosCARF.taAfHomem + dadosAssociadosCARF.taAHomem + dadosAssociadosCARF.taPHomem + 
-                   dadosAssociadosCARF.taIHomem + dadosAssociadosCARF.taQHomem + dadosAssociadosCARF.taEHomem + 
-                   dadosAssociadosCARF.taOHomem}
-                </td>
-              </tr>
-              <tr className="data-row">
-                <td className="row-label">Nº. de Mulheres</td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taAfMulher}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taAfMulher', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taAMulher}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taAMulher', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taPMulher}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taPMulher', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taIMulher}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taIMulher', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taQMulher}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taQMulher', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taEMulher}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taEMulher', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosAssociadosCARF.taOMulher}
-                    onChange={(e) => handleDadosAssociadosCARFChange('taOMulher', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td className="total-cell">
-                  {dadosAssociadosCARF.taAfMulher + dadosAssociadosCARF.taAMulher + dadosAssociadosCARF.taPMulher + 
-                   dadosAssociadosCARF.taIMulher + dadosAssociadosCARF.taQMulher + dadosAssociadosCARF.taEMulher + 
-                   dadosAssociadosCARF.taOMulher}
-                </td>
-              </tr>
-              <tr className="total-row">
-                <td className="row-label">TOTAL</td>
-                <td className="total-cell">
-                  {dadosAssociadosCARF.taAfHomem + dadosAssociadosCARF.taAfMulher}
-                </td>
-                <td className="total-cell">
-                  {dadosAssociadosCARF.taAHomem + dadosAssociadosCARF.taAMulher}
-                </td>
-                <td className="total-cell">
-                  {dadosAssociadosCARF.taPHomem + dadosAssociadosCARF.taPMulher}
-                </td>
-                <td className="total-cell">
-                  {dadosAssociadosCARF.taIHomem + dadosAssociadosCARF.taIMulher}
-                </td>
-                <td className="total-cell">
-                  {dadosAssociadosCARF.taQHomem + dadosAssociadosCARF.taQMulher}
-                </td>
-                <td className="total-cell">
-                  {dadosAssociadosCARF.taEHomem + dadosAssociadosCARF.taEMulher}
-                </td>
-                <td className="total-cell">
-                  {dadosAssociadosCARF.taOHomem + dadosAssociadosCARF.taOMulher}
-                </td>
-                <td className="total-cell">
-                  {(dadosAssociadosCARF.taAfHomem + dadosAssociadosCARF.taAfMulher) + 
-                   (dadosAssociadosCARF.taAHomem + dadosAssociadosCARF.taAMulher) + 
-                   (dadosAssociadosCARF.taPHomem + dadosAssociadosCARF.taPMulher) + 
-                   (dadosAssociadosCARF.taIHomem + dadosAssociadosCARF.taIMulher) + 
-                   (dadosAssociadosCARF.taQHomem + dadosAssociadosCARF.taQMulher) + 
-                   (dadosAssociadosCARF.taEHomem + dadosAssociadosCARF.taEMulher) + 
-                   (dadosAssociadosCARF.taOHomem + dadosAssociadosCARF.taOMulher)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Tabela Total de CARF por Tipo */}
-        <div className="table-container">
-          <table className="caf-tipos-table">
-            <thead>
-              <tr>
-                <th className="header-cell">Total de CARF</th>
-                <th>ORGÂNICO</th>
-                <th>AGROECOLÓGICO</th>
-                <th>EM TRANSIÇÃO</th>
-                <th>CONVENCIONAL</th>
-                <th className="header-cell">TOTAL</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="data-row">
-                <td className="row-label">Nº. de CARF</td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosCafTipos.taCafOrganico}
-                    onChange={(e) => handleDadosCafTiposChange('taCafOrganico', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosCafTipos.taCafAgroecologico}
-                    onChange={(e) => handleDadosCafTiposChange('taCafAgroecologico', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosCafTipos.taCafTransicao}
-                    onChange={(e) => handleDadosCafTiposChange('taCafTransicao', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={dadosCafTipos.taCafConvencional}
-                    onChange={(e) => handleDadosCafTiposChange('taCafConvencional', parseInt(e.target.value) || 0)}
-                    min="0"
-                    className="table-input"
-                  />
-                </td>
-                <td className="total-cell">
-                  {dadosCafTipos.taCafOrganico + dadosCafTipos.taCafAgroecologico + 
-                   dadosCafTipos.taCafTransicao + dadosCafTipos.taCafConvencional}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Campos de Sócios Ativos */}
-        <div className="socios-summary">
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Nº. de Sócios "Ativos" Total (com e sem DAP)</label>
-              <input
-                type="number"
-                value={dadosCaracteristicas.ativosTotal}
-                onChange={(e) => handleDadosCaracteristicasChange('ativosTotal', parseInt(e.target.value) || 0)}
-                min="0"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Nº. de Sócios "Ativos" com DAP</label>
-              <input
-                type="number"
-                value={dadosCaracteristicas.ativosCaf}
-                onChange={(e) => handleDadosCaracteristicasChange('ativosCaf', parseInt(e.target.value) || 0)}
-                min="0"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Relação de Sócios Ativos/Total</label>
-              <input
-                type="text"
-                value={dadosCaracteristicas.totalSocios > 0 ? 
-                  ((dadosCaracteristicas.ativosTotal / dadosCaracteristicas.totalSocios) * 100).toFixed(1) + '%' : '0%'}
-                readOnly
-                className="form-input readonly"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Relação de Sócios com DAP Ativos/Total</label>
-              <input
-                type="text"
-                value={dadosCaracteristicas.totalSociosCaf > 0 ? 
-                  ((dadosCaracteristicas.ativosCaf / dadosCaracteristicas.totalSociosCaf) * 100).toFixed(1) + '%' : '0%'}
-                readOnly
-                className="form-input readonly"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Campos de Não Sócios */}
-        <div className="socios-summary">
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Nº. Agricultores NÃO Sócios que Realizaram Operação Comercial com o Empreendimento nos últimos 12 meses (com e sem DAP)</label>
-              <input
-                type="number"
-                value={dadosNaosocios.naosocioOpTotal}
-                onChange={(e) => handleDadosNaosociosChange('naosocioOpTotal', parseInt(e.target.value) || 0)}
-                min="0"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Nº. Agricultores NÃO Sócios que Realizaram Operação Comercial com o Empreendimento nos últimos 12 meses com DAP</label>
-              <input
-                type="number"
-                value={dadosNaosocios.naosocioOpCaf}
-                onChange={(e) => handleDadosNaosociosChange('naosocioOpCaf', parseInt(e.target.value) || 0)}
-                min="0"
-                className="form-input"
-              />
-            </div>
-          </div>
-        </div>
-            </div>
-          </div>
-        </div>
+        {organizacao && (
+          <>
+            <DadosBasicos
+              organizacao={organizacao}
+              onUpdate={updateOrganizacao}
+              accordionAberto={accordionAberto}
+              onToggleAccordion={toggleAccordion}
+            />
+            
+            <DadosRepresentanteComponent
+              dados={dadosRepresentante}
+              onUpdate={updateRepresentante}
+              accordionAberto={accordionAberto}
+              onToggleAccordion={toggleAccordion}
+            />
+            
+            <CaracteristicasOrganizacao
+              organizacao={organizacao}
+              onUpdate={updateOrganizacao}
+              accordionAberto={accordionAberto}
+              onToggleAccordion={toggleAccordion}
+            />
+          </>
+        )}
       </div>
     </div>
   );
 
   const renderAbaDiagnostico = () => (
-    <div className="aba-content">
-      <div className="diagnostico-placeholder">
-        <h3>🔍 Diagnóstico</h3>
-        <p>Em desenvolvimento...</p>
+    <div className="aba-content" style={{ width: '100%' }}>
+        <div className="diagnostico-container" style={{ 
+          width: '100%',
+          maxWidth: 'none'
+        }}>
+        <DiagnosticoArea
+          titulo="ÁREA GERENCIAL: GOVERNANÇA ORGANIZACIONAL"
+          icone="🏛️"
+          area="governanca-main"
+          dados={governancaOrganizacional}
+          perguntas={gruposGovernanca}
+          diagnosticoAberto={diagnosticoAberto}
+          onToggle={toggleDiagnostico}
+          onUpdate={updateGovernanca}
+        />
+
+        <DiagnosticoArea
+          titulo="ÁREA GERENCIAL: GESTÃO DE PESSOAS"
+          icone="👥"
+          area="pessoas-main"
+          dados={gestaoPessoas}
+          perguntas={gruposGestaoPessoas}
+          diagnosticoAberto={diagnosticoAberto}
+          onToggle={toggleDiagnostico}
+          onUpdate={updateGestaoPessoas}
+        />
+
+        <DiagnosticoArea
+          titulo="ÁREA GERENCIAL: GESTÃO FINANCEIRA"
+          icone="💰"
+          area="financeira-main"
+          dados={gestaoFinanceira}
+          perguntas={gruposGestaoFinanceira}
+          diagnosticoAberto={diagnosticoAberto}
+          onToggle={toggleDiagnostico}
+          onUpdate={updateGestaoFinanceira}
+        />
       </div>
     </div>
   );
 
   if (loading) {
     return (
-      <div className="loading-state">
-        <div className="loading-spinner"></div>
-        <p>Carregando dados da organização...</p>
+      <div className="loading-container">
+        <div className="loading-spinner">⏳ Carregando...</div>
       </div>
     );
   }
 
-  if (error) {
+  if (!organizacao) {
     return (
-      <div className="error-message">
-        <p>❌ {error}</p>
+      <div className="error-container">
+        <div className="error-message">❌ Organização não encontrada</div>
         <button onClick={() => onNavigate('lista')} className="btn btn-primary">
-          Voltar para Lista
+          ← Voltar à Lista
         </button>
       </div>
     );
   }
 
   return (
-    <div className="edicao-content">
-      <div className="content-header">
-        <div className="header-actions-top">
+    <div className="edicao-organizacao" style={{ 
+      width: '100%', 
+      maxWidth: 'none',
+      margin: 0,
+      padding: '1rem'
+    }}>
+      {/* Header */}
+      <div className="edicao-header">
+        <div className="header-content">
           <button
             onClick={() => onNavigate('lista')}
-            className="btn btn-secondary btn-voltar"
+            className="btn-back"
           >
             ← Voltar
           </button>
-          <div className="header-data-visita">
-            <label>Data da Visita:</label>
-            <input
-              type="date"
-              value={organizacao?.dataVisita ? organizacao.dataVisita.split('T')[0] : ''}
-              readOnly
-              className="data-visita-readonly"
-            />
-          </div>
-        </div>
         <div className="header-info">
-          <h2>{organizacao?.nome}</h2>
+            <h1>✏️ Editando Organização</h1>
+            <h2>{organizacao.nome || 'Nome não informado'}</h2>
+          </div>
         </div>
       </div>
 
+      {/* Alertas */}
       {error && (
         <div className="alert alert-error">
           <p>{error}</p>
@@ -900,7 +353,10 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         </div>
 
         {/* Tab Content */}
-        <div className="tab-content-container">
+        <div className="tab-content-container" style={{ 
+          width: '100%',
+          maxWidth: 'none'
+        }}>
           {abaAtiva === 'organizacao' && renderAbaOrganizacao()}
           {abaAtiva === 'diagnostico' && renderAbaDiagnostico()}
 

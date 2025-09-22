@@ -33,9 +33,10 @@ app.post('/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
-    // Simular verificação de senha (em produção usar bcrypt)
-    if (password === 'olivanrabelo@gmail.com') {
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJvbGl2YW5yYWJlbG9AZ21haWwuY29tIiwibmFtZSI6Ik9saXZhbiBSYWJlbG8iLCJhY3RpdmUiOnRydWUsInJvbGVzIjpbXSwiaWF0IjoxNzU4MDQxNzIyLCJleHAiOjE3NTgxMjgxMjJ9.GT37F4cjB2PMHMwA9O4KEegqczb-g8X0EqXJj-pEY9k';
+    // Verificação simples de senha (em produção usar bcrypt)
+    // Para testes, qualquer senha com mais de 6 caracteres funciona
+    if (password && password.length >= 6) {
+      const token = `temp-token-${Date.now()}-${Math.random().toString(36)}`;
       
       res.json({
         success: true,
@@ -49,7 +50,7 @@ app.post('/auth/login', async (req, res) => {
             roles: user.userRoles.map(ur => ur.role.name)
           },
           token,
-          expiresIn: 1758128122
+          expiresIn: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 dias
         }
       });
     } else {
@@ -70,9 +71,10 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: 'Token de acesso necessário' });
   }
 
-  // Token fixo para teste
-  if (token === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJvbGl2YW5yYWJlbG9AZ21haWwuY29tIiwibmFtZSI6Ik9saXZhbiBSYWJlbG8iLCJhY3RpdmUiOnRydWUsInJvbGVzIjpbXSwiaWF0IjoxNzU4MDQxNzIyLCJleHAiOjE3NTgxMjgxMjJ9.GT37F4cjB2PMHMwA9O4KEegqczb-g8X0EqXJj-pEY9k') {
-    req.user = { id: 1, email: 'olivanrabelo@gmail.com', name: 'Olivan Rabelo' };
+  // Validação simples de token para testes
+  if (token && token.startsWith('temp-token-')) {
+    // Token temporário válido - extrair informações do usuário do banco
+    req.user = { id: 1, email: 'usuario@teste.com', name: 'Usuário Teste' };
     next();
   } else {
     res.status(403).json({ error: 'Token inválido' });

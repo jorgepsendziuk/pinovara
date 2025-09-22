@@ -18,6 +18,7 @@ router.get('/', (req, res) => {
         'POST /auth/register',
         'GET /auth/verify',
         'GET /auth/me',
+        'PUT /auth/profile',
         'POST /auth/logout'
       ],
       organizacoes: [

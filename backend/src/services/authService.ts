@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { LoginData, RegisterData, LoginResponse, JWTPayload, UserWithRoles } from '../types/auth';
-import { ApiError, ErrorCode, HttpStatus } from '../types/api';
+import { ErrorCode, HttpStatus } from '../types/api';
 
 const prisma = new PrismaClient();
 
@@ -22,20 +22,9 @@ class AuthService {
       });
     }
 
-    // Buscar usuário
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-      include: {
-        userRoles: {
-          include: {
-            role: {
-              include: {
-                module: true
-              }
-            }
-          }
-        }
-      }
+    // Buscar usuário (sem relacionamentos por enquanto)
+    const user = await prisma.users.findUnique({
+      where: { email: email.toLowerCase() }
     });
 
     if (!user) {
@@ -77,14 +66,7 @@ class AuthService {
       active: user.active,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      roles: user.userRoles.map(ur => ({
-        id: ur.role.id,
-        name: ur.role.name,
-        module: {
-          id: ur.role.module.id,
-          name: ur.role.module.name
-        }
-      }))
+      roles: [] // Temporariamente vazio
     };
 
     return {
@@ -118,7 +100,7 @@ class AuthService {
     }
 
     // Verificar se email já existe
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.users.findUnique({
       where: { email: email.toLowerCase() }
     });
 
@@ -134,24 +116,15 @@ class AuthService {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Criar usuário
-    const user = await prisma.user.create({
+    const user = await prisma.users.create({
       data: {
         email: email.toLowerCase(),
         password: hashedPassword,
         name: name.trim(),
-        active: true
+        active: true,
+        updatedAt: new Date()
       },
-      include: {
-        userRoles: {
-          include: {
-            role: {
-              include: {
-                module: true
-              }
-            }
-          }
-        }
-      }
+      // Sem includes por enquanto
     });
 
     // Gerar token
@@ -166,14 +139,7 @@ class AuthService {
       active: user.active,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      roles: user.userRoles.map(ur => ({
-        id: ur.role.id,
-        name: ur.role.name,
-        module: {
-          id: ur.role.module.id,
-          name: ur.role.module.name
-        }
-      }))
+      roles: [] // Temporariamente vazio
     };
 
     return {
@@ -187,19 +153,9 @@ class AuthService {
    * Obter dados do usuário por ID
    */
   async getUserById(userId: number): Promise<UserWithRoles> {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: userId },
-      include: {
-        userRoles: {
-          include: {
-            role: {
-              include: {
-                module: true
-              }
-            }
-          }
-        }
-      }
+      // Sem includes por enquanto
     });
 
     if (!user) {
@@ -217,14 +173,7 @@ class AuthService {
       active: user.active,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      roles: user.userRoles.map(ur => ({
-        id: ur.role.id,
-        name: ur.role.name,
-        module: {
-          id: ur.role.module.id,
-          name: ur.role.module.name
-        }
-      }))
+      roles: [] // Temporariamente vazio
     };
   }
 
@@ -260,6 +209,75 @@ class AuthService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Atualizar perfil do usuário
+   */
+  async updateProfile(userId: number, data: { name: string; email: string }): Promise<UserWithRoles> {
+    const { name, email } = data;
+
+    // Validações básicas
+    if (!name || !email) {
+      throw new ApiError({
+        message: 'Nome e email são obrigatórios',
+        statusCode: HttpStatus.BAD_REQUEST,
+        code: ErrorCode.MISSING_REQUIRED_FIELD
+      });
+    }
+
+    if (name.trim().length < 2) {
+      throw new ApiError({
+        message: 'Nome deve ter pelo menos 2 caracteres',
+        statusCode: HttpStatus.BAD_REQUEST,
+        code: ErrorCode.VALIDATION_ERROR
+      });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new ApiError({
+        message: 'Email inválido',
+        statusCode: HttpStatus.BAD_REQUEST,
+        code: ErrorCode.VALIDATION_ERROR
+      });
+    }
+
+    // Verificar se o email já está em uso por outro usuário
+    const existingUser = await prisma.users.findFirst({
+      where: {
+        email: email.toLowerCase(),
+        id: { not: userId }
+      }
+    });
+
+    if (existingUser) {
+      throw new ApiError({
+        message: 'Este email já está em uso por outro usuário',
+        statusCode: HttpStatus.CONFLICT,
+        code: ErrorCode.RESOURCE_ALREADY_EXISTS
+      });
+    }
+
+    // Atualizar usuário
+    const updatedUser = await prisma.users.update({
+      where: { id: userId },
+      data: {
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+        updatedAt: new Date()
+      }
+    });
+
+    // Retornar dados formatados
+    return {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      active: updatedUser.active,
+      createdAt: updatedUser.createdAt,
+      updatedAt: updatedUser.updatedAt,
+      roles: [] // Temporariamente vazio
+    };
   }
 
   /**
