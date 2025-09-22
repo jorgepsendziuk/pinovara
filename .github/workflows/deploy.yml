@@ -123,16 +123,17 @@ jobs:
         fi
         echo "✅ PM2 available"
 
-        # Create directories
+        # Create directories with proper ownership from start
         sudo mkdir -p /var/www/pinovara
+        sudo chown -R $USER:$USER /var/www/pinovara
 
         # Stop existing processes
         pm2 stop pinovara-backend 2>/dev/null || true
         pm2 delete pinovara-backend 2>/dev/null || true
 
-        # Remove old backend
-        sudo rm -rf /var/www/pinovara/backend
-        sudo mkdir -p /var/www/pinovara/backend
+        # Remove old backend (now with proper ownership)
+        rm -rf /var/www/pinovara/backend
+        mkdir -p /var/www/pinovara/backend
 
         # Copy files with explicit paths
         echo "📋 Deploying backend files..."
@@ -143,23 +144,23 @@ jobs:
         # Navigate to source directory for copying
         cd "$DEPLOY_SOURCE" || { echo "❌ Failed to cd to $DEPLOY_SOURCE"; exit 1; }
 
-        # Copy files with full paths
+        # Copy files with full paths (no sudo needed now)
         if [ -f "package.json" ]; then
-            sudo cp package*.json /var/www/pinovara/backend/
+            cp package*.json /var/www/pinovara/backend/
             echo "✅ package.json copied"
         else
             echo "❌ package.json not found in $DEPLOY_SOURCE"
         fi
 
         if [ -f ".env" ]; then
-            sudo cp .env /var/www/pinovara/backend/
+            cp .env /var/www/pinovara/backend/
             echo "✅ .env copied"
         else
             echo "❌ .env not found in $DEPLOY_SOURCE"
         fi
 
         if [ -f "ecosystem.config.js" ]; then
-            sudo cp ecosystem.config.js /var/www/pinovara/backend/
+            cp ecosystem.config.js /var/www/pinovara/backend/
             echo "✅ ecosystem.config.js copied"
         else
             echo "❌ ecosystem.config.js not found in $DEPLOY_SOURCE"
@@ -167,23 +168,18 @@ jobs:
         fi
 
         if [ -d "dist" ]; then
-            sudo cp -r dist /var/www/pinovara/backend/
+            cp -r dist /var/www/pinovara/backend/
             echo "✅ dist/ copied"
         else
             echo "❌ dist/ not found in $DEPLOY_SOURCE"
         fi
 
         if [ -d "prisma" ]; then
-            sudo cp -r prisma /var/www/pinovara/backend/
+            cp -r prisma /var/www/pinovara/backend/
             echo "✅ prisma/ copied"
         else
             echo "❌ prisma/ not found in $DEPLOY_SOURCE"
         fi
-
-        # Fix ownership and permissions
-        echo "🔧 Fixing ownership and permissions..."
-        sudo chown -R $USER:$USER /var/www/pinovara/backend
-        sudo chmod -R 755 /var/www/pinovara/backend
 
         # Navigate to target directory for execution
         cd /var/www/pinovara/backend || { echo "❌ Failed to cd to /var/www/pinovara/backend"; exit 1; }
@@ -218,9 +214,10 @@ jobs:
         # Deploy frontend
         echo "🎨 Deploying frontend..."
         sudo mkdir -p /var/www/html
-        sudo rm -rf /var/www/html/*
+        sudo chown -R $USER:$USER /var/www/html
+        rm -rf /var/www/html/*
         if [ -d "../frontend-dist" ]; then
-          sudo cp -r ../frontend-dist/* /var/www/html/
+          cp -r ../frontend-dist/* /var/www/html/
           echo "✅ Frontend deployed"
         else
           echo "⚠️ Frontend files not found"
