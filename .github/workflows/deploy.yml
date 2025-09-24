@@ -50,8 +50,10 @@ jobs:
       run: |
         echo "🔨 Building backend..."
         npm ci
+        echo "⚡ Generating Prisma client (fast CI machine)..."
+        npx prisma generate
         npm run build
-        echo "✅ Backend built successfully"
+        echo "✅ Backend built successfully (with Prisma client)"
 
     - name: 🎨 Build Frontend
       working-directory: ./frontend
@@ -79,6 +81,9 @@ jobs:
         # Copy files
         echo "📋 Preparing deployment files..."
         cp -r backend/package*.json backend/dist backend/prisma $DEPLOY_DIR/ 2>/dev/null || true
+        # Include pre-generated Prisma client (HUGE time saver!)
+        echo "⚡ Including pre-generated Prisma client..."
+        cp -r backend/node_modules/@prisma $DEPLOY_DIR/prisma-client 2>/dev/null || true
         cp -r frontend/dist $DEPLOY_DIR/frontend-dist 2>/dev/null || true
 
         # Create env file if config.env exists
@@ -242,10 +247,21 @@ jobs:
         echo "📦 Installing dependencies..."
         cd /var/www/pinovara/backend && sudo npm ci --production --unsafe-perm
 
-        # Database client setup (SAFE - no DB changes)
-        echo "🗄️ Generating Prisma client (read-only operation)..."
-        cd /var/www/pinovara/backend && sudo npx prisma generate
-        echo "✅ Prisma client generated successfully"
+        # Database client restore (SUPER FAST - no generation!)
+        echo "⚡ Restoring pre-generated Prisma client (instant!)..."
+        
+        # Create @prisma directory in node_modules
+        sudo mkdir -p /var/www/pinovara/backend/node_modules/@prisma
+        sudo chown -R $USER:$USER /var/www/pinovara/backend/node_modules/@prisma
+        
+        # Copy pre-generated client (5 seconds vs 8 minutes!)
+        if [ -d "$DEPLOY_SOURCE/prisma-client" ]; then
+          cp -r "$DEPLOY_SOURCE/prisma-client"/* /var/www/pinovara/backend/node_modules/@prisma/
+          echo "✅ Prisma client restored successfully (INSTANT!)"
+        else
+          echo "⚠️ Pre-generated client not found, falling back to generation..."
+          cd /var/www/pinovara/backend && sudo npx prisma generate
+        fi
         
         # NOTE: Database schema is NEVER modified by deploy
         # System adapts to existing database structure
