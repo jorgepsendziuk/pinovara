@@ -1,8 +1,8 @@
 name: Deploy to Production
 
-# 🚀 PINOVARA Deploy v4.0 - CLEAN & SIMPLE
-# ✅ NO BACKUP SYSTEM - Direct deployment only
-# ✅ NO COMPLEXITY - Just deploy and go
+# 🚀 PINOVARA Deploy v4.1 - WITH BACKUP SYSTEM
+# ✅ SAFE BACKUP SYSTEM - Timestamp-based backups
+# ✅ AUTO CLEANUP - Keeps only last 3 backups
 
 on:
   push:
@@ -14,11 +14,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 🚀 Starting Clean Deploy v4.0
+    - name: 🚀 Starting Safe Deploy v4.1
       run: |
-        echo "🎯 PINOVARA Deploy v4.0 - CLEAN & SIMPLE"
-        echo "✅ NO backup system - Direct deployment only"
-        echo "✅ NO complexity - Just deploy and go"
+        echo "🎯 PINOVARA Deploy v4.1 - WITH BACKUP SYSTEM"
+        echo "✅ SAFE backup system - Timestamp-based backups"
+        echo "✅ AUTO cleanup - Keeps only last 3 backups"
         echo "📅 $(date)"
 
     - name: 🔧 Validate Secrets
@@ -113,8 +113,8 @@ jobs:
         #!/bin/bash
         set -e
 
-        echo "🚀 PINOVARA v4.0 - CLEAN DEPLOY STARTING..."
-        echo "✅ NO backup system - Direct deployment"
+        echo "🚀 PINOVARA v4.1 - SAFE DEPLOY WITH BACKUP STARTING..."
+        echo "✅ BACKUP system enabled - Creating timestamped backups"
 
         # Check PM2
         if ! command -v pm2 &> /dev/null; then
@@ -122,6 +122,47 @@ jobs:
           exit 1
         fi
         echo "✅ PM2 available"
+
+        # Backup System - Create timestamped backups before deployment
+        BACKUP_TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+        BACKUP_DIR="/var/www/pinovara/backup"
+        
+        echo "💾 CREATING BACKUPS - Timestamp: $BACKUP_TIMESTAMP"
+        
+        # Create backup directory structure
+        sudo mkdir -p "$BACKUP_DIR"
+        sudo chown -R $USER:$USER "$BACKUP_DIR"
+        
+        # Backup existing backend if it exists
+        if [ -d "/var/www/pinovara/backend" ]; then
+          echo "💾 Backing up existing backend..."
+          mv /var/www/pinovara/backend "$BACKUP_DIR/backend-$BACKUP_TIMESTAMP"
+          echo "✅ Backend backed up to: $BACKUP_DIR/backend-$BACKUP_TIMESTAMP"
+        else
+          echo "ℹ️ No existing backend to backup"
+        fi
+        
+        # Backup existing frontend if it exists
+        if [ -d "/var/www/html" ] && [ "$(ls -A /var/www/html 2>/dev/null)" ]; then
+          echo "💾 Backing up existing frontend..."
+          sudo mkdir -p "$BACKUP_DIR/frontend-$BACKUP_TIMESTAMP"
+          sudo chown -R $USER:$USER "$BACKUP_DIR/frontend-$BACKUP_TIMESTAMP"
+          cp -r /var/www/html/* "$BACKUP_DIR/frontend-$BACKUP_TIMESTAMP/" 2>/dev/null || true
+          echo "✅ Frontend backed up to: $BACKUP_DIR/frontend-$BACKUP_TIMESTAMP"
+        else
+          echo "ℹ️ No existing frontend to backup"
+        fi
+        
+        # Cleanup old backups - keep only last 3 backups of each type
+        echo "🧹 Cleaning up old backups (keeping last 3)..."
+        
+        # Clean backend backups
+        cd "$BACKUP_DIR" && ls -d backend-* 2>/dev/null | head -n -3 | xargs rm -rf 2>/dev/null || true
+        
+        # Clean frontend backups
+        cd "$BACKUP_DIR" && ls -d frontend-* 2>/dev/null | head -n -3 | xargs rm -rf 2>/dev/null || true
+        
+        echo "✅ Backup system completed"
 
         # Create directories with proper ownership from start
         echo "👤 Current user: $(whoami)"
@@ -133,8 +174,7 @@ jobs:
         pm2 stop pinovara-backend 2>/dev/null || true
         pm2 delete pinovara-backend 2>/dev/null || true
 
-        # Remove old backend (now with proper ownership)
-        rm -rf /var/www/pinovara/backend
+        # Create fresh backend directory (old one already backed up)
         mkdir -p /var/www/pinovara/backend
 
         # Copy files with explicit paths
@@ -202,18 +242,13 @@ jobs:
         echo "📦 Installing dependencies..."
         cd /var/www/pinovara/backend && sudo npm ci --production --unsafe-perm
 
-        # Database setup with explicit directory
-        echo "🗄️ Setting up database..."
+        # Database client setup (SAFE - no DB changes)
+        echo "🗄️ Generating Prisma client (read-only operation)..."
         cd /var/www/pinovara/backend && sudo npx prisma generate
+        echo "✅ Prisma client generated successfully"
         
-        # Use migrations for production safety (no data loss)
-        if cd /var/www/pinovara/backend && sudo npx prisma migrate status; then
-          echo "📊 Applying pending migrations..."
-          cd /var/www/pinovara/backend && sudo npx prisma migrate deploy
-        else
-          echo "⚠️ No migrations found, using db push (CAREFUL!)"
-          cd /var/www/pinovara/backend && sudo npx prisma db push
-        fi
+        # NOTE: Database schema is NEVER modified by deploy
+        # System adapts to existing database structure
 
         # Start application
         echo "🚀 Starting application..."
@@ -236,7 +271,8 @@ jobs:
         echo "🎨 Deploying frontend..."
         sudo mkdir -p /var/www/html
         sudo chown -R $USER:$USER /var/www/html
-        rm -rf /var/www/html/*
+        # Frontend backup already done above, now clean and deploy fresh files
+        rm -rf /var/www/html/* 2>/dev/null || true
         if [ -d "../frontend-dist" ]; then
           cp -r ../frontend-dist/* /var/www/html/
           echo "✅ Frontend deployed"
@@ -245,6 +281,17 @@ jobs:
         fi
 
         echo "✅ DEPLOYMENT COMPLETED SUCCESSFULLY!"
+        
+        # Show backup status
+        echo ""
+        echo "💾 BACKUP STATUS:"
+        if [ -d "$BACKUP_DIR" ]; then
+          echo "📁 Backup directory: $BACKUP_DIR"
+          echo "📊 Available backups:"
+          ls -la "$BACKUP_DIR" | grep -E "(backend-|frontend-)" | tail -10 || echo "   No backups found"
+        else
+          echo "⚠️ No backup directory found"
+        fi
         EOF
 
         chmod +x $DEPLOY_DIR/deploy.sh
