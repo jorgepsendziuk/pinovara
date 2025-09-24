@@ -1,25 +1,29 @@
-name: Deploy to Production
+name: Deploy Full (with Prisma)
 
-# 🚀 PINOVARA Deploy v4.2 - ULTRA FAST DEPLOY
-# ⚡ SKIP PRISMA - Uses existing client (30 seconds!)
+# 🚀 PINOVARA Deploy FULL - COMPLETE REGENERATION
+# ⚡ REGENERATES PRISMA - For schema changes (8 minutes)
 # 📋 BACKUP SYSTEM - Timestamp-based backups
-# 🛠️ Use 'Deploy Full' for Prisma regeneration
+# 🔧 MANUAL ONLY - Use when Prisma schema changed
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      confirm_regeneration:
+        description: 'Confirm Prisma regeneration (type "yes")'
+        required: true
+        default: 'no'
 
 jobs:
-  deploy:
+  deploy-full:
     runs-on: ubuntu-latest
+    if: github.event.inputs.confirm_regeneration == 'yes'
 
     steps:
-    - name: 🚀 Starting Safe Deploy v4.1
+    - name: 🚀 Starting FULL Deploy with Prisma
       run: |
-        echo "🎯 PINOVARA Deploy v4.1 - WITH BACKUP SYSTEM"
-        echo "✅ SAFE backup system - Timestamp-based backups"
-        echo "✅ AUTO cleanup - Keeps only last 3 backups"
+        echo "🎯 PINOVARA Deploy FULL - COMPLETE REGENERATION"
+        echo "⚡ REGENERATES Prisma client - For schema changes"
+        echo "⏱️ Expected time: ~8 minutes (includes Prisma generation)"
         echo "📅 $(date)"
 
     - name: 🔧 Validate Secrets
@@ -52,7 +56,7 @@ jobs:
         echo "🔨 Building backend..."
         npm ci
         npm run build
-        echo "✅ Backend built successfully (FAST - no Prisma)"
+        echo "✅ Backend built successfully"
 
     - name: 🎨 Build Frontend
       working-directory: ./frontend
@@ -69,19 +73,18 @@ jobs:
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-    - name: 🚀 Deploy to Server
+    - name: 🚀 Deploy to Server (FULL)
       run: |
-        echo "🚀 Starting deployment to ${{ secrets.SERVER_HOST }}..."
+        echo "🚀 Starting FULL deployment to ${{ secrets.SERVER_HOST }}..."
 
         # Create temp directory
-        DEPLOY_DIR="/tmp/pinovara-deploy-$(date +%s)"
+        DEPLOY_DIR="/tmp/pinovara-deploy-full-$(date +%s)"
         mkdir -p $DEPLOY_DIR
 
         # Copy files
-        echo "📋 Preparing deployment files (FAST mode)..."
+        echo "📋 Preparing deployment files..."
         cp -r backend/package*.json backend/dist backend/prisma $DEPLOY_DIR/ 2>/dev/null || true
         cp -r frontend/dist $DEPLOY_DIR/frontend-dist 2>/dev/null || true
-        echo "⚡ Skipping Prisma client copy (will reuse server's existing client)"
 
         # Create env file if config.env exists
         if [ -f "backend/config.env" ]; then
@@ -110,13 +113,13 @@ jobs:
         };
         EOF
 
-        # Create deploy script
-        cat > $DEPLOY_DIR/deploy.sh << 'EOF'
+        # Create FULL deploy script
+        cat > $DEPLOY_DIR/deploy-full.sh << 'EOF'
         #!/bin/bash
         set -e
 
-        echo "🚀 PINOVARA v4.2 - ULTRA FAST DEPLOY STARTING..."
-        echo "⚡ FAST MODE - Reusing existing Prisma client"
+        echo "🚀 PINOVARA v4.2 - FULL DEPLOY WITH PRISMA REGENERATION..."
+        echo "⚡ REGENERATING Prisma client (expected ~8 minutes)"
         echo "📋 BACKUP system enabled - Creating timestamped backups"
 
         # Check PM2
@@ -245,30 +248,11 @@ jobs:
         echo "📦 Installing dependencies..."
         cd /var/www/pinovara/backend && sudo npm ci --production --unsafe-perm
 
-        # Prisma client strategy (ULTRA SMART!)
-        echo "⚡ Checking existing Prisma client on server..."
-        
-        # Check if Prisma client already exists on server (from previous deploys)
-        if [ -d "/var/www/pinovara/backend/node_modules/@prisma/client" ] && [ -f "/var/www/pinovara/backend/node_modules/@prisma/client/index.js" ]; then
-          echo "🎉 FOUND existing Prisma client on server!"
-          echo "⚡ SKIPPING Prisma generation (ULTRA FAST mode!)"
-          echo "📝 Using existing client from previous deploy"
-        else
-          echo "🔍 No existing Prisma client found on server"
-          
-          # Try to use pre-generated client from CI
-          if [ -d "$DEPLOY_SOURCE/prisma-client" ]; then
-            echo "⚡ Restoring pre-generated client from CI..."
-            sudo mkdir -p /var/www/pinovara/backend/node_modules/@prisma
-            sudo chown -R $USER:$USER /var/www/pinovara/backend/node_modules/@prisma
-            cp -r "$DEPLOY_SOURCE/prisma-client"/* /var/www/pinovara/backend/node_modules/@prisma/
-            echo "✅ Prisma client restored from CI (FAST!)"
-          else
-            echo "⚠️ No pre-generated client available"
-            echo "🚑 Use 'Deploy Full' workflow to regenerate Prisma client"
-            echo "📝 This deploy will use existing client or fail gracefully"
-          fi
-        fi
+        # FULL PRISMA REGENERATION (The main difference!)
+        echo "🗄️ FULL Prisma client generation (this will take ~8 minutes)..."
+        echo "⚡ REGENERATING from schema (not using cache)..."
+        cd /var/www/pinovara/backend && sudo npx prisma generate
+        echo "✅ Prisma client generated successfully (COMPLETE!)"
         
         # NOTE: Database schema is NEVER modified by deploy
         # System adapts to existing database structure
@@ -303,7 +287,7 @@ jobs:
           echo "⚠️ Frontend files not found"
         fi
 
-        echo "✅ DEPLOYMENT COMPLETED SUCCESSFULLY!"
+        echo "✅ FULL DEPLOYMENT COMPLETED SUCCESSFULLY!"
         
         # Show backup status
         echo ""
@@ -317,7 +301,7 @@ jobs:
         fi
         EOF
 
-        chmod +x $DEPLOY_DIR/deploy.sh
+        chmod +x $DEPLOY_DIR/deploy-full.sh
 
         # Upload and execute
         scp -r $DEPLOY_DIR ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
@@ -325,18 +309,18 @@ jobs:
         echo '👤 SSH User: ${{ secrets.SERVER_USER }}'
         echo '👤 Current user in SSH session: \$(whoami)'
         echo '👤 \$USER variable in SSH: '\$USER
-        DEPLOY_TMP_DIR=\$(ls -d /tmp/pinovara-deploy-* | head -1)
+        DEPLOY_TMP_DIR=\$(ls -d /tmp/pinovara-deploy-full-* | head -1)
         export DEPLOY_TMP_DIR
-        bash \$DEPLOY_TMP_DIR/deploy.sh
+        bash \$DEPLOY_TMP_DIR/deploy-full.sh
         "
 
         # Cleanup
         rm -rf $DEPLOY_DIR
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'rm -rf /tmp/pinovara-deploy-*'
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'rm -rf /tmp/pinovara-deploy-full-*'
 
     - name: ✅ Verify Deployment
       run: |
-        echo "🔍 Verifying deployment..."
+        echo "🔍 Verifying FULL deployment..."
         sleep 10
 
         # Check backend
@@ -353,4 +337,4 @@ jobs:
           echo "⚠️ Frontend may need Nginx configuration"
         fi
 
-        echo "🎉 Deployment verification complete!"
+        echo "🎉 FULL Deployment verification complete!"
