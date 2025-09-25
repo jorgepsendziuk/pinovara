@@ -10,3 +10,15 @@ usuarios
 grid
 roles
 organizacoes etc
+
+✅ Ajuste visual do sidebar: fundo branco puro com sombra aprimorada para melhor contraste e visibilidade
+
+retira essa parte
+Credenciais de Demonstração:
+Email: demo@pinovara.com.br
+Senha: Demo123
+
+Ou use: test@example.com / password123
+
+
+app.css esta gigantesco
