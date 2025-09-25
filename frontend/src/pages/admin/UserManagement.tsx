@@ -371,7 +371,7 @@ function UserManagement() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {users.map((user: User) => (
                   <tr key={user.id}>
                     <td>
                       <div className="user-info">
@@ -400,7 +400,7 @@ function UserManagement() {
                       <div className="roles-info">
                         {user.roles && user.roles.length > 0 ? (
                           <div className="roles-list">
-                            {user.roles.map((role) => (
+                            {user.roles.map((role: any) => (
                               <div key={role.id} className="role-item">
                                 <span className="role-badge">
                                   {role.name} ({role.module.name})
@@ -481,7 +481,7 @@ function UserManagement() {
                 <h3>Papéis Atuais</h3>
                 {selectedUser.roles && selectedUser.roles.length > 0 ? (
                   <div className="roles-list">
-                    {selectedUser.roles.map((role) => (
+                    {selectedUser.roles.map((role: any) => (
                       <div key={role.id} className="role-item">
                         <span className="role-badge">
                           {role.name} ({role.module.name})
@@ -504,7 +504,7 @@ function UserManagement() {
                 <h3>Papéis Disponíveis</h3>
                 {getAvailableRolesForUser(selectedUser).length > 0 ? (
                   <div className="roles-list">
-                    {getAvailableRolesForUser(selectedUser).map((role) => (
+                    {getAvailableRolesForUser(selectedUser).map((role: Role) => (
                       <div key={role.id} className="role-item">
                         <span className="role-badge">
                           {role.name} ({role.module.name})
@@ -761,7 +761,7 @@ function EditUserForm({ user, onSubmit, onCancel }: EditUserFormProps) {
         </button>
         <button 
           type="submit" 
-          disabled={updating || !formData.email || !formData.name || (formData.password && formData.password.length < 6)} 
+          disabled={updating || !formData.email || !formData.name || (formData.password.trim() && formData.password.length < 6)} 
           className="btn btn-primary"
         >
           {updating ? 'Atualizando...' : 'Atualizar Usuário'}
