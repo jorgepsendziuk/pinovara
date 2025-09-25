@@ -36,7 +36,7 @@ class AuthService {
           }
         }
       }
-    });
+    }) as any;
 
     if (!user) {
       throw new ApiError({
@@ -77,7 +77,7 @@ class AuthService {
       active: user.active,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      roles: user.user_roles ? user.user_roles.map(ur => ({
+      roles: user.user_roles ? user.user_roles.map((ur: any) => ({
         id: ur.roles.id,
         name: ur.roles.name,
         description: ur.roles.description,
@@ -166,23 +166,7 @@ class AuthService {
       active: user.active,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      roles: user.user_roles ? user.user_roles.map(ur => ({
-        id: ur.roles.id,
-        name: ur.roles.name,
-        description: ur.roles.description,
-        active: ur.roles.active,
-        createdAt: ur.roles.createdAt,
-        updatedAt: ur.roles.updatedAt,
-        moduleId: ur.roles.moduleId,
-        module: {
-          id: ur.roles.modules.id,
-          name: ur.roles.modules.name,
-          description: ur.roles.modules.description,
-          active: ur.roles.modules.active,
-          createdAt: ur.roles.modules.createdAt,
-          updatedAt: ur.roles.modules.updatedAt
-        }
-      })) : []
+      roles: [] // Usuário recém-criado não tem roles ainda
     };
 
     return {
@@ -209,7 +193,7 @@ class AuthService {
           }
         }
       }
-    });
+    }) as any;
 
     if (!user) {
       throw new ApiError({
@@ -226,7 +210,7 @@ class AuthService {
       active: user.active,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      roles: user.user_roles.map(ur => ({
+      roles: user.user_roles.map((ur: any) => ({
         id: ur.roles.id,
         name: ur.roles.name,
         description: ur.roles.description,
@@ -334,8 +318,19 @@ class AuthService {
         name: name.trim(),
         email: email.toLowerCase().trim(),
         updatedAt: new Date()
+      },
+      include: {
+        user_roles: {
+          include: {
+            roles: {
+              include: {
+                modules: true
+              }
+            }
+          }
+        }
       }
-    });
+    }) as any;
 
     // Retornar dados formatados
     return {
@@ -345,7 +340,7 @@ class AuthService {
       active: updatedUser.active,
       createdAt: updatedUser.createdAt,
       updatedAt: updatedUser.updatedAt,
-      roles: user.user_roles ? user.user_roles.map(ur => ({
+      roles: updatedUser.user_roles ? updatedUser.user_roles.map((ur: any) => ({
         id: ur.roles.id,
         name: ur.roles.name,
         description: ur.roles.description,
