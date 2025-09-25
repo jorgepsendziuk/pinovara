@@ -59,6 +59,8 @@ jobs:
       run: |
         echo "🎨 Building frontend..."
         npm ci
+        echo "📝 Generating version info..."
+        node scripts/generate-version.cjs
         npm run build
         echo "✅ Frontend built successfully"
 

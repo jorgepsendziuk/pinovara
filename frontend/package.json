@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:prod": "npm ci && vite build",
+    "build": "node scripts/generate-version.cjs && vite build",
+    "build:prod": "npm ci && node scripts/generate-version.cjs && vite build",
+    "version:generate": "node scripts/generate-version.cjs",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },

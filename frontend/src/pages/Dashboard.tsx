@@ -1,5 +1,6 @@
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
+import VersionIndicator from '../components/VersionIndicator';
 
 function Dashboard() {
   const { user, hasPermission } = useAuth();
@@ -10,6 +11,9 @@ function Dashboard() {
 
   return (
     <div className="dashboard-layout">
+      {/* Indicador de versão discreto */}
+      <VersionIndicator position="top-right" theme="auto" />
+      
       <Sidebar />
 
       <div className="main-content">
