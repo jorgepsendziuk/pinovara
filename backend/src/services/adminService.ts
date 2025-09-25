@@ -41,6 +41,41 @@ interface UserWithRoles {
   }>;
 }
 
+interface PrismaUser {
+  id: number;
+  email: string;
+  name: string;
+  password: string;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  user_roles?: PrismaUserRole[];
+}
+
+interface PrismaUserRole {
+  userId: number;
+  roleId: number;
+  roles: PrismaRole;
+}
+
+interface PrismaRole {
+  id: number;
+  name: string;
+  description: string | null;
+  active: boolean;
+  moduleId: number;
+  modules: PrismaModule;
+}
+
+interface PrismaModule {
+  id: number;
+  name: string;
+  description: string | null;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 class AdminService {
   /**
    * Listar todos os usuários com suas roles
@@ -64,7 +99,7 @@ class AdminService {
         }
       });
 
-      return users.map(user => this.formatUserWithRoles(user as any));
+      return users.map((user: PrismaUser) => this.formatUserWithRoles(user));
     } catch (error) {
       console.error('❌ [AdminService] Error listing users:', error);
       throw new ApiError({
@@ -430,16 +465,16 @@ class AdminService {
         ]
       });
 
-      return roles.map(role => ({
+      return roles.map((role: PrismaRole) => ({
         id: role.id,
         name: role.name,
-        description: role.description,
+        description: role.description || '',
         active: role.active,
         moduleId: role.moduleId,
         module: {
           id: role.modules.id,
           name: role.modules.name,
-          description: role.modules.description,
+          description: role.modules.description || '',
           active: role.modules.active
         }
       }));
@@ -456,7 +491,7 @@ class AdminService {
   /**
    * Formatar usuário com roles para resposta
    */
-  private formatUserWithRoles(user: any): UserWithRoles {
+  private formatUserWithRoles(user: PrismaUser): UserWithRoles {
     return {
       id: user.id,
       email: user.email,
@@ -464,16 +499,16 @@ class AdminService {
       active: user.active,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      roles: user.user_roles ? user.user_roles.map((ur: any) => ({
+      roles: user.user_roles ? user.user_roles.map((ur: PrismaUserRole) => ({
         id: ur.roles.id,
         name: ur.roles.name,
-        description: ur.roles.description,
+        description: ur.roles.description || '',
         active: ur.roles.active,
         moduleId: ur.roles.moduleId,
         module: {
           id: ur.roles.modules.id,
           name: ur.roles.modules.name,
-          description: ur.roles.modules.description,
+          description: ur.roles.modules.description || '',
           active: ur.roles.modules.active
         }
       })) : []
