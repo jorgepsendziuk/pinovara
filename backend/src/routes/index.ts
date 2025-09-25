@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from './authRoutes';
 import organizacaoRoutes from './organizacaoRoutes';
 import healthRoutes from './healthRoutes';
+import debugRoutes from './debugRoutes';
 
 const router = Router();
 
@@ -41,5 +42,6 @@ router.get('/', (req, res) => {
 router.use('/', healthRoutes);  // Health routes no root
 router.use('/auth', authRoutes);
 router.use('/organizacoes', organizacaoRoutes);
+router.use('/debug', debugRoutes);  // DEBUG routes - REMOVER EM PRODUÇÃO
 
 export default router;
