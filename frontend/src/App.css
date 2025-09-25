@@ -2967,13 +2967,16 @@ main, section, article, aside, header, footer {
   }
 
   .main-content {
-    margin-left: 0;
+    margin-left: 0 !important;
+    width: 100%;
     transition: margin-left 0.3s ease;
     padding-top: 4rem; /* Espaço para o botão hamburger */
   }
 
-  .dashboard-layout .sidebar.collapsed + .main-content {
-    margin-left: 0;
+  .dashboard-layout .sidebar.collapsed + .main-content,
+  .dashboard-layout .main-content {
+    margin-left: 0 !important;
+    width: 100%;
   }
 
   /* Mobile overlay aprimorado */
