@@ -1,5 +1,3 @@
-interface mais amigavel para telas menores
-menu recolhivel automaticamente em telas menores
 
 gestao de roles e papeis
 
