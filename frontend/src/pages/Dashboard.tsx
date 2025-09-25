@@ -57,7 +57,7 @@ function Dashboard() {
 
               {user.roles && user.roles.length > 0 ? (
                 <div className="roles-grid">
-                  {user.roles.map((role) => (
+                  {user.roles.map((role: any) => (
                     <div key={role.id} className="role-card">
                       <div className="role-header">
                         <h4>{role.name}</h4>
