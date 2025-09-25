@@ -141,4 +141,4 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Start the server
-startServer();
+startServer();// Force redeploy to fix roles loading issue - Thu Sep 25 07:26:22 -03 2025
