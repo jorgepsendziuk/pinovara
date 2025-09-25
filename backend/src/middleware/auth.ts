@@ -18,6 +18,8 @@ export interface AuthRequest extends Request {
       };
     }>;
   };
+  body: any;
+  params: any;
 }
 
 /**
