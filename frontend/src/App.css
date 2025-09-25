@@ -2411,9 +2411,9 @@ main, section, article, aside, header, footer {
   left: 0;
   height: 100vh;
   width: 280px;
-  background: var(--bg-primary);
-  border-right: 1px solid rgba(148, 163, 184, 0.1);
-  box-shadow: var(--shadow-lg);
+  background: #ffffff;
+  border-right: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2979,7 +2979,7 @@ main, section, article, aside, header, footer {
     width: 100%;
   }
 
-  /* Mobile overlay aprimorado */
+  /* Mobile overlay aprimorado - movido para fora da estrutura sidebar */
   .sidebar::before {
     content: '';
     position: fixed;
@@ -2991,13 +2991,22 @@ main, section, article, aside, header, footer {
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
-    z-index: 999;
+    z-index: 998; /* Menor que o sidebar para ficar atrás */
     backdrop-filter: blur(4px);
+    pointer-events: auto; /* Permitir cliques no overlay para fechar o menu */
   }
 
   .sidebar.open::before {
     opacity: 1;
     visibility: visible;
+  }
+
+  /* Garantir que o conteúdo do sidebar tenha z-index maior que o overlay */
+  .sidebar-header,
+  .sidebar-nav,
+  .sidebar-footer {
+    position: relative;
+    z-index: 1002; /* Maior que o overlay blur */
   }
 
   /* Mobile hamburger button aprimorado */
