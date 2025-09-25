@@ -1,0 +1,484 @@
+import bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client';
+import { ErrorCode, HttpStatus } from '../types/api';
+import { ApiError } from '../utils/ApiError';
+
+const prisma = new PrismaClient();
+
+interface CreateUserData {
+  email: string;
+  password: string;
+  name: string;
+  active?: boolean;
+}
+
+interface UpdateUserData {
+  email?: string;
+  name?: string;
+  active?: boolean;
+  password?: string;
+}
+
+interface UserWithRoles {
+  id: number;
+  email: string;
+  name: string;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  roles: Array<{
+    id: number;
+    name: string;
+    description: string;
+    active: boolean;
+    moduleId: number;
+    module: {
+      id: number;
+      name: string;
+      description: string;
+      active: boolean;
+    };
+  }>;
+}
+
+class AdminService {
+  /**
+   * Listar todos os usuários com suas roles
+   */
+  async getAllUsers(): Promise<UserWithRoles[]> {
+    try {
+      const users = await prisma.users.findMany({
+        include: {
+          user_roles: {
+            include: {
+              roles: {
+                include: {
+                  modules: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      return users.map(user => this.formatUserWithRoles(user as any));
+    } catch (error) {
+      console.error('❌ [AdminService] Error listing users:', error);
+      throw new ApiError({
+        message: 'Erro ao listar usuários',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
+   * Buscar usuário por ID com roles
+   */
+  async getUserById(userId: number): Promise<UserWithRoles | null> {
+    try {
+      const user = await prisma.users.findUnique({
+        where: { id: userId },
+        include: {
+          user_roles: {
+            include: {
+              roles: {
+                include: {
+                  modules: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      return user ? this.formatUserWithRoles(user as any) : null;
+    } catch (error) {
+      console.error('❌ [AdminService] Error fetching user:', error);
+      throw new ApiError({
+        message: 'Erro ao buscar usuário',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
+   * Criar novo usuário
+   */
+  async createUser(data: CreateUserData): Promise<UserWithRoles> {
+    const { email, password, name, active = true } = data;
+
+    // Validações
+    if (!email || !password || !name) {
+      throw new ApiError({
+        message: 'Email, senha e nome são obrigatórios',
+        statusCode: HttpStatus.BAD_REQUEST,
+        code: ErrorCode.MISSING_REQUIRED_FIELD
+      });
+    }
+
+    if (password.length < 6) {
+      throw new ApiError({
+        message: 'Senha deve ter pelo menos 6 caracteres',
+        statusCode: HttpStatus.BAD_REQUEST,
+        code: ErrorCode.VALIDATION_ERROR
+      });
+    }
+
+    // Verificar se email já existe
+    const existingUser = await prisma.users.findUnique({
+      where: { email: email.toLowerCase() }
+    });
+
+    if (existingUser) {
+      throw new ApiError({
+        message: 'Email já cadastrado',
+        statusCode: HttpStatus.CONFLICT,
+        code: ErrorCode.RESOURCE_ALREADY_EXISTS
+      });
+    }
+
+    try {
+      // Hash da senha
+      const hashedPassword = await bcrypt.hash(password, 12);
+
+      // Criar usuário
+      const user = await prisma.users.create({
+        data: {
+          email: email.toLowerCase(),
+          password: hashedPassword,
+          name: name.trim(),
+          active,
+          updatedAt: new Date()
+        },
+        include: {
+          user_roles: {
+            include: {
+              roles: {
+                include: {
+                  modules: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      console.log('✅ [AdminService] User created:', user.id, user.email);
+      return this.formatUserWithRoles(user as any);
+    } catch (error) {
+      console.error('❌ [AdminService] Error creating user:', error);
+      throw new ApiError({
+        message: 'Erro ao criar usuário',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
+   * Atualizar usuário
+   */
+  async updateUser(userId: number, data: UpdateUserData): Promise<UserWithRoles> {
+    const updateData: any = { ...data };
+
+    // Se uma nova senha foi fornecida, fazer hash
+    if (data.password) {
+      if (data.password.length < 6) {
+        throw new ApiError({
+          message: 'Senha deve ter pelo menos 6 caracteres',
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: ErrorCode.VALIDATION_ERROR
+        });
+      }
+      updateData.password = await bcrypt.hash(data.password, 12);
+    }
+
+    // Se email foi fornecido, verificar se não existe outro usuário com mesmo email
+    if (data.email) {
+      const existingUser = await prisma.users.findFirst({
+        where: {
+          email: data.email.toLowerCase(),
+          NOT: { id: userId }
+        }
+      });
+
+      if (existingUser) {
+        throw new ApiError({
+          message: 'Email já está sendo usado por outro usuário',
+          statusCode: HttpStatus.CONFLICT,
+          code: ErrorCode.RESOURCE_ALREADY_EXISTS
+        });
+      }
+
+      updateData.email = data.email.toLowerCase();
+    }
+
+    if (data.name) {
+      updateData.name = data.name.trim();
+    }
+
+    updateData.updatedAt = new Date();
+
+    try {
+      const user = await prisma.users.update({
+        where: { id: userId },
+        data: updateData,
+        include: {
+          user_roles: {
+            include: {
+              roles: {
+                include: {
+                  modules: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      console.log('✅ [AdminService] User updated:', userId);
+      return this.formatUserWithRoles(user as any);
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new ApiError({
+          message: 'Usuário não encontrado',
+          statusCode: HttpStatus.NOT_FOUND,
+          code: ErrorCode.RESOURCE_NOT_FOUND
+        });
+      }
+
+      console.error('❌ [AdminService] Error updating user:', error);
+      throw new ApiError({
+        message: 'Erro ao atualizar usuário',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
+   * Deletar usuário
+   */
+  async deleteUser(userId: number): Promise<void> {
+    try {
+      // Verificar se usuário existe
+      const user = await prisma.users.findUnique({
+        where: { id: userId }
+      });
+
+      if (!user) {
+        throw new ApiError({
+          message: 'Usuário não encontrado',
+          statusCode: HttpStatus.NOT_FOUND,
+          code: ErrorCode.RESOURCE_NOT_FOUND
+        });
+      }
+
+      // Deletar usuário (user_roles serão deletadas automaticamente devido ao onDelete: Cascade)
+      await prisma.users.delete({
+        where: { id: userId }
+      });
+
+      console.log('✅ [AdminService] User deleted:', userId);
+    } catch (error: any) {
+      if (error instanceof ApiError) throw error;
+
+      console.error('❌ [AdminService] Error deleting user:', error);
+      throw new ApiError({
+        message: 'Erro ao deletar usuário',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
+   * Atualizar status do usuário (ativo/inativo)
+   */
+  async updateUserStatus(userId: number, active: boolean): Promise<UserWithRoles> {
+    return this.updateUser(userId, { active });
+  }
+
+  /**
+   * Atribuir role a um usuário
+   */
+  async assignRoleToUser(userId: number, roleId: number): Promise<void> {
+    try {
+      // Verificar se usuário existe
+      const user = await prisma.users.findUnique({
+        where: { id: userId }
+      });
+
+      if (!user) {
+        throw new ApiError({
+          message: 'Usuário não encontrado',
+          statusCode: HttpStatus.NOT_FOUND,
+          code: ErrorCode.RESOURCE_NOT_FOUND
+        });
+      }
+
+      // Verificar se role existe
+      const role = await prisma.roles.findUnique({
+        where: { id: roleId }
+      });
+
+      if (!role) {
+        throw new ApiError({
+          message: 'Papel não encontrado',
+          statusCode: HttpStatus.NOT_FOUND,
+          code: ErrorCode.RESOURCE_NOT_FOUND
+        });
+      }
+
+      // Verificar se user_role já existe
+      const existingUserRole = await prisma.user_roles.findFirst({
+        where: {
+          userId,
+          roleId
+        }
+      });
+
+      if (existingUserRole) {
+        throw new ApiError({
+          message: 'Usuário já possui este papel',
+          statusCode: HttpStatus.CONFLICT,
+          code: ErrorCode.RESOURCE_ALREADY_EXISTS
+        });
+      }
+
+      // Criar user_role
+      await prisma.user_roles.create({
+        data: {
+          userId,
+          roleId,
+          updatedAt: new Date()
+        }
+      });
+
+      console.log('✅ [AdminService] Role assigned:', userId, roleId);
+    } catch (error: any) {
+      if (error instanceof ApiError) throw error;
+
+      console.error('❌ [AdminService] Error assigning role:', error);
+      throw new ApiError({
+        message: 'Erro ao atribuir papel',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
+   * Remover role de um usuário
+   */
+  async removeRoleFromUser(userId: number, roleId: number): Promise<void> {
+    try {
+      // Verificar se user_role existe
+      const userRole = await prisma.user_roles.findFirst({
+        where: {
+          userId,
+          roleId
+        }
+      });
+
+      if (!userRole) {
+        throw new ApiError({
+          message: 'Usuário não possui este papel',
+          statusCode: HttpStatus.NOT_FOUND,
+          code: ErrorCode.RESOURCE_NOT_FOUND
+        });
+      }
+
+      // Remover user_role
+      await prisma.user_roles.delete({
+        where: { id: userRole.id }
+      });
+
+      console.log('✅ [AdminService] Role removed:', userId, roleId);
+    } catch (error: any) {
+      if (error instanceof ApiError) throw error;
+
+      console.error('❌ [AdminService] Error removing role:', error);
+      throw new ApiError({
+        message: 'Erro ao remover papel',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
+   * Listar todas as roles disponíveis
+   */
+  async getAllRoles() {
+    try {
+      const roles = await prisma.roles.findMany({
+        include: {
+          modules: true
+        },
+        where: {
+          active: true
+        },
+        orderBy: [
+          { modules: { name: 'asc' } },
+          { name: 'asc' }
+        ]
+      });
+
+      return roles.map(role => ({
+        id: role.id,
+        name: role.name,
+        description: role.description,
+        active: role.active,
+        moduleId: role.moduleId,
+        module: {
+          id: role.modules.id,
+          name: role.modules.name,
+          description: role.modules.description,
+          active: role.modules.active
+        }
+      }));
+    } catch (error) {
+      console.error('❌ [AdminService] Error listing roles:', error);
+      throw new ApiError({
+        message: 'Erro ao listar papéis',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
+   * Formatar usuário com roles para resposta
+   */
+  private formatUserWithRoles(user: any): UserWithRoles {
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      active: user.active,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      roles: user.user_roles ? user.user_roles.map((ur: any) => ({
+        id: ur.roles.id,
+        name: ur.roles.name,
+        description: ur.roles.description,
+        active: ur.roles.active,
+        moduleId: ur.roles.moduleId,
+        module: {
+          id: ur.roles.modules.id,
+          name: ur.roles.modules.name,
+          description: ur.roles.modules.description,
+          active: ur.roles.modules.active
+        }
+      })) : []
+    };
+  }
+}
+
+export default new AdminService();
