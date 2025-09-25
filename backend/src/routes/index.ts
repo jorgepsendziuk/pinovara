@@ -3,6 +3,7 @@ import authRoutes from './authRoutes';
 import organizacaoRoutes from './organizacaoRoutes';
 import healthRoutes from './healthRoutes';
 import debugRoutes from './debugRoutes';
+import adminRoutes from './adminRoutes';
 
 const router = Router();
 
@@ -30,6 +31,18 @@ router.get('/', (req, res) => {
         'DELETE /organizacoes/:id',
         'GET /organizacoes/dashboard'
       ],
+      admin: [
+        'GET /admin/users',
+        'GET /admin/users/:id',
+        'POST /admin/users',
+        'PUT /admin/users/:id',
+        'DELETE /admin/users/:id',
+        'PUT /admin/users/:id/status',
+        'GET /admin/roles',
+        'POST /admin/users/:id/roles',
+        'DELETE /admin/users/:id/roles/:roleId',
+        'GET /admin/stats'
+      ],
       system: [
         'GET /',
         'GET /health'
@@ -42,6 +55,7 @@ router.get('/', (req, res) => {
 router.use('/', healthRoutes);  // Health routes no root
 router.use('/auth', authRoutes);
 router.use('/organizacoes', organizacaoRoutes);
+router.use('/admin', adminRoutes);  // Admin routes - requer autenticação e papel admin
 router.use('/debug', debugRoutes);  // DEBUG routes - REMOVER EM PRODUÇÃO
 
 export default router;

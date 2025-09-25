@@ -35,6 +35,10 @@ function UserManagement() {
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
@@ -201,6 +205,80 @@ function UserManagement() {
     setShowRoleModal(false);
   };
 
+  const handleCreateUser = async (userData: { email: string; password: string; name: string; active: boolean }) => {
+    try {
+      setCreating(true);
+      const token = localStorage.getItem('@pinovara:token');
+      
+      const response = await fetch(`${API_BASE}/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Falha ao criar usuário');
+      }
+
+      await fetchUsers();
+      setShowCreateModal(false);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao criar usuário');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleEditUser = async (userId: string, userData: { email?: string; name?: string; active?: boolean; password?: string }) => {
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+      
+      const response = await fetch(`${API_BASE}/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Falha ao atualizar usuário');
+      }
+
+      await fetchUsers();
+      setShowEditModal(false);
+      setEditingUser(null);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar usuário');
+    }
+  };
+
+  const openCreateModal = () => {
+    setShowCreateModal(true);
+  };
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false);
+  };
+
+  const openEditModal = (user: User) => {
+    setEditingUser(user);
+    setShowEditModal(true);
+  };
+
+  const closeEditModal = () => {
+    setEditingUser(null);
+    setShowEditModal(false);
+  };
+
   const getAvailableRolesForUser = (user: User): Role[] => {
     const userRoleIds = user.roles.map(role => role.id);
     return availableRoles.filter(role => !userRoleIds.includes(role.id));
@@ -227,6 +305,15 @@ function UserManagement() {
         <div className="header-content">
           <h1>Gestão de Usuários</h1>
           <p>Gerencie usuários do sistema, seus status e permissões</p>
+        </div>
+        <div className="header-actions">
+          <button 
+            onClick={openCreateModal} 
+            className="btn btn-primary"
+            disabled={creating}
+          >
+            {creating ? 'Criando...' : '+ Criar Usuário'}
+          </button>
         </div>
       </div>
 
@@ -345,15 +432,22 @@ function UserManagement() {
                         {user.id !== currentUser?.id && (
                           <>
                             <button
+                              onClick={() => openEditModal(user)}
+                              className="btn btn-small btn-secondary"
+                              style={{ marginRight: '4px' }}
+                            >
+                              ✏️ Editar
+                            </button>
+                            <button
                               onClick={() => openRoleModal(user)}
                               className="btn btn-small btn-primary"
+                              style={{ marginRight: '4px' }}
                             >
                               Gerenciar Papéis
                             </button>
                             <button
                               onClick={() => handleDeleteUser(user.id, user.name)}
                               className="btn btn-small btn-danger"
-                              style={{ marginLeft: '8px' }}
                             >
                               🗑️ Deletar
                             </button>
@@ -438,7 +532,242 @@ function UserManagement() {
           </div>
         </div>
       )}
+
+      {/* Create User Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h2>Criar Novo Usuário</h2>
+              <button onClick={closeCreateModal} className="modal-close">×</button>
+            </div>
+            
+            <div className="modal-body">
+              <CreateUserForm 
+                onSubmit={handleCreateUser}
+                onCancel={closeCreateModal}
+                creating={creating}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && editingUser && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h2>Editar Usuário: {editingUser.name}</h2>
+              <button onClick={closeEditModal} className="modal-close">×</button>
+            </div>
+            
+            <div className="modal-body">
+              <EditUserForm 
+                user={editingUser}
+                onSubmit={handleEditUser}
+                onCancel={closeEditModal}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+// Components for Create/Edit User Forms
+interface CreateUserFormProps {
+  onSubmit: (data: { email: string; password: string; name: string; active: boolean }) => Promise<void>;
+  onCancel: () => void;
+  creating: boolean;
+}
+
+function CreateUserForm({ onSubmit, onCancel, creating }: CreateUserFormProps) {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: '',
+    active: true
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.email && formData.password && formData.name) {
+      await onSubmit(formData);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="user-form">
+      <div className="form-group">
+        <label htmlFor="name">Nome Completo *</label>
+        <input
+          type="text"
+          id="name"
+          value={formData.name}
+          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          required
+          disabled={creating}
+          placeholder="Nome completo do usuário"
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="email">Email *</label>
+        <input
+          type="email"
+          id="email"
+          value={formData.email}
+          onChange={(e) => setFormData({...formData, email: e.target.value})}
+          required
+          disabled={creating}
+          placeholder="email@exemplo.com"
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="password">Senha *</label>
+        <input
+          type="password"
+          id="password"
+          value={formData.password}
+          onChange={(e) => setFormData({...formData, password: e.target.value})}
+          required
+          disabled={creating}
+          placeholder="Mínimo 6 caracteres"
+          minLength={6}
+        />
+      </div>
+
+      <div className="form-group">
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={formData.active}
+            onChange={(e) => setFormData({...formData, active: e.target.checked})}
+            disabled={creating}
+          />
+          <span>Usuário ativo</span>
+        </label>
+      </div>
+
+      <div className="form-actions">
+        <button type="button" onClick={onCancel} disabled={creating} className="btn btn-secondary">
+          Cancelar
+        </button>
+        <button type="submit" disabled={creating || !formData.email || !formData.password || !formData.name} className="btn btn-primary">
+          {creating ? 'Criando...' : 'Criar Usuário'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+interface EditUserFormProps {
+  user: User;
+  onSubmit: (userId: string, data: { email?: string; name?: string; active?: boolean; password?: string }) => Promise<void>;
+  onCancel: () => void;
+}
+
+function EditUserForm({ user, onSubmit, onCancel }: EditUserFormProps) {
+  const [formData, setFormData] = useState({
+    email: user.email,
+    name: user.name,
+    active: user.active,
+    password: '' // Novo campo opcional
+  });
+  const [updating, setUpdating] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdating(true);
+    
+    const updateData: any = {
+      email: formData.email,
+      name: formData.name,
+      active: formData.active
+    };
+
+    // Apenas incluir password se foi fornecida
+    if (formData.password.trim()) {
+      updateData.password = formData.password;
+    }
+
+    try {
+      await onSubmit(user.id, updateData);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="user-form">
+      <div className="form-group">
+        <label htmlFor="edit-name">Nome Completo *</label>
+        <input
+          type="text"
+          id="edit-name"
+          value={formData.name}
+          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          required
+          disabled={updating}
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="edit-email">Email *</label>
+        <input
+          type="email"
+          id="edit-email"
+          value={formData.email}
+          onChange={(e) => setFormData({...formData, email: e.target.value})}
+          required
+          disabled={updating}
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="edit-password">Nova Senha (opcional)</label>
+        <input
+          type="password"
+          id="edit-password"
+          value={formData.password}
+          onChange={(e) => setFormData({...formData, password: e.target.value})}
+          disabled={updating}
+          placeholder="Deixe em branco para manter a atual"
+          minLength={6}
+        />
+        {formData.password && formData.password.length < 6 && (
+          <small className="form-hint error">Senha deve ter pelo menos 6 caracteres</small>
+        )}
+      </div>
+
+      <div className="form-group">
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={formData.active}
+            onChange={(e) => setFormData({...formData, active: e.target.checked})}
+            disabled={updating}
+          />
+          <span>Usuário ativo</span>
+        </label>
+      </div>
+
+      <div className="form-actions">
+        <button type="button" onClick={onCancel} disabled={updating} className="btn btn-secondary">
+          Cancelar
+        </button>
+        <button 
+          type="submit" 
+          disabled={updating || !formData.email || !formData.name || (formData.password && formData.password.length < 6)} 
+          className="btn btn-primary"
+        >
+          {updating ? 'Atualizando...' : 'Atualizar Usuário'}
+        </button>
+      </div>
+    </form>
   );
 }
 
