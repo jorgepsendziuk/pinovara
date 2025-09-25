@@ -36,7 +36,7 @@ function Login() {
       const healthResponse = await api.get('/health');
       setHealthStatus(prev => ({ 
         ...prev, 
-        database: healthResponse.data.database === 'connected' ? 'connected' : 'error'
+        database: healthResponse.data.data?.services?.database === 'up' ? 'connected' : 'error'
       }));
     } catch (error) {
       console.error('Health check failed:', error);
