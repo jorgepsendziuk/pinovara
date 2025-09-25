@@ -16,6 +16,10 @@ import SystemMonitor from './pages/admin/SystemMonitor';
 
 // Module Pages
 import OrganizacoesModule from './pages/modules/OrganizacoesModule';
+import PerfilModule from './pages/modules/PerfilModule';
+
+// 🚧 Imports dos módulos em desenvolvimento - comentados
+/*
 import DiagnosticoModule from './pages/modules/DiagnosticoModule';
 import AssociadosModule from './pages/modules/AssociadosModule';
 import RelatoriosModule from './pages/modules/RelatoriosModule';
@@ -23,7 +27,7 @@ import MapasModule from './pages/modules/MapasModule';
 import PesquisaModule from './pages/modules/PesquisaModule';
 import TecnicosModule from './pages/modules/TecnicosModule';
 import MobilizacaoModule from './pages/modules/MobilizacaoModule';
-import PerfilModule from './pages/modules/PerfilModule';
+*/
 import TestPermissions from './pages/TestPermissions';
 import AccessDenied from './pages/AccessDenied';
 import Profile from './pages/Profile';
@@ -82,6 +86,8 @@ function AppRoutes() {
         }
       />
 
+      {/* 🚧 ROTAS DOS MÓDULOS EM DESENVOLVIMENTO - OCULTAS */}
+      {/*
       <Route
         path="/diagnostico/*"
         element={
@@ -144,6 +150,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      */}
 
       <Route
         path="/configuracao-odk"

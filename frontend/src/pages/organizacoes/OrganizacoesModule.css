@@ -814,29 +814,8 @@
   color: #64748b;
 }
 
-/* ========== MODO ESCURO (FUTURO) ========== */
-
-@media (prefers-color-scheme: dark) {
-  .organizacoes-module {
-    background: #0f172a;
-  }
-  
-  .lista-content,
-  .cadastro-content,
-  .detalhes-content,
-  .dashboard-content {
-    background: #1e293b;
-    color: #f1f5f9;
-  }
-  
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    background: #334155;
-    border-color: #475569;
-    color: #f1f5f9;
-  }
-}
+/* ========== MODO ESCURO - REMOVIDO ========== */
+/* Removido para evitar aplicação automática de modo escuro */
 
 /* ========== PRINT STYLES ========== */
 

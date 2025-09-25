@@ -77,23 +77,7 @@ class AuthService {
       active: user.active,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      roles: user.user_roles ? user.user_roles.map(ur => ({
-        id: ur.roles.id,
-        name: ur.roles.name,
-        description: ur.roles.description,
-        active: ur.roles.active,
-        createdAt: ur.roles.createdAt,
-        updatedAt: ur.roles.updatedAt,
-        moduleId: ur.roles.moduleId,
-        module: {
-          id: ur.roles.modules.id,
-          name: ur.roles.modules.name,
-          description: ur.roles.modules.description,
-          active: ur.roles.modules.active,
-          createdAt: ur.roles.modules.createdAt,
-          updatedAt: ur.roles.modules.updatedAt
-        }
-      })) : []
+      roles: [] // Temporariamente vazio
     };
 
     return {
@@ -166,23 +150,7 @@ class AuthService {
       active: user.active,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      roles: user.user_roles ? user.user_roles.map(ur => ({
-        id: ur.roles.id,
-        name: ur.roles.name,
-        description: ur.roles.description,
-        active: ur.roles.active,
-        createdAt: ur.roles.createdAt,
-        updatedAt: ur.roles.updatedAt,
-        moduleId: ur.roles.moduleId,
-        module: {
-          id: ur.roles.modules.id,
-          name: ur.roles.modules.name,
-          description: ur.roles.modules.description,
-          active: ur.roles.modules.active,
-          createdAt: ur.roles.modules.createdAt,
-          updatedAt: ur.roles.modules.updatedAt
-        }
-      })) : []
+      roles: [] // Temporariamente vazio
     };
 
     return {
@@ -198,17 +166,7 @@ class AuthService {
   async getUserById(userId: number): Promise<UserWithRoles> {
     const user = await prisma.users.findUnique({
       where: { id: userId },
-      include: {
-        user_roles: {
-          include: {
-            roles: {
-              include: {
-                modules: true
-              }
-            }
-          }
-        }
-      }
+      // Sem includes por enquanto
     });
 
     if (!user) {
@@ -226,23 +184,7 @@ class AuthService {
       active: user.active,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      roles: user.user_roles.map(ur => ({
-        id: ur.roles.id,
-        name: ur.roles.name,
-        description: ur.roles.description,
-        active: ur.roles.active,
-        createdAt: ur.roles.createdAt,
-        updatedAt: ur.roles.updatedAt,
-        moduleId: ur.roles.moduleId,
-        module: {
-          id: ur.roles.modules.id,
-          name: ur.roles.modules.name,
-          description: ur.roles.modules.description,
-          active: ur.roles.modules.active,
-          createdAt: ur.roles.modules.createdAt,
-          updatedAt: ur.roles.modules.updatedAt
-        }
-      }))
+      roles: [] // Temporariamente vazio
     };
   }
 
@@ -345,23 +287,7 @@ class AuthService {
       active: updatedUser.active,
       createdAt: updatedUser.createdAt,
       updatedAt: updatedUser.updatedAt,
-      roles: user.user_roles ? user.user_roles.map(ur => ({
-        id: ur.roles.id,
-        name: ur.roles.name,
-        description: ur.roles.description,
-        active: ur.roles.active,
-        createdAt: ur.roles.createdAt,
-        updatedAt: ur.roles.updatedAt,
-        moduleId: ur.roles.moduleId,
-        module: {
-          id: ur.roles.modules.id,
-          name: ur.roles.modules.name,
-          description: ur.roles.modules.description,
-          active: ur.roles.modules.active,
-          createdAt: ur.roles.modules.createdAt,
-          updatedAt: ur.roles.modules.updatedAt
-        }
-      })) : []
+      roles: [] // Temporariamente vazio
     };
   }
 

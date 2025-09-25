@@ -170,6 +170,11 @@ const Sidebar: React.FC = () => {
         }
       ]
     },
+    
+    // 🚧 ===== MÓDULOS EM DESENVOLVIMENTO - OCULTOS =====
+    // Os módulos abaixo estão sendo desenvolvidos e foram temporariamente
+    // ocultados para manter a interface limpa até estarem funcionais
+    /*
     {
       id: 'diagnostico',
       label: 'Diagnóstico',
@@ -380,6 +385,7 @@ const Sidebar: React.FC = () => {
         }
       ]
     },
+    */
     {
       id: 'configuracao-odk',
       label: 'Configuração ODK',
