@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { DataGrid, DataGridColumn } from '../../components/DataGrid';
 
 interface User {
   id: string;
@@ -39,15 +40,158 @@ function UserManagement() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [creating, setCreating] = useState(false);
+  
+  // Estados para DataGrid
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
+
+  // Definição das colunas da DataGrid
+  const columns: DataGridColumn<User>[] = [
+    {
+      key: 'user',
+      title: 'Usuário',
+      dataIndex: 'name',
+      width: '25%',
+      sortable: true,
+      render: (_, record: User) => (
+        <div className="user-info">
+          <div className="user-avatar-mini">
+            <span>{record.name?.charAt(0).toUpperCase()}</span>
+          </div>
+          <div className="user-details">
+            <div className="user-name">{record.name}</div>
+            <div className="user-email">{record.email}</div>
+            <div className="user-id">ID: {record.id}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      title: 'Status',
+      dataIndex: 'active',
+      width: '15%',
+      align: 'center',
+      render: (active: boolean, record: User) => (
+        <div className="status-info">
+          <span className={`status-badge ${active ? 'active' : 'inactive'}`}>
+            {active ? 'Ativo' : 'Inativo'}
+          </span>
+          {record.id !== currentUser?.id && (
+            <button
+              onClick={() => handleToggleUserStatus(record.id, active)}
+              className={`btn btn-small ${active ? 'btn-danger' : 'btn-success'}`}
+              style={{ marginTop: '0.5rem' }}
+            >
+              {active ? 'Desativar' : 'Ativar'}
+            </button>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'roles',
+      title: 'Papéis',
+      dataIndex: 'roles',
+      width: '30%',
+      responsive: {
+        hideOn: 'mobile'
+      },
+      render: (roles: User['roles']) => (
+        <div className="roles-info">
+          <div className="roles-count">
+            {roles?.length || 0} papel(éis)
+          </div>
+          <div className="roles-list">
+            {roles?.slice(0, 2).map((role: any) => (
+              <span key={role.id} className="role-tag">
+                {role.name} ({role.module.name})
+              </span>
+            ))}
+            {roles && roles.length > 2 && (
+              <span className="more-roles">+{roles.length - 2} mais</span>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'createdAt',
+      title: 'Cadastro',
+      dataIndex: 'createdAt',
+      width: '15%',
+      align: 'center',
+      sortable: true,
+      responsive: {
+        hideOn: 'mobile'
+      },
+      render: (date: string) => (
+        <div className="date-info">
+          <div className="date">
+            {new Date(date).toLocaleDateString('pt-BR')}
+          </div>
+          <div className="time">
+            {new Date(date).toLocaleTimeString('pt-BR', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      title: 'Ações',
+      width: '15%',
+      align: 'center',
+      render: (_, record: User) => (
+        <div className="action-buttons">
+          <button
+            onClick={() => openRoleModal(record)}
+            className="btn btn-small btn-secondary"
+            title="Gerenciar papéis"
+          >
+            👥
+          </button>
+          <button
+            onClick={() => openEditModal(record)}
+            className="btn btn-small btn-primary"
+            title="Editar usuário"
+          >
+            ✏️
+          </button>
+          {record.id !== currentUser?.id && (
+            <button
+              onClick={() => handleDeleteUser(record.id, record.name)}
+              className="btn btn-small btn-danger"
+              title="Excluir usuário"
+            >
+              🗑️
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('@pinovara:token');
       
-      const response = await fetch(`${API_BASE}/admin/users`, {
+      // Construir parâmetros de busca
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        pageSize: pageSize.toString(),
+        ...(searchTerm && { search: searchTerm })
+      });
+      
+      const response = await fetch(`${API_BASE}/admin/users?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -60,6 +204,7 @@ function UserManagement() {
 
       const data = await response.json();
       setUsers(data.data.users);
+      setTotalUsers(data.data.total || data.data.users.length);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -286,8 +431,61 @@ function UserManagement() {
 
   useEffect(() => {
     fetchUsers();
-    fetchAvailableRoles();
-  }, []);
+    if (availableRoles.length === 0) {
+      fetchAvailableRoles();
+    }
+  }, [currentPage, pageSize, searchTerm]);
+
+  // Handlers para DataGrid
+  const handlePaginationChange = (page: number, pageSize: number) => {
+    setCurrentPage(page);
+    setPageSize(pageSize);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Resetar para primeira página ao buscar
+  };
+
+  const handleSelectionChange = (selectedRowKeys: string[], _: User[]) => {
+    setSelectedRowKeys(selectedRowKeys);
+  };
+
+  const handleBulkAction = (action: string, selectedRows: User[]) => {
+    switch (action) {
+      case 'delete':
+        handleBulkDelete(selectedRows);
+        break;
+      case 'activate':
+        handleBulkActivate(selectedRows);
+        break;
+      case 'deactivate':
+        handleBulkDeactivate(selectedRows);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleBulkDelete = async (users: User[]) => {
+    if (!confirm(`Tem certeza que deseja excluir ${users.length} usuários?`)) {
+      return;
+    }
+    
+    // Implementar exclusão em massa
+    console.log('Excluir usuários:', users);
+  };
+
+  const handleBulkActivate = async (users: User[]) => {
+    // Implementar ativação em massa
+    console.log('Ativar usuários:', users);
+  };
+
+  const handleBulkDeactivate = async (users: User[]) => {
+    // Implementar desativação em massa
+    console.log('Desativar usuários:', users);
+  };
+
 
   if (loading) {
     return (
@@ -351,120 +549,67 @@ function UserManagement() {
         </div>
       </div>
 
-      {/* Users Table */}
+      {/* Users DataGrid */}
       <div className="users-section">
-        {users.length === 0 ? (
-          <div className="empty-state">
-            <h3>Nenhum usuário encontrado</h3>
-            <p>Não há usuários cadastrados no sistema.</p>
-          </div>
-        ) : (
-          <div className="table-container">
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>Usuário</th>
-                  <th>Status</th>
-                  <th>Papéis</th>
-                  <th>Cadastro</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user: User) => (
-                  <tr key={user.id}>
-                    <td>
-                      <div className="user-info">
-                        <div className="user-name">{user.name}</div>
-                        <div className="user-email">{user.email}</div>
-                        <div className="user-id">ID: {user.id}</div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="status-info">
-                        <span className={`status-badge ${user.active ? 'active' : 'inactive'}`}>
-                          {user.active ? 'Ativo' : 'Inativo'}
-                        </span>
-                        
-                        {user.id !== currentUser?.id && (
-                          <button
-                            onClick={() => handleToggleUserStatus(user.id, user.active)}
-                            className={`btn btn-small ${user.active ? 'btn-danger' : 'btn-success'}`}
-                          >
-                            {user.active ? 'Desativar' : 'Ativar'}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="roles-info">
-                        {user.roles && user.roles.length > 0 ? (
-                          <div className="roles-list">
-                            {user.roles.map((role: any) => (
-                              <div key={role.id} className="role-item">
-                                <span className="role-badge">
-                                  {role.name} ({role.module.name})
-                                </span>
-                                {user.id !== currentUser?.id && (
-                                  <button
-                                    onClick={() => handleRemoveRole(user.id, role.id)}
-                                    className="btn btn-tiny btn-danger"
-                                    title="Remover papel"
-                                  >
-                                    ×
-                                  </button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="no-roles">Nenhum papel atribuído</span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="date-info">
-                        {new Date(user.createdAt).toLocaleDateString('pt-BR')}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="action-buttons">
-                        {user.id !== currentUser?.id && (
-                          <>
-                            <button
-                              onClick={() => openEditModal(user)}
-                              className="btn btn-small btn-secondary"
-                              style={{ marginRight: '4px' }}
-                            >
-                              ✏️ Editar
-                            </button>
-                            <button
-                              onClick={() => openRoleModal(user)}
-                              className="btn btn-small btn-primary"
-                              style={{ marginRight: '4px' }}
-                            >
-                              Gerenciar Papéis
-                            </button>
-                            <button
-                              onClick={() => handleDeleteUser(user.id, user.name)}
-                              className="btn btn-small btn-danger"
-                            >
-                              🗑️ Deletar
-                            </button>
-                          </>
-                        )}
-
-                        {user.id === currentUser?.id && (
-                          <span className="self-user">Você mesmo</span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <DataGrid<User>
+          columns={columns}
+          dataSource={users}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            current: currentPage,
+            pageSize: pageSize,
+            total: totalUsers,
+            showSizeChanger: true,
+            onChange: handlePaginationChange,
+          }}
+          filters={{
+            searchable: true,
+            searchPlaceholder: 'Buscar por nome, email ou ID...',
+            onSearchChange: handleSearchChange,
+          }}
+          selection={{
+            type: 'checkbox',
+            selectedRowKeys: selectedRowKeys,
+            onChange: handleSelectionChange,
+          }}
+          actions={{
+            onCreate: () => setShowCreateModal(true),
+            createLabel: 'Novo Usuário',
+            bulkActions: [
+              {
+                key: 'activate',
+                label: 'Ativar',
+                icon: '🔓',
+              },
+              {
+                key: 'deactivate',
+                label: 'Desativar',
+                icon: '🔒',
+              },
+              {
+                key: 'delete',
+                label: 'Excluir',
+                icon: '🗑️',
+              },
+            ],
+            onBulkAction: handleBulkAction,
+          }}
+          emptyState={{
+            title: 'Nenhum usuário encontrado',
+            description: searchTerm 
+              ? `Não foram encontrados usuários que correspondam ao termo "${searchTerm}".`
+              : 'Não há usuários cadastrados no sistema ainda.',
+            icon: '👥',
+            action: {
+              label: 'Criar primeiro usuário',
+              onClick: () => setShowCreateModal(true),
+            },
+          }}
+          responsive={true}
+          size="medium"
+          className="users-datagrid"
+        />
       </div>
 
       {/* Role Management Modal */}

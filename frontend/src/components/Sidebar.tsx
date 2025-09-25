@@ -2,20 +2,36 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-// Hook personalizado para detectar se está em mobile
-const useIsMobile = () => {
+// Hook personalizado para detectar breakpoints responsivos
+const useResponsive = () => {
+  const [screenSize, setScreenSize] = useState(() => {
+    const width = window.innerWidth;
+    if (width < 480) return 'mobile-sm';
+    if (width < 768) return 'mobile';
+    if (width < 1024) return 'tablet';
+    return 'desktop';
+  });
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+      
+      if (width < 480) setScreenSize('mobile-sm');
+      else if (width < 768) setScreenSize('mobile');
+      else if (width < 1024) setScreenSize('tablet');
+      else setScreenSize('desktop');
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  return isMobile;
+  return { screenSize, isMobile, isTablet };
 };
 
 interface MenuItem {
@@ -32,7 +48,7 @@ const Sidebar: React.FC = () => {
   const { user, hasPermission, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+  const { screenSize, isMobile, isTablet } = useResponsive();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -109,12 +125,29 @@ const Sidebar: React.FC = () => {
     }
   }, [isCollapsed]);
 
-  // Fechar menu mobile automaticamente quando volta para desktop
+  // Auto-collapse e responsividade baseada no tamanho da tela
   useEffect(() => {
     if (!isMobile) {
       setIsMobileOpen(false);
     }
-  }, [isMobile]);
+    
+    // Auto-collapse em tablets menores para economizar espaço
+    if (isTablet && !isCollapsed) {
+      // Opcional: auto-collapse em tablets pode ser ativado aqui
+      // setIsCollapsed(true);
+    }
+    
+    // Ajustar largura baseada no tipo de dispositivo
+    if (screenSize === 'mobile-sm') {
+      setSidebarWidth(100); // Sidebar full-screen em mobile muito pequeno
+    } else if (screenSize === 'mobile') {
+      setSidebarWidth(280);
+    } else if (screenSize === 'tablet') {
+      setSidebarWidth(isCollapsed ? 70 : 260);
+    } else {
+      setSidebarWidth(isCollapsed ? 70 : 280);
+    }
+  }, [isMobile, isTablet, screenSize, isCollapsed]);
 
   const menuItems: MenuItem[] = [
     {
@@ -555,8 +588,11 @@ const Sidebar: React.FC = () => {
 
       <aside
         ref={sidebarRef}
-        className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobile && isMobileOpen ? 'open' : ''} ${isResizing ? 'resizing' : ''}`}
-        style={{ width: isMobile ? '280px' : `${sidebarWidth}px` }}
+        className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobile && isMobileOpen ? 'open' : ''} ${isResizing ? 'resizing' : ''} ${screenSize}`}
+        style={{ 
+          width: isMobile ? (screenSize === 'mobile-sm' ? '100vw' : '280px') : `${sidebarWidth}px`,
+          maxWidth: screenSize === 'mobile-sm' ? '320px' : 'none'
+        }}
         onClick={handleOverlayClick}
       >
         {/* Header */}
