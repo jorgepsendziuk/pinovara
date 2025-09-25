@@ -27,14 +27,49 @@ class OrganizacaoService {
    * Listar organizações com filtros e paginação
    */
   async list(filters: OrganizacaoFilters = {}): Promise<OrganizacaoListResponse> {
-    const { page = 1, limit = 10 } = filters;
+    const { page = 1, limit = 10, nome, cnpj, estado, municipio, id_tecnico } = filters;
 
-    // Buscar dados reais do banco - começando simples
-    const total = await prisma.organizacao.count();
+    // Construir condições de filtro
+    const whereConditions: any = {
+      // Não mostrar organizações removidas por padrão
+      removido: { not: true }
+    };
+
+    // Aplicar filtros específicos
+    if (nome) {
+      whereConditions.nome = {
+        contains: nome,
+        mode: 'insensitive'
+      };
+    }
+
+    if (cnpj) {
+      whereConditions.cnpj = {
+        contains: cnpj,
+        mode: 'insensitive'
+      };
+    }
+
+    if (estado) {
+      whereConditions.estado = estado;
+    }
+
+    if (municipio) {
+      whereConditions.municipio = municipio;
+    }
+
+    // Filtro por técnico (importante para a role de técnico)
+    if (id_tecnico !== undefined) {
+      whereConditions.id_tecnico = id_tecnico;
+    }
+
+    // Buscar dados reais do banco
+    const total = await prisma.organizacao.count({ where: whereConditions });
     const skip = (page - 1) * limit;
     const totalPaginas = Math.ceil(total / limit);
 
     const organizacoes = await prisma.organizacao.findMany({
+      where: whereConditions,
       select: {
         id: true,
         nome: true,
