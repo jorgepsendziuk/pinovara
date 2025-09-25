@@ -116,4 +116,73 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+/**
+ * GET /admin/system-info
+ * Informações detalhadas do sistema para o painel administrativo
+ */
+router.get('/system-info', async (req, res) => {
+  try {
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    // Verificar conexão com banco de dados
+    let dbStatus = 'connected';
+    let userCount = 0;
+    let orgCount = 0;
+    let dbError = null;
+
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      userCount = await prisma.users.count();
+      orgCount = await prisma.organizacao.count();
+    } catch (error) {
+      dbStatus = 'error';
+      dbError = error instanceof Error ? error.message : 'Database connection failed';
+    } finally {
+      await prisma.$disconnect();
+    }
+
+    const systemInfo = {
+      database: {
+        status: dbStatus,
+        lastCheck: new Date().toISOString(),
+        error: dbError
+      },
+      users: {
+        total: userCount,
+        active: userCount // Por simplicidade, consideramos todos ativos por agora
+      },
+      organizations: {
+        total: orgCount
+      },
+      system: {
+        version: process.env.npm_package_version || '2.0.0',
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        nodeVersion: process.version,
+        platform: process.platform,
+        environment: process.env.NODE_ENV || 'development'
+      },
+      timestamp: new Date().toISOString()
+    };
+
+    res.json({
+      success: true,
+      data: systemInfo,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ [AdminRoutes] Error in /system-info:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Erro ao obter informações do sistema',
+        statusCode: 500
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 export default router;
