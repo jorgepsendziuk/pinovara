@@ -761,7 +761,7 @@ function EditUserForm({ user, onSubmit, onCancel }: EditUserFormProps) {
         </button>
         <button 
           type="submit" 
-          disabled={updating || !formData.email || !formData.name || (formData.password.trim() && formData.password.length < 6)} 
+          disabled={updating || !formData.email || !formData.name || (formData.password.trim().length > 0 && formData.password.length < 6)} 
           className="btn btn-primary"
         >
           {updating ? 'Atualizando...' : 'Atualizar Usuário'}
