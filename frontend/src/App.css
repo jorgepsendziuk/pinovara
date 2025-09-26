@@ -6914,3 +6914,186 @@ main, section, article, aside, header, footer {
     display: none;
   }
 }
+
+/* ========== ROLE MANAGEMENT - ABAS ========== */
+.role-tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  margin-bottom: 2rem;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+.tab-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+  font-size: 0.95rem;
+}
+
+.tab-button:hover {
+  color: var(--text-primary);
+  background: rgba(5, 104, 57, 0.05);
+}
+
+.tab-button.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  background: rgba(5, 104, 57, 0.05);
+}
+
+/* ========== ROLE MANAGEMENT - USUÁRIOS ========== */
+.users-tab {
+  margin-top: 1rem;
+}
+
+.users-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.user-item {
+  background: var(--bg-tertiary);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  border: 1px solid rgba(5, 104, 57, 0.1);
+  box-shadow: var(--shadow-sm);
+}
+
+.user-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.user-name-email h3 {
+  margin: 0 0 0.25rem 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.user-email {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.user-status {
+  flex-shrink: 0;
+}
+
+.user-roles,
+.add-role-section {
+  margin-bottom: 1.25rem;
+}
+
+.user-roles h4,
+.add-role-section h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.role-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.role-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--primary-color);
+  color: white;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.role-module {
+  opacity: 0.8;
+}
+
+.role-name {
+  font-weight: 600;
+}
+
+.role-remove-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.25rem;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.role-remove-btn:hover {
+  opacity: 1;
+}
+
+.no-roles {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.add-role-section select {
+  width: 100%;
+  max-width: 300px;
+  padding: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.add-role-section select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(5, 104, 57, 0.1);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .role-tabs {
+    flex-direction: column;
+  }
+
+  .tab-button {
+    text-align: left;
+    border-bottom: none;
+    border-left: 2px solid transparent;
+  }
+
+  .tab-button.active {
+    border-bottom: none;
+    border-left-color: var(--primary-color);
+  }
+
+  .user-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .role-tags {
+    gap: 0.25rem;
+  }
+
+  .role-tag {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+  }
+}
