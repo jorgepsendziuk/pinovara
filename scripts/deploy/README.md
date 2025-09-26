@@ -86,6 +86,26 @@ sudo ./scripts/deploy/setup-server.sh
 - ✅ Logs recentes
 - ✅ Performance dos endpoints
 
+### 4. ⬆️ **upgrade-nodejs.sh**
+**Upgrade do Node.js no servidor (compatibilidade com Vite 7.x)**
+
+```bash
+# Executar como root/sudo no servidor
+sudo ./scripts/deploy/upgrade-nodejs.sh
+```
+
+**O que faz:**
+- ✅ Detecta versão atual do Node.js
+- ✅ Remove versão anterior
+- ✅ Instala Node.js 20.x (compatível com Vite 7.x)
+- ✅ Verifica compatibilidade
+- ✅ Backup das versões anteriores
+
+**Quando usar:**
+- Quando aparecer warning: `Unsupported engine { node: 'v18.20.8' }`
+- Para compatibilidade com Vite 7.x e outras ferramentas modernas
+- Upgrade preventivo para evitar problemas futuros
+
 ## 🔄 Fluxo de Deploy Completo
 
 ### **Configuração Inicial do Servidor**
