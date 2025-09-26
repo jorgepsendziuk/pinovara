@@ -420,7 +420,7 @@ function RoleManagement() {
             </div>
           </div>
 
-      {error && (
+          {error && (
         <div className="alert alert-error alert-compact">
           <p>{error}</p>
           <button onClick={() => setError(null)}>×</button>
@@ -494,6 +494,8 @@ function RoleManagement() {
           </div>
         )}
       </div>
+        </>
+      )}
 
       {/* Aba de Usuários */}
       {activeTab === 'users' && (
@@ -772,7 +774,7 @@ function RoleManagement() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 
