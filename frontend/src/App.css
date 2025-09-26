@@ -2547,19 +2547,16 @@ main, section, article, aside, header, footer {
 .logo-text {
   font-size: 1.1rem;
   font-weight: 800;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #374151;
   letter-spacing: -0.02em;
   white-space: nowrap;
 }
 
 .sidebar-toggle {
   background: none;
-  border: 1px solid var(--text-muted);
+  border: 1px solid #d1d5db;
   border-radius: var(--border-radius-sm);
-  color: var(--text-secondary);
+  color: #6b7280;
   cursor: pointer;
   padding: 0.375rem;
   display: flex;
@@ -2611,7 +2608,7 @@ main, section, article, aside, header, footer {
 
 .user-name-mini {
   font-weight: 600;
-  color: var(--text-primary);
+  color: #374151;
   font-size: 0.85rem;
   white-space: nowrap;
   overflow: hidden;
@@ -2784,7 +2781,7 @@ main, section, article, aside, header, footer {
   gap: 0.75rem;
   padding: 0.875rem 1.5rem;
   text-decoration: none;
-  color: var(--text-secondary);
+  color: #374151;
   transition: all 0.2s ease;
   width: 100%;
   border: none;
@@ -2856,7 +2853,7 @@ main, section, article, aside, header, footer {
 .nav-submenu .nav-link {
   padding: 0.75rem 1.5rem 0.75rem 3rem;
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: #6b7280;
 }
 
 .nav-submenu .nav-link:hover {
