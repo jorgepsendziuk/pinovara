@@ -13,9 +13,11 @@ function Login() {
   const [healthStatus, setHealthStatus] = useState<{
     api: 'checking' | 'connected' | 'error';
     database: 'checking' | 'connected' | 'error';
+    apiUrl: string;
   }>({
     api: 'checking',
     database: 'checking',
+    apiUrl: '',
   });
 
   const { login } = useAuth();
@@ -28,19 +30,23 @@ function Login() {
 
   const checkSystemHealth = async () => {
     try {
+      // Get API URL from axios instance
+      const apiUrl = (api.defaults.baseURL || '').replace(/\/$/, ''); // Remove trailing slash
+
       // Check API connection
       await api.get('/');
-      setHealthStatus(prev => ({ ...prev, api: 'connected' }));
-      
+      setHealthStatus(prev => ({ ...prev, api: 'connected', apiUrl }));
+
       // Check database connection via health endpoint
       const healthResponse = await api.get('/health');
-      setHealthStatus(prev => ({ 
-        ...prev, 
+      setHealthStatus(prev => ({
+        ...prev,
         database: healthResponse.data.data?.services?.database === 'up' ? 'connected' : 'error'
       }));
     } catch (error) {
       console.error('Health check failed:', error);
-      setHealthStatus({ api: 'error', database: 'error' });
+      const apiUrl = (api.defaults.baseURL || '').replace(/\/$/, '');
+      setHealthStatus({ api: 'error', database: 'error', apiUrl });
     }
   };
 
@@ -170,6 +176,14 @@ function Login() {
                 {healthStatus.database === 'error' && '❌ Erro'}
               </span>
             </div>
+            {healthStatus.apiUrl && (
+              <div className="health-item">
+                <span className="health-label">URL da API:</span>
+                <span className="health-indicator api-url">
+                  🔗 {healthStatus.apiUrl}
+                </span>
+              </div>
+            )}
           </div>
           <button
             type="button"

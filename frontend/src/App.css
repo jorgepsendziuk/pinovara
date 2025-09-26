@@ -1583,6 +1583,18 @@ main, section, article, aside, header, footer {
   background: rgba(139, 69, 19, 0.1);
 }
 
+.health-indicator.api-url {
+  color: var(--primary-color);
+  background: rgba(13, 110, 253, 0.1);
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .health-refresh {
   width: 100%;
   margin-top: 1rem;
