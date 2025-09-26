@@ -1,0 +1,40 @@
+# ================================
+# PINOVARA Backend - Dockerfile.dev
+# ================================
+# Dockerfile para desenvolvimento com hot-reload
+
+FROM node:20-alpine AS development
+
+# Instalar dependências do sistema
+RUN apk add --no-cache libc6-compat openssl curl
+
+# Instalar dumb-init para sinalização adequada
+RUN wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64 && \
+    chmod +x /usr/local/bin/dumb-init
+
+WORKDIR /app
+
+# Copiar arquivos de dependências
+COPY package*.json ./
+
+# Instalar TODAS as dependências (incluindo dev)
+RUN npm install
+
+# Copiar código fonte
+COPY . .
+
+# Garantir que o cliente Prisma está gerado
+RUN npx prisma generate --schema=./prisma/schema.prisma
+
+# Expor porta de desenvolvimento
+EXPOSE 3001
+
+# Health check para desenvolvimento
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
+
+# Usar dumb-init para sinalização adequada
+ENTRYPOINT ["dumb-init", "--"]
+
+# Comando padrão (pode ser sobrescrito pelo docker-compose)
+CMD ["npm", "run", "dev"]
