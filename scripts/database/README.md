@@ -6,6 +6,8 @@ Scripts para operações específicas do banco de dados PINOVARA.
 
 - **`assign-admin-role.js`** - Atribuir papel admin
 - **`create-tables.js`** - Criar tabelas
+- **`setup-tecnico-role.js`** - Configurar papel técnico
+- **`update-tecnico-passwords.js`** - Atualizar senhas dos técnicos
 
 ## 🎯 Scripts Disponíveis
 
@@ -31,12 +33,37 @@ Cria tabelas básicas do sistema:
 node scripts/database/create-tables.js
 ```
 
+### `setup-tecnico-role.js`
+Configura o papel de técnico no sistema:
+- Cria/verifica módulo "organizacoes"
+- Cria/verifica papel "tecnico"
+- Mostra resumo dos papéis
+
+**Uso:**
+```bash
+node scripts/database/setup-tecnico-role.js
+```
+
+### `update-tecnico-passwords.js`
+Atualiza senhas de todos os usuários técnicos:
+- Identifica usuários com papel "tecnico"
+- Atualiza senhas para senha padrão
+- Usa hash bcrypt seguro
+- Mostra preview antes de executar
+
+**Uso:**
+```bash
+node scripts/database/update-tecnico-passwords.js
+```
+
 ## 🗄️ Operações Disponíveis
 
 ### Gerenciamento de Usuários
 - ✅ Atribuir papéis
 - ✅ Verificar permissões
 - ✅ Listar usuários
+- ✅ Atualizar senhas em lote
+- ✅ Reset de senhas por papel
 
 ### Estrutura do Banco
 - ✅ Criar tabelas

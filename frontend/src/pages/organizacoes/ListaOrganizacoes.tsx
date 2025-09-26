@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { PDFService, OrganizacaoData } from '../../services/pdfService';
 
 interface Organizacao {
   id: number;
@@ -43,12 +44,58 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [itensPorPagina] = useState(10);
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [gerandoPDF, setGerandoPDF] = useState<number | null>(null);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
   useEffect(() => {
     fetchOrganizacoes();
   }, [paginaAtual, filtros]);
+
+  const gerarTermoAdesao = async (organizacaoId: number) => {
+    try {
+      setGerandoPDF(organizacaoId);
+
+      // Buscar dados completos da organização
+      const response = await fetch(`${API_BASE}/organizacoes/${organizacaoId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('@pinovara:token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao buscar dados da organização');
+      }
+
+      const responseData = await response.json();
+      const orgData = responseData.data || responseData; // Ajustar caso os dados venham dentro de 'data'
+
+      // Preparar dados para o PDF
+      const dadosPDF: OrganizacaoData = {
+        nome: orgData.nome || '',
+        cnpj: orgData.cnpj || '',
+        endereco: `${orgData.organizacao_end_logradouro || ''} ${orgData.organizacao_end_numero || ''}, ${orgData.organizacao_end_bairro || ''}, CEP: ${orgData.organizacao_end_cep || ''}`.trim(),
+        representanteNome: orgData.representante_nome || '',
+        representanteCPF: orgData.representante_cpf || '',
+        representanteRG: orgData.representante_rg || '',
+        representanteFuncao: orgData.representante_funcao || '',
+        representanteEndereco: `${orgData.representante_end_logradouro || ''} ${orgData.representante_end_numero || ''}, ${orgData.representante_end_bairro || ''}, CEP: ${orgData.representante_end_cep || ''}`.trim()
+      };
+
+      // Gerar PDF
+      await PDFService.gerarTermoAdesao(dadosPDF);
+
+    } catch (error) {
+      console.error('Erro ao gerar termo de adesão:', error);
+      if (error instanceof Error) {
+        alert(`Erro ao gerar termo de adesão: ${error.message}`);
+      } else {
+        alert('Erro ao gerar termo de adesão. Verifique se você está logado e tente novamente.');
+      }
+    } finally {
+      setGerandoPDF(null);
+    }
+  };
 
   const fetchOrganizacoes = async () => {
     try {
@@ -276,14 +323,22 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                       </td>
                       <td>
                         <div className="action-buttons">
-                          <button 
+                          <button
                             className="btn btn-sm btn-primary"
                             onClick={() => onNavigate('edicao', org.id)}
                             title="Editar"
                           >
                             ✏️ Editar
                           </button>
-                          <button 
+                          <button
+                            className="btn btn-sm btn-success"
+                            onClick={() => gerarTermoAdesao(org.id)}
+                            disabled={gerandoPDF === org.id}
+                            title="Gerar Termo de Adesão"
+                          >
+                            {gerandoPDF === org.id ? '⏳' : '📄 PDF'}
+                          </button>
+                          <button
                             className="btn btn-sm btn-danger"
                             onClick={() => handleExcluir(org.id)}
                           >
