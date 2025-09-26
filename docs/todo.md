@@ -11,7 +11,7 @@ grid
 roles
 organizacoes etc
 
-✅ Ajuste visual do sidebar: fundo branco puro com sombra aprimorada para melhor contraste e visibilidade
+✅ Ajuste visual do sidebar: menu claro com fundo branco, sombra elegante e textos em tons de cinza suaves para perfeita legibilidade
 
 retira essa parte
 Credenciais de Demonstração:
