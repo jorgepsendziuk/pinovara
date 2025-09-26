@@ -20,6 +20,8 @@ function Login() {
     apiUrl: '',
   });
 
+  const [isHealthExpanded, setIsHealthExpanded] = useState(false);
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -148,41 +150,58 @@ function Login() {
 
 
         <div className="health-check">
-          <h4>Status do Sistema:</h4>
-          <div className="health-status">
-            <div className="health-item">
-              <span className="health-label">API:</span>
-              <span className={`health-indicator ${healthStatus.api}`}>
-                {healthStatus.api === 'checking' && '⏳ Verificando...'}
-                {healthStatus.api === 'connected' && '✅ Conectado'}
-                {healthStatus.api === 'error' && '❌ Erro'}
-              </span>
-            </div>
-            <div className="health-item">
-              <span className="health-label">Banco de Dados:</span>
-              <span className={`health-indicator ${healthStatus.database}`}>
-                {healthStatus.database === 'checking' && '⏳ Verificando...'}
-                {healthStatus.database === 'connected' && '✅ Conectado'}
-                {healthStatus.database === 'error' && '❌ Erro'}
-              </span>
-            </div>
-            {healthStatus.apiUrl && (
-              <div className="health-item">
-                <span className="health-label">URL da API:</span>
-                <span className="health-indicator api-url">
-                  🔗 {healthStatus.apiUrl}
-                </span>
-              </div>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={checkSystemHealth}
-            className="btn btn-outline btn-small health-refresh"
-            disabled={healthStatus.api === 'checking'}
+          <div
+            className="health-header"
+            onClick={() => setIsHealthExpanded(!isHealthExpanded)}
           >
-            🔄 Verificar Novamente
-          </button>
+            <h4>Status do Sistema:</h4>
+            <div className="health-indicators-compact">
+              <span className={`status-dot ${healthStatus.api}`} title="API"></span>
+              <span className={`status-dot ${healthStatus.database}`} title="Banco de Dados"></span>
+            </div>
+            <span className={`accordion-arrow ${isHealthExpanded ? 'expanded' : ''}`}>
+              ▼
+            </span>
+          </div>
+
+          {isHealthExpanded && (
+            <div className="health-details">
+              <div className="health-status">
+                <div className="health-item">
+                  <span className="health-label">API:</span>
+                  <span className={`health-indicator ${healthStatus.api}`}>
+                    {healthStatus.api === 'checking' && '⏳ Verificando...'}
+                    {healthStatus.api === 'connected' && '✅ Conectado'}
+                    {healthStatus.api === 'error' && '❌ Erro'}
+                  </span>
+                </div>
+                <div className="health-item">
+                  <span className="health-label">Banco de Dados:</span>
+                  <span className={`health-indicator ${healthStatus.database}`}>
+                    {healthStatus.database === 'checking' && '⏳ Verificando...'}
+                    {healthStatus.database === 'connected' && '✅ Conectado'}
+                    {healthStatus.database === 'error' && '❌ Erro'}
+                  </span>
+                </div>
+                {healthStatus.apiUrl && (
+                  <div className="health-item">
+                    <span className="health-label">URL da API:</span>
+                    <span className="health-indicator api-url">
+                      🔗 {healthStatus.apiUrl}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={checkSystemHealth}
+                className="btn btn-outline btn-small health-refresh"
+                disabled={healthStatus.api === 'checking'}
+              >
+                🔄 Verificar Novamente
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
