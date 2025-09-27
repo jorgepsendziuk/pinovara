@@ -1,7 +1,6 @@
 
 implementar gestao de roles e papeis
 
-porque esse pdf ta saindo com 10.7MB? 
 documentar as ultimas modificacoes, verificar documentacao se esta refletindo o estado atual do sistema, caso necessário, olhe nos extratos do git...
 
 usar datagrid mais robusta nas listagens de:
@@ -11,14 +10,8 @@ roles
 organizacoes etc
 
 
-
-retira essa parte
-Credenciais de Demonstração:
-Email: demo@pinovara.com.br
-Senha: Demo123
-
-Ou use: test@example.com / password123
-
+design system:
+vamos criar um design system desse sistema, um ponto de partida onde todas as novas paginas devem se inspiram e buscar 
 
 app.css esta gigantesco
 

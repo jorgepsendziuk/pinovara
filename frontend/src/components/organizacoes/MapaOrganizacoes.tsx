@@ -71,7 +71,7 @@ function MapaOrganizacoes({ organizacoes, onOrganizacaoClick }: MapaOrganizacoes
     <div
       id="mapa-organizacoes"
       style={{
-        height: '400px',
+        height: '300px',
         width: '100%',
         borderRadius: '8px',
         border: '1px solid #ddd'

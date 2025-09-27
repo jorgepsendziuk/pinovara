@@ -60,8 +60,8 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
         throw new Error('Erro ao carregar estatísticas');
       }
 
-      const data = await response.json();
-      setStats(data);
+      const responseData = await response.json();
+      setStats(responseData.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -103,7 +103,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
       <div className="content-header">
         <div className="header-info">
           <h2>🏢 Dashboard - Organizações</h2>
-          <p>Visão geral das organizações cadastradas no sistema</p>
+          <p style={{margin: '0.25rem 0 0 0', fontSize: '0.9rem'}}>Visão geral das organizações cadastradas</p>
         </div>
       </div>
 
@@ -129,13 +129,6 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
             </div>
           </div>
 
-          <div className="stat-card">
-            <div className="stat-icon">📋</div>
-            <div className="stat-content">
-              <h3>Com Questionário</h3>
-              <p className="stat-number">{stats?.comQuestionario || 0}</p>
-            </div>
-          </div>
 
           <div className="stat-card">
             <div className="stat-icon">⏳</div>
@@ -146,28 +139,6 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
           </div>
         </div>
 
-        {/* Distribuição por Estado */}
-        {stats?.porEstado && stats.porEstado.length > 0 && (
-          <div className="dashboard-card">
-            <h3>📊 Distribuição por Estado</h3>
-            <div className="estado-distribution">
-              {stats.porEstado.slice(0, 6).map((estado, index) => (
-                <div key={index} className="estado-item">
-                  <span className="estado-name">{estado.estado}</span>
-                  <span className="estado-count">{estado.total}</span>
-                  <div className="estado-bar">
-                    <div
-                      className="estado-bar-fill"
-                      style={{
-                        width: `${(estado.total / Math.max(...stats.porEstado.map(e => e.total))) * 100}%`
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Tabela de Organizações Recentes - DESTAQUE PRINCIPAL */}
         <div className="dashboard-card recentes-destaque">
@@ -231,8 +202,8 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
         {stats?.organizacoesComGps && stats.organizacoesComGps.length > 0 && (
           <div className="dashboard-card">
             <h3>🗺️ Mapa das Organizações</h3>
-            <p style={{ marginBottom: '16px', color: '#666' }}>
-              Localização geográfica das organizações cadastradas ({stats.organizacoesComGps.length} organizações mapeadas)
+            <p style={{ marginBottom: '0.5rem', color: '#666', fontSize: '0.85rem' }}>
+              {stats.organizacoesComGps.length} organizações com localização GPS
             </p>
             <MapaOrganizacoes
               organizacoes={stats.organizacoesComGps}
@@ -241,34 +212,6 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
           </div>
         )}
 
-        {/* Ações Rápidas */}
-        <div className="quick-actions">
-          <h3>⚡ Ações Rápidas</h3>
-          <div className="actions-grid">
-            <button 
-              className="action-btn"
-              onClick={() => onNavigate('cadastro')}
-            >
-              <span className="action-icon">➕</span>
-              <span>Nova Organização</span>
-            </button>
-            <button 
-              className="action-btn"
-              onClick={() => onNavigate('lista')}
-            >
-              <span className="action-icon">📋</span>
-              <span>Ver Lista</span>
-            </button>
-            <button className="action-btn">
-              <span className="action-icon">📊</span>
-              <span>Relatórios</span>
-            </button>
-            <button className="action-btn">
-              <span className="action-icon">📤</span>
-              <span>Exportar Dados</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

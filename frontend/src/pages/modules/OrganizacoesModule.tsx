@@ -8,7 +8,7 @@ import ListaOrganizacoes from '../organizacoes/ListaOrganizacoes';
 import CadastroOrganizacao from '../organizacoes/CadastroOrganizacao';
 // import DetalhesOrganizacao from '../organizacoes/DetalhesOrganizacao'; // Removido
 import EdicaoOrganizacao from '../organizacoes/EdicaoOrganizacao';
-import MapaOrganizacoes from '../organizacoes/MapaOrganizacoes';
+import MapaOrganizacoesPage from '../organizacoes/MapaOrganizacoesPage';
 import '../organizacoes/OrganizacoesModule.css';
 
 type ViewType = 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa' | 'detalhes';
@@ -87,7 +87,7 @@ function OrganizacoesModule() {
       case 'cadastro':
         return <CadastroOrganizacao onNavigate={handleNavegacao} />;
       case 'mapa':
-        return <MapaOrganizacoes />;
+        return <MapaOrganizacoesPage onNavigate={handleNavegacao} />;
       case 'edicao':
         return organizacaoSelecionada ? (
           <EdicaoOrganizacao 
@@ -130,12 +130,12 @@ function OrganizacoesModule() {
       <Sidebar />
 
       <div className="main-content">
-        <main className="dashboard-main">
-          <div className="container">
+        <main className="dashboard-main" style={{padding: viewAtiva === 'mapa' ? '0' : '3rem 0'}}>
+          <div className={viewAtiva === 'mapa' ? 'full-width-container' : 'container'}>
             <div className="organizacoes-module">
 
               {/* Conteúdo do módulo */}
-              <div className="module-content">
+              <div className="module-content" style={{padding: viewAtiva === 'mapa' ? '0' : 'inherit'}}>
                 {renderView()}
               </div>
             </div>
