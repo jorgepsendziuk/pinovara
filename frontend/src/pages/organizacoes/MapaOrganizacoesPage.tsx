@@ -1,4 +1,12 @@
 import { useState, useEffect } from 'react';
+import Icon from '../../components/Icon';
+import {
+  Map,
+  Search,
+  Trash,
+  Eye,
+  Edit
+} from 'lucide-react';
 
 interface OrganizacaoComGps {
   id: number;
@@ -106,7 +114,7 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
     return (
       <div className="mapa-page">
         <div className="mapa-header">
-          <h1>🗺️ Mapa das Organizações</h1>
+          <h1><Map size={24} style={{marginRight: '0.5rem'}} /> Mapa das Organizações</h1>
           <p>Carregando organizações...</p>
         </div>
         <div className="loading-spinner">⏳</div>
@@ -118,11 +126,11 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
     return (
       <div className="mapa-page">
         <div className="mapa-header">
-          <h1>🗺️ Mapa das Organizações</h1>
+          <h1><Map size={24} style={{marginRight: '0.5rem'}} /> Mapa das Organizações</h1>
           <p>Erro ao carregar dados</p>
         </div>
         <div className="error-message">
-          <p>❌ {error}</p>
+          <p><Icon emoji="❌" size={16} /> {error}</p>
           <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', color: '#666' }}>
             Verifique se você está logado no sistema.
           </p>
@@ -142,7 +150,7 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
               }}
               className="btn btn-secondary"
             >
-              🔍 Debug Token
+              <Search size={14} style={{marginRight: '0.25rem'}} /> Debug Token
             </button>
           </div>
         </div>
@@ -154,7 +162,7 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
     <div className="mapa-page">
       <div className="mapa-header">
         <div className="header-info">
-          <h1>🗺️ Mapa das Organizações</h1>
+          <h1><Map size={24} style={{marginRight: '0.5rem'}} /> Mapa das Organizações</h1>
         </div>
 
         {/* Filtros */}
@@ -201,7 +209,7 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
 
             <div className="filtro-item">
               <button onClick={clearFilters} className="btn btn-secondary">
-                🗑️ Limpar Filtros
+                <Trash size={14} style={{marginRight: '0.25rem'}} /> Limpar Filtros
               </button>
             </div>
           </div>
@@ -241,13 +249,13 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
                     className="btn btn-sm btn-outline"
                     onClick={() => onNavigate('detalhes', org.id)}
                   >
-                    👁️ Ver
+                    <Eye size={14} style={{marginRight: '0.25rem'}} /> Ver
                   </button>
                   <button
                     className="btn btn-sm btn-primary"
                     onClick={() => onNavigate('edicao', org.id)}
                   >
-                    ✏️ Editar
+                    <Edit size={14} style={{marginRight: '0.25rem'}} /> Editar
                   </button>
                 </div>
               </div>
@@ -299,11 +307,11 @@ function MapaGrande({ organizacoes, onOrganizacaoClick, onNavigate }: MapaGrande
             <div style="display: flex; gap: 4px; margin-top: 8px;">
               <button onclick="window.mapNavigateToDetails(${org.id})"
                       style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                👁️ Ver Detalhes
+                <Eye size={14} style={{marginRight: '0.25rem'}} /> Ver Detalhes
               </button>
               <button onclick="window.mapNavigateToEdit(${org.id})"
                       style="background: #27ae60; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                ✏️ Editar
+                <Edit size={14} style={{marginRight: '0.25rem'}} /> Editar
               </button>
             </div>
           </div>
