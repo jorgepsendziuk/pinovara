@@ -13,7 +13,7 @@ export interface OrganizacaoData {
 }
 
 export class PDFService {
-  static async gerarTermoAdesao(organizacao: OrganizacaoData): Promise<void> {
+  static async gerarTermoAdesao(organizacao: OrganizacaoData, qualidade: 'alta' | 'normal' | 'baixa' = 'normal'): Promise<void> {
     // Criar um elemento HTML temporário para renderizar o termo
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = this.getTermoAdesaoHTML(organizacao);
@@ -34,16 +34,27 @@ export class PDFService {
       // Aguardar um pouco para garantir que o conteúdo seja renderizado
       await new Promise(resolve => setTimeout(resolve, 500));
 
+      // Configurações baseadas na qualidade desejada
+      const qualidadeConfig = {
+        alta: { scale: 2, quality: 0.9 },
+        normal: { scale: 1.5, quality: 0.8 },
+        baixa: { scale: 1, quality: 0.6 }
+      };
+
+      const config = qualidadeConfig[qualidade];
+
       const canvas = await html2canvas(tempDiv, {
-        scale: 2,
+        scale: config.scale,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: 794, // A4 width in pixels at 96 DPI
         height: 1123, // A4 height in pixels at 96 DPI
+        logging: false, // Desabilitar logs para performance
       });
 
-      const imgData = canvas.toDataURL('image/png');
+      // Usar JPEG ao invés de PNG para compressão
+      const imgData = canvas.toDataURL('image/jpeg', config.quality);
 
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -51,7 +62,7 @@ export class PDFService {
         format: 'a4'
       });
 
-      pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+      pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
       pdf.save(`termo-adesao-${organizacao.nome.replace(/\s+/g, '-').toLowerCase()}.pdf`);
 
     } finally {
@@ -68,9 +79,6 @@ export class PDFService {
           <!-- Logo -->
           <div style="margin-bottom: 15px;">
             <img src="/pinovara.png" alt="PINOVARA" style="width: 80px; height: auto; max-height: 80px; object-fit: contain;" />
-          </div>
-          <div style="font-size: 28px; font-weight: bold; color: #006400; margin-bottom: 10px;">
-            PINOVARA
           </div>
           <div style="font-size: 16px; color: #666; margin-top: 5px;">
             Projeto Inovador em Gestão do PNRA - TED nº 50/2023
@@ -98,7 +106,6 @@ export class PDFService {
           </p>
         </div>
 
-        <!-- Assinatura -->
         <div style="margin-top: 80px;">
           <div style="border-top: 1px solid #333; width: 70%; margin: 0 auto; padding-top: 20px; ">
             <div style="margin-bottom: 30px;">
