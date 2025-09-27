@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PDFService, OrganizacaoData } from '../../services/pdfService';
+import Icon from '../../components/Icon';
+import {
+  Plus,
+  Edit,
+  Trash
+} from 'lucide-react';
 
 interface Organizacao {
   id: number;
@@ -261,7 +267,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
 
               <div className="filter-actions">
                 <button className="btn btn-secondary" onClick={limparFiltros}>
-                  🗑️ Limpar
+                  <Trash size={14} style={{marginRight: '0.25rem'}} /> Limpar
                 </button>
               </div>
             </div>
@@ -272,7 +278,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         <div className="table-container">
           {error ? (
             <div className="error-message">
-              <p>❌ {error}</p>
+              <p><Icon emoji="❌" size={16} /> {error}</p>
               <button onClick={fetchOrganizacoes} className="btn btn-primary">
                 Tentar Novamente
               </button>
@@ -283,7 +289,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               <h3>Nenhuma organização encontrada</h3>
               <p>Não há organizações que correspondam aos filtros aplicados.</p>
               <button className="btn btn-primary">
-                ➕ Cadastrar Primeira Organização
+                <Plus size={14} style={{marginRight: '0.25rem'}} /> Cadastrar Primeira Organização
               </button>
             </div>
           ) : (
@@ -328,7 +334,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                             onClick={() => onNavigate('edicao', org.id)}
                             title="Editar"
                           >
-                            ✏️ Editar
+                            <Edit size={14} style={{marginRight: '0.25rem'}} /> Editar
                           </button>
                           <button
                             className="btn btn-sm btn-success"
@@ -342,7 +348,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                             className="btn btn-sm btn-danger"
                             onClick={() => handleExcluir(org.id)}
                           >
-                            🗑️
+                            <Trash size={14} />
                           </button>
                         </div>
                       </td>

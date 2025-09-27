@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import MapaOrganizacoes from '../../components/organizacoes/MapaOrganizacoes';
+import Icon from '../../components/Icon';
+import {
+  Building,
+  Clock,
+  MapPin,
+  Clock3,
+  Eye,
+  Plus,
+  Map
+} from 'lucide-react';
 
 interface OrganizacaoStats {
   total: number;
@@ -73,10 +83,10 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
     return (
       <div className="dashboard-content">
         <div className="content-header">
-          <h2>🏢 Dashboard - Organizações</h2>
+          <h2><Building size={20} style={{marginRight: '0.5rem'}} /> Dashboard - Organizações</h2>
           <p>Carregando estatísticas...</p>
         </div>
-        <div className="loading-spinner">⏳</div>
+        <div className="loading-spinner"><Clock size={24} /></div>
       </div>
     );
   }
@@ -85,11 +95,11 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
     return (
       <div className="dashboard-content">
         <div className="content-header">
-          <h2>🏢 Dashboard - Organizações</h2>
+          <h2><Building size={20} style={{marginRight: '0.5rem'}} /> Dashboard - Organizações</h2>
           <p>Erro ao carregar dados</p>
         </div>
         <div className="error-message">
-          <p>❌ {error}</p>
+          <p><Icon emoji="❌" size={16} /> {error}</p>
           <button onClick={fetchStats} className="btn btn-primary">
             Tentar Novamente
           </button>
@@ -102,7 +112,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
     <div className="dashboard-content">
       <div className="content-header">
         <div className="header-info">
-          <h2>🏢 Dashboard - Organizações</h2>
+          <h2><Building size={20} style={{marginRight: '0.5rem'}} /> Dashboard - Organizações</h2>
           <p style={{margin: '0.25rem 0 0 0', fontSize: '0.9rem'}}>Visão geral das organizações cadastradas</p>
         </div>
       </div>
@@ -111,7 +121,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
         {/* Cards de Estatísticas - Indicadores Discretos */}
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-icon">🏢</div>
+            <div className="stat-icon"><Building size={24} /></div>
             <div className="stat-content">
               <h3>Total de Organizações</h3>
               <p className="stat-number">{stats?.total || 0}</p>
@@ -119,7 +129,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">📍</div>
+            <div className="stat-icon"><MapPin size={24} /></div>
             <div className="stat-content">
               <h3>Com Localização GPS</h3>
               <p className="stat-number">{stats?.comGps || 0}</p>
@@ -131,7 +141,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
 
 
           <div className="stat-card">
-            <div className="stat-icon">⏳</div>
+            <div className="stat-icon"><Clock size={24} /></div>
             <div className="stat-content">
               <h3>Pendentes</h3>
               <p className="stat-number">{stats?.semQuestionario || 0}</p>
@@ -142,7 +152,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
 
         {/* Tabela de Organizações Recentes - DESTAQUE PRINCIPAL */}
         <div className="dashboard-card recentes-destaque">
-          <h3>🕒 Organizações Recentes</h3>
+          <h3><Clock3 size={18} style={{marginRight: '0.5rem'}} /> Organizações Recentes</h3>
           <div className="table-container">
             {stats?.organizacoesRecentes && stats.organizacoesRecentes.length > 0 ? (
               <table className="data-table">
@@ -168,7 +178,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
                       <td>{org.estado}</td>
                       <td>
                         <div className="status-indicators">
-                          {org.temGps && <span className="gps-indicator" title="Tem localização GPS">📍</span>}
+                          {org.temGps && <span className="gps-indicator" title="Tem localização GPS"><MapPin size={14} /></span>}
                           <span className="status-badge status-pending">Pendente</span>
                         </div>
                       </td>
@@ -177,7 +187,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
                           className="btn btn-sm btn-primary"
                           onClick={() => onNavigate('detalhes', org.id)}
                         >
-                          👁️ Ver
+                          <Eye size={14} style={{marginRight: '0.25rem'}} /> Ver
                         </button>
                       </td>
                     </tr>
@@ -187,11 +197,11 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
             ) : (
               <div className="empty-state">
                 <p>Nenhuma organização cadastrada ainda</p>
-                <button 
+                <button
                   className="btn btn-primary"
                   onClick={() => onNavigate('cadastro')}
                 >
-                  ➕ Cadastrar Primeira
+                  <Plus size={14} style={{marginRight: '0.25rem'}} /> Cadastrar Primeira
                 </button>
               </div>
             )}
@@ -201,7 +211,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
         {/* Mapa das Localizações das Organizações */}
         {stats?.organizacoesComGps && stats.organizacoesComGps.length > 0 && (
           <div className="dashboard-card">
-            <h3>🗺️ Mapa das Organizações</h3>
+            <h3><Map size={18} style={{marginRight: '0.5rem'}} /> Mapa das Organizações</h3>
             <p style={{ marginBottom: '0.5rem', color: '#666', fontSize: '0.85rem' }}>
               {stats.organizacoesComGps.length} organizações com localização GPS
             </p>
