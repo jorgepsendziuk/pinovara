@@ -321,12 +321,88 @@ class OrganizacaoService {
       where: { removido: false }
     });
 
+    // Organizações com GPS
+    const comGps = await prisma.organizacao.count({
+      where: {
+        removido: false,
+        gps_lat: { not: null },
+        gps_lng: { not: null }
+      }
+    });
+
+    // Organizações sem GPS
+    const semGps = total - comGps;
+
+    // Estatísticas por estado
+    const porEstado = await prisma.organizacao.groupBy({
+      by: ['estado'],
+      where: { removido: false },
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 10
+    });
+
+    // Organizações recentes (últimas 10)
+    const organizacoesRecentes = await prisma.organizacao.findMany({
+      where: { removido: false },
+      select: {
+        id: true,
+        nome: true,
+        data_visita: true,
+        estado: true,
+        gps_lat: true,
+        gps_lng: true
+      },
+      orderBy: { data_visita: 'desc' },
+      take: 10
+    });
+
+    // Estatísticas por estado com nomes
+    const porEstadoFormatado = await Promise.all(
+      porEstado.map(async (item) => ({
+        estado: await this.getEstadoNome(item.estado) || `Estado ${item.estado}`,
+        total: item._count.id
+      }))
+    );
+
+    // Organizações com GPS para o mapa
+    const organizacoesComGps = await prisma.organizacao.findMany({
+      where: {
+        removido: false,
+        gps_lat: { not: null },
+        gps_lng: { not: null }
+      },
+      select: {
+        id: true,
+        nome: true,
+        gps_lat: true,
+        gps_lng: true,
+        estado: true
+      },
+      take: 100 // Limitar para performance
+    });
+
     return {
       total,
-      comQuestionario: Math.floor(total * 0.3),
+      comGps,
+      semGps,
+      comQuestionario: Math.floor(total * 0.3), // Mantém cálculo aproximado por enquanto
       semQuestionario: Math.floor(total * 0.7),
-      porEstado: [],
-      organizacoesRecentes: []
+      porEstado: porEstadoFormatado,
+      organizacoesRecentes: organizacoesRecentes.map(org => ({
+        id: org.id,
+        nome: org.nome || 'Nome não informado',
+        dataVisita: org.data_visita,
+        estado: this.getEstadoNome(org.estado) || 'Não informado',
+        temGps: !!(org.gps_lat && org.gps_lng)
+      })),
+      organizacoesComGps: organizacoesComGps.map(org => ({
+        id: org.id,
+        nome: org.nome || 'Nome não informado',
+        lat: org.gps_lat,
+        lng: org.gps_lng,
+        estado: this.getEstadoNome(org.estado) || 'Não informado'
+      }))
     };
   }
 
