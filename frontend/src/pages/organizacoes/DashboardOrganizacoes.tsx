@@ -1,22 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import MapaOrganizacoes from '../../components/organizacoes/MapaOrganizacoes';
 
 interface OrganizacaoStats {
   total: number;
+  comGps: number;
+  semGps: number;
   comQuestionario: number;
   semQuestionario: number;
   porEstado: Array<{
     estado: string;
     total: number;
   }>;
-  porTipo: Array<{
-    tipo: string;
-    total: number;
-  }>;
-  recentes: Array<{
+  organizacoesRecentes: Array<{
     id: number;
     nome: string;
     dataVisita: string;
+    estado: string;
+    temGps: boolean;
+  }>;
+  organizacoesComGps: Array<{
+    id: number;
+    nome: string;
+    lat: number;
+    lng: number;
     estado: string;
   }>;
 }
@@ -101,13 +108,24 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
       </div>
 
       <div className="dashboard-body">
-        {/* Cards de Estatísticas - Compactos */}
+        {/* Cards de Estatísticas - Indicadores Discretos */}
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-icon">🏢</div>
             <div className="stat-content">
-              <h3>Total</h3>
+              <h3>Total de Organizações</h3>
               <p className="stat-number">{stats?.total || 0}</p>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-icon">📍</div>
+            <div className="stat-content">
+              <h3>Com Localização GPS</h3>
+              <p className="stat-number">{stats?.comGps || 0}</p>
+              <small className="stat-percentage">
+                {stats?.total ? Math.round((stats.comGps / stats.total) * 100) : 0}% do total
+              </small>
             </div>
           </div>
 
@@ -128,22 +146,46 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
           </div>
         </div>
 
+        {/* Distribuição por Estado */}
+        {stats?.porEstado && stats.porEstado.length > 0 && (
+          <div className="dashboard-card">
+            <h3>📊 Distribuição por Estado</h3>
+            <div className="estado-distribution">
+              {stats.porEstado.slice(0, 6).map((estado, index) => (
+                <div key={index} className="estado-item">
+                  <span className="estado-name">{estado.estado}</span>
+                  <span className="estado-count">{estado.total}</span>
+                  <div className="estado-bar">
+                    <div
+                      className="estado-bar-fill"
+                      style={{
+                        width: `${(estado.total / Math.max(...stats.porEstado.map(e => e.total))) * 100}%`
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Tabela de Organizações Recentes - DESTAQUE PRINCIPAL */}
         <div className="dashboard-card recentes-destaque">
           <h3>🕒 Organizações Recentes</h3>
           <div className="table-container">
-            {stats?.recentes && stats.recentes.length > 0 ? (
+            {stats?.organizacoesRecentes && stats.organizacoesRecentes.length > 0 ? (
               <table className="data-table">
                 <thead>
                   <tr>
                     <th>Nome</th>
                     <th>Data da Visita</th>
+                    <th>Estado</th>
                     <th>Status</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.recentes.map((org) => (
+                  {stats.organizacoesRecentes.map((org) => (
                     <tr key={org.id}>
                       <td>
                         <div className="org-info">
@@ -152,11 +194,15 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
                         </div>
                       </td>
                       <td>{new Date(org.dataVisita).toLocaleDateString('pt-BR')}</td>
+                      <td>{org.estado}</td>
                       <td>
-                        <span className="status-badge status-pending">Pendente</span>
+                        <div className="status-indicators">
+                          {org.temGps && <span className="gps-indicator" title="Tem localização GPS">📍</span>}
+                          <span className="status-badge status-pending">Pendente</span>
+                        </div>
                       </td>
                       <td>
-                        <button 
+                        <button
                           className="btn btn-sm btn-primary"
                           onClick={() => onNavigate('detalhes', org.id)}
                         >
@@ -181,6 +227,19 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
           </div>
         </div>
 
+        {/* Mapa das Localizações das Organizações */}
+        {stats?.organizacoesComGps && stats.organizacoesComGps.length > 0 && (
+          <div className="dashboard-card">
+            <h3>🗺️ Mapa das Organizações</h3>
+            <p style={{ marginBottom: '16px', color: '#666' }}>
+              Localização geográfica das organizações cadastradas ({stats.organizacoesComGps.length} organizações mapeadas)
+            </p>
+            <MapaOrganizacoes
+              organizacoes={stats.organizacoesComGps}
+              onOrganizacaoClick={(id) => onNavigate('detalhes', id)}
+            />
+          </div>
+        )}
 
         {/* Ações Rápidas */}
         <div className="quick-actions">
