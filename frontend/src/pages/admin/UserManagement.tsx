@@ -4,7 +4,8 @@ import { DataGrid, DataGridColumn } from '../../components/DataGrid';
 import {
   Users,
   Edit,
-  Trash
+  Trash,
+  UserCheck
 } from 'lucide-react';
 
 interface User {
@@ -34,7 +35,7 @@ interface Role {
 }
 
 function UserManagement() {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isImpersonating, originalUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,29 +156,50 @@ function UserManagement() {
       width: '15%',
       align: 'center',
       render: (_, record: User) => (
-        <div className="action-buttons">
+        <div className="action-buttons" style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
           <button
             onClick={() => openRoleModal(record)}
-            className="btn btn-small btn-secondary"
+            className="btn-icon"
             title="Gerenciar papéis"
+            style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6c757d' }}
           >
             <Users size={16} />
           </button>
           <button
             onClick={() => openEditModal(record)}
-            className="btn btn-small btn-primary"
+            className="btn-icon"
             title="Editar usuário"
+            style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#007bff' }}
           >
-            <Edit size={14} />
+            <Edit size={16} />
           </button>
           {record.id !== currentUser?.id && (
-            <button
-              onClick={() => handleDeleteUser(record.id, record.name)}
-              className="btn btn-small btn-danger"
-              title="Excluir usuário"
-            >
-              <Trash size={14} />
-            </button>
+            <>
+              <button
+                onClick={() => handleImpersonateUser(record)}
+                className="btn-icon"
+                title={`Personificar ${record.name}`}
+                disabled={isImpersonating}
+                style={{
+                  padding: '0.25rem',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: isImpersonating ? 'not-allowed' : 'pointer',
+                  color: isImpersonating ? '#ccc' : '#ffc107',
+                  opacity: isImpersonating ? 0.5 : 1
+                }}
+              >
+                <UserCheck size={16} />
+              </button>
+              <button
+                onClick={() => handleDeleteUser(record.id, record.name)}
+                className="btn-icon"
+                title="Excluir usuário"
+                style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#dc3545' }}
+              >
+                <Trash size={16} />
+              </button>
+            </>
           )}
         </div>
       ),
@@ -345,6 +367,43 @@ function UserManagement() {
     }
   };
 
+  const handleImpersonateUser = async (user: User) => {
+    if (!confirm(`Deseja personificar o usuário "${user.name}"?\n\nVocê verá o sistema como se estivesse logado com essa conta.\n\nPara voltar ao seu usuário original, faça logout e login novamente.`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+
+      const response = await fetch(`${API_BASE}/admin/impersonate/${user.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Erro ao personificar usuário');
+      }
+
+      const data = await response.json();
+
+      // Armazenar o token personificado
+      localStorage.setItem('@pinovara:token', data.data.token);
+      localStorage.setItem('@pinovara:originalUser', JSON.stringify(currentUser));
+
+      // Redirecionar para a dashboard padrão do sistema
+      alert(`Agora você está personificando ${user.name}. Você será redirecionado para a dashboard.`);
+      window.location.href = '/pinovara';
+
+    } catch (error) {
+      console.error('Erro ao personificar usuário:', error);
+      alert(`Erro ao personificar usuário: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    }
+  };
+
   const openRoleModal = (user: User) => {
     setSelectedUser(user);
     setShowRoleModal(true);
@@ -506,8 +565,29 @@ function UserManagement() {
     <div className="admin-page">
       <div className="page-header">
         <div className="header-content">
-          <h1>Gestão de Usuários</h1>
-          <p>Gerencie usuários do sistema, seus status e permissões</p>
+          <h1>
+            Gestão de Usuários
+            {isImpersonating && (
+              <span style={{
+                fontSize: '0.6em',
+                color: '#ffc107',
+                marginLeft: '0.5rem',
+                background: '#ffc10720',
+                padding: '0.2rem 0.4rem',
+                borderRadius: '0.2rem',
+                fontWeight: 'normal'
+              }}>
+                PERSONIFICANDO: {currentUser?.name}
+              </span>
+            )}
+          </h1>
+          {isImpersonating && originalUser && (
+            <p>
+              <span style={{ color: '#ffc107', fontWeight: 'bold' }}>
+                Personificando como {currentUser?.name}. <a href="#" onClick={(e) => { e.preventDefault(); window.location.reload(); }} style={{ color: '#ffc107' }}>Voltar ao usuário original</a>
+              </span>
+            </p>
+          )}
         </div>
         <div className="header-actions">
           <button 
@@ -612,7 +692,7 @@ function UserManagement() {
             },
           }}
           responsive={true}
-          size="medium"
+          size="small"
           className="users-datagrid"
         />
       </div>

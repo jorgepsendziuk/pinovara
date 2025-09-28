@@ -24,6 +24,13 @@ router.get('/users', adminController.getUsers);
 router.get('/users/:id', adminController.getUser);
 
 /**
+ * POST /admin/impersonate/:userId
+ * Personificar um usuário (apenas para admins)
+ * Gera um token JWT para o usuário personificado
+ */
+router.post('/impersonate/:userId', adminController.impersonateUser);
+
+/**
  * POST /admin/users
  * Criar novo usuário
  * 

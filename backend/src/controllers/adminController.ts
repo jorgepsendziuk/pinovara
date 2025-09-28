@@ -408,6 +408,101 @@ class AdminController {
       });
     }
   }
+
+  /**
+   * POST /admin/impersonate/:userId
+   * Personificar um usuário
+   */
+  async impersonateUser(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const adminUser = req.user;
+
+      if (!adminUser) {
+        res.status(HttpStatus.UNAUTHORIZED).json({
+          success: false,
+          error: {
+            message: 'Usuário não autenticado',
+            code: ErrorCode.AUTHENTICATION_REQUIRED,
+            statusCode: HttpStatus.UNAUTHORIZED
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Verificar se o admin tem permissão
+      const isAdmin = adminUser.roles?.some(role =>
+        role.name === 'admin' && role.module.name === 'sistema'
+      );
+
+      if (!isAdmin) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Apenas administradores podem personificar usuários',
+            code: ErrorCode.INSUFFICIENT_PERMISSIONS,
+            statusCode: HttpStatus.FORBIDDEN
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Não permitir personificar a si mesmo
+      if (adminUser.id === parseInt(userId)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: {
+            message: 'Não é possível personificar a si mesmo',
+            code: ErrorCode.VALIDATION_ERROR,
+            statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Gerar token para o usuário personificado
+      const impersonationData = await adminService.generateImpersonationToken(parseInt(userId), adminUser);
+
+      res.json({
+        success: true,
+        message: 'Token de personificação gerado com sucesso',
+        data: {
+          token: impersonationData.token,
+          user: impersonationData.user,
+          impersonatedBy: adminUser.name,
+          expiresAt: impersonationData.expiresAt
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ [AdminController] Error in impersonateUser:', error);
+
+      if (error instanceof ApiError) {
+        res.status(error.statusCode).json({
+          success: false,
+          error: {
+            message: error.message,
+            code: error.code,
+            statusCode: error.statusCode
+          },
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+          success: false,
+          error: {
+            message: 'Erro interno do servidor',
+            code: ErrorCode.INTERNAL_ERROR,
+            statusCode: HttpStatus.INTERNAL_SERVER_ERROR
+          },
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+  }
 }
 
 export default new AdminController();
