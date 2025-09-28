@@ -148,8 +148,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
 
   const carregarDadosAuxiliares = async () => {
     try {
-      // Simular carregamento de estados, municípios e funções
-      // Em produção, viria de APIs específicas
+      // Carregar estados e funções (dados fixos)
       setEstados([
         { id: 1, nome: 'Minas Gerais', uf: 'MG' },
         { id: 2, nome: 'Bahia', uf: 'BA' },
@@ -157,33 +156,22 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
         { id: 4, nome: 'São Paulo', uf: 'SP' }
       ]);
 
-      setMunicipios([
-        // Minas Gerais (estadoId: 1)
-        { id: 1, nome: 'Diamantina', codigo_ibge: 3120904, estadoId: 1 },
-        { id: 2, nome: 'Belo Horizonte', codigo_ibge: 3106200, estadoId: 1 },
-        { id: 3, nome: 'Uberlândia', codigo_ibge: 3170206, estadoId: 1 },
-        { id: 4, nome: 'Juiz de Fora', codigo_ibge: 3136702, estadoId: 1 },
-        { id: 5, nome: 'Montes Claros', codigo_ibge: 3143302, estadoId: 1 },
+      // Carregar todos os municípios do banco de dados
+      const token = localStorage.getItem('@pinovara:token');
+      const response = await fetch(`${API_BASE}/organizacoes/municipios`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-        // Bahia (estadoId: 2)
-        { id: 6, nome: 'Salvador', codigo_ibge: 2927408, estadoId: 2 },
-        { id: 7, nome: 'Feira de Santana', codigo_ibge: 2910800, estadoId: 2 },
-        { id: 8, nome: 'Vitória da Conquista', codigo_ibge: 2933307, estadoId: 2 },
-        { id: 9, nome: 'Camaçari', codigo_ibge: 2905701, estadoId: 2 },
-        { id: 10, nome: 'Ilhéus', codigo_ibge: 2913606, estadoId: 2 },
-
-        // Espírito Santo (estadoId: 3)
-        { id: 11, nome: 'Vitória', codigo_ibge: 3205309, estadoId: 3 },
-        { id: 12, nome: 'Vila Velha', codigo_ibge: 3205200, estadoId: 3 },
-        { id: 13, nome: 'Serra', codigo_ibge: 3205002, estadoId: 3 },
-        { id: 14, nome: 'Cariacica', codigo_ibge: 3201308, estadoId: 3 },
-
-        // São Paulo (estadoId: 4)
-        { id: 15, nome: 'São Paulo', codigo_ibge: 3550308, estadoId: 4 },
-        { id: 16, nome: 'Campinas', codigo_ibge: 3509502, estadoId: 4 },
-        { id: 17, nome: 'São Bernardo do Campo', codigo_ibge: 3548708, estadoId: 4 },
-        { id: 18, nome: 'Santo André', codigo_ibge: 3547809, estadoId: 4 }
-      ]);
+      if (response.ok) {
+        const data = await response.json();
+        setMunicipios(data.data || []);
+      } else {
+        console.warn('Não foi possível carregar municípios do servidor, usando dados vazios');
+        setMunicipios([]);
+      }
 
       setFuncoes([
         { id: 1, nome: 'Presidente', descricao: 'Presidente da organização' },

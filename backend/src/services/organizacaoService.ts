@@ -407,6 +407,49 @@ class OrganizacaoService {
   }
 
   /**
+   * Buscar municípios (filtrados por estado opcionalmente)
+   */
+  async getMunicipios(estadoId?: number) {
+    try {
+      let municipios;
+
+      if (estadoId) {
+        // Buscar municípios de um estado específico
+        municipios = await prisma.$queryRaw`
+          SELECT
+            id,
+            descricao as nome,
+            id_estado as estadoId,
+            codigo_ibge
+          FROM pinovara_aux.municipio_ibge
+          WHERE id_estado = ${estadoId}
+          ORDER BY descricao
+        `;
+      } else {
+        // Buscar todos os municípios
+        municipios = await prisma.$queryRaw`
+          SELECT
+            id,
+            descricao as nome,
+            id_estado as estadoId,
+            codigo_ibge
+          FROM pinovara_aux.municipio_ibge
+          ORDER BY descricao
+        `;
+      }
+
+      return municipios;
+    } catch (error) {
+      console.error('Erro ao buscar municípios:', error);
+      throw new ApiError({
+        message: 'Erro ao buscar municípios',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
    * Helper para obter nome do estado
    */
   getEstadoNome(codigo?: number | null): string {

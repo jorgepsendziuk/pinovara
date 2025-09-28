@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PDFService, OrganizacaoData } from '../../services/pdfService';
+import { DataGrid, DataGridColumn } from '../../components/DataGrid';
 import {
-  Plus,
   Edit,
   Trash,
-  XCircle
+  Printer
 } from 'lucide-react';
 
 interface Organizacao {
@@ -20,14 +20,6 @@ interface Organizacao {
   email: string | null;
 }
 
-interface Filtros {
-  busca: string;
-  estado: string;
-  municipio: string;
-  status: string;
-  dataInicio: string;
-  dataFim: string;
-}
 
 interface ListaOrganizacoesProps {
   onNavigate: (view: 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa', organizacaoId?: number) => void;
@@ -37,26 +29,49 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const { } = useAuth();
   const [organizacoes, setOrganizacoes] = useState<Organizacao[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filtros, setFiltros] = useState<Filtros>({
-    busca: '',
-    estado: '',
-    municipio: '',
-    status: '',
-    dataInicio: '',
-    dataFim: ''
-  });
-  const [paginaAtual, setPaginaAtual] = useState(1);
-  const [totalPaginas, setTotalPaginas] = useState(1);
-  const [itensPorPagina] = useState(10);
-  const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [gerandoPDF, setGerandoPDF] = useState<number | null>(null);
+
+  // Estados para DataGrid
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalOrganizacoes, setTotalOrganizacoes] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
+  // Funções auxiliares
+  const formatarCNPJ = (cnpj: string | null): string => {
+    if (!cnpj) return '-';
+    // Remove todos os caracteres não numéricos
+    const cnpjNumeros = cnpj.replace(/\D/g, '');
+    // Aplica a máscara CNPJ: XX.XXX.XXX/XXXX-XX
+    return cnpjNumeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  };
+
+  const getNomeEstado = (estadoId: number | null): string => {
+    const estados = [
+      { id: 1, nome: 'Minas Gerais', uf: 'MG' },
+      { id: 2, nome: 'Bahia', uf: 'BA' },
+      { id: 3, nome: 'Espírito Santo', uf: 'ES' }
+    ];
+    const estado = estados.find(e => e.id === estadoId);
+    return estado ? estado.uf : '-';
+  };
+
+  const getNomeMunicipio = (municipioId: number | null): string => {
+    const municipios = [
+      { id: 1, nome: 'Diamantina' },
+      { id: 2, nome: 'Belo Horizonte' },
+      { id: 3, nome: 'Salvador' },
+      { id: 4, nome: 'Vitória' }
+    ];
+    const municipio = municipios.find(m => m.id === municipioId);
+    return municipio ? municipio.nome : '-';
+  };
+
   useEffect(() => {
     fetchOrganizacoes();
-  }, [paginaAtual, filtros]);
+  }, [currentPage, pageSize, searchTerm]);
 
   const gerarTermoAdesao = async (organizacaoId: number) => {
     try {
@@ -107,13 +122,14 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     try {
       setLoading(true);
       const token = localStorage.getItem('@pinovara:token');
-      
-      // Construir URL com parâmetros de paginação
+
+      // Construir parâmetros de busca
       const params = new URLSearchParams({
-        page: paginaAtual.toString(),
-        limit: itensPorPagina.toString()
+        page: currentPage.toString(),
+        pageSize: pageSize.toString(),
+        ...(searchTerm && { search: searchTerm })
       });
-      
+
       const response = await fetch(`${API_BASE}/organizacoes?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -126,45 +142,22 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       }
 
       const data = await response.json();
-      
-      if (data.success && data.data) {
-        // API retorna: { success: true, data: { organizacoes: [], total: X, pagina: Y, ... } }
-        setOrganizacoes(data.data.organizacoes || []);
-        setTotalPaginas(data.data.totalPaginas || 1);
-      } else {
-        console.error('Formato de resposta inesperado:', data);
-        setOrganizacoes([]);
-      }
+      setOrganizacoes(data.data.organizacoes || []);
+      setTotalOrganizacoes(data.data.total || data.data.organizacoes.length);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      console.error('Erro ao carregar organizações:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFiltroChange = (campo: keyof Filtros, valor: string) => {
-    setFiltros(prev => ({ ...prev, [campo]: valor }));
-    setPaginaAtual(1); // Reset para primeira página ao filtrar
-  };
-
-  const limparFiltros = () => {
-    setFiltros({
-      busca: '',
-      estado: '',
-      municipio: '',
-      status: '',
-      dataInicio: '',
-      dataFim: ''
-    });
-    setPaginaAtual(1);
-  };
 
   const handleExcluir = async (id: number) => {
     if (!confirm('Tem certeza que deseja excluir esta organização?')) return;
 
     try {
       const token = localStorage.getItem('@pinovara:token');
-      
+
       const response = await fetch(`${API_BASE}/organizacoes/${id}`, {
         method: 'DELETE',
         headers: {
@@ -184,6 +177,125 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     }
   };
 
+  // Handlers para DataGrid
+  const handlePaginationChange = (page: number, pageSize: number) => {
+    setCurrentPage(page);
+    setPageSize(pageSize);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Resetar para primeira página ao buscar
+  };
+
+  // Definição das colunas da DataGrid
+  const columns: DataGridColumn<Organizacao>[] = [
+    {
+      key: 'id',
+      title: 'ID',
+      dataIndex: 'id',
+      width: '8%',
+      sortable: true,
+      align: 'center',
+      render: (id: number) => (
+        <span style={{ fontWeight: 'bold', color: '#666' }}>#{id}</span>
+      ),
+    },
+    {
+      key: 'nome',
+      title: 'Nome',
+      dataIndex: 'nome',
+      width: '22%',
+      sortable: true,
+      render: (nome: string) => nome || '-',
+    },
+    {
+      key: 'cnpj',
+      title: 'CNPJ',
+      dataIndex: 'cnpj',
+      width: '18%',
+      sortable: true,
+      render: (cnpj: string) => formatarCNPJ(cnpj),
+    },
+    {
+      key: 'localizacao',
+      title: 'Localização',
+      dataIndex: 'municipio',
+      width: '20%',
+      render: (municipio: number, record: Organizacao) => {
+        const municipioNome = getNomeMunicipio(municipio);
+        const estadoSigla = getNomeEstado(record.estado);
+        return `${municipioNome} - ${estadoSigla}`;
+      },
+    },
+    {
+      key: 'contato',
+      title: 'Contato',
+      dataIndex: 'telefone',
+      width: '15%',
+      responsive: {
+        hideOn: 'mobile'
+      },
+      render: (telefone: string, record: Organizacao) => (
+        <div className="contact-info">
+          <div className="telefone">{telefone || '-'}</div>
+          <div className="email">{record.email || '-'}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      title: 'Status',
+      dataIndex: 'id',
+      width: '10%',
+      align: 'center',
+      render: () => (
+        <span className="status-badge status-active">Ativo</span>
+      ),
+    },
+    {
+      key: 'actions',
+      title: 'Ações',
+      width: '17%',
+      align: 'center',
+      render: (_, record: Organizacao) => (
+        <div className="action-buttons" style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
+          <button
+            onClick={() => onNavigate('edicao', record.id)}
+            className="btn-icon"
+            title="Editar organização"
+            style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#007bff' }}
+          >
+            <Edit size={16} />
+          </button>
+          <button
+            onClick={() => gerarTermoAdesao(record.id)}
+            className="btn-icon"
+            title="Imprimir Termo de Adesão"
+            disabled={gerandoPDF === record.id}
+            style={{
+              padding: '0.25rem',
+              border: 'none',
+              background: 'transparent',
+              cursor: gerandoPDF === record.id ? 'not-allowed' : 'pointer',
+              color: gerandoPDF === record.id ? '#ccc' : '#28a745'
+            }}
+          >
+            {gerandoPDF === record.id ? '⏳' : <Printer size={16} />}
+          </button>
+          <button
+            onClick={() => handleExcluir(record.id)}
+            className="btn-icon"
+            title="Excluir organização"
+            style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#dc3545' }}
+          >
+            <Trash size={16} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
 
   if (loading) {
     return (
@@ -202,187 +314,52 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       <div className="content-header">
         <div className="header-info">
           <h2>🏢 Lista de Organizações</h2>
-          <p>Gerencie todas as organizações cadastradas no sistema</p>
+        </div>
+        <div className="header-actions">
+          <button
+            onClick={() => onNavigate('cadastro')}
+            className="btn btn-primary"
+          >
+            + Nova Organização
+          </button>
         </div>
       </div>
 
       <div className="lista-body">
-        {/* Filtros */}
-        {mostrarFiltros && (
-          <div className="filters-panel">
-            <div className="filters-grid">
-              <div className="filter-group">
-                <label>Buscar</label>
-                <input
-                  type="text"
-                  placeholder="Nome, CNPJ..."
-                  value={filtros.busca}
-                  onChange={(e) => handleFiltroChange('busca', e.target.value)}
-                />
-              </div>
-
-              <div className="filter-group">
-                <label>Estado</label>
-                <select
-                  value={filtros.estado}
-                  onChange={(e) => handleFiltroChange('estado', e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  <option value="BA">Bahia</option>
-                  <option value="MG">Minas Gerais</option>
-                  <option value="ES">Espírito Santo</option>
-                </select>
-              </div>
-
-              <div className="filter-group">
-                <label>Status</label>
-                <select
-                  value={filtros.status}
-                  onChange={(e) => handleFiltroChange('status', e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  <option value="completo">Completo</option>
-                  <option value="pendente">Pendente</option>
-                  <option value="rascunho">Rascunho</option>
-                </select>
-              </div>
-
-              <div className="filter-group">
-                <label>Data Início</label>
-                <input
-                  type="date"
-                  value={filtros.dataInicio}
-                  onChange={(e) => handleFiltroChange('dataInicio', e.target.value)}
-                />
-              </div>
-
-              <div className="filter-group">
-                <label>Data Fim</label>
-                <input
-                  type="date"
-                  value={filtros.dataFim}
-                  onChange={(e) => handleFiltroChange('dataFim', e.target.value)}
-                />
-              </div>
-
-              <div className="filter-actions">
-                <button className="btn btn-secondary" onClick={limparFiltros}>
-                  <Trash size={14} style={{marginRight: '0.25rem'}} /> Limpar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tabela de Organizações */}
-        <div className="table-container">
-          {error ? (
-            <div className="error-message">
-              <p><XCircle size={16} style={{marginRight: '0.5rem'}} /> {error}</p>
-              <button onClick={fetchOrganizacoes} className="btn btn-primary">
-                Tentar Novamente
-              </button>
-            </div>
-          ) : organizacoes.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">🏢</div>
-              <h3>Nenhuma organização encontrada</h3>
-              <p>Não há organizações que correspondam aos filtros aplicados.</p>
-              <button className="btn btn-primary">
-                <Plus size={14} style={{marginRight: '0.25rem'}} /> Cadastrar Primeira Organização
-              </button>
-            </div>
-          ) : (
-            <>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>CNPJ</th>
-                    <th>Localização</th>
-                    <th>Telefone</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {organizacoes.map((org) => (
-                    <tr key={org.id}>
-                      <td>
-                        <div className="org-info">
-                          <strong>{org.nome}</strong>
-                          <small>ID: {org.id}</small>
-                        </div>
-                      </td>
-                      <td>{org.cnpj || '-'}</td>
-                      <td>
-                        <div className="location-info">
-                          <span>{org.municipio || '-'}</span>
-                          <small>{org.estado || '-'}</small>
-                        </div>
-                      </td>
-                      <td>
-                        {org.telefone || '-'}
-                      </td>
-                      <td>
-                        <span className="status-badge status-complete">Ativo</span>
-                      </td>
-                      <td>
-                        <div className="action-buttons">
-                          <button
-                            className="btn btn-sm btn-primary"
-                            onClick={() => onNavigate('edicao', org.id)}
-                            title="Editar"
-                          >
-                            <Edit size={14} style={{marginRight: '0.25rem'}} /> Editar
-                          </button>
-                          <button
-                            className="btn btn-sm btn-success"
-                            onClick={() => gerarTermoAdesao(org.id)}
-                            disabled={gerandoPDF === org.id}
-                            title="Gerar Termo de Adesão"
-                          >
-                            {gerandoPDF === org.id ? '⏳' : '📄 PDF'}
-                          </button>
-                          <button
-                            className="btn btn-sm btn-danger"
-                            onClick={() => handleExcluir(org.id)}
-                          >
-                            <Trash size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* Paginação */}
-              {totalPaginas > 1 && (
-                <div className="pagination">
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => setPaginaAtual(prev => Math.max(1, prev - 1))}
-                    disabled={paginaAtual === 1}
-                  >
-                    ← Anterior
-                  </button>
-                  
-                  <div className="pagination-info">
-                    Página {paginaAtual} de {totalPaginas}
-                  </div>
-                  
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => setPaginaAtual(prev => Math.min(totalPaginas, prev + 1))}
-                    disabled={paginaAtual === totalPaginas}
-                  >
-                    Próxima →
-                  </button>
-                </div>
-              )}
-            </>
-          )}
+        {/* DataGrid de Organizações */}
+        <div className="organizacoes-datagrid-container">
+          <DataGrid<Organizacao>
+            columns={columns}
+            dataSource={organizacoes}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              current: currentPage,
+              pageSize: pageSize,
+              total: totalOrganizacoes,
+              showSizeChanger: true,
+              onChange: handlePaginationChange,
+            }}
+            filters={{
+              searchable: true,
+              searchPlaceholder: 'Buscar por nome, CNPJ ou localização...',
+              onSearchChange: handleSearchChange,
+            }}
+            emptyState={{
+              title: 'Nenhuma organização encontrada',
+              description: searchTerm
+                ? `Não foram encontradas organizações que correspondam ao termo "${searchTerm}".`
+                : 'Não há organizações cadastradas no sistema ainda.',
+              icon: '🏢',
+              action: {
+                label: 'Cadastrar primeira organização',
+                onClick: () => onNavigate('cadastro'),
+              },
+            }}
+            responsive={true}
+            size="medium"
+            className="organizacoes-datagrid"
+          />
         </div>
       </div>
     </div>

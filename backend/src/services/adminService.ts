@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { ErrorCode, HttpStatus } from '../types/api';
 import { ApiError } from '../utils/ApiError';
@@ -513,6 +514,91 @@ class AdminService {
         }
       })) : []
     };
+  }
+
+  /**
+   * Gerar token de personificação para um usuário
+   */
+  async generateImpersonationToken(userId: number, adminUser: any) {
+    try {
+      // Buscar o usuário a ser personificado
+      const user = await prisma.users.findUnique({
+        where: { id: userId },
+        include: {
+          user_roles: {
+            include: {
+              roles: {
+                include: {
+                  modules: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!user) {
+        throw new ApiError({
+          message: 'Usuário não encontrado',
+          statusCode: HttpStatus.NOT_FOUND,
+          code: ErrorCode.RESOURCE_NOT_FOUND
+        });
+      }
+
+      if (!user.active) {
+        throw new ApiError({
+          message: 'Não é possível personificar um usuário inativo',
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: ErrorCode.VALIDATION_ERROR
+        });
+      }
+
+      // Gerar token JWT para personificação
+      const jwtSecret = process.env.JWT_SECRET;
+      if (!jwtSecret) {
+        throw new ApiError({
+          message: 'Configuração JWT não encontrada',
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          code: ErrorCode.INTERNAL_ERROR
+        });
+      }
+
+      const tokenPayload = {
+        userId: user.id,
+        email: user.email,
+        impersonatedBy: adminUser.id,
+        isImpersonation: true
+      };
+
+      // Token expira em 8 horas para personificação
+      const token = jwt.sign(tokenPayload, jwtSecret, {
+        expiresIn: '8h',
+        audience: 'pinovara-frontend',
+        issuer: 'pinovara-api'
+      });
+
+      // Formatar dados do usuário personificado
+      const userData = this.formatUserWithRoles(user);
+
+      return {
+        token,
+        user: userData,
+        expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000) // 8 horas
+      };
+
+    } catch (error) {
+      console.error('Erro ao gerar token de personificação:', error);
+
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      throw new ApiError({
+        message: 'Erro ao gerar token de personificação',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.INTERNAL_ERROR
+      });
+    }
   }
 }
 

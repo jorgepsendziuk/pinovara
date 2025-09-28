@@ -237,6 +237,26 @@ class OrganizacaoController {
   }
 
   /**
+   * GET /organizacoes/municipios/:estadoId?
+   */
+  async getMunicipios(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const estadoId = req.params.estadoId ? parseInt(req.params.estadoId) : undefined;
+
+      const municipios = await organizacaoService.getMunicipios(estadoId);
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        data: municipios,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Organizacao Controller Error:', error);
+      this.handleError(error, res);
+    }
+  }
+
+  /**
    * Tratar erros de forma padronizada
    */
   private handleError(error: any, res: Response): void {
