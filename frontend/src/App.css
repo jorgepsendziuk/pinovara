@@ -1810,12 +1810,12 @@ main, section, article, aside, header, footer {
 }
 
 .user-roles h3::before {
-  content: '🏷️';
+  /* Ícone será adicionado via componente React */
   font-size: 1.25rem;
 }
 
 .dashboard-stats h3::before {
-  content: '📊';
+  /* Ícone será adicionado via componente React */
   font-size: 1.25rem;
 }
 

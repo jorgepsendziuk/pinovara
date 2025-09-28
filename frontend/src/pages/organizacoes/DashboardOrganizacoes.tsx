@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import MapaOrganizacoes from '../../components/organizacoes/MapaOrganizacoes';
-import Icon from '../../components/Icon';
 import {
   Building,
   Clock,
@@ -9,7 +8,8 @@ import {
   Clock3,
   Eye,
   Plus,
-  Map
+  Map,
+  XCircle
 } from 'lucide-react';
 
 interface OrganizacaoStats {
@@ -99,7 +99,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
           <p>Erro ao carregar dados</p>
         </div>
         <div className="error-message">
-          <p><Icon emoji="❌" size={16} /> {error}</p>
+          <p><XCircle size={16} style={{marginRight: '0.5rem'}} /> {error}</p>
           <button onClick={fetchStats} className="btn btn-primary">
             Tentar Novamente
           </button>

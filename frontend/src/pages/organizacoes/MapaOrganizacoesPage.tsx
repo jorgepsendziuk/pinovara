@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import Icon from '../../components/Icon';
 import {
   Map,
   Search,
   Trash,
   Eye,
-  Edit
+  Edit,
+  XCircle
 } from 'lucide-react';
 
 interface OrganizacaoComGps {
@@ -130,7 +130,7 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
           <p>Erro ao carregar dados</p>
         </div>
         <div className="error-message">
-          <p><Icon emoji="❌" size={16} /> {error}</p>
+          <p><XCircle size={16} style={{marginRight: '0.5rem'}} /> {error}</p>
           <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', color: '#666' }}>
             Verifique se você está logado no sistema.
           </p>

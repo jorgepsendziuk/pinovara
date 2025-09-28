@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { GruposDiagnostico } from '../../types/organizacao';
+import { Clipboard, Users, BarChart, Target, Handshake, GraduationCap } from 'lucide-react';
 
 interface DiagnosticoAreaProps {
   titulo: string;
@@ -42,13 +43,13 @@ export const DiagnosticoArea: React.FC<DiagnosticoAreaProps> = ({
     const isOpen = subAccordionAberto === categoria;
     
     // Títulos personalizados para cada categoria
-    const titulos: { [key: string]: string } = {
-      'estrutura': '📋 Estrutura Organizacional',
-      'estrategia': '🎯 Estratégia e Planejamento', 
-      'organizacao': '👥 Organização dos Associados',
-      'direcao': '🤝 Direção e Participação',
-      'controle': '📊 Controle e Transparência',
-      'educacao': '🎓 Educação Cooperativista'
+    const titulos: { [key: string]: React.ReactElement } = {
+      'estrutura': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Estrutura Organizacional</>,
+      'estrategia': <><Target size={16} style={{marginRight: '0.5rem'}} /> Estratégia e Planejamento</>,
+      'organizacao': <><Users size={16} style={{marginRight: '0.5rem'}} /> Organização dos Associados</>,
+      'direcao': <><Handshake size={16} style={{marginRight: '0.5rem'}} /> Direção e Participação</>,
+      'controle': <><BarChart size={16} style={{marginRight: '0.5rem'}} /> Controle e Transparência</>,
+      'educacao': <><GraduationCap size={16} style={{marginRight: '0.5rem'}} /> Educação Cooperativista</>
     };
 
     return (

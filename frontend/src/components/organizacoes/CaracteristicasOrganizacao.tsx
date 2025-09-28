@@ -1,5 +1,6 @@
 import React from 'react';
 import { Organizacao } from '../../types/organizacao';
+import { BarChart, Users, Building2 } from 'lucide-react';
 
 interface CaracteristicasOrganizacaoProps {
   organizacao: Organizacao;
@@ -20,7 +21,7 @@ export const CaracteristicasOrganizacao: React.FC<CaracteristicasOrganizacaoProp
         className="accordion-header"
         onClick={() => onToggleAccordion('caracteristicas')}
       >
-        <h3>📊 Características da Organização</h3>
+        <h3><BarChart size={18} style={{marginRight: '0.5rem'}} /> Características da Organização</h3>
         <span className={`accordion-icon ${accordionAberto === 'caracteristicas' ? 'open' : ''}`}>
           ▼
         </span>
@@ -31,7 +32,7 @@ export const CaracteristicasOrganizacao: React.FC<CaracteristicasOrganizacaoProp
           
           {/* Seção: Dados Gerais dos Sócios */}
           <div className="subsection">
-            <h4>👥 Dados Gerais dos Sócios</h4>
+            <h4><Users size={16} style={{marginRight: '0.5rem'}} /> Dados Gerais dos Sócios</h4>
             <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="n_total_socios">Total de Sócios</label>
@@ -81,7 +82,7 @@ export const CaracteristicasOrganizacao: React.FC<CaracteristicasOrganizacaoProp
 
           {/* Seção: Programas Governamentais */}
           <div className="subsection">
-            <h4>🏛️ Programas Governamentais</h4>
+            <h4><Building2 size={16} style={{marginRight: '0.5rem'}} /> Programas Governamentais</h4>
             <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="n_socios_paa">Sócios PAA</label>

@@ -1,4 +1,9 @@
 import { useState, useEffect } from 'react';
+import {
+  Users,
+  Edit,
+  Trash
+} from 'lucide-react';
 
 interface Module {
   id: number;
@@ -401,7 +406,7 @@ function RoleManagement() {
           className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
           onClick={() => setActiveTab('users')}
         >
-          👥 Usuários & Atribuições
+          <Users size={18} style={{marginRight: '0.5rem'}} /> Usuários & Atribuições
         </button>
       </div>
 
@@ -447,10 +452,10 @@ function RoleManagement() {
 
               <div className="compact-module-actions">
                 <button onClick={() => setEditingModule(module)} className="btn-icon" title="Editar módulo">
-                  ✏️
+                  <Edit size={14} />
                 </button>
                 <button onClick={() => handleDeleteModule(module.id)} className="btn-icon btn-danger" title="Excluir módulo">
-                  🗑️
+                  <Trash size={14} />
                 </button>
               </div>
             </div>
@@ -474,10 +479,10 @@ function RoleManagement() {
 
                     <div className="compact-role-actions">
                       <button onClick={() => setEditingRole(role)} className="btn-icon-small" title="Editar papel">
-                        ✏️
+                        <Edit size={14} />
                       </button>
                       <button onClick={() => handleDeleteRole(role.id)} className="btn-icon-small btn-danger" title="Excluir papel">
-                        🗑️
+                        <Trash size={14} />
                       </button>
                     </div>
                   </div>

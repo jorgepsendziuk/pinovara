@@ -1,6 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { organizacaoAPI } from '../../services/api';
+import {
+  Clipboard,
+  BarChart,
+  Users,
+  Building2,
+  CheckCircle,
+  Save,
+  Plus,
+  Home,
+  User,
+  FormInput,
+  Sprout,
+  Coffee,
+  Users2,
+  Factory,
+  Wheat,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 
 interface Estado {
   id: number;
@@ -139,10 +158,31 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
       ]);
 
       setMunicipios([
+        // Minas Gerais (estadoId: 1)
         { id: 1, nome: 'Diamantina', codigo_ibge: 3120904, estadoId: 1 },
         { id: 2, nome: 'Belo Horizonte', codigo_ibge: 3106200, estadoId: 1 },
-        { id: 3, nome: 'Salvador', codigo_ibge: 2927408, estadoId: 2 },
-        { id: 4, nome: 'Vitória', codigo_ibge: 3205309, estadoId: 3 }
+        { id: 3, nome: 'Uberlândia', codigo_ibge: 3170206, estadoId: 1 },
+        { id: 4, nome: 'Juiz de Fora', codigo_ibge: 3136702, estadoId: 1 },
+        { id: 5, nome: 'Montes Claros', codigo_ibge: 3143302, estadoId: 1 },
+
+        // Bahia (estadoId: 2)
+        { id: 6, nome: 'Salvador', codigo_ibge: 2927408, estadoId: 2 },
+        { id: 7, nome: 'Feira de Santana', codigo_ibge: 2910800, estadoId: 2 },
+        { id: 8, nome: 'Vitória da Conquista', codigo_ibge: 2933307, estadoId: 2 },
+        { id: 9, nome: 'Camaçari', codigo_ibge: 2905701, estadoId: 2 },
+        { id: 10, nome: 'Ilhéus', codigo_ibge: 2913606, estadoId: 2 },
+
+        // Espírito Santo (estadoId: 3)
+        { id: 11, nome: 'Vitória', codigo_ibge: 3205309, estadoId: 3 },
+        { id: 12, nome: 'Vila Velha', codigo_ibge: 3205200, estadoId: 3 },
+        { id: 13, nome: 'Serra', codigo_ibge: 3205002, estadoId: 3 },
+        { id: 14, nome: 'Cariacica', codigo_ibge: 3201308, estadoId: 3 },
+
+        // São Paulo (estadoId: 4)
+        { id: 15, nome: 'São Paulo', codigo_ibge: 3550308, estadoId: 4 },
+        { id: 16, nome: 'Campinas', codigo_ibge: 3509502, estadoId: 4 },
+        { id: 17, nome: 'São Bernardo do Campo', codigo_ibge: 3548708, estadoId: 4 },
+        { id: 18, nome: 'Santo André', codigo_ibge: 3547809, estadoId: 4 }
       ]);
 
       setFuncoes([
@@ -270,24 +310,30 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
 
       const novaOrganizacao = await organizacaoAPI.create(dadosParaEnvio);
       
-      alert('✅ Organização cadastrada com sucesso!');
+      alert('Organização cadastrada com sucesso!');
       onNavigate('detalhes', novaOrganizacao.id);
 
     } catch (error) {
       console.error('Erro ao cadastrar organização:', error);
-      alert('❌ Erro ao cadastrar organização: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+      alert('Erro ao cadastrar organização: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     } finally {
       setLoading(false);
     }
   };
 
-  const municipiosFiltrados = municipios.filter(
-    m => !formData.estado || m.estadoId === parseInt(formData.estado)
-  );
+  // Filtro de municípios baseado no estado selecionado
+  const municipiosFiltrados = useMemo(() => {
+    if (!formData.estado) {
+      return [];
+    }
+    return municipios.filter(municipio =>
+      municipio.estadoId === parseInt(formData.estado)
+    );
+  }, [municipios, formData.estado]);
 
   const renderAbaDadosBasicos = () => (
     <div className="aba-content">
-      <h3>📋 Dados Básicos da Organização</h3>
+      <h3><Clipboard size={18} style={{marginRight: '0.5rem'}} /> Dados Básicos da Organização</h3>
       
       <div className="form-grid">
         <div className="form-group">
@@ -359,8 +405,12 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
             id="estado"
             value={formData.estado}
             onChange={(e) => {
-              handleInputChange('estado', e.target.value);
-              handleInputChange('municipio', ''); // Reset município
+              const novoEstado = e.target.value;
+              handleInputChange('estado', novoEstado);
+              // Reset município quando estado muda
+              if (formData.municipio) {
+                handleInputChange('municipio', '');
+              }
             }}
           >
             <option value="">Selecione o estado</option>
@@ -379,6 +429,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
             value={formData.municipio}
             onChange={(e) => handleInputChange('municipio', e.target.value)}
             disabled={!formData.estado}
+            key={`municipio-${formData.estado}`} // Força re-render quando estado muda
           >
             <option value="">Selecione o município</option>
             {municipiosFiltrados.map(municipio => (
@@ -445,7 +496,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
 
   const renderAbaEndereco = () => (
     <div className="aba-content">
-      <h3>🏠 Endereço da Organização</h3>
+      <h3><Home size={18} style={{marginRight: '0.5rem'}} /> Endereço da Organização</h3>
       
       <div className="form-grid">
         <div className="form-group">
@@ -598,7 +649,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
         </div>
       </div>
 
-      <h4>🏠 Endereço do Representante</h4>
+      <h4><Home size={16} style={{marginRight: '0.5rem'}} /> Endereço do Representante</h4>
       <div className="form-grid">
         <div className="form-group">
           <label htmlFor="representanteEndLogradouro">Logradouro</label>
@@ -667,9 +718,9 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
 
   const renderAbaCaracteristicas = () => (
     <div className="aba-content">
-      <h3>📊 Características da Organização</h3>
-      
-      <h4>👥 Sócios e Associados</h4>
+      <h3><BarChart size={18} style={{marginRight: '0.5rem'}} /> Características da Organização</h3>
+
+      <h4><Users size={16} style={{marginRight: '0.5rem'}} /> Sócios e Associados</h4>
       <div className="form-grid">
         <div className="form-group">
           <label htmlFor="caracteristicasNTotalSocios">Total de Sócios</label>
@@ -732,7 +783,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
         </div>
       </div>
 
-      <h4>🌱 Programas de Aquisição</h4>
+      <h4><Sprout size={16} style={{marginRight: '0.5rem'}} /> Programas de Aquisição</h4>
       <div className="form-grid">
         <div className="form-group">
           <label htmlFor="caracteristicasNSociosPaa">Sócios PAA</label>
@@ -783,7 +834,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
         </div>
       </div>
 
-      <h4>☕ Características do Café</h4>
+      <h4><Coffee size={16} style={{marginRight: '0.5rem'}} /> Características do Café</h4>
       <div className="form-grid">
         <div className="form-group">
           <label htmlFor="caracteristicasTaCafConvencional">Café Convencional</label>
@@ -834,7 +885,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
         </div>
       </div>
 
-      <h4>👫 Distribuição por Gênero - Associados</h4>
+      <h4><Users2 size={16} style={{marginRight: '0.5rem'}} /> Distribuição por Gênero - Associados</h4>
       <div className="form-grid">
         <div className="form-group">
           <label htmlFor="caracteristicasTaAMulher">Associadas (Mulheres)</label>
@@ -861,7 +912,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
         </div>
       </div>
 
-      <h4>🏭 Distribuição por Gênero - Empresários</h4>
+      <h4><Factory size={16} style={{marginRight: '0.5rem'}} /> Distribuição por Gênero - Empresários</h4>
       <div className="form-grid">
         <div className="form-group">
           <label htmlFor="caracteristicasTaEMulher">Empresárias (Mulheres)</label>
@@ -888,7 +939,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
         </div>
       </div>
 
-      <h4>🌾 Agricultura Familiar</h4>
+      <h4><Wheat size={16} style={{marginRight: '0.5rem'}} /> Agricultura Familiar</h4>
       <div className="form-grid">
         <div className="form-group">
           <label htmlFor="caracteristicasTaAfMulher">Agricultoras Familiares</label>
@@ -919,11 +970,11 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
 
   const renderAbaQuestionarios = () => (
     <div className="aba-content">
-      <h3>📝 Questionários e Observações</h3>
+      <h3><FormInput size={18} style={{marginRight: '0.5rem'}} /> Questionários e Observações</h3>
       
       <div className="questionarios-info">
         <div className="info-card">
-          <h4>📋 Módulos de Questionários</h4>
+          <h4><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Módulos de Questionários</h4>
           <p>Os questionários detalhados (GO, GPP, GC, GF, GP, GS, GI, IS) serão preenchidos posteriormente através dos módulos específicos.</p>
           
           <div className="modulos-grid">
@@ -955,7 +1006,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
         </div>
       </div>
 
-      <h4>📝 Observações Gerais</h4>
+      <h4><FormInput size={16} style={{marginRight: '0.5rem'}} /> Observações Gerais</h4>
       <div className="form-group">
         <label htmlFor="obs">Observações</label>
         <textarea
@@ -971,7 +1022,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
         </small>
       </div>
 
-      <h4>✅ Informações Adicionais</h4>
+      <h4><CheckCircle size={16} style={{marginRight: '0.5rem'}} /> Informações Adicionais</h4>
       <div className="form-grid">
         <div className="form-group">
           <label htmlFor="simNaoProducao">Tem Produção?</label>
@@ -1032,7 +1083,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
     <div className="cadastro-content">
       <div className="content-header">
         <div className="header-info">
-          <h2>➕ Cadastro de Organização</h2>
+          <h2><Plus size={20} style={{marginRight: '0.5rem'}} /> Cadastro de Organização</h2>
           <p>Preencha os dados da nova organização</p>
         </div>
         
@@ -1056,35 +1107,35 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
               className={`tab-button ${abaAtiva === 'basicos' ? 'active' : ''}`}
               onClick={() => setAbaAtiva('basicos')}
             >
-              📋 Dados Básicos
+              <Clipboard size={14} style={{marginRight: '0.25rem'}} /> Dados Básicos
             </button>
             <button
               type="button"
               className={`tab-button ${abaAtiva === 'endereco' ? 'active' : ''}`}
               onClick={() => setAbaAtiva('endereco')}
             >
-              🏠 Endereço
+              <Home size={14} style={{marginRight: '0.25rem'}} /> Endereço
             </button>
             <button
               type="button"
               className={`tab-button ${abaAtiva === 'representante' ? 'active' : ''}`}
               onClick={() => setAbaAtiva('representante')}
             >
-              👤 Representante
+              <User size={14} style={{marginRight: '0.25rem'}} /> Representante
             </button>
             <button
               type="button"
               className={`tab-button ${abaAtiva === 'caracteristicas' ? 'active' : ''}`}
               onClick={() => setAbaAtiva('caracteristicas')}
             >
-              📊 Características
+              <BarChart size={14} style={{marginRight: '0.25rem'}} /> Características
             </button>
             <button
               type="button"
               className={`tab-button ${abaAtiva === 'questionarios' ? 'active' : ''}`}
               onClick={() => setAbaAtiva('questionarios')}
             >
-              📝 Questionários
+              <FormInput size={14} style={{marginRight: '0.25rem'}} /> Questionários
             </button>
           </div>
 
@@ -1112,7 +1163,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
                     }
                   }}
                 >
-                  ← Anterior
+                  <ChevronLeft size={14} style={{marginRight: '0.25rem'}} /> Anterior
                 </button>
               )}
 
@@ -1128,7 +1179,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
                     }
                   }}
                 >
-                  Próxima →
+                  Próxima <ChevronRight size={14} style={{marginLeft: '0.25rem'}} />
                 </button>
               )}
 
@@ -1172,7 +1223,7 @@ function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
                 </>
               ) : (
                 <>
-                  💾 Salvar Organização
+                  <Save size={16} style={{marginRight: '0.5rem'}} /> Salvar Organização
                 </>
               )}
             </button>

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PDFService, OrganizacaoData } from '../../services/pdfService';
-import Icon from '../../components/Icon';
 import {
   Plus,
   Edit,
-  Trash
+  Trash,
+  XCircle
 } from 'lucide-react';
 
 interface Organizacao {
@@ -278,7 +278,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         <div className="table-container">
           {error ? (
             <div className="error-message">
-              <p><Icon emoji="❌" size={16} /> {error}</p>
+              <p><XCircle size={16} style={{marginRight: '0.5rem'}} /> {error}</p>
               <button onClick={fetchOrganizacoes} className="btn btn-primary">
                 Tentar Novamente
               </button>
