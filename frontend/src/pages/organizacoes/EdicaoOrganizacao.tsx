@@ -7,6 +7,13 @@ import { DadosBasicos } from '../../components/organizacoes/DadosBasicos';
 import { DadosRepresentanteComponent } from '../../components/organizacoes/DadosRepresentante';
 import { CaracteristicasOrganizacao } from '../../components/organizacoes/CaracteristicasOrganizacao';
 import { DiagnosticoArea } from '../../components/organizacoes/DiagnosticoArea';
+import {
+  Edit,
+  Search,
+  Building2,
+  Users,
+  XCircle
+} from 'lucide-react';
 
 interface EdicaoOrganizacaoProps {
   organizacaoId: number;
@@ -121,7 +128,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         throw new Error('Erro ao salvar organização');
       }
 
-      setSuccess('✅ Organização salva com sucesso!');
+      setSuccess('Organização salva com sucesso!');
       
       setTimeout(() => {
         setSuccess(null);
@@ -242,7 +249,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         }}>
         <DiagnosticoArea
           titulo="ÁREA GERENCIAL: GOVERNANÇA ORGANIZACIONAL"
-          icone="🏛️"
+          icone={<Building2 size={16} />}
           area="governanca-main"
           dados={governancaOrganizacional}
           perguntas={gruposGovernanca}
@@ -253,7 +260,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
 
         <DiagnosticoArea
           titulo="ÁREA GERENCIAL: GESTÃO DE PESSOAS"
-          icone="👥"
+          icone={<Users size={16} />}
           area="pessoas-main"
           dados={gestaoPessoas}
           perguntas={gruposGestaoPessoas}
@@ -287,7 +294,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   if (!organizacao) {
     return (
       <div className="error-container">
-        <div className="error-message">❌ Organização não encontrada</div>
+        <div className="error-message"><XCircle size={16} style={{marginRight: '0.5rem'}} /> Organização não encontrada</div>
         <button onClick={() => onNavigate('lista')} className="btn btn-primary">
           ← Voltar à Lista
         </button>
@@ -312,7 +319,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             ← Voltar
           </button>
         <div className="header-info">
-            <h1>✏️ Editando Organização</h1>
+            <h1><Edit size={24} style={{marginRight: '0.5rem'}} /> Editando Organização</h1>
             <h2>{organizacao.nome || 'Nome não informado'}</h2>
           </div>
         </div>
@@ -347,7 +354,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
               className={`tab-button ${abaAtiva === 'diagnostico' ? 'active' : ''}`}
               onClick={() => setAbaAtiva('diagnostico')}
             >
-              🔍 Diagnóstico
+              <Search size={14} style={{marginRight: '0.25rem'}} /> Diagnóstico
             </button>
           </div>
         </div>

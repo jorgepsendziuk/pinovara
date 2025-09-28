@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import VERSION_INFO from '../version';
 import './VersionIndicator.css';
+import { Clipboard } from 'lucide-react';
 
 interface VersionIndicatorProps {
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -131,7 +132,7 @@ const VersionIndicator: React.FC<VersionIndicatorProps> = ({
               onClick={() => copyToClipboard(`${VERSION_INFO.shortCommitHash} | ${VERSION_INFO.buildDate}`)}
               title="Copiar informações resumidas"
             >
-              📋 Copiar Info
+              <Clipboard size={14} style={{marginRight: '0.25rem'}} /> Copiar Info
             </button>
           </div>
         </div>

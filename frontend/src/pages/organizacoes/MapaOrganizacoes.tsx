@@ -2,6 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import {
+  CheckCircle,
+  Clock,
+  FileText,
+  Building
+} from 'lucide-react';
 
 // Corrigir ícones padrão do Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -61,12 +67,25 @@ const getStatusColor = (status: string) => {
   }
 };
 
+// Função auxiliar para renderizar ícone Lucide como SVG string
+const renderIconToSvg = (IconComponent: any, size: number = 16, color: string = 'white') => {
+  // Para simplificar, vamos usar uma abordagem mais direta com símbolos Unicode que se aproximam dos ícones Lucide
+  // Já que renderizar SVG completo no Leaflet pode ser complexo
+  switch (IconComponent) {
+    case CheckCircle: return '✓';
+    case Clock: return '⏱';
+    case FileText: return '📄';
+    case Building: return '🏢';
+    default: return '•';
+  }
+};
+
 const getStatusIcon = (status: string) => {
   switch (status) {
-    case 'completo': return '✅';
-    case 'pendente': return '⏳';
-    case 'rascunho': return '📝';
-    default: return '🏢';
+    case 'completo': return renderIconToSvg(CheckCircle);
+    case 'pendente': return renderIconToSvg(Clock);
+    case 'rascunho': return renderIconToSvg(FileText);
+    default: return renderIconToSvg(Building);
   }
 };
 
@@ -490,17 +509,17 @@ function MapaOrganizacoes() {
               <div style="background: #f8f9fa; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                 <p style="margin: 0.25rem 0; color: #6c757d; font-size: 0.85rem;"><strong>ID:</strong> ${org.id}</p>
                 <p style="margin: 0.25rem 0; color: #6c757d; font-size: 0.85rem;"><strong>CNPJ:</strong> ${org.cnpj || 'Não informado'}</p>
-                <p style="margin: 0.25rem 0; color: #6c757d; font-size: 0.85rem;"><strong>📍 Localização:</strong> ${org.municipio} - ${org.estado}</p>
-                <p style="margin: 0.25rem 0; color: #6c757d; font-size: 0.85rem;"><strong>📊 Status:</strong>
+                <p style="margin: 0.25rem 0; color: #6c757d; font-size: 0.85rem;"><strong>Localização:</strong> ${org.municipio} - ${org.estado}</p>
+                <p style="margin: 0.25rem 0; color: #6c757d; font-size: 0.85rem;"><strong>Status:</strong>
                   <span style="display: inline-block; padding: 0.2rem 0.4rem; border-radius: 0.2rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; background: ${getStatusColor(org.status)}20; color: ${getStatusColor(org.status)}; margin-left: 0.25rem;">
                     ${org.status}
                   </span>
                 </p>
-                <p style="margin: 0.25rem 0; color: #6c757d; font-size: 0.85rem;"><strong>📅 Última visita:</strong> ${
+                <p style="margin: 0.25rem 0; color: #6c757d; font-size: 0.85rem;"><strong>Última visita:</strong> ${
                   org.dataVisita ? new Date(org.dataVisita).toLocaleDateString('pt-BR') : 'Não informado'
                 }</p>
-                <p style="margin: 0.25rem 0; color: #6c757d; font-size: 0.85rem;"><strong>📍 GPS:</strong> ${org.gpsLat.toFixed(4)}, ${org.gpsLng.toFixed(4)}</p>
-                <p style="margin: 0.25rem 0; color: #6c757d; font-size: 0.85rem;"><strong>⛰️ Altitude:</strong> ${org.gpsAlt}m</p>
+                <p style="margin: 0.25rem 0; color: #6c757d; font-size: 0.85rem;"><strong>GPS:</strong> ${org.gpsLat.toFixed(4)}, ${org.gpsLng.toFixed(4)}</p>
+                <p style="margin: 0.25rem 0; color: #6c757d; font-size: 0.85rem;"><strong>Altitude:</strong> ${org.gpsAlt}m</p>
               </div>
 
               <div style="display: flex; gap: 0.5rem; flex-direction: column;">
@@ -509,14 +528,14 @@ function MapaOrganizacoes() {
                   font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center;
                   box-shadow: 0 2px 4px rgba(0,123,255,0.3); transition: all 0.2s ease;
                 " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,123,255,0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,123,255,0.3)';">
-                  👁️ Ver Detalhes Completos
+                  Ver Detalhes Completos
                 </button>
                 <button onclick="window.location.href='/organizacoes/edicao/${org.id}'" style="
                   background: linear-gradient(135deg, #28a745, #1e7e34); color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem;
                   font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center;
                   box-shadow: 0 2px 4px rgba(40,167,69,0.3); transition: all 0.2s ease;
                 " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(40,167,69,0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(40,167,69,0.3)';">
-                  ✏️ Editar Organização
+                  Editar Organização
                 </button>
               </div>
             </div>
@@ -763,7 +782,7 @@ function MapaOrganizacoes() {
   if (error) {
     return (
       <div className="error-message">
-        <p>❌ {error}</p>
+        <p><span style={{marginRight: '0.5rem'}}>❌</span>{error}</p>
         <button onClick={fetchOrganizacoes} className="btn btn-primary">
           Tentar Novamente
         </button>
@@ -775,7 +794,7 @@ function MapaOrganizacoes() {
     <div className="mapa-content">
       <div className="content-header">
         <div className="header-info">
-          <h2>🗺️ Mapa das Organizações</h2>
+          <h2><span style={{marginRight: '0.5rem'}}>📍</span>Mapa das Organizações</h2>
           <p>Visualize a localização geográfica de todas as organizações cadastradas</p>
           <div className="header-stats">
             <span className="stat-item">
@@ -832,7 +851,7 @@ function MapaOrganizacoes() {
               className="btn btn-secondary" 
               onClick={() => setFiltros({ status: '', estado: '', municipio: '' })}
             >
-              🗑️ Limpar Filtros
+              <span style={{marginRight: '0.25rem'}}>🗑️</span>Limpar Filtros
             </button>
           </div>
         </div>
@@ -887,15 +906,15 @@ function MapaOrganizacoes() {
         <h4>Legenda</h4>
         <div className="legenda-items">
           <div className="legenda-item">
-            <span className="legenda-icon" style={{ backgroundColor: '#28a745' }}>✅</span>
+            <span className="legenda-icon" style={{ backgroundColor: '#28a745' }}>✓</span>
             <span>Completo</span>
           </div>
           <div className="legenda-item">
-            <span className="legenda-icon" style={{ backgroundColor: '#ffc107' }}>⏳</span>
+            <span className="legenda-icon" style={{ backgroundColor: '#ffc107' }}>⏱</span>
             <span>Pendente</span>
           </div>
           <div className="legenda-item">
-            <span className="legenda-icon" style={{ backgroundColor: '#6c757d' }}>📝</span>
+            <span className="legenda-icon" style={{ backgroundColor: '#6c757d' }}>📄</span>
             <span>Rascunho</span>
           </div>
         </div>

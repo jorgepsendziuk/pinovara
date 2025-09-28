@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { DataGrid, DataGridColumn } from '../../components/DataGrid';
+import {
+  Users,
+  Edit,
+  Trash
+} from 'lucide-react';
 
 interface User {
   id: string;
@@ -156,14 +161,14 @@ function UserManagement() {
             className="btn btn-small btn-secondary"
             title="Gerenciar papéis"
           >
-            👥
+            <Users size={16} />
           </button>
           <button
             onClick={() => openEditModal(record)}
             className="btn btn-small btn-primary"
             title="Editar usuário"
           >
-            ✏️
+            <Edit size={14} />
           </button>
           {record.id !== currentUser?.id && (
             <button
@@ -171,7 +176,7 @@ function UserManagement() {
               className="btn btn-small btn-danger"
               title="Excluir usuário"
             >
-              🗑️
+              <Trash size={14} />
             </button>
           )}
         </div>
@@ -590,7 +595,7 @@ function UserManagement() {
               {
                 key: 'delete',
                 label: 'Excluir',
-                icon: '🗑️',
+                icon: <Trash size={14} />,
               },
             ],
             onBulkAction: handleBulkAction,
@@ -600,7 +605,7 @@ function UserManagement() {
             description: searchTerm 
               ? `Não foram encontrados usuários que correspondam ao termo "${searchTerm}".`
               : 'Não há usuários cadastrados no sistema ainda.',
-            icon: '👥',
+            icon: <Users size={16} />,
             action: {
               label: 'Criar primeiro usuário',
               onClick: () => setShowCreateModal(true),

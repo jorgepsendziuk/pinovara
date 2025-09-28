@@ -49,13 +49,13 @@ export interface DataGridProps<T = any> {
     bulkActions?: Array<{
       key: string;
       label: string;
-      icon?: string;
+      icon?: string | React.ReactElement;
     }>;
   };
   emptyState?: {
     title?: string;
     description?: string;
-    icon?: string;
+    icon?: string | React.ReactElement;
     action?: {
       label: string;
       onClick: () => void;
@@ -260,7 +260,7 @@ function DataGrid<T = any>({
                     }}
                     className="btn btn-secondary btn-small"
                   >
-                    {action.icon && <span className="btn-icon">{action.icon}</span>}
+                    {action.icon && <span className="btn-icon">{typeof action.icon === 'string' ? action.icon : action.icon}</span>}
                     {action.label}
                   </button>
                 ))}
@@ -289,7 +289,7 @@ function DataGrid<T = any>({
           </div>
         ) : isEmpty ? (
           <div className="data-grid-empty">
-            <div className="empty-icon">{emptyState?.icon || '📋'}</div>
+            <div className="empty-icon">{typeof emptyState?.icon === 'string' ? emptyState.icon : emptyState?.icon || '📋'}</div>
             <h3>{emptyState?.title || 'Nenhum registro encontrado'}</h3>
             <p>{emptyState?.description || 'Não há dados para exibir.'}</p>
             {emptyState?.action && (

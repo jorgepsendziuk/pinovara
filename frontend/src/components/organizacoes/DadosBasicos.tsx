@@ -1,5 +1,6 @@
 import React from 'react';
 import { Organizacao } from '../../types/organizacao';
+import { Clipboard } from 'lucide-react';
 
 interface DadosBasicosProps {
   organizacao: Organizacao;
@@ -20,7 +21,7 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
         className="accordion-header"
         onClick={() => onToggleAccordion('dados-basicos')}
       >
-        <h3>📋 Dados Básicos da Organização</h3>
+        <h3><Clipboard size={18} style={{marginRight: '0.5rem'}} /> Dados Básicos da Organização</h3>
         <span className={`accordion-icon ${accordionAberto === 'dados-basicos' ? 'open' : ''}`}>
           ▼
         </span>
