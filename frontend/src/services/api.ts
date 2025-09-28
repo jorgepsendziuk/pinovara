@@ -329,17 +329,17 @@ export const auxiliarAPI = {
    */
   getEstados: async (): Promise<Estado[]> => {
     try {
-      const response = await api.get<ApiResponse<Estado[]>>('/auxiliar/estados');
-      
+      const response = await api.get<ApiResponse<Estado[]>>('/organizacoes/estados');
+
       if (!response.data.success) {
         throw new Error(response.data.error?.message || 'Erro ao carregar estados');
       }
-      
+
       return response.data.data!;
     } catch (error) {
       // Fallback para dados padrão se API não estiver disponível
       console.warn('Usando dados padrão para estados:', error);
-      
+
       return [
         { id: 1, nome: 'Minas Gerais', uf: 'MG', codigo_ibge: 31 },
         { id: 2, nome: 'Bahia', uf: 'BA', codigo_ibge: 29 },
@@ -354,13 +354,13 @@ export const auxiliarAPI = {
    */
   getMunicipios: async (estadoId?: number): Promise<Municipio[]> => {
     try {
-      const params = estadoId ? `?estadoId=${estadoId}` : '';
-      const response = await api.get<ApiResponse<Municipio[]>>(`/auxiliar/municipios${params}`);
-      
+      const params = estadoId ? `/${estadoId}` : '';
+      const response = await api.get<ApiResponse<Municipio[]>>(`/organizacoes/municipios${params}`);
+
       if (!response.data.success) {
         throw new Error(response.data.error?.message || 'Erro ao carregar municípios');
       }
-      
+
       return response.data.data!;
     } catch (error) {
       // Fallback para dados padrão

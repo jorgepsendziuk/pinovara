@@ -1,5 +1,6 @@
 import React from 'react';
 import { DadosRepresentante } from '../../types/organizacao';
+import { User, ChevronDown } from 'lucide-react';
 
 interface DadosRepresentanteProps {
   dados: DadosRepresentante;
@@ -20,10 +21,16 @@ export const DadosRepresentanteComponent: React.FC<DadosRepresentanteProps> = ({
         className="accordion-header"
         onClick={() => onToggleAccordion('representante')}
       >
-        <h3>👤 Dados do Representante</h3>
-        <span className={`accordion-icon ${accordionAberto === 'representante' ? 'open' : ''}`}>
-          ▼
-        </span>
+        <h3><User size={18} style={{marginRight: '0.5rem'}} /> Dados do Representante</h3>
+        <ChevronDown
+          size={16}
+          className={`accordion-icon ${accordionAberto === 'representante' ? 'open' : ''}`}
+          style={{
+            marginLeft: '0.5rem',
+            transition: 'transform 0.2s ease',
+            transform: accordionAberto === 'representante' ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}
+        />
       </button>
       
       <div className={`accordion-content ${accordionAberto === 'representante' ? 'open' : ''}`}>

@@ -12,7 +12,9 @@ import {
   Search,
   Building2,
   Users,
-  XCircle
+  XCircle,
+  Loader2,
+  Save
 } from 'lucide-react';
 
 interface EdicaoOrganizacaoProps {
@@ -286,7 +288,10 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   if (loading) {
     return (
       <div className="loading-container">
-        <div className="loading-spinner">⏳ Carregando...</div>
+        <div className="loading-spinner">
+          <Loader2 size={16} className="spinning" style={{marginRight: '0.5rem'}} />
+          Carregando...
+        </div>
       </div>
     );
   }
@@ -348,7 +353,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
               className={`tab-button ${abaAtiva === 'organizacao' ? 'active' : ''}`}
               onClick={() => setAbaAtiva('organizacao')}
             >
-              🏢 Organização
+              <Building2 size={16} style={{marginRight: '0.5rem'}} /> Organização
             </button>
             <button
               className={`tab-button ${abaAtiva === 'diagnostico' ? 'active' : ''}`}
@@ -374,7 +379,17 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
               disabled={saving}
               className="btn btn-success btn-save"
             >
-              {saving ? '💾 Salvando...' : '💾 Salvar Alterações'}
+                {saving ? (
+                  <>
+                    <Loader2 size={16} className="spinning" style={{marginRight: '0.5rem'}} />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} style={{marginRight: '0.5rem'}} />
+                    Salvar Alterações
+                  </>
+                )}
             </button>
           </div>
         </div>

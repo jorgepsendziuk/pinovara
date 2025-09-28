@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Organizacao } from '../../types/organizacao';
-import { Clipboard } from 'lucide-react';
+import { Clipboard, ChevronDown } from 'lucide-react';
+import { auxiliarAPI } from '../../services/api';
 
 interface DadosBasicosProps {
   organizacao: Organizacao;
@@ -15,6 +16,47 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
   accordionAberto,
   onToggleAccordion
 }) => {
+  const [estados, setEstados] = useState<any[]>([]);
+  const [municipios, setMunicipios] = useState<any[]>([]);
+  const [loadingEstados, setLoadingEstados] = useState(false);
+  const [loadingMunicipios, setLoadingMunicipios] = useState(false);
+
+  // Carregar estados
+  useEffect(() => {
+    const carregarEstados = async () => {
+      setLoadingEstados(true);
+      try {
+        const response = await auxiliarAPI.getEstados();
+        setEstados(response.data || []);
+      } catch (error) {
+        console.error('Erro ao carregar estados:', error);
+      } finally {
+        setLoadingEstados(false);
+      }
+    };
+    carregarEstados();
+  }, []);
+
+  // Carregar municípios quando estado muda
+  useEffect(() => {
+    if (organizacao?.estado) {
+      const carregarMunicipios = async () => {
+        setLoadingMunicipios(true);
+        try {
+          const response = await auxiliarAPI.getMunicipios(organizacao.estado);
+          setMunicipios(response.data || []);
+        } catch (error) {
+          console.error('Erro ao carregar municípios:', error);
+        } finally {
+          setLoadingMunicipios(false);
+        }
+      };
+      carregarMunicipios();
+    } else {
+      // Limpar municípios se não há estado selecionado
+      setMunicipios([]);
+    }
+  }, [organizacao?.estado]);
   return (
     <div className="accordion-item">
       <button
@@ -22,9 +64,15 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
         onClick={() => onToggleAccordion('dados-basicos')}
       >
         <h3><Clipboard size={18} style={{marginRight: '0.5rem'}} /> Dados Básicos da Organização</h3>
-        <span className={`accordion-icon ${accordionAberto === 'dados-basicos' ? 'open' : ''}`}>
-          ▼
-        </span>
+        <ChevronDown
+          size={16}
+          className={`accordion-icon ${accordionAberto === 'dados-basicos' ? 'open' : ''}`}
+          style={{
+            marginLeft: '0.5rem',
+            transition: 'transform 0.2s ease',
+            transform: accordionAberto === 'dados-basicos' ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}
+        />
       </button>
       
       <div className={`accordion-content ${accordionAberto === 'dados-basicos' ? 'open' : ''}`}>
@@ -82,6 +130,42 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
                 onChange={(e) => onUpdate('email', e.target.value)}
                 placeholder="contato@organizacao.com"
               />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="estado">Estado</label>
+              <select
+                id="estado"
+                value={organizacao.estado?.toString() || ''}
+                onChange={(e) => onUpdate('estado', e.target.value ? parseInt(e.target.value) : null)}
+                disabled={loadingEstados}
+              >
+                <option value="">Selecione um estado</option>
+                {estados.map((estado) => (
+                  <option key={estado.id} value={estado.id.toString()}>
+                    {estado.uf} - {estado.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="municipio">Município</label>
+              <select
+                id="municipio"
+                value={organizacao.municipio?.toString() || ''}
+                onChange={(e) => onUpdate('municipio', e.target.value ? parseInt(e.target.value) : null)}
+                disabled={loadingMunicipios || !organizacao.estado}
+              >
+                <option value="">
+                  {!organizacao.estado ? 'Selecione um estado primeiro' : 'Selecione um município'}
+                </option>
+                {municipios.map((municipio) => (
+                  <option key={municipio.id} value={municipio.id.toString()}>
+                    {municipio.nome}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 
-implementar gestao de roles e papeis
+continuar a implementação de gestao de roles e papeis
 
 documentar as ultimas modificacoes, verificar documentacao se esta refletindo o estado atual do sistema, caso necessário, olhe nos extratos do git...
 
@@ -10,7 +10,7 @@ roles
 organizacoes etc
 
 design system:
-vamos criar um design system desse sistema, um ponto de partida onde todas as novas paginas devem se inspiram e buscar 
+vamos criar um design system desse sistema, um padrao onde todas as novas paginas devem se inspirar, e atualizar as paginas existentes com esses padroes.
 
 app.css esta gigantesco
 
