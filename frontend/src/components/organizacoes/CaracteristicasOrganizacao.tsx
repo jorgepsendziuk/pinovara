@@ -1,6 +1,6 @@
 import React from 'react';
 import { Organizacao } from '../../types/organizacao';
-import { BarChart, Users, Building2 } from 'lucide-react';
+import { BarChart, Users, Building2, ChevronDown, Coffee } from 'lucide-react';
 
 interface CaracteristicasOrganizacaoProps {
   organizacao: Organizacao;
@@ -22,9 +22,15 @@ export const CaracteristicasOrganizacao: React.FC<CaracteristicasOrganizacaoProp
         onClick={() => onToggleAccordion('caracteristicas')}
       >
         <h3><BarChart size={18} style={{marginRight: '0.5rem'}} /> Características da Organização</h3>
-        <span className={`accordion-icon ${accordionAberto === 'caracteristicas' ? 'open' : ''}`}>
-          ▼
-        </span>
+        <ChevronDown
+          size={16}
+          className={`accordion-icon ${accordionAberto === 'caracteristicas' ? 'open' : ''}`}
+          style={{
+            marginLeft: '0.5rem',
+            transition: 'transform 0.2s ease',
+            transform: accordionAberto === 'caracteristicas' ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}
+        />
       </button>
       
       <div className={`accordion-content ${accordionAberto === 'caracteristicas' ? 'open' : ''}`}>
@@ -132,7 +138,7 @@ export const CaracteristicasOrganizacao: React.FC<CaracteristicasOrganizacaoProp
 
           {/* Seção: Tipos de Café */}
           <div className="subsection">
-            <h4>☕ Tipos de Café</h4>
+            <h4><Coffee size={16} style={{marginRight: '0.5rem'}} /> Tipos de Café</h4>
             <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="caf_organico">Café Orgânico</label>

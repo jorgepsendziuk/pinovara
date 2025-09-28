@@ -12,7 +12,8 @@ router.use(checkOrganizacaoPermission);
 // Dashboard - rota especial que deve vir antes das rotas com parâmetros
 router.get('/dashboard', organizacaoController.getDashboard.bind(organizacaoController));
 
-// Endpoint para buscar municípios (usado no cadastro)
+// Endpoints auxiliares para estados e municípios
+router.get('/estados', organizacaoController.getEstados.bind(organizacaoController));
 router.get('/municipios/:estadoId?', organizacaoController.getMunicipios.bind(organizacaoController));
 
 // CRUD básico - agora com controle de acesso por role

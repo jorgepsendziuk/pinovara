@@ -450,6 +450,32 @@ class OrganizacaoService {
   }
 
   /**
+   * Buscar estados
+   */
+  async getEstados() {
+    try {
+      const estados = await prisma.$queryRaw`
+        SELECT
+          id,
+          descricao as nome,
+          sigla as uf,
+          codigo_ibge
+        FROM pinovara_aux.estado
+        ORDER BY descricao
+      `;
+
+      return estados;
+    } catch (error) {
+      console.error('Erro ao buscar estados:', error);
+      throw new ApiError({
+        message: 'Erro ao buscar estados',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
    * Helper para obter nome do estado
    */
   getEstadoNome(codigo?: number | null): string {

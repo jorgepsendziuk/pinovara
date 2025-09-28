@@ -237,6 +237,24 @@ class OrganizacaoController {
   }
 
   /**
+   * GET /organizacoes/estados
+   */
+  async getEstados(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const estados = await organizacaoService.getEstados();
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        data: estados,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Organizacao Controller Error:', error);
+      this.handleError(error, res);
+    }
+  }
+
+  /**
    * GET /organizacoes/municipios/:estadoId?
    */
   async getMunicipios(req: AuthRequest, res: Response): Promise<void> {
