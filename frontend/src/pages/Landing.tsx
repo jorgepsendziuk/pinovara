@@ -1,10 +1,36 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import VersionIndicator from '../components/VersionIndicator';
+import ImageModal from '../components/ImageModal';
 
 function Landing() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Estado para o modal de imagens
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    images: [] as string[],
+    currentIndex: 0
+  });
+
+  // Handler para abrir o modal
+  const openModal = (images: string[], index: number) => {
+    setModalState({
+      isOpen: true,
+      images,
+      currentIndex: index
+    });
+  };
+
+  // Handler para fechar o modal
+  const closeModal = () => {
+    setModalState(prev => ({
+      ...prev,
+      isOpen: false
+    }));
+  };
 
   // Função para scroll suave para as seções
   const scrollToSection = (sectionId: string) => {
@@ -31,20 +57,26 @@ function Landing() {
 
           <nav className="nav">
             <div className="nav-menu">
-              <button 
-                className="nav-link" 
+              <button
+                className="nav-link"
                 onClick={() => scrollToSection('eixos')}
               >
                 Eixos Estruturantes
               </button>
-              <button 
-                className="nav-link" 
+              <button
+                className="nav-link"
                 onClick={() => scrollToSection('metas')}
               >
                 Metas do Projeto
               </button>
-              <button 
-                className="nav-link" 
+              <button
+                className="nav-link"
+                onClick={() => scrollToSection('eventos')}
+              >
+                Eventos
+              </button>
+              <button
+                className="nav-link"
                 onClick={() => scrollToSection('coordenacao')}
               >
                 Coordenação
@@ -87,27 +119,65 @@ function Landing() {
         <section className="hero">
           <div className="container">
             <div className="hero-content">
-              <div className="hero-header">
-                <div className="hero-logo">
-                  <img
-                    src="/pinovara.png"
-                    alt="PINOVARA Logo"
-                    className="hero-logo-image"
-                  />
+              <div className="hero-main">
+                <div className="hero-disclaimer">
+                  <div className="hero-header">
+                    <div className="hero-logo">
+                      <img
+                        src="/pinovara.png"
+                        alt="PINOVARA Logo"
+                        className="hero-logo-image"
+                      />
+                    </div>
+                    <h2>Pesquisa Inovadora em Gestão do PNRA</h2>
+                  </div>
+                  <p>
+                    Parceria estratégica entre o Instituto Nacional de Colonização e Reforma Agrária (INCRA)
+                    e a Universidade Federal da Bahia (UFBA) por meio do Termo de Execução Descentralizado (TED)
+                    número 50/2023, visando impactar a vida de mais de 5.000 (cinco mil) famílias nos estados
+                    da Bahia, São Paulo e Espírito Santo.
+                  </p>
+                  <p>
+                    Desenvolvimento de processos inovadores no georreferenciamento e supervisão ocupacional
+                    com coleta de dados socioeconômicos/ambientais de lotes e perímetros em projetos de
+                    assentamento federais e regularização fundiária de territórios quilombolas.
+                  </p>
                 </div>
-                <h2>Pesquisa Inovadora em Gestão do PNRA</h2>
+
+                <div className="hero-events-call">
+                  <div className="events-call-header">
+                    <h3>Projeto em Ação</h3>
+                    <p>Conheça os eventos que estão acontecendo no PINOVARA</p>
+                  </div>
+
+                  <div className="events-slider">
+                    <div className="slider-container">
+                      <div className="slider-track">
+                        <div className="slide">
+                          <img src="/eventos/evento-1-1.jpg" alt="Evento 1 - Foto 1" />
+                        </div>
+                        <div className="slide">
+                          <img src="/eventos/evento-2-1.jpg" alt="Evento 2 - Foto 1" />
+                        </div>
+                        <div className="slide">
+                          <img src="/eventos/evento-3-1.jpg" alt="Evento 3 - Foto 1" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    className="events-cta-button"
+                    onClick={() => scrollToSection('eventos')}
+                  >
+                    Ver Todos os Eventos
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M7 17l10-10"/>
+                      <path d="M7 7h10v10"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
-              <p>
-                Parceria estratégica entre o Instituto Nacional de Colonização e Reforma Agrária (INCRA)
-                e a Universidade Federal da Bahia (UFBA) por meio do Termo de Execução Descentralizado (TED)
-                número 50/2023, visando impactar a vida de mais de 5.000 (cinco mil) famílias nos estados
-                da Bahia, São Paulo e Espírito Santo.
-              </p>
-              <p>
-                Desenvolvimento de processos inovadores no georreferenciamento e supervisão ocupacional
-                com coleta de dados socioeconômicos/ambientais de lotes e perímetros em projetos de
-                assentamento federais e regularização fundiária de territórios quilombolas.
-              </p>
             </div>
           </div>
         </section>
@@ -404,6 +474,206 @@ function Landing() {
           </div>
         </section>
 
+        <section id="eventos" className="events">
+          <div className="container">
+            <div className="events-header">
+              <h3 className="section-title">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 2v4"/>
+                  <path d="M16 2v4"/>
+                  <rect width="18" height="18" x="3" y="4" rx="2"/>
+                  <path d="M3 10h18"/>
+                  <path d="M8 14h.01"/>
+                  <path d="M12 14h.01"/>
+                  <path d="M16 14h.01"/>
+                  <path d="M8 18h.01"/>
+                  <path d="M12 18h.01"/>
+                  <path d="M16 18h.01"/>
+                </svg>
+                Eventos do PINOVARA
+              </h3>
+              <p className="section-intro">
+                Acompanhe as atividades e mobilizações que estão acontecendo no projeto PINOVARA em todo o território nacional.
+              </p>
+            </div>
+
+            <div className="events-grid">
+              <div className="event-card">
+                <div className="event-images">
+                  <div className="event-image-main">
+                    <img
+                      src="/eventos/evento-1-1.jpg"
+                      alt="Evento 1 - Principal"
+                      onClick={() => openModal([
+                        '/eventos/evento-1-1.jpg',
+                        '/eventos/evento-1-2.jpg',
+                        '/eventos/evento-1-3.jpg',
+                        '/eventos/evento-1-4.jpg',
+                        '/eventos/evento-1-5.jpg'
+                      ], 0)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </div>
+                  <div className="event-images-grid">
+                    <img
+                      src="/eventos/evento-1-2.jpg"
+                      alt="Evento 1 - Foto 2"
+                      onClick={() => openModal([
+                        '/eventos/evento-1-1.jpg',
+                        '/eventos/evento-1-2.jpg',
+                        '/eventos/evento-1-3.jpg',
+                        '/eventos/evento-1-4.jpg',
+                        '/eventos/evento-1-5.jpg'
+                      ], 1)}
+                    />
+                    <img
+                      src="/eventos/evento-1-3.jpg"
+                      alt="Evento 1 - Foto 3"
+                      onClick={() => openModal([
+                        '/eventos/evento-1-1.jpg',
+                        '/eventos/evento-1-2.jpg',
+                        '/eventos/evento-1-3.jpg',
+                        '/eventos/evento-1-4.jpg',
+                        '/eventos/evento-1-5.jpg'
+                      ], 2)}
+                    />
+                    <img
+                      src="/eventos/evento-1-4.jpg"
+                      alt="Evento 1 - Foto 4"
+                      onClick={() => openModal([
+                        '/eventos/evento-1-1.jpg',
+                        '/eventos/evento-1-2.jpg',
+                        '/eventos/evento-1-3.jpg',
+                        '/eventos/evento-1-4.jpg',
+                        '/eventos/evento-1-5.jpg'
+                      ], 3)}
+                    />
+                    <img
+                      src="/eventos/evento-1-5.jpg"
+                      alt="Evento 1 - Foto 5"
+                      onClick={() => openModal([
+                        '/eventos/evento-1-1.jpg',
+                        '/eventos/evento-1-2.jpg',
+                        '/eventos/evento-1-3.jpg',
+                        '/eventos/evento-1-4.jpg',
+                        '/eventos/evento-1-5.jpg'
+                      ], 4)}
+                    />
+                  </div>
+                </div>
+                <div className="event-content">
+                  <div className="event-badge">EVENTO 01</div>
+                  <h4 className="event-title">Entregas do Governo Federal e Lançamento do Programa Nacional de Desenvolvimento Territorial Sustentável</h4>
+                  <p className="event-description">
+                    O coordenador do PINOVARA, Olivan da S. Rabêlo, participou nos dias 12 e 13 de setembro nas cidades de Andradina ( na Cooperativa COAPAR - atendida pelo PINOVARA)  e Promissão (Assentamento Reunidas - Agrovila Central) ambas cidades  do Estado de São Paulo, das entregas do Governo Federal e Lançamento do Programa Nacional de Desenvolvimento Territorial Sustentável com as presenças do Ministro do Desenvolvimento Agrário e Agricultura Familiar Luiz Paulo Teixeira e da    Superintendente Regional do INCRA em São Paulo - INCRA - SP    Sabrina Diniz Bittencourt Nepomuceno, além das lideranças de diversos movimentos sociais. "Podemos testemunhar neste evento a força da agricultura familiar  que reuniu as famílias que produzem alimentos saudáveis e sustentáveis que seguem para as mesas das outras famílias'" afirmou o coordenador do PINOVARA.
+                  </p>
+                </div>
+              </div>
+
+              <div className="event-card">
+                <div className="event-images">
+                  <div className="event-image-main">
+                    <img
+                      src="/eventos/evento-2-1.jpg"
+                      alt="Evento 2 - Principal"
+                      onClick={() => openModal([
+                        '/eventos/evento-2-1.jpg',
+                        '/eventos/evento-2-2.jpg',
+                        '/eventos/evento-2-3.jpg',
+                        '/eventos/evento-2-4.jpg'
+                      ], 0)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </div>
+                  <div className="event-images-grid">
+                    <img
+                      src="/eventos/evento-2-2.jpg"
+                      alt="Evento 2 - Foto 2"
+                      onClick={() => openModal([
+                        '/eventos/evento-2-1.jpg',
+                        '/eventos/evento-2-2.jpg',
+                        '/eventos/evento-2-3.jpg',
+                        '/eventos/evento-2-4.jpg'
+                      ], 1)}
+                    />
+                    <img
+                      src="/eventos/evento-2-3.jpg"
+                      alt="Evento 2 - Foto 3"
+                      onClick={() => openModal([
+                        '/eventos/evento-2-1.jpg',
+                        '/eventos/evento-2-2.jpg',
+                        '/eventos/evento-2-3.jpg',
+                        '/eventos/evento-2-4.jpg'
+                      ], 2)}
+                    />
+                    <img
+                      src="/eventos/evento-2-4.jpg"
+                      alt="Evento 2 - Foto 4"
+                      onClick={() => openModal([
+                        '/eventos/evento-2-1.jpg',
+                        '/eventos/evento-2-2.jpg',
+                        '/eventos/evento-2-3.jpg',
+                        '/eventos/evento-2-4.jpg'
+                      ], 3)}
+                    />
+                  </div>
+                </div>
+                <div className="event-content">
+                  <div className="event-badge">EVENTO 02</div>
+                  <h4 className="event-title">Mobilização e sensibilização em Cooperativismo para Lideranças / Técnicos dos empreendimentos coletivos atendidos pelo PINOVARA</h4>
+                  <p className="event-description">
+                    No dia 15/09/25 foi realizada qualificação em Cooperativismo para as Lideranças e Técnicos dos empreendimentos coletivos atendidos pelo Pinovara. O evento aconteceu na Sede da Superintendência Regional do INCRA em São Paulo - INCRA - SP e contou com as presenças das principais lideranças de cooperativas e associações selecionadas pelo INCRA SR - SP para serem atendidas pelo PINOVARA. A qualificação foi realizada pelo Sr. Eder Vargas e Sra. Verônica Ribeiro, que conduziram o encontro trazendo abordagem fundamental sobre os princípios do Cooperativismo para o público presente ao evento.
+                  </p>
+                </div>
+              </div>
+
+              <div className="event-card">
+                <div className="event-images">
+                  <div className="event-image-main">
+                    <img
+                      src="/eventos/evento-3-1.jpg"
+                      alt="Evento 3 - Principal"
+                      onClick={() => openModal([
+                        '/eventos/evento-3-1.jpg',
+                        '/eventos/evento-3-2.jpg',
+                        '/eventos/evento-3-3.jpg'
+                      ], 0)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </div>
+                  <div className="event-images-grid">
+                    <img
+                      src="/eventos/evento-3-2.jpg"
+                      alt="Evento 3 - Foto 2"
+                      onClick={() => openModal([
+                        '/eventos/evento-3-1.jpg',
+                        '/eventos/evento-3-2.jpg',
+                        '/eventos/evento-3-3.jpg'
+                      ], 1)}
+                    />
+                    <img
+                      src="/eventos/evento-3-3.jpg"
+                      alt="Evento 3 - Foto 3"
+                      onClick={() => openModal([
+                        '/eventos/evento-3-1.jpg',
+                        '/eventos/evento-3-2.jpg',
+                        '/eventos/evento-3-3.jpg'
+                      ], 2)}
+                    />
+                  </div>
+                </div>
+                <div className="event-content">
+                  <div className="event-badge">EVENTO 03</div>
+                  <h4 className="event-title">Mobilização e sensibilização para a aplicação do Perfil de Entrada, Plano de Gestão e Qualificação dos empreendimentos coletivos do PINOVARA</h4>
+                  <p className="event-description">
+                    No dia 16/09 foi realizada a qualificação de Mobilização e sensibilização para a aplicação do Perfil de Entrada, Plano de Gestão e Qualificação dos empreendimentos coletivos do PINOVARA. O evento aconteceu na Sede da Superintendência Regional do INCRA em São Paulo - INCRA - SP e contou com as presenças das principais lideranças / técnicos de cooperativas e associações selecionadas pelo INCRA SR - SP para serem atendidas pelo PINOVARA. A qualificação foi liderada pelo Coordenador do PINOVARA Olivan da S. Rabêlo que abordou sobre o instrumento de coleta de  dados e informações que serão coletados junto aos empreendimentos coletivos e o planejamento das atividades de gestão dos empreendimentos, assim como os procedimentos para as capacitações que serão ofertadas para as cooperativas / associações que estão no contexto dos projetos de assentamentos e territórios quilombolas atendidos pelo PINOVARA no Estado de São Paulo.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section id="coordenacao" className="coordinators">
           <div className="container">
             <div className="coordinators-header">
@@ -478,6 +748,14 @@ function Landing() {
           </div>
         </div>
       </footer>
+
+      {/* Modal de Imagens */}
+      <ImageModal
+        images={modalState.images}
+        currentIndex={modalState.currentIndex}
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+      />
     </div>
   );
 }
