@@ -7,6 +7,7 @@ import { DadosBasicos } from '../../components/organizacoes/DadosBasicos';
 import { DadosRepresentanteComponent } from '../../components/organizacoes/DadosRepresentante';
 import { CaracteristicasOrganizacao } from '../../components/organizacoes/CaracteristicasOrganizacao';
 import { DiagnosticoArea } from '../../components/organizacoes/DiagnosticoArea';
+import { PlanoGestao } from '../../components/organizacoes/PlanoGestao';
 import {
   Edit,
   Search,
@@ -14,7 +15,8 @@ import {
   Users,
   XCircle,
   Loader2,
-  Save
+  Save,
+  Target
 } from 'lucide-react';
 
 interface EdicaoOrganizacaoProps {
@@ -285,6 +287,17 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     </div>
   );
 
+  const renderAbaPlanoGestao = () => (
+    <div className="aba-content" style={{ width: '100%' }}>
+      <div className="plano-gestao-wrapper" style={{ 
+        width: '100%',
+        maxWidth: 'none'
+      }}>
+        <PlanoGestao onUpdate={(dados) => console.log('Dados atualizados:', dados)} />
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -347,30 +360,32 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
 
       <div className="edicao-body">
         {/* Tabs Navigation */}
-        <div className="tabs-container">
-          <div className="tabs">
-            <button
-              className={`tab-button ${abaAtiva === 'organizacao' ? 'active' : ''}`}
-              onClick={() => setAbaAtiva('organizacao')}
-            >
-              <Building2 size={16} style={{marginRight: '0.5rem'}} /> Organização
-            </button>
-            <button
-              className={`tab-button ${abaAtiva === 'diagnostico' ? 'active' : ''}`}
-              onClick={() => setAbaAtiva('diagnostico')}
-            >
-              <Search size={14} style={{marginRight: '0.25rem'}} /> Diagnóstico
-            </button>
-          </div>
+        <div className="tabs-navigation">
+          <button
+            className={`tab-button ${abaAtiva === 'organizacao' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('organizacao')}
+          >
+            <Building2 size={14} style={{marginRight: '0.25rem'}} /> Organização
+          </button>
+          <button
+            className={`tab-button ${abaAtiva === 'diagnostico' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('diagnostico')}
+          >
+            <Search size={14} style={{marginRight: '0.25rem'}} /> Diagnóstico
+          </button>
+          <button
+            className={`tab-button ${abaAtiva === 'planoGestao' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('planoGestao')}
+          >
+            <Target size={14} style={{marginRight: '0.25rem'}} /> Plano de Gestão
+          </button>
         </div>
 
         {/* Tab Content */}
-        <div className="tab-content-container" style={{ 
-          width: '100%',
-          maxWidth: 'none'
-        }}>
+        <div className="tab-content">
           {abaAtiva === 'organizacao' && renderAbaOrganizacao()}
           {abaAtiva === 'diagnostico' && renderAbaDiagnostico()}
+          {abaAtiva === 'planoGestao' && renderAbaPlanoGestao()}
 
           {/* Form Actions */}
           <div className="form-actions">
