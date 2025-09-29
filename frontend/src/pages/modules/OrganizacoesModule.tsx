@@ -131,7 +131,7 @@ function OrganizacoesModule() {
 
       <div className="main-content">
         <main className="dashboard-main" style={{padding: viewAtiva === 'mapa' ? '0' : '3rem 0'}}>
-          <div className={viewAtiva === 'mapa' ? 'full-width-container' : 'container'}>
+          <div className={viewAtiva === 'mapa' ? 'full-width-container' : 'full-width-container'}>
             <div className="organizacoes-module">
 
               {/* Conteúdo do módulo */}
