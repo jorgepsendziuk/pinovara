@@ -236,9 +236,12 @@ class AdminService {
       const currentUser = await prisma.users.findUnique({
         where: { id: userId }
       });
+
+      console.log('✅ Encontrou o ID usuário:', userId);
       
       if (currentUser) {
         // Executar função de sincronização com ODK
+        console.log('✅ Encontrou o usuário:', currentUser.name);
         try {
           await prisma.$queryRawUnsafe(`
             SELECT fn_sync_user_to_odk($1, $2, $3)
