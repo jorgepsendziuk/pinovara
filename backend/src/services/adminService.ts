@@ -232,6 +232,24 @@ class AdminService {
         });
       }
       updateData.password = await bcrypt.hash(data.password, 12);
+
+      const currentUser = await prisma.users.findUnique({
+        where: { id: userId }
+      });
+      
+      if (currentUser) {
+        // Executar função de sincronização com ODK
+        try {
+          await prisma.$queryRawUnsafe(`
+            SELECT fn_sync_user_to_odk($1, $2, $3)
+          `, updateData.name || currentUser.name, currentUser.email, data.password);
+          console.log('✅ [AdminService] User synced with ODK:', currentUser.email);
+        } catch (error) {
+          console.error('⚠️ [AdminService] Error syncing with ODK:', error);
+          // Você pode decidir se quer falhar ou continuar aqui
+          // throw error; // Descomente se quiser que falhe quando der erro no ODK
+        }
+      }
     }
 
     // Se email foi fornecido, verificar se não existe outro usuário com mesmo email
