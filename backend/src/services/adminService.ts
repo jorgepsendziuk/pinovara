@@ -236,21 +236,22 @@ class AdminService {
       const currentUser = await prisma.users.findUnique({
         where: { id: userId }
       });
-
-      console.log('✅ Encontrou o ID usuário:', userId);
       
       if (currentUser) {
-        // Executar função de sincronização com ODK
-        console.log('✅ Encontrou o usuário:', currentUser.name);
+        // Sincronizar usuário com ODK
+        const p_fullname = updateData.name || currentUser.name;
+        const p_username = currentUser.email;
+        const p_password = data.password;
+        
         try {
-          await prisma.$queryRawUnsafe(`
-            SELECT fn_sync_user_to_odk($1, $2, $3)
-          `, updateData.name || currentUser.name, currentUser.email, data.password);
-          console.log('✅ [AdminService] User synced with ODK:', currentUser.email);
-        } catch (error) {
-          console.error('⚠️ [AdminService] Error syncing with ODK:', error);
-          // Você pode decidir se quer falhar ou continuar aqui
-          // throw error; // Descomente se quiser que falhe quando der erro no ODK
+          const result = await prisma.$queryRawUnsafe(`
+            SELECT public.fn_sync_user_to_odk($1, $2, $3)
+          `, p_fullname, p_username, p_password);
+          
+          console.log('✅ [AdminService] Usuário sincronizado com ODK:', currentUser.email);
+        } catch (error: any) {
+          console.error('⚠️ [AdminService] Erro ao sincronizar com ODK:', error?.message);
+          // A atualização da senha continua mesmo se a sincronização falhar
         }
       }
     }
