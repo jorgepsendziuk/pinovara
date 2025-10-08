@@ -868,6 +868,7 @@ model organizacao {
   organizacao_arquivo                                                organizacao_arquivo[]
   organizacao_foto                                                   organizacao_foto[]
   organizacao_producao                                               organizacao_producao[]
+  organizacao_documento                                              organizacao_documento[]
 
   @@schema("pinovara")
 }
@@ -1285,4 +1286,20 @@ model sim_nao {
   organizacao_organizacao_sim_nao_socioTosim_nao    organizacao[] @relation("organizacao_sim_nao_socioTosim_nao")
 
   @@schema("pinovara_aux")
+}
+
+model organizacao_documento {
+  id               Int          @id @default(autoincrement())
+  id_organizacao   Int
+  tipo_documento   String       @db.VarChar(50)
+  arquivo          String       @db.VarChar(255)
+  data_envio       DateTime     @default(now()) @db.Timestamp(6)
+  usuario_envio    String       @db.VarChar(255)
+  obs              String?      @db.Text
+  
+  organizacao      organizacao  @relation(fields: [id_organizacao], references: [id], onDelete: Cascade)
+  
+  @@index([id_organizacao])
+  @@index([tipo_documento])
+  @@schema("pinovara")
 }
