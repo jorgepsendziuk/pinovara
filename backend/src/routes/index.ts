@@ -4,6 +4,7 @@ import organizacaoRoutes from './organizacaoRoutes';
 import healthRoutes from './healthRoutes';
 import debugRoutes from './debugRoutes';
 import adminRoutes from './adminRoutes';
+import documentoRoutes from './documentoRoutes';
 
 const router = Router();
 
@@ -29,7 +30,11 @@ router.get('/', (req, res) => {
         'GET /organizacoes/:id',
         'PUT /organizacoes/:id',
         'DELETE /organizacoes/:id',
-        'GET /organizacoes/dashboard'
+        'GET /organizacoes/dashboard',
+        'POST /organizacoes/:id/documentos',
+        'GET /organizacoes/:id/documentos',
+        'GET /organizacoes/:id/documentos/:docId/download',
+        'DELETE /organizacoes/:id/documentos/:docId'
       ],
       admin: [
         'GET /admin/users',
@@ -55,6 +60,7 @@ router.get('/', (req, res) => {
 router.use('/', healthRoutes);  // Health routes no root
 router.use('/auth', authRoutes);
 router.use('/organizacoes', organizacaoRoutes);
+router.use('/', documentoRoutes);  // Documento routes - usa /organizacoes/:id/documentos
 router.use('/admin', adminRoutes);  // Admin routes - requer autenticação e papel admin
 router.use('/debug', debugRoutes);  // DEBUG routes - REMOVER EM PRODUÇÃO
 

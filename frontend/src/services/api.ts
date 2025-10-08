@@ -435,4 +435,100 @@ export const auxiliarAPI = {
   }
 };
 
+// ========== SERVIÇOS DE DOCUMENTOS ==========
+
+export interface Documento {
+  id: number;
+  id_organizacao: number;
+  tipo_documento: string;
+  arquivo: string;
+  data_envio: string;
+  usuario_envio: string;
+  obs?: string;
+}
+
+export const documentoAPI = {
+  /**
+   * Upload de documento
+   */
+  upload: async (organizacaoId: number, formData: FormData): Promise<Documento> => {
+    const response = await api.post<ApiResponse<Documento>>(
+      `/organizacoes/${organizacaoId}/documentos`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao enviar documento');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
+   * Listar documentos de uma organização
+   */
+  list: async (organizacaoId: number): Promise<Documento[]> => {
+    const response = await api.get<ApiResponse<Documento[]>>(
+      `/organizacoes/${organizacaoId}/documentos`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar documentos');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
+   * Download de documento
+   */
+  download: async (organizacaoId: number, documentoId: number): Promise<void> => {
+    const response = await api.get(
+      `/organizacoes/${organizacaoId}/documentos/${documentoId}/download`,
+      {
+        responseType: 'blob',
+      }
+    );
+
+    // Criar URL do blob e fazer download
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Extrair nome do arquivo do header ou usar padrão
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = 'documento.pdf';
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+      if (filenameMatch) {
+        filename = filenameMatch[1];
+      }
+    }
+    
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Deletar documento
+   */
+  delete: async (organizacaoId: number, documentoId: number): Promise<void> => {
+    const response = await api.delete<ApiResponse>(
+      `/organizacoes/${organizacaoId}/documentos/${documentoId}`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao deletar documento');
+    }
+  },
+};
+
 export default api;

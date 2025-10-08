@@ -8,6 +8,7 @@ import { DadosRepresentanteComponent } from '../../components/organizacoes/Dados
 import { CaracteristicasOrganizacao } from '../../components/organizacoes/CaracteristicasOrganizacao';
 import { DiagnosticoArea } from '../../components/organizacoes/DiagnosticoArea';
 import { PlanoGestao } from '../../components/organizacoes/PlanoGestao';
+import { UploadDocumentos } from '../../components/organizacoes/UploadDocumentos';
 import {
   Edit,
   Search,
@@ -222,6 +223,12 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             <DadosBasicos
               organizacao={organizacao}
               onUpdate={updateOrganizacao}
+              accordionAberto={accordionAberto}
+              onToggleAccordion={toggleAccordion}
+            />
+            
+            <UploadDocumentos
+              organizacaoId={organizacaoId}
               accordionAberto={accordionAberto}
               onToggleAccordion={toggleAccordion}
             />
