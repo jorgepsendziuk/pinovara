@@ -27,7 +27,7 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
       setLoadingEstados(true);
       try {
         const response = await auxiliarAPI.getEstados();
-        setEstados(response.data || []);
+        setEstados(response || []);
       } catch (error) {
         console.error('Erro ao carregar estados:', error);
       } finally {
@@ -43,8 +43,8 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
       const carregarMunicipios = async () => {
         setLoadingMunicipios(true);
         try {
-          const response = await auxiliarAPI.getMunicipios(organizacao.estado);
-          setMunicipios(response.data || []);
+          const response = await auxiliarAPI.getMunicipios(organizacao.estado || undefined);
+          setMunicipios(response || []);
         } catch (error) {
           console.error('Erro ao carregar municípios:', error);
         } finally {
@@ -143,7 +143,7 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
                 <option value="">Selecione um estado</option>
                 {estados.map((estado) => (
                   <option key={estado.id} value={estado.id.toString()}>
-                    {estado.uf} - {estado.nome}
+                    {estado.nome}
                   </option>
                 ))}
               </select>

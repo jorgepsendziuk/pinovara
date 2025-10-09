@@ -6391,6 +6391,10 @@ main, section, article, aside, header, footer {
   margin-bottom: 1.5rem;
 }
 
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
