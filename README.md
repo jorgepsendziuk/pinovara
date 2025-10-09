@@ -665,8 +665,17 @@ O script `setup-vm.sh` configura automaticamente:
 Cliente → Nginx (porta 80/443)
     ├── / (root) → /var/www/html (React SPA)
     ├── /api/* → http://localhost:3001 (Node.js API)
+    ├── /auth/* → http://localhost:3001/auth/ (Auth API)
+    ├── /organizacoes/\d+ → http://localhost:3001 (API com ID)
+    ├── /admin/* → http://localhost:3001/admin/ (Admin API)
     └── /health → http://localhost:3001/health
 ```
+
+⚠️ **IMPORTANTE - React Router:**
+- Rotas como `/organizacoes/lista`, `/organizacoes/cadastro` são páginas React
+- Apenas `/organizacoes/123` (com ID numérico) vai para API
+- O nginx DEVE servir `index.html` para todas as rotas React
+- **Documentação completa:** `docs/nginx-spa-fix.md` e `docs/deployment.md`
 
 ### Monitoramento
 
