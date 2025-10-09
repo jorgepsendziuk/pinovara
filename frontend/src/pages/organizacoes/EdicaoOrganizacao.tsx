@@ -29,7 +29,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   
   // Estados principais
   const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('organizacao');
-  const [accordionAberto, setAccordionAberto] = useState<string | null>('dados-basicos');
+  const [accordionAberto, setAccordionAberto] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -344,8 +344,10 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             ← Voltar
           </button>
         <div className="header-info">
-            <h1><Edit size={24} style={{marginRight: '0.5rem'}} /> Editando Organização</h1>
-            <h2>{organizacao.nome || 'Nome não informado'}</h2>
+            <h1 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center' }}>
+              <Edit size={20} style={{marginRight: '0.5rem'}} /> 
+              {organizacao.nome || 'Nome não informado'}
+            </h1>
           </div>
         </div>
       </div>
