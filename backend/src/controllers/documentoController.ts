@@ -16,9 +16,9 @@ const TIPO_PASTAS: { [key: string]: string } = {
 // Configurar storage do multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const tipo = req.body.tipo_documento || 'termo_adesao';
-    const pasta = TIPO_PASTAS[tipo] || 'documentos';
-    const destino = `/var/pinovara/shared/uploads/${pasta}`;
+    // O tipo_documento vem como campo do FormData, mas o multer processa o arquivo antes
+    // Vamos usar uma pasta temporária e depois mover para a pasta correta
+    const destino = `/var/pinovara/shared/uploads/temp`;
     
     // Criar pasta se não existir
     if (!fs.existsSync(destino)) {
@@ -28,11 +28,10 @@ const storage = multer.diskStorage({
     cb(null, destino);
   },
   filename: (req, file, cb) => {
-    const organizacaoId = req.params.id;
-    const tipo = req.body.tipo_documento || 'termo_adesao';
     const timestamp = Date.now();
+    const randomStr = Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
-    const nome = `${tipo}-${organizacaoId}-${timestamp}${ext}`;
+    const nome = `temp-${timestamp}-${randomStr}${ext}`;
     cb(null, nome);
   }
 });
@@ -82,6 +81,8 @@ class DocumentoController {
 
       // Validar tipo de documento
       if (!TIPO_PASTAS[tipo_documento]) {
+        // Deletar arquivo temporário
+        fs.unlinkSync(file.path);
         res.status(400).json({
           success: false,
           error: { message: 'Tipo de documento inválido' }
@@ -89,11 +90,30 @@ class DocumentoController {
         return;
       }
 
+      // Mover arquivo da pasta temp para a pasta correta
+      const pasta = TIPO_PASTAS[tipo_documento];
+      const destinoFinal = `/var/pinovara/shared/uploads/${pasta}`;
+      
+      // Criar pasta destino se não existir
+      if (!fs.existsSync(destinoFinal)) {
+        fs.mkdirSync(destinoFinal, { recursive: true });
+      }
+
+      // Gerar nome final do arquivo
+      const ext = path.extname(file.originalname);
+      const timestamp = Date.now();
+      const nomeOriginalLimpo = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '-').substring(0, 50);
+      const nomeArquivoFinal = `${tipo_documento}-org${organizacaoId}-${nomeOriginalLimpo}-${timestamp}${ext}`;
+      const caminhoFinal = path.join(destinoFinal, nomeArquivoFinal);
+
+      // Mover arquivo
+      fs.renameSync(file.path, caminhoFinal);
+
       // Criar registro no banco
       const documento = await documentoService.create({
         id_organizacao: organizacaoId,
         tipo_documento,
-        arquivo: file.filename,
+        arquivo: nomeArquivoFinal,
         usuario_envio: req.user?.email || 'sistema',
         obs: obs || null,
       });

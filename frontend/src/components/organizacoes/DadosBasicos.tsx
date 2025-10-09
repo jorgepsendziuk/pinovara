@@ -105,7 +105,7 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
               <input
                 type="date"
                 id="data_fundacao"
-                value={organizacao.data_fundacao || ''}
+                value={organizacao.data_fundacao ? new Date(organizacao.data_fundacao).toISOString().split('T')[0] : ''}
                 onChange={(e) => onUpdate('data_fundacao', e.target.value)}
               />
             </div>
