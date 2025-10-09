@@ -211,13 +211,6 @@ export const DiagnosticoArea: React.FC<DiagnosticoAreaProps> = ({
         className="accordion-header area-header"
         onClick={() => onToggle(area)}
         style={{ 
-          backgroundColor: '#f8f9fa', 
-          color: '#495057', 
-          fontSize: '16px', 
-          fontWeight: 'bold',
-          padding: '15px',
-          border: '1px solid #dee2e6',
-          borderRadius: '6px',
           width: '100%',
           textAlign: 'left',
           display: 'flex',

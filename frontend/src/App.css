@@ -6315,15 +6315,16 @@ main, section, article, aside, header, footer {
 
 /* Accordions */
 .accordion-item {
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid #dee2e6;
   border-radius: 8px;
   margin-bottom: 1rem;
   overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .accordion-header {
   width: 100%;
-  background: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
   padding: 1rem 1.5rem;
   text-align: left;
@@ -6331,24 +6332,24 @@ main, section, article, aside, header, footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: background-color 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .accordion-header:hover {
-  background-color: rgba(148, 163, 184, 0.05);
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
 }
 
 .accordion-header h3 {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: white;
   display: flex;
   align-items: center;
 }
 
 .accordion-icon {
-  color: var(--text-secondary);
+  color: white;
   transition: transform 0.2s ease;
 }
 

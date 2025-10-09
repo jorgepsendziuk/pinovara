@@ -1,5 +1,6 @@
 import React from 'react';
 import Sidebar from '../components/Sidebar';
+import { Smartphone, QrCode, CheckCircle, Lock, HelpCircle, Wifi } from 'lucide-react';
 import './ConfiguracaoODK.css';
 
 const ConfiguracaoODK: React.FC = () => {
@@ -11,7 +12,10 @@ const ConfiguracaoODK: React.FC = () => {
         <main className="dashboard-main">
           <div className="container">
             <div className="header">
-              <h1>📱 Configuração do ODK Collect</h1>
+              <h1 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                <Smartphone size={40} />
+                Configuração do ODK Collect
+              </h1>
               <p className="subtitle">
                 Configure seu dispositivo móvel para conectar ao sistema PINOVARA
               </p>
@@ -19,7 +23,10 @@ const ConfiguracaoODK: React.FC = () => {
 
             <div className="content">
               <div className="instructions">
-                <h2>📋 Instruções de Configuração</h2>
+                <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CheckCircle size={24} />
+                  Instruções de Configuração
+                </h2>
                 
                 <div className="step">
                   <div className="step-number">1</div>
@@ -28,6 +35,18 @@ const ConfiguracaoODK: React.FC = () => {
                     <p>
                       Baixe e instale o aplicativo ODK Collect na Google Play Store para dispositivos Android.
                     </p>
+                    <a 
+                      href="https://play.google.com/store/apps/details?id=org.odk.collect.android&hl=pt_BR" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="download-link"
+                    >
+                      <img 
+                        src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" 
+                        alt="Disponível no Google Play"
+                        style={{ height: '60px', marginTop: '10px' }}
+                      />
+                    </a>
                   </div>
                 </div>
 
@@ -53,7 +72,10 @@ const ConfiguracaoODK: React.FC = () => {
               </div>
 
               <div className="qr-section">
-                <h2>🔗 QR Code de Configuração</h2>
+                <h2 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <QrCode size={24} />
+                  QR Code de Configuração
+                </h2>
                 <div className="qr-container">
                   <img 
                     src="/pinovara_qr_code.png" 
@@ -68,25 +90,37 @@ const ConfiguracaoODK: React.FC = () => {
             </div>
 
             <div className="additional-info">
-              <h2>ℹ️ Informações Adicionais</h2>
+              <h2 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <HelpCircle size={24} />
+                Informações Adicionais
+              </h2>
               
               <div className="info-grid">
                 <div className="info-card">
-                  <h3>🔒 Segurança</h3>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Lock size={20} />
+                    Segurança
+                  </h3>
                   <p>
                     Esta configuração utiliza conexão segura e autenticação para garantir que apenas usuários autorizados tenham acesso aos formulários.
                   </p>
                 </div>
 
                 <div className="info-card">
-                  <h3>🛠️ Suporte</h3>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <HelpCircle size={20} />
+                    Suporte
+                  </h3>
                   <p>
                     Em caso de problemas com a configuração, entre em contato com a equipe de suporte técnico.
                   </p>
                 </div>
 
                 <div className="info-card">
-                  <h3>📱 Compatibilidade</h3>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Wifi size={20} />
+                    Compatibilidade
+                  </h3>
                   <p>
                     O ODK Collect é compatível com dispositivos Android, funcionando tanto online quanto offline.
                   </p>

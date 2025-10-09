@@ -142,10 +142,6 @@ export function PlanoGestao({ onUpdate }: PlanoGestaoProps) {
           <Target size={20} style={{ marginRight: '0.5rem' }} />
           Plano de Gestão
         </h3>
-        <p className="plano-gestao-desc">
-          Defina as estratégias e ações para o desenvolvimento da organização. 
-          Por enquanto, apenas as datas de início e término são editáveis para validação do design.
-        </p>
       </div>
 
       <div className="planos-accordion">
