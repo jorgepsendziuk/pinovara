@@ -102,7 +102,11 @@ class DocumentoController {
       // Gerar nome final do arquivo
       const ext = path.extname(file.originalname);
       const timestamp = Date.now();
-      const nomeOriginalLimpo = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '-').substring(0, 50);
+      const nomeOriginalLimpo = path.basename(file.originalname, ext)
+        .replace(/[^a-zA-Z0-9]/g, '-')
+        .replace(/-+/g, '-')  // Substituir múltiplos hífens por um só
+        .replace(/^-|-$/g, '') // Remover hífens no início e fim
+        .substring(0, 50);
       const nomeArquivoFinal = `${tipo_documento}-org${organizacaoId}-${nomeOriginalLimpo}-${timestamp}${ext}`;
       const caminhoFinal = path.join(destinoFinal, nomeArquivoFinal);
 
