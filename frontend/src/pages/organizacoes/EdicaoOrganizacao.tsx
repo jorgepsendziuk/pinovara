@@ -4,6 +4,7 @@ import { useOrganizacaoData } from '../../hooks/useOrganizacaoData';
 import { useRepresentanteData } from '../../hooks/useRepresentanteData';
 import { useDiagnosticoData } from '../../hooks/useDiagnosticoData';
 import { DadosBasicos } from '../../components/organizacoes/DadosBasicos';
+import { EnderecoLocalizacao } from '../../components/organizacoes/EnderecoLocalizacao';
 import { DadosRepresentanteComponent } from '../../components/organizacoes/DadosRepresentante';
 import { CaracteristicasOrganizacao } from '../../components/organizacoes/CaracteristicasOrganizacao';
 import { DiagnosticoArea } from '../../components/organizacoes/DiagnosticoArea';
@@ -221,6 +222,13 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         {organizacao && (
           <>
             <DadosBasicos
+              organizacao={organizacao}
+              onUpdate={updateOrganizacao}
+              accordionAberto={accordionAberto}
+              onToggleAccordion={toggleAccordion}
+            />
+            
+            <EnderecoLocalizacao
               organizacao={organizacao}
               onUpdate={updateOrganizacao}
               accordionAberto={accordionAberto}
