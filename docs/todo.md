@@ -11,16 +11,6 @@ organizacoes etc
 
 
 http://localhost:5173/organizacoes/lista
-melhore o visual dessa pagina:
-- aproveitamento melhor do espaço
-- substituir emojis por icones
-- melhor responsividade em telas menores
-- na localizacao nao esta puxando, confira
-- id tirar #
-- aumentar a coluna Nome, pois esse é o campo com nomes mais extensos
-- tentar diminuir o tamanho das coisas no datagrid, cada linha esta muito alta
-- no contato fazer links de whatsapp / mailto
-- tirar status
 - adicionar filtros nos cabecalhos da datagrid, é possivel?
 
 
