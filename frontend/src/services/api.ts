@@ -439,12 +439,15 @@ export const auxiliarAPI = {
 
 export interface Documento {
   id: number;
-  id_organizacao: number;
-  tipo_documento: string;
-  arquivo: string;
-  data_envio: string;
-  usuario_envio: string;
-  obs?: string;
+  id_organizacao: number | null;
+  arquivo: string | null;
+  obs: string | null;
+  creator_uri_user: string;
+  creation_date: string;
+  last_update_uri_user: string | null;
+  last_update_date: string;
+  uri: string;
+  ordinal_number: number;
 }
 
 export const documentoAPI = {
@@ -527,6 +530,93 @@ export const documentoAPI = {
 
     if (!response.data.success) {
       throw new Error(response.data.error?.message || 'Erro ao deletar documento');
+    }
+  },
+};
+
+// Interface para Foto
+export interface Foto {
+  id: number;
+  uri: string;
+  creator_uri_user: string;
+  creation_date: Date;
+  last_update_uri_user?: string | null;
+  last_update_date: Date;
+  parent_auri?: string | null;
+  ordinal_number: number;
+  top_level_auri?: string | null;
+  grupo?: number | null;
+  foto?: string | null;
+  obs?: string | null;
+  id_organizacao?: number | null;
+}
+
+export const fotoAPI = {
+  /**
+   * Upload de foto
+   */
+  upload: async (organizacaoId: number, formData: FormData): Promise<Foto> => {
+    const response = await api.post<ApiResponse<Foto>>(
+      `/organizacoes/${organizacaoId}/fotos`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao enviar foto');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
+   * Listar fotos de uma organização
+   */
+  list: async (organizacaoId: number): Promise<Foto[]> => {
+    const response = await api.get<ApiResponse<Foto[]>>(
+      `/organizacoes/${organizacaoId}/fotos`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar fotos');
+    }
+
+    return response.data.data || [];
+  },
+
+  /**
+   * Download de foto
+   */
+  download: async (organizacaoId: number, fotoId: number): Promise<void> => {
+    const response = await api.get(
+      `/organizacoes/${organizacaoId}/fotos/${fotoId}/download`,
+      { responseType: 'blob' }
+    );
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `foto_${fotoId}.jpg`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Deletar foto
+   */
+  delete: async (organizacaoId: number, fotoId: number): Promise<void> => {
+    const response = await api.delete<ApiResponse>(
+      `/organizacoes/${organizacaoId}/fotos/${fotoId}`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao deletar foto');
     }
   },
 };

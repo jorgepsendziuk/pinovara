@@ -10,6 +10,7 @@ import { CaracteristicasOrganizacao } from '../../components/organizacoes/Caract
 import { DiagnosticoArea } from '../../components/organizacoes/DiagnosticoArea';
 import { PlanoGestao } from '../../components/organizacoes/PlanoGestao';
 import { UploadDocumentos } from '../../components/organizacoes/UploadDocumentos';
+import { UploadFotos } from '../../components/organizacoes/UploadFotos';
 import {
   Edit,
   Search,
@@ -18,7 +19,9 @@ import {
   XCircle,
   Loader2,
   Save,
-  Target
+  Target,
+  ChevronsDown,
+  ChevronsUp
 } from 'lucide-react';
 
 interface EdicaoOrganizacaoProps {
@@ -30,7 +33,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   
   // Estados principais
   const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('organizacao');
-  const [accordionAberto, setAccordionAberto] = useState<string | null>(null);
+  const [accordionsAbertos, setAccordionsAbertos] = useState<string[]>([]);
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -79,7 +82,28 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
 
   // Handlers
   const toggleAccordion = (accordion: string) => {
-    setAccordionAberto(accordionAberto === accordion ? null : accordion);
+    setAccordionsAbertos(prev => 
+      prev.includes(accordion) 
+        ? prev.filter(a => a !== accordion)
+        : [...prev, accordion]
+    );
+  };
+
+  const expandirTodos = () => {
+    // Abre todos os accordions da aba Organização
+    setAccordionsAbertos([
+      'dados-basicos',
+      'endereco-localizacao',
+      'arquivos',
+      'fotos',
+      'representante',
+      'caracteristicas'
+    ]);
+  };
+
+  const colapsarTodos = () => {
+    // Fecha todos os accordions
+    setAccordionsAbertos([]);
   };
 
   const handleSubmit = async () => {
@@ -218,40 +242,99 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   // Renderização das abas
   const renderAbaOrganizacao = () => (
     <div className="aba-content">
+      {/* Botão Expandir/Colapsar Todos */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'flex-end', 
+        marginBottom: '15px',
+        gap: '10px'
+      }}>
+        <button
+          onClick={colapsarTodos}
+          style={{
+            padding: '8px 16px',
+            background: '#6c757d',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '14px',
+            fontWeight: '500',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = '#5a6268'}
+          onMouseOut={(e) => e.currentTarget.style.background = '#6c757d'}
+        >
+          <ChevronsUp size={16} />
+          Colapsar Todos
+        </button>
+        <button
+          onClick={expandirTodos}
+          style={{
+            padding: '8px 16px',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '14px',
+            fontWeight: '500',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+          onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+        >
+          <ChevronsDown size={16} />
+          Expandir Todos
+        </button>
+      </div>
+
       <div className="accordions-container">
         {organizacao && (
           <>
             <DadosBasicos
               organizacao={organizacao}
               onUpdate={updateOrganizacao}
-              accordionAberto={accordionAberto}
+              accordionAberto={accordionsAbertos.includes('dados-basicos') ? 'dados-basicos' : null}
               onToggleAccordion={toggleAccordion}
             />
             
             <EnderecoLocalizacao
               organizacao={organizacao}
               onUpdate={updateOrganizacao}
-              accordionAberto={accordionAberto}
+              accordionAberto={accordionsAbertos.includes('endereco-localizacao') ? 'endereco-localizacao' : null}
               onToggleAccordion={toggleAccordion}
             />
             
             <UploadDocumentos
               organizacaoId={organizacaoId}
-              accordionAberto={accordionAberto}
+              accordionAberto={accordionsAbertos.includes('arquivos') ? 'arquivos' : null}
+              onToggleAccordion={toggleAccordion}
+            />
+            
+            <UploadFotos
+              organizacaoId={organizacaoId}
+              accordionAberto={accordionsAbertos.includes('fotos') ? 'fotos' : null}
               onToggleAccordion={toggleAccordion}
             />
             
             <DadosRepresentanteComponent
               dados={dadosRepresentante}
               onUpdate={updateRepresentante}
-              accordionAberto={accordionAberto}
+              accordionAberto={accordionsAbertos.includes('representante') ? 'representante' : null}
               onToggleAccordion={toggleAccordion}
             />
             
             <CaracteristicasOrganizacao
               organizacao={organizacao}
               onUpdate={updateOrganizacao}
-              accordionAberto={accordionAberto}
+              accordionAberto={accordionsAbertos.includes('caracteristicas') ? 'caracteristicas' : null}
               onToggleAccordion={toggleAccordion}
             />
           </>
@@ -404,21 +487,53 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
           {abaAtiva === 'diagnostico' && renderAbaDiagnostico()}
           {abaAtiva === 'planoGestao' && renderAbaPlanoGestao()}
 
-          {/* Form Actions */}
-          <div className="form-actions">
+          {/* Form Actions - Botão Flutuante */}
+          <div style={{
+            position: 'fixed',
+            bottom: '30px',
+            right: '30px',
+            zIndex: 1000
+          }}>
             <button
               onClick={handleSubmit}
               disabled={saving}
-              className="btn btn-success btn-save"
+              style={{
+                padding: '14px 28px',
+                background: saving ? '#6c757d' : 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50px',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                fontSize: '16px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 15px rgba(40, 167, 69, 0.4)',
+                transition: 'all 0.3s ease',
+                transform: saving ? 'scale(0.95)' : 'scale(1)'
+              }}
+              onMouseOver={(e) => {
+                if (!saving) {
+                  e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(40, 167, 69, 0.5)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!saving) {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(40, 167, 69, 0.4)';
+                }
+              }}
             >
                 {saving ? (
                   <>
-                    <Loader2 size={16} className="spinning" style={{marginRight: '0.5rem'}} />
+                    <Loader2 size={18} className="spinning" />
                     Salvando...
                   </>
                 ) : (
                   <>
-                    <Save size={16} style={{marginRight: '0.5rem'}} />
+                    <Save size={18} />
                     Salvar Alterações
                   </>
                 )}

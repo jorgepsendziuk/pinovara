@@ -32,8 +32,10 @@ export const EnderecoLocalizacao: React.FC<EnderecoLocalizacaoProps> = ({
     // Inicializar mapa apenas se o accordion estiver aberto e houver GPS
     if (accordionAberto === 'endereco-localizacao' && organizacao.gps_lat && organizacao.gps_lng) {
       if (!mapRef.current) {
-        // Criar mapa
-        const map = L.map('mapa-endereco').setView(
+        // Criar mapa com scroll wheel desabilitado
+        const map = L.map('mapa-endereco', {
+          scrollWheelZoom: false  // Desabilita zoom com scroll/mousewheel
+        }).setView(
           [organizacao.gps_lat, organizacao.gps_lng],
           15
         );

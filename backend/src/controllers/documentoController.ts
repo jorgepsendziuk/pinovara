@@ -5,34 +5,29 @@ import fs from 'fs';
 import { documentoService } from '../services/documentoService';
 import { AuthRequest } from '../middleware/auth';
 
-// Mapeamento de tipos de documento para pastas
-const TIPO_PASTAS: { [key: string]: string } = {
-  'termo_adesao': 'termos-adesao',
-  'relatorio': 'relatorios',
-  'lista_presenca': 'listas-presenca',
-  'foto': 'fotos',
-};
+// Pasta única para todos os arquivos
+const UPLOAD_DIR = '/var/pinovara/shared/uploads/arquivos';
 
 // Configurar storage do multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // O tipo_documento vem como campo do FormData, mas o multer processa o arquivo antes
-    // Vamos usar uma pasta temporária e depois mover para a pasta correta
-    const destino = `/var/pinovara/shared/uploads/temp`;
-    
     // Criar pasta se não existir
-    if (!fs.existsSync(destino)) {
-      fs.mkdirSync(destino, { recursive: true });
+    if (!fs.existsSync(UPLOAD_DIR)) {
+      fs.mkdirSync(UPLOAD_DIR, { recursive: true });
     }
-    
-    cb(null, destino);
+    cb(null, UPLOAD_DIR);
   },
   filename: (req, file, cb) => {
+    const organizacaoId = req.params.id;
     const timestamp = Date.now();
-    const randomStr = Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
-    const nome = `temp-${timestamp}-${randomStr}${ext}`;
-    cb(null, nome);
+    const nomeOriginalLimpo = path.basename(file.originalname, ext)
+      .replace(/[^a-zA-Z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 50);
+    const nomeArquivoFinal = `org${organizacaoId}-${nomeOriginalLimpo}-${timestamp}${ext}`;
+    cb(null, nomeArquivoFinal);
   }
 });
 
@@ -69,7 +64,7 @@ class DocumentoController {
     try {
       const organizacaoId = parseInt(req.params.id);
       const file = req.file;
-      const { tipo_documento, obs } = req.body;
+      const { obs } = req.body;
 
       if (!file) {
         res.status(400).json({
@@ -79,47 +74,21 @@ class DocumentoController {
         return;
       }
 
-      // Validar tipo de documento
-      if (!TIPO_PASTAS[tipo_documento]) {
-        // Deletar arquivo temporário
-        fs.unlinkSync(file.path);
-        res.status(400).json({
-          success: false,
-          error: { message: 'Tipo de documento inválido' }
-        });
-        return;
-      }
-
-      // Mover arquivo da pasta temp para a pasta correta
-      const pasta = TIPO_PASTAS[tipo_documento];
-      const destinoFinal = `/var/pinovara/shared/uploads/${pasta}`;
-      
-      // Criar pasta destino se não existir
-      if (!fs.existsSync(destinoFinal)) {
-        fs.mkdirSync(destinoFinal, { recursive: true });
-      }
-
-      // Gerar nome final do arquivo
-      const ext = path.extname(file.originalname);
+      // Gerar URI único para o arquivo
       const timestamp = Date.now();
-      const nomeOriginalLimpo = path.basename(file.originalname, ext)
-        .replace(/[^a-zA-Z0-9]/g, '-')
-        .replace(/-+/g, '-')  // Substituir múltiplos hífens por um só
-        .replace(/^-|-$/g, '') // Remover hífens no início e fim
-        .substring(0, 50);
-      const nomeArquivoFinal = `${tipo_documento}-org${organizacaoId}-${nomeOriginalLimpo}-${timestamp}${ext}`;
-      const caminhoFinal = path.join(destinoFinal, nomeArquivoFinal);
-
-      // Mover arquivo
-      fs.renameSync(file.path, caminhoFinal);
+      const uri = `uuid:${organizacaoId}-${timestamp}-${Math.random().toString(36).substring(7)}`;
+      
+      // Contar arquivos existentes para definir ordinal_number
+      const count = await documentoService.count(organizacaoId);
 
       // Criar registro no banco
       const documento = await documentoService.create({
         id_organizacao: organizacaoId,
-        tipo_documento,
-        arquivo: nomeArquivoFinal,
+        arquivo: file.filename,
         usuario_envio: req.user?.email || 'sistema',
         obs: obs || null,
+        uri: uri,
+        ordinal_number: count + 1,
       });
 
       res.status(201).json({
@@ -170,9 +139,8 @@ class DocumentoController {
         return;
       }
 
-      // Determinar pasta baseado no tipo
-      const pasta = TIPO_PASTAS[documento.tipo_documento] || 'documentos';
-      const filePath = path.join('/var/pinovara/shared/uploads', pasta, documento.arquivo);
+      // Caminho do arquivo na pasta única
+      const filePath = path.join(UPLOAD_DIR, documento.arquivo!);
 
       // Verificar se arquivo existe
       if (!fs.existsSync(filePath)) {
@@ -184,7 +152,7 @@ class DocumentoController {
       }
 
       // Fazer download
-      res.download(filePath, documento.arquivo);
+      res.download(filePath, documento.arquivo!);
     } catch (error) {
       console.error('Erro ao fazer download de documento:', error);
       res.status(500).json({
@@ -209,9 +177,8 @@ class DocumentoController {
         return;
       }
 
-      // Determinar pasta baseado no tipo
-      const pasta = TIPO_PASTAS[documento.tipo_documento] || 'documentos';
-      const filePath = path.join('/var/pinovara/shared/uploads', pasta, documento.arquivo);
+      // Caminho do arquivo na pasta única
+      const filePath = path.join(UPLOAD_DIR, documento.arquivo!);
 
       // Deletar arquivo físico se existir
       if (fs.existsSync(filePath)) {

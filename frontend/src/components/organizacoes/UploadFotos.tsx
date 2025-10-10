@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Upload, FileText, Image, Trash2, Download, 
+  Upload, Image, Trash2, Download, 
   ChevronDown, ChevronUp, AlertCircle, Plus
 } from 'lucide-react';
-import { documentoAPI, Documento } from '../../services/api';
+import { fotoAPI, Foto } from '../../services/api';
 
-interface UploadDocumentosProps {
+interface UploadFotosProps {
   organizacaoId: number;
   accordionAberto: string | null;
   onToggleAccordion: (accordion: string) => void;
 }
 
-export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
+export const UploadFotos: React.FC<UploadFotosProps> = ({
   organizacaoId,
   accordionAberto,
   onToggleAccordion
 }) => {
-  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const [fotos, setFotos] = useState<Foto[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadFormAberto, setUploadFormAberto] = useState(false);
@@ -24,15 +24,15 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
   const [obs, setObs] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-  // Carregar documentos
-  const loadDocumentos = async () => {
+  // Carregar fotos
+  const loadFotos = async () => {
     setLoading(true);
     try {
-      const docs = await documentoAPI.list(organizacaoId);
-      setDocumentos(docs);
-    } catch (error) {
-      console.error('Erro ao carregar documentos:', error);
-      setMessage({ type: 'error', text: 'Erro ao carregar documentos' });
+      const data = await fotoAPI.list(organizacaoId);
+      setFotos(data);
+    } catch (error: any) {
+      console.error('Erro ao carregar fotos:', error);
+      setMessage({ type: 'error', text: 'Erro ao carregar fotos' });
     } finally {
       setLoading(false);
     }
@@ -40,105 +40,108 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
 
   useEffect(() => {
     if (organizacaoId) {
-      loadDocumentos();
+      loadFotos();
     }
   }, [organizacaoId]);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      setSelectedFile(event.target.files[0]);
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar se é imagem
+      if (!file.type.startsWith('image/')) {
+        setMessage({ type: 'error', text: 'Por favor, selecione apenas imagens' });
+        return;
+      }
+      setSelectedFile(file);
       setMessage(null);
     }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) {
-      setMessage({ type: 'error', text: 'Selecione um arquivo' });
-      return;
-    }
+    if (!selectedFile) return;
 
     setUploading(true);
     setMessage(null);
 
     try {
       const formData = new FormData();
-      formData.append('arquivo', selectedFile);
-      if (obs) {
-        formData.append('obs', obs);
-      }
+      formData.append('foto', selectedFile);
+      if (obs) formData.append('obs', obs);
 
-      await documentoAPI.upload(organizacaoId, formData);
-
-      setMessage({ type: 'success', text: 'Arquivo enviado com sucesso!' });
+      await fotoAPI.upload(organizacaoId, formData);
+      
+      setMessage({ type: 'success', text: 'Foto enviada com sucesso!' });
       setSelectedFile(null);
       setObs('');
-      loadDocumentos();
+      setUploadFormAberto(false);
+      
+      // Recarregar lista
+      await loadFotos();
+
+      // Limpar mensagem após 3s
+      setTimeout(() => setMessage(null), 3000);
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Erro ao enviar arquivo' });
+      setMessage({ type: 'error', text: error.message || 'Erro ao enviar foto' });
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDelete = async (documentoId: number) => {
-    if (!confirm('Deseja realmente excluir este documento?')) return;
-
+  const handleDownload = async (foto: Foto) => {
     try {
-      await documentoAPI.delete(organizacaoId, documentoId);
-      setMessage({ type: 'success', text: 'Documento excluído com sucesso!' });
-      loadDocumentos();
+      await fotoAPI.download(organizacaoId, foto.id);
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Erro ao excluir documento' });
+      setMessage({ type: 'error', text: 'Erro ao fazer download da foto' });
     }
   };
 
-  const handleDownload = async (documentoId: number) => {
+  const handleDelete = async (foto: Foto) => {
+    if (!confirm(`Tem certeza que deseja excluir esta foto?`)) {
+      return;
+    }
+
     try {
-      await documentoAPI.download(organizacaoId, documentoId);
+      await fotoAPI.delete(organizacaoId, foto.id);
+      setMessage({ type: 'success', text: 'Foto excluída com sucesso!' });
+      await loadFotos();
+      setTimeout(() => setMessage(null), 3000);
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Erro ao fazer download' });
+      setMessage({ type: 'error', text: 'Erro ao excluir foto' });
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('pt-BR');
+  const formatDate = (date: Date | string) => {
+    return new Date(date).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const getFileIcon = (filename: string) => {
-    const ext = filename.split('.').pop()?.toLowerCase();
-    if (ext === 'pdf') return <FileText size={16} color="#dc3545" />;
-    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext || '')) return <Image size={16} color="#2196f3" />;
-    if (['doc', 'docx'].includes(ext || '')) return <FileText size={16} color="#007bff" />;
-    return <FileText size={16} />;
-  };
-
-  const getFileColor = (filename: string) => {
-    const ext = filename.split('.').pop()?.toLowerCase();
-    if (ext === 'pdf') return '#dc3545';
-    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext || '')) return '#2196f3';
-    if (['doc', 'docx'].includes(ext || '')) return '#007bff';
-    return '#6c757d';
-  };
-
-  const isAberto = accordionAberto === 'arquivos';
+  const isAberto = accordionAberto === 'fotos';
 
   return (
     <div className="accordion-item">
-      <button 
+      <button
         className="accordion-header"
-        onClick={() => onToggleAccordion('arquivos')}
+        onClick={() => onToggleAccordion('fotos')}
+        style={{
+          background: isAberto 
+            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white'
+        }}
       >
-        <h3>
-          <Upload size={18} style={{marginRight: '0.5rem'}} /> 
-          Arquivos e Documentos
-        </h3>
-        <ChevronDown
-          size={16}
-          className={`accordion-icon ${isAberto ? 'open' : ''}`}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Image size={20} />
+          <span>Fotos</span>
+        </div>
+        <ChevronDown 
+          size={20}
           style={{
-            marginLeft: '0.5rem',
-            transition: 'transform 0.2s ease',
+            transition: 'transform 0.3s ease',
             transform: isAberto ? 'rotate(180deg)' : 'rotate(0deg)'
           }}
         />
@@ -168,7 +171,7 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Plus size={18} />
-                Enviar Novo Arquivo
+                Enviar Nova Foto
               </span>
               {uploadFormAberto ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
@@ -184,31 +187,42 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
               }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="form-group" style={{ marginBottom: '0' }}>
-                <label>Arquivo *</label>
+                <label>Imagem *</label>
                 <input
                   type="file"
                   onChange={handleFileSelect}
-                  className="form-control"
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  accept="image/*"
+                  style={{
+                    padding: '8px',
+                    border: '1px solid #ced4da',
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}
                 />
                 {selectedFile && (
-                  <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
-                    📎 Arquivo selecionado: <strong>{selectedFile.name}</strong>
-                  </small>
+                  <div style={{ marginTop: '8px', fontSize: '13px', color: '#6c757d' }}>
+                    Arquivo selecionado: {selectedFile.name}
+                  </div>
                 )}
               </div>
 
               <div className="form-group" style={{ marginBottom: '0' }}>
-                <label>Observações</label>
+                <label>Descrição/Observação</label>
                 <textarea
                   value={obs}
                   onChange={(e) => setObs(e.target.value)}
-                  className="form-control"
                   rows={3}
-                  placeholder="Descrição do arquivo, tipo de documento, etc..."
+                  placeholder="Digite uma descrição ou observação sobre a foto..."
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    border: '1px solid #ced4da',
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    resize: 'vertical'
+                  }}
                 />
               </div>
-            </div>
 
             {message && (
               <div style={{
@@ -226,61 +240,62 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
               </div>
             )}
 
-                <button
-                  type="button"
-                  onClick={handleUpload}
-                  disabled={!selectedFile || uploading}
-                  style={{
-                    marginTop: '15px',
-                    padding: '10px 20px',
-                    background: selectedFile && !uploading ? '#28a745' : '#6c757d',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: selectedFile && !uploading ? 'pointer' : 'not-allowed',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <Upload size={16} />
-                  {uploading ? 'Enviando...' : 'Enviar Arquivo'}
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleUpload}
+                    disabled={!selectedFile || uploading}
+                    style={{
+                      marginTop: '15px',
+                      padding: '10px 20px',
+                      background: selectedFile && !uploading ? '#28a745' : '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: selectedFile && !uploading ? 'pointer' : 'not-allowed',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Upload size={16} />
+                    {uploading ? 'Enviando...' : 'Enviar Foto'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Lista de Documentos */}
+          {/* Lista de Fotos */}
           <div>
             <h4 style={{ marginBottom: '15px', color: '#333' }}>
-              Documentos Enviados ({documentos.length})
+              Fotos Enviadas ({fotos.length})
             </h4>
 
             {loading ? (
-              <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-                Carregando documentos...
+              <div style={{ textAlign: 'center', padding: '20px', color: '#6c757d' }}>
+                Carregando fotos...
               </div>
-            ) : documentos.length === 0 ? (
+            ) : fotos.length === 0 ? (
               <div style={{ 
                 textAlign: 'center', 
-                padding: '40px', 
-                color: '#666',
+                padding: '30px', 
                 background: '#f8f9fa',
-                borderRadius: '8px'
+                borderRadius: '8px',
+                color: '#6c757d'
               }}>
-                <Upload size={48} style={{ opacity: 0.3, marginBottom: '10px' }} />
-                <p>Nenhum documento enviado ainda</p>
+                <Image size={48} style={{ margin: '0 auto 10px', opacity: 0.5 }} />
+                <p>Nenhuma foto enviada ainda</p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {documentos.map(doc => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {fotos.map((foto) => (
                   <div
-                    key={doc.id}
+                    key={foto.id}
                     style={{
-                      padding: '15px',
+                      background: 'white',
                       border: '1px solid #dee2e6',
                       borderRadius: '8px',
-                      background: 'white',
+                      padding: '15px',
                       display: 'flex',
                       gap: '15px',
                       alignItems: 'center'
@@ -291,57 +306,59 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
                       width: '80px',
                       height: '80px',
                       borderRadius: '8px',
-                      background: `${getFileColor(doc.arquivo || '')}15`,
+                      background: '#667eea15',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
-                      border: '2px solid',
-                      borderColor: getFileColor(doc.arquivo || '')
+                      border: '2px solid #667eea'
                     }}>
-                      {React.cloneElement(getFileIcon(doc.arquivo || ''), { 
-                        size: 40
-                      })}
+                      <Image size={40} color="#667eea" />
                     </div>
 
                     {/* Informações */}
                     <div style={{ flex: 1 }}>
                       <div style={{ 
                         display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '8px',
+                        justifyContent: 'space-between', 
+                        alignItems: 'start',
                         marginBottom: '8px'
                       }}>
-                        <strong style={{ fontSize: '16px', color: '#333' }}>
-                          {doc.arquivo}
-                        </strong>
+                        <div style={{ fontWeight: '600', fontSize: '15px', color: '#333' }}>
+                          {foto.foto || `Foto ${foto.id}`}
+                        </div>
                       </div>
+                      
                       <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.6' }}>
-                        <div><strong>Enviado em:</strong> {formatDate(doc.creation_date)}</div>
-                        <div><strong>Por:</strong> {doc.creator_uri_user}</div>
-                        {doc.obs && <div><strong>Descrição:</strong> {doc.obs}</div>}
+                        <div><strong>Enviado em:</strong> {formatDate(foto.creation_date)}</div>
+                        <div><strong>Por:</strong> {foto.creator_uri_user}</div>
+                        {foto.obs && <div><strong>Descrição:</strong> {foto.obs}</div>}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
+
+                    {/* Ações */}
+                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                       <button
-                        onClick={() => handleDownload(doc.id)}
+                        onClick={() => handleDownload(foto)}
                         style={{
                           padding: '8px 12px',
-                          background: '#007bff',
+                          background: '#17a2b8',
                           color: 'white',
                           border: 'none',
                           borderRadius: '4px',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '5px'
+                          gap: '6px',
+                          fontSize: '13px'
                         }}
-                        title="Download"
+                        title="Baixar foto"
                       >
-                        <Download size={16} />
+                        <Download size={14} />
+                        Baixar
                       </button>
                       <button
-                        onClick={() => handleDelete(doc.id)}
+                        onClick={() => handleDelete(foto)}
                         style={{
                           padding: '8px 12px',
                           background: '#dc3545',
@@ -351,11 +368,13 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '5px'
+                          gap: '6px',
+                          fontSize: '13px'
                         }}
-                        title="Excluir"
+                        title="Excluir foto"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
+                        Excluir
                       </button>
                     </div>
                   </div>
@@ -368,3 +387,4 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
     </div>
   );
 };
+
