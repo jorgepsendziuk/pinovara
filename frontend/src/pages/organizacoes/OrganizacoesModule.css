@@ -585,6 +585,21 @@
 
 /* ========== LISTA DE ORGANIZAÇÕES ========== */
 
+.lista-content {
+  padding: 0;
+  margin: 0;
+}
+
+.lista-body {
+  padding: 0;
+  margin: 0;
+}
+
+.organizacoes-datagrid-container {
+  padding: 0;
+  margin: 0;
+}
+
 .table-container {
   overflow-x: auto;
   padding: 24px 32px;

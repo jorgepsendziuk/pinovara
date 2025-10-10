@@ -68,28 +68,60 @@ class OrganizacaoService {
     const skip = (page - 1) * limit;
     const totalPaginas = Math.ceil(total / limit);
 
-    const organizacoes = await prisma.organizacao.findMany({
-      where: whereConditions,
-      select: {
-        id: true,
-        nome: true,
-        cnpj: true,
-        telefone: true,
-        email: true,
-        estado: true,
-        municipio: true,
-        data_visita: true,
-        data_fundacao: true,
-        gps_lat: true,
-        gps_lng: true,
-        removido: true
-      },
-      orderBy: {
-        id: 'asc'
-      },
-      take: limit,
-      skip
-    });
+    // Buscar organizações com nomes de estado e município
+    let sqlQuery = `
+      SELECT 
+        o.id,
+        o.nome,
+        o.cnpj,
+        o.telefone,
+        o.email,
+        o.estado,
+        e.descricao as estado_nome,
+        o.municipio,
+        m.descricao as municipio_nome,
+        o.data_visita,
+        o.data_fundacao,
+        o.gps_lat,
+        o.gps_lng,
+        o.removido,
+        o.meta_instance_id
+      FROM pinovara.organizacao o
+      LEFT JOIN pinovara_aux.estado e ON o.estado = e.id
+      LEFT JOIN pinovara_aux.municipio_ibge m ON o.municipio = m.id
+      WHERE o.removido = false
+    `;
+
+    // Aplicar filtros de busca
+    const conditions: string[] = [];
+    
+    if (nome) {
+      conditions.push(`o.nome ILIKE '%${nome}%'`);
+    }
+    
+    if (cnpj) {
+      conditions.push(`o.cnpj ILIKE '%${cnpj}%'`);
+    }
+    
+    if (estado) {
+      conditions.push(`o.estado = ${estado}`);
+    }
+    
+    if (municipio) {
+      conditions.push(`o.municipio = ${municipio}`);
+    }
+    
+    if (id_tecnico !== undefined) {
+      conditions.push(`o.id_tecnico = ${id_tecnico}`);
+    }
+    
+    if (conditions.length > 0) {
+      sqlQuery += ` AND (${conditions.join(' OR ')})`;
+    }
+
+    sqlQuery += ` ORDER BY o.id ASC LIMIT ${limit} OFFSET ${skip}`;
+
+    const organizacoes = await prisma.$queryRawUnsafe<any[]>(sqlQuery);
 
     return {
       organizacoes,

@@ -130,7 +130,7 @@ function OrganizacoesModule() {
       <Sidebar />
 
       <div className="main-content">
-        <main className="dashboard-main" style={{padding: viewAtiva === 'mapa' ? '0' : '3rem 0'}}>
+        <main className="dashboard-main" style={{padding: viewAtiva === 'mapa' ? '0' : '20px'}}>
           <div className={viewAtiva === 'mapa' ? 'full-width-container' : 'full-width-container'}>
             <div className="organizacoes-module">
 
