@@ -247,6 +247,21 @@ class OrganizacaoService {
           go_educacao_27_resposta: true, go_educacao_27_comentario: true, go_educacao_27_proposta: true,
           go_educacao_28_resposta: true, go_educacao_28_comentario: true, go_educacao_28_proposta: true,
           
+          // Campos ODK Metadata
+          meta_instance_id: true,
+          meta_instance_name: true,
+          uri: true,
+          creator_uri_user: true,
+          creation_date: true,
+          last_update_uri_user: true,
+          last_update_date: true,
+          model_version: true,
+          ui_version: true,
+          is_complete: true,
+          submission_date: true,
+          marked_as_complete_date: true,
+          complementado: true,
+          
           // TODO: Adicionar GP, GF, GC, GPP, GS, GI incrementalmente
           // Por enquanto, focando nos campos que já estavam funcionando
         }

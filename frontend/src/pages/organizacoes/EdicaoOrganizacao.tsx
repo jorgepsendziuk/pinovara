@@ -6,11 +6,11 @@ import { useDiagnosticoData } from '../../hooks/useDiagnosticoData';
 import { DadosBasicos } from '../../components/organizacoes/DadosBasicos';
 import { EnderecoLocalizacao } from '../../components/organizacoes/EnderecoLocalizacao';
 import { DadosRepresentanteComponent } from '../../components/organizacoes/DadosRepresentante';
-import { CaracteristicasOrganizacao } from '../../components/organizacoes/CaracteristicasOrganizacao';
 import { DiagnosticoArea } from '../../components/organizacoes/DiagnosticoArea';
 import { PlanoGestao } from '../../components/organizacoes/PlanoGestao';
 import { UploadDocumentos } from '../../components/organizacoes/UploadDocumentos';
 import { UploadFotos } from '../../components/organizacoes/UploadFotos';
+import { DadosColeta } from '../../components/organizacoes/DadosColeta';
 import {
   Edit,
   Search,
@@ -97,7 +97,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       'arquivos',
       'fotos',
       'representante',
-      'caracteristicas'
+      'dados-coleta'
     ]);
   };
 
@@ -331,10 +331,9 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
               onToggleAccordion={toggleAccordion}
             />
             
-            <CaracteristicasOrganizacao
+            <DadosColeta
               organizacao={organizacao}
-              onUpdate={updateOrganizacao}
-              accordionAberto={accordionsAbertos.includes('caracteristicas') ? 'caracteristicas' : null}
+              accordionAberto={accordionsAbertos.includes('dados-coleta') ? 'dados-coleta' : null}
               onToggleAccordion={toggleAccordion}
             />
           </>

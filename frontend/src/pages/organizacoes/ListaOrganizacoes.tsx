@@ -210,7 +210,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       key: 'nome',
       title: 'Nome',
       dataIndex: 'nome',
-      width: '30%',
+      width: '45%',
       sortable: true,
       render: (nome: string, record: Organizacao) => {
         const isODKCollect = record.meta_instance_id && record.meta_instance_id.trim() !== '';
@@ -231,16 +231,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           </div>
         );
       },
-    },
-    {
-      key: 'cnpj',
-      title: 'CNPJ',
-      dataIndex: 'cnpj',
-      width: '14%',
-      sortable: true,
-      render: (cnpj: string) => (
-        <span style={{ fontSize: '13px' }}>{formatarCNPJ(cnpj)}</span>
-      ),
     },
     {
       key: 'localizacao',
