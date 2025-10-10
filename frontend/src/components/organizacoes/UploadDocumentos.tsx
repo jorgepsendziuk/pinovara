@@ -271,25 +271,64 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
                       borderRadius: '8px',
                       background: 'white',
                       display: 'flex',
-                      justifyContent: 'space-between',
+                      gap: '15px',
                       alignItems: 'center'
                     }}
                   >
+                    {/* Miniatura */}
+                    <div style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '8px',
+                      background: doc.tipo_documento === 'foto' 
+                        ? '#e3f2fd' 
+                        : doc.tipo_documento === 'termo_adesao'
+                        ? '#fff3e0'
+                        : doc.tipo_documento === 'relatorio'
+                        ? '#f3e5f5'
+                        : '#e8f5e9',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      border: '2px solid',
+                      borderColor: doc.tipo_documento === 'foto' 
+                        ? '#2196f3' 
+                        : doc.tipo_documento === 'termo_adesao'
+                        ? '#ff9800'
+                        : doc.tipo_documento === 'relatorio'
+                        ? '#9c27b0'
+                        : '#4caf50'
+                    }}>
+                      {React.cloneElement(getIcon(doc.tipo_documento), { 
+                        size: 40,
+                        color: doc.tipo_documento === 'foto' 
+                          ? '#2196f3' 
+                          : doc.tipo_documento === 'termo_adesao'
+                          ? '#ff9800'
+                          : doc.tipo_documento === 'relatorio'
+                          ? '#9c27b0'
+                          : '#4caf50'
+                      })}
+                    </div>
+
+                    {/* Informações */}
                     <div style={{ flex: 1 }}>
                       <div style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
                         gap: '8px',
-                        marginBottom: '5px'
+                        marginBottom: '8px'
                       }}>
-                        {getIcon(doc.tipo_documento)}
-                        <strong>{getTipoLabel(doc.tipo_documento)}</strong>
+                        <strong style={{ fontSize: '16px', color: '#333' }}>
+                          {getTipoLabel(doc.tipo_documento)}
+                        </strong>
                       </div>
-                      <div style={{ fontSize: '14px', color: '#666' }}>
-                        <div>Arquivo: {doc.arquivo}</div>
-                        <div>Enviado em: {formatDate(doc.data_envio)}</div>
-                        <div>Por: {doc.usuario_envio}</div>
-                        {doc.obs && <div>Obs: {doc.obs}</div>}
+                      <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.6' }}>
+                        <div><strong>Arquivo:</strong> {doc.arquivo}</div>
+                        <div><strong>Enviado em:</strong> {formatDate(doc.data_envio)}</div>
+                        <div><strong>Por:</strong> {doc.usuario_envio}</div>
+                        {doc.obs && <div><strong>Obs:</strong> {doc.obs}</div>}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>

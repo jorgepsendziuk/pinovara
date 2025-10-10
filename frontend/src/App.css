@@ -6395,6 +6395,10 @@ main, section, article, aside, header, footer {
   grid-column: 1 / -1;
 }
 
+.form-group.two-thirds {
+  grid-column: span 2;
+}
+
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;

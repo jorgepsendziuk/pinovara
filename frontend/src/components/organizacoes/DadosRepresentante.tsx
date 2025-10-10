@@ -36,7 +36,7 @@ export const DadosRepresentanteComponent: React.FC<DadosRepresentanteProps> = ({
       <div className={`accordion-content ${accordionAberto === 'representante' ? 'open' : ''}`}>
         <div className="accordion-section">
           <div className="form-grid">
-            <div className="form-group">
+            <div className="form-group two-thirds">
               <label htmlFor="representante_nome">Nome Completo</label>
               <input
                 type="text"
