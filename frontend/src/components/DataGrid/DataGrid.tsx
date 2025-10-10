@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import './DataGrid.css';
 
 export interface DataGridColumn<T = any> {
@@ -166,6 +167,53 @@ function DataGrid<T = any>({
     setSortConfig({ key: columnKey, direction });
   };
 
+  // Aplicar ordenação aos dados
+  const sortedData = useMemo(() => {
+    if (!sortConfig) return dataSource;
+
+    const column = columns.find(col => col.key === sortConfig.key);
+    if (!column) return dataSource;
+
+    const sorted = [...dataSource].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      if (column.dataIndex) {
+        if (typeof column.dataIndex === 'function') {
+          aValue = column.dataIndex(a);
+          bValue = column.dataIndex(b);
+        } else {
+          aValue = a[column.dataIndex as keyof T];
+          bValue = b[column.dataIndex as keyof T];
+        }
+      } else {
+        aValue = a;
+        bValue = b;
+      }
+
+      // Tratamento de valores nulos/undefined
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+
+      // Comparação numérica
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+
+      // Comparação de strings (case insensitive)
+      const aStr = String(aValue).toLowerCase();
+      const bStr = String(bValue).toLowerCase();
+      
+      if (sortConfig.direction === 'asc') {
+        return aStr.localeCompare(bStr);
+      } else {
+        return bStr.localeCompare(aStr);
+      }
+    });
+
+    return sorted;
+  }, [dataSource, sortConfig, columns]);
+
   // Seleção
   const handleSelectRow = (rowKey: string, selected: boolean) => {
     let newSelectedRowKeys: string[];
@@ -183,7 +231,7 @@ function DataGrid<T = any>({
     setSelectedRowKeys(newSelectedRowKeys);
     
     if (selection?.onChange) {
-      const selectedRows = dataSource.filter(record => 
+      const selectedRows = sortedData.filter(record => 
         newSelectedRowKeys.includes(getRowKey(record, 0))
       );
       selection.onChange(newSelectedRowKeys, selectedRows);
@@ -192,23 +240,23 @@ function DataGrid<T = any>({
 
   // Selecionar todos
   const handleSelectAll = (selected: boolean) => {
-    const allRowKeys = dataSource.map((record, index) => getRowKey(record, index));
+    const allRowKeys = sortedData.map((record, index) => getRowKey(record, index));
     const newSelectedRowKeys = selected ? allRowKeys : [];
     
     setSelectedRowKeys(newSelectedRowKeys);
     
     if (selection?.onChange) {
-      const selectedRows = selected ? dataSource : [];
+      const selectedRows = selected ? sortedData : [];
       selection.onChange(newSelectedRowKeys, selectedRows);
     }
   };
 
   // Estados
   const isLoading = loading;
-  const isEmpty = !isLoading && dataSource.length === 0;
+  const isEmpty = !isLoading && sortedData.length === 0;
   const hasSelection = Boolean(selection);
   const hasActions = Boolean(actions);
-  const allSelected = selectedRowKeys.length === dataSource.length && dataSource.length > 0;
+  const allSelected = selectedRowKeys.length === sortedData.length && sortedData.length > 0;
   const someSelected = selectedRowKeys.length > 0;
 
   return (
@@ -328,10 +376,10 @@ function DataGrid<T = any>({
                     <div className="column-header">
                       <span>{column.title}</span>
                       {column.sortable && (
-                        <span className="sort-indicator">
+                        <span className="sort-indicator" style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '4px' }}>
                           {sortConfig?.key === column.key ? (
-                            sortConfig.direction === 'asc' ? '▲' : '▼'
-                          ) : '↕️'}
+                            sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                          ) : <ArrowUpDown size={14} style={{ opacity: 0.5 }} />}
                         </span>
                       )}
                     </div>
@@ -341,7 +389,7 @@ function DataGrid<T = any>({
             </thead>
             
             <tbody>
-              {dataSource.map((record, index) => {
+              {sortedData.map((record, index) => {
                 const key = getRowKey(record, index);
                 const isSelected = selectedRowKeys.includes(key);
                 

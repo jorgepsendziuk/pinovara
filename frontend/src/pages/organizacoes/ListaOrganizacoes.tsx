@@ -5,7 +5,14 @@ import { DataGrid, DataGridColumn } from '../../components/DataGrid';
 import {
   Edit,
   Trash,
-  Printer
+  Printer,
+  Building2,
+  Phone,
+  Mail,
+  MessageCircle,
+  Clipboard,
+  Monitor,
+  X
 } from 'lucide-react';
 
 interface Organizacao {
@@ -13,11 +20,14 @@ interface Organizacao {
   nome: string;
   cnpj: string;
   estado: number | null;
+  estado_nome?: string;
   municipio: number | null;
+  municipio_nome?: string;
   gpsLat: number | null;
   gpsLng: number | null;
   telefone: string | null;
   email: string | null;
+  meta_instance_id?: string | null;
 }
 
 
@@ -36,37 +46,32 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const [pageSize, setPageSize] = useState(10);
   const [totalOrganizacoes, setTotalOrganizacoes] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [legendaVisivel, setLegendaVisivel] = useState(true);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
   // Funções auxiliares
   const formatarCNPJ = (cnpj: string | null): string => {
     if (!cnpj) return '-';
-    // Remove todos os caracteres não numéricos
     const cnpjNumeros = cnpj.replace(/\D/g, '');
-    // Aplica a máscara CNPJ: XX.XXX.XXX/XXXX-XX
     return cnpjNumeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
   };
 
-  const getNomeEstado = (estadoId: number | null): string => {
-    const estados = [
-      { id: 1, nome: 'Minas Gerais', uf: 'MG' },
-      { id: 2, nome: 'Bahia', uf: 'BA' },
-      { id: 3, nome: 'Espírito Santo', uf: 'ES' }
-    ];
-    const estado = estados.find(e => e.id === estadoId);
-    return estado ? estado.uf : '-';
+  const formatarTelefone = (telefone: string | null): string => {
+    if (!telefone) return '';
+    const tel = telefone.replace(/\D/g, '');
+    if (tel.length === 11) {
+      return tel.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    } else if (tel.length === 10) {
+      return tel.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    }
+    return telefone;
   };
 
-  const getNomeMunicipio = (municipioId: number | null): string => {
-    const municipios = [
-      { id: 1, nome: 'Diamantina' },
-      { id: 2, nome: 'Belo Horizonte' },
-      { id: 3, nome: 'Salvador' },
-      { id: 4, nome: 'Vitória' }
-    ];
-    const municipio = municipios.find(m => m.id === municipioId);
-    return municipio ? municipio.nome : '-';
+  const getWhatsAppLink = (telefone: string | null): string => {
+    if (!telefone) return '';
+    const tel = telefone.replace(/\D/g, '');
+    return `https://wa.me/55${tel}`;
   };
 
   useEffect(() => {
@@ -194,63 +199,115 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       key: 'id',
       title: 'ID',
       dataIndex: 'id',
-      width: '8%',
+      width: '5%',
       sortable: true,
       align: 'center',
       render: (id: number) => (
-        <span style={{ fontWeight: 'bold', color: '#666' }}>#{id}</span>
+        <span style={{ fontWeight: '600', color: '#666', fontSize: '13px' }}>{id}</span>
       ),
     },
     {
       key: 'nome',
       title: 'Nome',
       dataIndex: 'nome',
-      width: '22%',
+      width: '30%',
       sortable: true,
-      render: (nome: string) => nome || '-',
+      render: (nome: string, record: Organizacao) => {
+        const isODKCollect = record.meta_instance_id && record.meta_instance_id.trim() !== '';
+        
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span 
+              title={isODKCollect ? 'Cadastrado via ODK Collect (aplicativo)' : 'Cadastrado via sistema web'}
+              style={{ display: 'inline-flex', flexShrink: 0, minWidth: '16px', minHeight: '16px' }}
+            >
+              {isODKCollect ? (
+                <Clipboard size={16} color="#8b4513" />
+              ) : (
+                <Monitor size={16} color="#667eea" />
+              )}
+            </span>
+            <span style={{ fontWeight: '500' }}>{nome || '-'}</span>
+          </div>
+        );
+      },
     },
     {
       key: 'cnpj',
       title: 'CNPJ',
       dataIndex: 'cnpj',
-      width: '18%',
+      width: '14%',
       sortable: true,
-      render: (cnpj: string) => formatarCNPJ(cnpj),
+      render: (cnpj: string) => (
+        <span style={{ fontSize: '13px' }}>{formatarCNPJ(cnpj)}</span>
+      ),
     },
     {
       key: 'localizacao',
       title: 'Localização',
-      dataIndex: 'municipio',
-      width: '20%',
-      render: (municipio: number, record: Organizacao) => {
-        const municipioNome = getNomeMunicipio(municipio);
-        const estadoSigla = getNomeEstado(record.estado);
-        return `${municipioNome} - ${estadoSigla}`;
+      dataIndex: 'municipio_nome',
+      width: '16%',
+      render: (_: any, record: Organizacao) => {
+        const municipio = record.municipio_nome || '-';
+        const estado = record.estado_nome || '';
+        return (
+          <span style={{ fontSize: '13px' }}>
+            {municipio}{estado && ` - ${estado}`}
+          </span>
+        );
       },
     },
     {
       key: 'contato',
       title: 'Contato',
       dataIndex: 'telefone',
-      width: '15%',
+      width: '18%',
       responsive: {
         hideOn: 'mobile'
       },
       render: (telefone: string, record: Organizacao) => (
-        <div className="contact-info">
-          <div className="telefone">{telefone || '-'}</div>
-          <div className="email">{record.email || '-'}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
+          {telefone && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <a 
+                href={getWhatsAppLink(telefone)} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px', 
+                  color: '#25D366', 
+                  textDecoration: 'none',
+                  fontWeight: '500'
+                }}
+                title="Abrir no WhatsApp"
+              >
+                <MessageCircle size={14} />
+                {formatarTelefone(telefone)}
+              </a>
+            </div>
+          )}
+          {record.email && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <a 
+                href={`mailto:${record.email}`}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px', 
+                  color: '#666', 
+                  textDecoration: 'none'
+                }}
+                title="Enviar e-mail"
+              >
+                <Mail size={14} />
+                {record.email}
+              </a>
+            </div>
+          )}
+          {!telefone && !record.email && <span style={{ color: '#999' }}>-</span>}
         </div>
-      ),
-    },
-    {
-      key: 'status',
-      title: 'Status',
-      dataIndex: 'id',
-      width: '10%',
-      align: 'center',
-      render: () => (
-        <span className="status-badge status-active">Ativo</span>
       ),
     },
     {
@@ -259,37 +316,87 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       width: '17%',
       align: 'center',
       render: (_, record: Organizacao) => (
-        <div className="action-buttons" style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
           <button
             onClick={() => onNavigate('edicao', record.id)}
-            className="btn-icon"
             title="Editar organização"
-            style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#007bff' }}
+            style={{ 
+              padding: '6px 8px', 
+              border: '1px solid #007bff', 
+              background: 'white',
+              borderRadius: '4px',
+              cursor: 'pointer', 
+              color: '#007bff',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#007bff';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.color = '#007bff';
+            }}
           >
-            <Edit size={16} />
+            <Edit size={14} />
           </button>
           <button
             onClick={() => gerarTermoAdesao(record.id)}
-            className="btn-icon"
             title="Imprimir Termo de Adesão"
             disabled={gerandoPDF === record.id}
             style={{
-              padding: '0.25rem',
-              border: 'none',
-              background: 'transparent',
+              padding: '6px 8px',
+              border: '1px solid #28a745',
+              background: 'white',
+              borderRadius: '4px',
               cursor: gerandoPDF === record.id ? 'not-allowed' : 'pointer',
-              color: gerandoPDF === record.id ? '#ccc' : '#28a745'
+              color: gerandoPDF === record.id ? '#ccc' : '#28a745',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s',
+              opacity: gerandoPDF === record.id ? 0.5 : 1
+            }}
+            onMouseOver={(e) => {
+              if (gerandoPDF !== record.id) {
+                e.currentTarget.style.background = '#28a745';
+                e.currentTarget.style.color = 'white';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (gerandoPDF !== record.id) {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#28a745';
+              }
             }}
           >
-            {gerandoPDF === record.id ? '⏳' : <Printer size={16} />}
+            <Printer size={14} />
           </button>
           <button
             onClick={() => handleExcluir(record.id)}
-            className="btn-icon"
             title="Excluir organização"
-            style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#dc3545' }}
+            style={{ 
+              padding: '6px 8px', 
+              border: '1px solid #dc3545', 
+              background: 'white',
+              borderRadius: '4px',
+              cursor: 'pointer', 
+              color: '#dc3545',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#dc3545';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.color = '#dc3545';
+            }}
           >
-            <Trash size={16} />
+            <Trash size={14} />
           </button>
         </div>
       ),
@@ -301,10 +408,12 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     return (
       <div className="lista-content">
         <div className="content-header">
-          <h2>🏢 Lista de Organizações</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Building2 size={28} color="white" />
+            <h2>Lista de Organizações</h2>
+          </div>
           <p>Carregando organizações...</p>
         </div>
-        <div className="loading-spinner">⏳</div>
       </div>
     );
   }
@@ -312,8 +421,9 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   return (
     <div className="lista-content">
       <div className="content-header">
-        <div className="header-info">
-          <h2>🏢 Lista de Organizações</h2>
+        <div className="header-info" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Building2 size={28} color="white" />
+          <h2>Lista de Organizações</h2>
         </div>
         <div className="header-actions">
           <button
@@ -324,6 +434,61 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           </button>
         </div>
       </div>
+
+      {/* Legenda Flutuante */}
+      {legendaVisivel && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          background: 'white',
+          border: '2px solid #667eea',
+          borderRadius: '8px',
+          padding: '10px 12px',
+          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)',
+          zIndex: 999,
+          fontSize: '13px'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '8px'
+          }}>
+            <div style={{ fontWeight: '600', color: '#374151' }}>
+              Origem do Cadastro
+            </div>
+            <button
+              onClick={() => setLegendaVisivel(false)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                color: '#9ca3af',
+                transition: 'color 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.color = '#ef4444'}
+              onMouseOut={(e) => e.currentTarget.style.color = '#9ca3af'}
+              title="Fechar legenda"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Clipboard size={16} color="#8b4513" />
+              <span style={{ color: '#64748b' }}>ODK Collect (Aplicativo)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Monitor size={16} color="#667eea" />
+              <span style={{ color: '#64748b' }}>Sistema Web</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="lista-body">
         {/* DataGrid de Organizações */}
@@ -350,14 +515,13 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               description: searchTerm
                 ? `Não foram encontradas organizações que correspondam ao termo "${searchTerm}".`
                 : 'Não há organizações cadastradas no sistema ainda.',
-              icon: '🏢',
               action: {
                 label: 'Cadastrar primeira organização',
                 onClick: () => onNavigate('cadastro'),
               },
             }}
             responsive={true}
-            size="medium"
+            size="compact"
             className="organizacoes-datagrid"
           />
         </div>
