@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Upload, Image, Trash2, Download, 
-  ChevronDown, ChevronUp, AlertCircle, Plus
+  ChevronDown, ChevronUp, AlertCircle, Plus, X
 } from 'lucide-react';
 import { fotoAPI, Foto } from '../../services/api';
 
@@ -23,6 +23,7 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [obs, setObs] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [fotoAmpliada, setFotoAmpliada] = useState<Foto | null>(null);
 
   // Carregar fotos
   const loadFotos = async () => {
@@ -301,19 +302,41 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
                       alignItems: 'center'
                     }}
                   >
-                    {/* Miniatura */}
-                    <div style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '8px',
-                      background: '#667eea15',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      border: '2px solid #667eea'
-                    }}>
-                      <Image size={40} color="#667eea" />
+                    {/* Miniatura - Imagem Real */}
+                    <div 
+                      onClick={() => setFotoAmpliada(foto)}
+                      style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                        border: '2px solid #667eea',
+                        background: '#f8f9fa',
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s ease',
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                      onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      <img
+                        src={`${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/fotos/${foto.id}/view`}
+                        alt={foto.foto || 'Foto'}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                        onError={(e) => {
+                          // Fallback para ícone se a imagem falhar ao carregar
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #667eea15;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>';
+                          }
+                        }}
+                      />
                     </div>
 
                     {/* Informações */}
@@ -384,6 +407,81 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Modal de Preview Ampliado */}
+      {fotoAmpliada && (
+        <div
+          onClick={() => setFotoAmpliada(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.9)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+        >
+          <button
+            onClick={() => setFotoAmpliada(null)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'white',
+              transition: 'background 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
+          >
+            <X size={24} />
+          </button>
+          
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '90%',
+              maxHeight: '90%',
+              background: 'white',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)'
+            }}
+          >
+            <img
+              src={`${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/fotos/${fotoAmpliada.id}/view`}
+              alt={fotoAmpliada.foto || 'Foto'}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '80vh',
+                display: 'block'
+              }}
+            />
+            {fotoAmpliada.obs && (
+              <div style={{
+                padding: '15px',
+                background: '#f8f9fa',
+                borderTop: '1px solid #dee2e6'
+              }}>
+                <strong>Descrição:</strong> {fotoAmpliada.obs}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

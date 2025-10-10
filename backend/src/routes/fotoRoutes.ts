@@ -13,6 +13,9 @@ router.post('/:id/fotos', uploadMiddleware, fotoController.upload);
 // Listar fotos de uma organização
 router.get('/:id/fotos', fotoController.list);
 
+// Visualizar foto (para exibição/miniatura)
+router.get('/:id/fotos/:fotoId/view', fotoController.view);
+
 // Download de foto
 router.get('/:id/fotos/:fotoId/download', fotoController.download);
 

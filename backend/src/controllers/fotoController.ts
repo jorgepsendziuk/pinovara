@@ -105,6 +105,50 @@ export const fotoController = {
     }
   },
 
+  // Visualizar foto (retorna a imagem para exibição)
+  async view(req: Request, res: Response) {
+    try {
+      const fotoId = parseInt(req.params.fotoId);
+      const foto = await fotoService.findById(fotoId);
+
+      if (!foto || !foto.foto) {
+        return res.status(404).json({
+          success: false,
+          error: 'Foto não encontrada'
+        });
+      }
+
+      const filePath = path.join(UPLOAD_DIR, foto.foto);
+
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({
+          success: false,
+          error: 'Arquivo não encontrado no servidor'
+        });
+      }
+
+      // Detectar tipo MIME baseado na extensão
+      const ext = path.extname(foto.foto).toLowerCase();
+      const mimeTypes: { [key: string]: string } = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp'
+      };
+
+      const contentType = mimeTypes[ext] || 'image/jpeg';
+      res.setHeader('Content-Type', contentType);
+      res.sendFile(filePath);
+    } catch (error: any) {
+      console.error('Erro ao visualizar foto:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Erro ao visualizar foto'
+      });
+    }
+  },
+
   // Download de foto
   async download(req: Request, res: Response) {
     try {
