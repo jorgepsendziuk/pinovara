@@ -619,6 +619,36 @@ export const fotoAPI = {
       throw new Error(response.data.error?.message || 'Erro ao deletar foto');
     }
   },
+
+  /**
+   * Sincronizar fotos do ODK
+   */
+  syncFromODK: async (organizacaoId: number): Promise<any> => {
+    const response = await api.post<ApiResponse>(
+      `/organizacoes/${organizacaoId}/fotos/sync`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao sincronizar fotos do ODK');
+    }
+
+    return response.data.data;
+  },
+
+  /**
+   * Listar fotos disponíveis no ODK
+   */
+  listODKAvailable: async (organizacaoId: number): Promise<any> => {
+    const response = await api.get<ApiResponse>(
+      `/organizacoes/${organizacaoId}/fotos/odk-disponiveis`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar fotos disponíveis no ODK');
+    }
+
+    return response.data.data;
+  },
 };
 
 export default api;

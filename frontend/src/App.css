@@ -7967,3 +7967,17 @@ main, section, article, aside, header, footer {
     font-size: 0.95rem;
   }
 }
+/* Animação de rotação para ícones */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+

@@ -4,23 +4,20 @@ import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
-// Todas as rotas requerem autenticação
-router.use(authenticateToken);
+// Upload de foto (requer autenticação)
+router.post('/:id/fotos', authenticateToken, uploadMiddleware, fotoController.upload);
 
-// Upload de foto
-router.post('/:id/fotos', uploadMiddleware, fotoController.upload);
+// Listar fotos de uma organização (requer autenticação)
+router.get('/:id/fotos', authenticateToken, fotoController.list);
 
-// Listar fotos de uma organização
-router.get('/:id/fotos', fotoController.list);
-
-// Visualizar foto (para exibição/miniatura)
+// Visualizar foto (público - para imagens em <img src>)
 router.get('/:id/fotos/:fotoId/view', fotoController.view);
 
-// Download de foto
-router.get('/:id/fotos/:fotoId/download', fotoController.download);
+// Download de foto (requer autenticação)
+router.get('/:id/fotos/:fotoId/download', authenticateToken, fotoController.download);
 
-// Deletar foto
-router.delete('/:id/fotos/:fotoId', fotoController.delete);
+// Deletar foto (requer autenticação)
+router.delete('/:id/fotos/:fotoId', authenticateToken, fotoController.delete);
 
 export default router;
 
