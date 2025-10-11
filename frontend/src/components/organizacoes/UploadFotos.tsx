@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Upload, Image, Trash2, Download, 
-  ChevronDown, ChevronUp, AlertCircle, Plus, X
+  ChevronDown, ChevronUp, AlertCircle, Plus, X, RefreshCw
 } from 'lucide-react';
 import { fotoAPI, Foto } from '../../services/api';
 
@@ -19,6 +19,7 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
   const [fotos, setFotos] = useState<Foto[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [uploadFormAberto, setUploadFormAberto] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [obs, setObs] = useState('');
@@ -111,6 +112,42 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
     }
   };
 
+  const handleSyncODK = async () => {
+    if (!confirm('Deseja sincronizar fotos do ODK Collect para esta organização?')) {
+      return;
+    }
+
+    setSyncing(true);
+    setMessage(null);
+
+    try {
+      const resultado = await fotoAPI.syncFromODK(organizacaoId);
+      
+      let mensagem = '';
+      let tipo: 'success' | 'error' = 'success';
+
+      if (resultado.baixadas > 0) {
+        mensagem = `✅ Sincronização concluída!\n\n📊 Resumo:\n• ${resultado.total_odk} fotos encontradas no ODK\n• ${resultado.baixadas} fotos baixadas\n• ${resultado.ja_existentes} já existiam\n• ${resultado.erros} erros`;
+        await loadFotos();
+      } else if (resultado.total_odk === 0) {
+        mensagem = '⚠️ Nenhuma foto encontrada no ODK para esta organização.';
+        tipo = 'error';
+      } else {
+        mensagem = `✅ Todas as ${resultado.total_odk} fotos já foram sincronizadas anteriormente.`;
+      }
+
+      alert(mensagem);
+      setMessage({ type: tipo, text: mensagem.replace(/\n/g, ' ') });
+      setTimeout(() => setMessage(null), 5000);
+    } catch (error: any) {
+      const mensagemErro = `❌ Erro ao sincronizar fotos do ODK:\n\n${error.message}`;
+      alert(mensagemErro);
+      setMessage({ type: 'error', text: error.message || 'Erro ao sincronizar fotos do ODK' });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -150,12 +187,13 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
 
       <div className={`accordion-content ${isAberto ? 'open' : ''}`}>
         <div className="accordion-section">
-          {/* Sub-accordion para Upload */}
-          <div style={{ marginBottom: '20px' }}>
+          {/* Botões de Ação */}
+          <div style={{ marginBottom: '20px', display: 'flex', gap: '12px' }}>
+            {/* Botão Upload */}
             <button
               onClick={() => setUploadFormAberto(!uploadFormAberto)}
               style={{
-                width: '100%',
+                flex: 1,
                 padding: '12px 16px',
                 background: uploadFormAberto ? '#28a745' : '#f8f9fa',
                 color: uploadFormAberto ? 'white' : '#333',
@@ -176,6 +214,37 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
               </span>
               {uploadFormAberto ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
+
+            {/* Botão Sincronizar ODK */}
+            <button
+              onClick={handleSyncODK}
+              disabled={syncing}
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                background: syncing ? '#6c757d' : '#056839',
+                color: 'white',
+                border: `2px solid ${syncing ? '#6c757d' : '#056839'}`,
+                borderRadius: '8px',
+                cursor: syncing ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '15px',
+                fontWeight: '600',
+                transition: 'all 0.2s ease',
+                opacity: syncing ? 0.7 : 1
+              }}
+              title="Sincronizar fotos do ODK Collect"
+            >
+              <RefreshCw size={18} className={syncing ? 'spin' : ''} />
+              {syncing ? 'Sincronizando...' : 'Sincronizar ODK'}
+            </button>
+          </div>
+
+          {/* Sub-accordion para Upload */}
+          <div style={{ marginBottom: '20px' }}>
 
             {uploadFormAberto && (
               <div style={{ 
@@ -306,8 +375,8 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
                     <div 
                       onClick={() => setFotoAmpliada(foto)}
                       style={{
-                        width: '80px',
-                        height: '80px',
+                        width: '150px',
+                        height: '150px',
                         borderRadius: '8px',
                         overflow: 'hidden',
                         flexShrink: 0,
@@ -315,25 +384,26 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
                         background: '#f8f9fa',
                         cursor: 'pointer',
                         transition: 'transform 0.2s ease',
+                        position: 'relative'
                       }}
                       onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                       onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
                       <img
                         src={`${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/fotos/${foto.id}/view`}
-                        alt={foto.foto || 'Foto'}
+                        alt={foto.obs || foto.foto || 'Foto'}
                         style={{
                           width: '100%',
                           height: '100%',
                           objectFit: 'cover'
                         }}
                         onError={(e) => {
-                          // Fallback para ícone se a imagem falhar ao carregar
+                          // Indicar que arquivo não existe
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
                           const parent = target.parentElement;
                           if (parent) {
-                            parent.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #667eea15;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>';
+                            parent.innerHTML = '<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; background: #f8d7da; color: #721c24; font-size: 10px; padding: 5px; text-align: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="margin-top: 4px;">Arquivo não encontrado</span></div>';
                           }
                         }}
                       />
@@ -348,14 +418,14 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
                         marginBottom: '8px'
                       }}>
                         <div style={{ fontWeight: '600', fontSize: '15px', color: '#333' }}>
-                          {foto.foto || `Foto ${foto.id}`}
+                          {foto.obs || foto.foto || `Foto ${foto.id}`}
                         </div>
                       </div>
                       
                       <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.6' }}>
+                        <div><strong>Arquivo:</strong> {foto.foto || 'N/A'}</div>
                         <div><strong>Enviado em:</strong> {formatDate(foto.creation_date)}</div>
                         <div><strong>Por:</strong> {foto.creator_uri_user}</div>
-                        {foto.obs && <div><strong>Descrição:</strong> {foto.obs}</div>}
                       </div>
                     </div>
 

@@ -17,18 +17,16 @@ const storage = multer.diskStorage({
     cb(null, UPLOAD_DIR);
   },
   filename: (req, file, cb) => {
-    const organizacaoId = req.params.id;
-    const timestamp = Date.now();
-    const ext = path.extname(file.originalname);
+    const ext = path.extname(file.originalname).toLowerCase();
     const baseName = path.basename(file.originalname, ext)
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-      .replace(/[^a-zA-Z0-9]/g, '_')    // Substitui caracteres especiais
-      .replace(/_+/g, '_')               // Remove underscores duplicados
-      .replace(/^_|_$/g, '')             // Remove underscores no início/fim
+      .replace(/[\u0300-\u036f]/g, '')  // Remove acentos
+      .replace(/[^a-z0-9]/gi, '-')       // Substitui especiais por hífen
+      .replace(/-+/g, '-')                // Remove hífens duplicados
+      .replace(/^-|-$/g, '')              // Remove hífens início/fim
       .toLowerCase();
     
-    const cleanName = `foto_org${organizacaoId}_${baseName}_${timestamp}${ext}`;
+    const cleanName = `${baseName}${ext}`;
     cb(null, cleanName);
   }
 });
@@ -112,6 +110,7 @@ export const fotoController = {
       const foto = await fotoService.findById(fotoId);
 
       if (!foto || !foto.foto) {
+        console.log(`❌ Foto ${fotoId} não encontrada no banco`);
         return res.status(404).json({
           success: false,
           error: 'Foto não encontrada'
@@ -119,13 +118,17 @@ export const fotoController = {
       }
 
       const filePath = path.join(UPLOAD_DIR, foto.foto);
+      console.log(`🔍 Buscando arquivo: ${filePath}`);
 
       if (!fs.existsSync(filePath)) {
+        console.log(`❌ Arquivo não existe: ${filePath}`);
         return res.status(404).json({
           success: false,
           error: 'Arquivo não encontrado no servidor'
         });
       }
+
+      console.log(`✅ Arquivo encontrado: ${foto.foto}`);
 
       // Detectar tipo MIME baseado na extensão
       const ext = path.extname(foto.foto).toLowerCase();
@@ -171,7 +174,9 @@ export const fotoController = {
         });
       }
 
-      res.download(filePath, foto.foto);
+      // Garantir que arquivo tenha extensão no download
+      const nomeDownload = foto.foto.includes('.') ? foto.foto : `${foto.foto}.jpg`;
+      res.download(filePath, nomeDownload);
     } catch (error: any) {
       console.error('Erro ao fazer download de foto:', error);
       res.status(500).json({

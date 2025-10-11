@@ -6,6 +6,7 @@ import debugRoutes from './debugRoutes';
 import adminRoutes from './adminRoutes';
 import documentoRoutes from './documentoRoutes';
 import fotoRoutes from './fotoRoutes';
+import fotoSyncRoutes from './fotoSyncRoutes';
 
 const router = Router();
 
@@ -64,9 +65,10 @@ router.get('/', (req, res) => {
 // Registrar rotas dos módulos
 router.use('/', healthRoutes);  // Health routes no root
 router.use('/auth', authRoutes);
-router.use('/organizacoes', organizacaoRoutes);
+router.use('/organizacoes', fotoRoutes);  // Foto routes - ANTES de organizacaoRoutes (view é público)
+router.use('/', fotoSyncRoutes);  // Foto sync ODK routes - usa /organizacoes/:id/fotos/sync
+router.use('/organizacoes', organizacaoRoutes);  // Organizacao routes - usa auth global
 router.use('/', documentoRoutes);  // Documento routes - usa /organizacoes/:id/documentos
-router.use('/organizacoes', fotoRoutes);  // Foto routes - usa /organizacoes/:id/fotos
 router.use('/admin', adminRoutes);  // Admin routes - requer autenticação e papel admin
 router.use('/debug', debugRoutes);  // DEBUG routes - REMOVER EM PRODUÇÃO
 
