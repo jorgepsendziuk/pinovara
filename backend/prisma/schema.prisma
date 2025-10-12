@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["multiSchema"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -670,6 +669,26 @@ model organizacao {
   sim_nao_pj                                                         Int?
   sim_nao_socio                                                      Int?
   obs                                                                String?                         @db.VarChar(8192)
+  descricao                                                          String?                         @db.VarChar(8192)
+  eixos_trabalhados                                                  String?                         @db.VarChar
+  enfase                                                             Int?
+  enfase_outros                                                      String?                         @db.VarChar
+  metodologia                                                        String?                         @db.VarChar
+  orientacoes                                                        String?                         @db.VarChar
+  participantes_menos_10                                             Int?
+  assinatura_rep_legal                                               String?
+  uri                                                                String?                         @unique @map("_uri") @db.VarChar(80)
+  creator_uri_user                                                   String?                         @map("_creator_uri_user") @db.VarChar(80)
+  creation_date                                                      DateTime?                       @map("_creation_date") @db.Timestamp(6)
+  last_update_uri_user                                               String?                         @map("_last_update_uri_user") @db.VarChar(80)
+  last_update_date                                                   DateTime?                       @map("_last_update_date") @db.Timestamp(6)
+  model_version                                                      Int?                            @map("_model_version")
+  ui_version                                                         Int?                            @map("_ui_version")
+  is_complete                                                        Boolean?                        @map("_is_complete")
+  submission_date                                                    DateTime?                       @map("_submission_date") @db.Timestamp(6)
+  marked_as_complete_date                                            DateTime?                       @map("_marked_as_complete_date") @db.Timestamp(6)
+  complementado                                                      Boolean?                        @default(false)
+  enfase_organizacao_enfaseToenfase                                  enfase?                         @relation("organizacao_enfaseToenfase", fields: [enfase], references: [id], onDelete: NoAction, onUpdate: NoAction)
   estado_organizacao_estadoToestado                                  estado?                         @relation("organizacao_estadoToestado", fields: [estado], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gc_comercial_15_respostaToresposta            resposta?                       @relation("organizacao_gc_comercial_15_respostaToresposta", fields: [gc_comercial_15_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gc_comercial_16_respostaToresposta            resposta?                       @relation("organizacao_gc_comercial_16_respostaToresposta", fields: [gc_comercial_16_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -859,6 +878,7 @@ model organizacao {
   resposta_organizacao_is_residuos_17_respostaToresposta             resposta?                       @relation("organizacao_is_residuos_17_respostaToresposta", fields: [is_residuos_17_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_is_residuos_18_respostaToresposta             resposta?                       @relation("organizacao_is_residuos_18_respostaToresposta", fields: [is_residuos_18_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   municipio_ibge                                                     municipio_ibge?                 @relation(fields: [municipio], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sim_nao_organizacao_participantes_menos_10Tosim_nao                sim_nao?                        @relation("organizacao_participantes_menos_10Tosim_nao", fields: [participantes_menos_10], references: [id], onDelete: NoAction, onUpdate: NoAction)
   funcao                                                             funcao?                         @relation(fields: [representante_funcao], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sim_nao_organizacao_sim_nao_fileTosim_nao                          sim_nao?                        @relation("organizacao_sim_nao_fileTosim_nao", fields: [sim_nao_file], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sim_nao_organizacao_sim_nao_pjTosim_nao                            sim_nao?                        @relation("organizacao_sim_nao_pjTosim_nao", fields: [sim_nao_pj], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -868,6 +888,8 @@ model organizacao {
   organizacao_abrangencia_socio                                      organizacao_abrangencia_socio[]
   organizacao_arquivo                                                organizacao_arquivo[]
   organizacao_foto                                                   organizacao_foto[]
+  organizacao_indicador                                              organizacao_indicador[]
+  organizacao_participante                                           organizacao_participante[]
   organizacao_producao                                               organizacao_producao[]
 
   @@schema("pinovara")
@@ -956,11 +978,6 @@ model organizacao_foto {
 
   @@schema("pinovara")
 }
-
-/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
-// model organizacao_paa {
-// @@schema("pinovara")
-// }
 
 model organizacao_producao {
   id                   Int          @id @default(autoincrement())
@@ -1278,12 +1295,83 @@ model resposta {
 }
 
 model sim_nao {
-  id                                                Int           @id
-  descricao                                         String?       @db.VarChar
-  organizacao_organizacao_sim_nao_fileTosim_nao     organizacao[] @relation("organizacao_sim_nao_fileTosim_nao")
-  organizacao_organizacao_sim_nao_pjTosim_nao       organizacao[] @relation("organizacao_sim_nao_pjTosim_nao")
-  organizacao_organizacao_sim_nao_producaoTosim_nao organizacao[] @relation("organizacao_sim_nao_producaoTosim_nao")
-  organizacao_organizacao_sim_nao_socioTosim_nao    organizacao[] @relation("organizacao_sim_nao_socioTosim_nao")
+  id                                                      Int           @id
+  descricao                                               String?       @db.VarChar
+  organizacao_organizacao_participantes_menos_10Tosim_nao organizacao[] @relation("organizacao_participantes_menos_10Tosim_nao")
+  organizacao_organizacao_sim_nao_fileTosim_nao           organizacao[] @relation("organizacao_sim_nao_fileTosim_nao")
+  organizacao_organizacao_sim_nao_pjTosim_nao             organizacao[] @relation("organizacao_sim_nao_pjTosim_nao")
+  organizacao_organizacao_sim_nao_producaoTosim_nao       organizacao[] @relation("organizacao_sim_nao_producaoTosim_nao")
+  organizacao_organizacao_sim_nao_socioTosim_nao          organizacao[] @relation("organizacao_sim_nao_socioTosim_nao")
+
+  @@schema("pinovara_aux")
+}
+
+model organizacao_indicador {
+  id                   Int          @id @default(autoincrement())
+  uri                  String       @unique @map("_uri") @db.VarChar(80)
+  creator_uri_user     String       @map("_creator_uri_user") @db.VarChar(80)
+  creation_date        DateTime     @map("_creation_date") @db.Timestamp(6)
+  last_update_uri_user String?      @map("_last_update_uri_user") @db.VarChar(80)
+  last_update_date     DateTime     @map("_last_update_date") @db.Timestamp(6)
+  parent_auri          String?      @map("_parent_auri") @db.VarChar(80)
+  ordinal_number       Int          @map("_ordinal_number")
+  top_level_auri       String?      @map("_top_level_auri") @db.VarChar(80)
+  valor                Int?
+  id_organizacao       Int?
+  organizacao          organizacao? @relation(fields: [id_organizacao], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  indicador            indicador?   @relation(fields: [valor], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("pinovara")
+}
+
+/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
+// model organizacao_paa {
+// @@schema("pinovara")
+// }
+
+model organizacao_participante {
+  id                                                Int          @id @default(autoincrement())
+  uri                                               String       @unique @map("_uri") @db.VarChar(80)
+  creator_uri_user                                  String       @map("_creator_uri_user") @db.VarChar(80)
+  creation_date                                     DateTime     @map("_creation_date") @db.Timestamp(6)
+  last_update_uri_user                              String?      @map("_last_update_uri_user") @db.VarChar(80)
+  last_update_date                                  DateTime     @map("_last_update_date") @db.Timestamp(6)
+  parent_auri                                       String?      @map("_parent_auri") @db.VarChar(80)
+  ordinal_number                                    Int          @map("_ordinal_number")
+  top_level_auri                                    String?      @map("_top_level_auri") @db.VarChar(80)
+  nome                                              String?      @db.VarChar
+  cpf                                               String?      @db.VarChar(11)
+  telefone                                          String?      @db.VarChar
+  relacao                                           Int?
+  relacao_outros                                    String?      @db.VarChar
+  assinatura                                        String?      @db.VarChar
+  id_organizacao                                    Int?
+  organizacao                                       organizacao? @relation(fields: [id_organizacao], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  relacao_organizacao_participante_relacaoTorelacao relacao?     @relation("organizacao_participante_relacaoTorelacao", fields: [relacao], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("pinovara")
+}
+
+model enfase {
+  id                                     Int           @id
+  descricao                              String?       @db.VarChar
+  organizacao_organizacao_enfaseToenfase organizacao[] @relation("organizacao_enfaseToenfase")
+
+  @@schema("pinovara_aux")
+}
+
+model indicador {
+  id                    Int                     @id
+  descricao             String?                 @db.VarChar
+  organizacao_indicador organizacao_indicador[]
+
+  @@schema("pinovara_aux")
+}
+
+model relacao {
+  id                                                                 Int                        @id
+  descricao                                                          String?                    @db.VarChar
+  organizacao_participante_organizacao_participante_relacaoTorelacao organizacao_participante[] @relation("organizacao_participante_relacaoTorelacao")
 
   @@schema("pinovara_aux")
 }

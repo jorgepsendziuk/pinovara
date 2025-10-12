@@ -3,17 +3,25 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0 || >=22.12.0"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:prod": "npm ci && vite build",
+    "build": "node scripts/generate-version.cjs && vite build",
+    "build:prod": "npm ci && node scripts/generate-version.cjs && vite build",
+    "version:generate": "node scripts/generate-version.cjs",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/jspdf": "^1.3.3",
     "@types/leaflet": "^1.9.20",
     "axios": "^1.6.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.3",
     "leaflet": "^1.9.4",
+    "lucide-react": "^0.544.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",

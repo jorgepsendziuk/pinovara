@@ -22,6 +22,8 @@ interface AuthContextData {
   token: string | null;
   loading: boolean;
   isAuthenticated: boolean;
+  isImpersonating: boolean;
+  originalUser: AuthUser | null;
 
   // Ações
   login: (data: LoginData) => Promise<void>;
@@ -32,6 +34,7 @@ interface AuthContextData {
   hasPermission: (moduleName: string, roleName?: string) => boolean;
   hasAnyPermission: (permissions: { module: string; role?: string }[]) => boolean;
   refreshUser: () => Promise<void>;
+  stopImpersonation: () => void;
 }
 
 // ========== CONTEXTO ==========
@@ -48,6 +51,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isImpersonating, setIsImpersonating] = useState(false);
+  const [originalUser, setOriginalUser] = useState<AuthUser | null>(null);
 
   // ========== UTILITÁRIOS ==========
 
@@ -111,15 +116,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Fazer logout
    */
   const logout = (): void => {
+    // Se está personificando, voltar ao usuário original
+    if (isImpersonating && originalUser) {
+      stopImpersonation();
+      return;
+    }
+
     // Limpar estado
     setUser(null);
     setToken(null);
+    setIsImpersonating(false);
+    setOriginalUser(null);
 
     // Limpar localStorage
     localStorage.removeItem('@pinovara:token');
     localStorage.removeItem('@pinovara:user');
+    localStorage.removeItem('@pinovara:originalUser');
 
     console.log('👋 Logout realizado');
+  };
+
+  const stopImpersonation = (): void => {
+    if (!originalUser) return;
+
+    // Restaurar usuário original
+    setUser(originalUser);
+    setIsImpersonating(false);
+    setOriginalUser(null);
+
+    // Restaurar token original
+    const originalToken = localStorage.getItem('@pinovara:token');
+    if (originalToken) {
+      setToken(originalToken);
+      localStorage.setItem('@pinovara:user', JSON.stringify(originalUser));
+    }
+
+    // Limpar dados de personificação
+    localStorage.removeItem('@pinovara:originalUser');
+
+    console.log('🔄 Personificação encerrada, retornando ao usuário original');
   };
 
   /**
@@ -175,10 +210,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const storedToken = localStorage.getItem('@pinovara:token');
         const storedUser = localStorage.getItem('@pinovara:user');
+        const storedOriginalUser = localStorage.getItem('@pinovara:originalUser');
 
         if (storedToken && storedUser) {
           setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+
+          // Verificar se está em modo de personificação
+          if (parsedUser.isImpersonation && storedOriginalUser) {
+            setIsImpersonating(true);
+            setOriginalUser(JSON.parse(storedOriginalUser));
+          }
 
           // Verificar se token ainda é válido
           await refreshUser();
@@ -231,6 +274,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     token,
     loading,
     isAuthenticated,
+    isImpersonating,
+    originalUser,
 
     // Ações
     login,
@@ -241,6 +286,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     hasPermission: checkPermission,
     hasAnyPermission: checkAnyPermission,
     refreshUser,
+    stopImpersonation,
   };
 
   return (

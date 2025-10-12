@@ -535,6 +535,20 @@
   padding: 0;
 }
 
+.card-header-with-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.card-header-with-actions h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -570,6 +584,21 @@
 }
 
 /* ========== LISTA DE ORGANIZAÇÕES ========== */
+
+.lista-content {
+  padding: 0;
+  margin: 0;
+}
+
+.lista-body {
+  padding: 0;
+  margin: 0;
+}
+
+.organizacoes-datagrid-container {
+  padding: 0;
+  margin: 0;
+}
 
 .table-container {
   overflow-x: auto;

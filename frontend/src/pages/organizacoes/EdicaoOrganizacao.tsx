@@ -4,9 +4,26 @@ import { useOrganizacaoData } from '../../hooks/useOrganizacaoData';
 import { useRepresentanteData } from '../../hooks/useRepresentanteData';
 import { useDiagnosticoData } from '../../hooks/useDiagnosticoData';
 import { DadosBasicos } from '../../components/organizacoes/DadosBasicos';
+import { EnderecoLocalizacao } from '../../components/organizacoes/EnderecoLocalizacao';
 import { DadosRepresentanteComponent } from '../../components/organizacoes/DadosRepresentante';
-import { CaracteristicasOrganizacao } from '../../components/organizacoes/CaracteristicasOrganizacao';
 import { DiagnosticoArea } from '../../components/organizacoes/DiagnosticoArea';
+import { PlanoGestao } from '../../components/organizacoes/PlanoGestao';
+import { UploadDocumentos } from '../../components/organizacoes/UploadDocumentos';
+import { UploadFotos } from '../../components/organizacoes/UploadFotos';
+import { DadosColeta } from '../../components/organizacoes/DadosColeta';
+import {
+  Edit,
+  Search,
+  Building2,
+  Users,
+  XCircle,
+  Loader2,
+  Save,
+  Target,
+  ChevronsDown,
+  ChevronsUp,
+  FileText
+} from 'lucide-react';
 
 interface EdicaoOrganizacaoProps {
   organizacaoId: number;
@@ -17,9 +34,10 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   
   // Estados principais
   const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('organizacao');
-  const [accordionAberto, setAccordionAberto] = useState<string | null>('dados-basicos');
+  const [accordionsAbertos, setAccordionsAbertos] = useState<string[]>([]);
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [gerandoPDF, setGerandoPDF] = useState(false);
 
   // Hooks customizados
   const {
@@ -66,7 +84,63 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
 
   // Handlers
   const toggleAccordion = (accordion: string) => {
-    setAccordionAberto(accordionAberto === accordion ? null : accordion);
+    setAccordionsAbertos(prev => 
+      prev.includes(accordion) 
+        ? prev.filter(a => a !== accordion)
+        : [...prev, accordion]
+    );
+  };
+
+  const expandirTodos = () => {
+    // Abre todos os accordions da aba Organização
+    setAccordionsAbertos([
+      'dados-basicos',
+      'endereco-localizacao',
+      'arquivos',
+      'fotos',
+      'representante',
+      'dados-coleta'
+    ]);
+  };
+
+  const colapsarTodos = () => {
+    // Fecha todos os accordions
+    setAccordionsAbertos([]);
+  };
+
+  const handleGerarRelatorio = async () => {
+    if (!organizacao) return;
+
+    setGerandoPDF(true);
+    try {
+      // Chamar API para gerar PDF
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/relatorio/pdf`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('@pinovara:token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao gerar relatório');
+      }
+
+      // Baixar PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `relatorio_${organizacao.nome?.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      alert('✅ Relatório gerado com sucesso!');
+    } catch (error: any) {
+      alert(`❌ Erro ao gerar relatório: ${error.message}`);
+    } finally {
+      setGerandoPDF(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -121,7 +195,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         throw new Error('Erro ao salvar organização');
       }
 
-      setSuccess('✅ Organização salva com sucesso!');
+      setSuccess('Organização salva com sucesso!');
       
       setTimeout(() => {
         setSuccess(null);
@@ -205,27 +279,125 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   // Renderização das abas
   const renderAbaOrganizacao = () => (
     <div className="aba-content">
+      {/* Botões de Ação */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        marginBottom: '15px',
+        gap: '10px'
+      }}>
+        {/* Botão Gerar Relatório */}
+        <button
+          onClick={handleGerarRelatorio}
+          disabled={gerandoPDF}
+          style={{
+            padding: '8px 16px',
+            background: gerandoPDF ? '#6c757d' : '#056839',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: gerandoPDF ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '14px',
+            fontWeight: '500',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseOver={(e) => !gerandoPDF && (e.currentTarget.style.background = '#045028')}
+          onMouseOut={(e) => !gerandoPDF && (e.currentTarget.style.background = '#056839')}
+        >
+          <FileText size={16} />
+          {gerandoPDF ? 'Gerando PDF...' : 'Gerar Relatório'}
+        </button>
+
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={colapsarTodos}
+            style={{
+              padding: '8px 16px',
+              background: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#5a6268'}
+            onMouseOut={(e) => e.currentTarget.style.background = '#6c757d'}
+          >
+            <ChevronsUp size={16} />
+            Recolher Todos
+          </button>
+          <button
+            onClick={expandirTodos}
+            style={{
+              padding: '8px 16px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <ChevronsDown size={16} />
+            Expandir Todos
+          </button>
+        </div>
+      </div>
+
       <div className="accordions-container">
         {organizacao && (
           <>
             <DadosBasicos
               organizacao={organizacao}
               onUpdate={updateOrganizacao}
-              accordionAberto={accordionAberto}
+              accordionAberto={accordionsAbertos.includes('dados-basicos') ? 'dados-basicos' : null}
+              onToggleAccordion={toggleAccordion}
+            />
+            
+            <EnderecoLocalizacao
+              organizacao={organizacao}
+              onUpdate={updateOrganizacao}
+              accordionAberto={accordionsAbertos.includes('endereco-localizacao') ? 'endereco-localizacao' : null}
+              onToggleAccordion={toggleAccordion}
+            />
+            
+            <UploadDocumentos
+              organizacaoId={organizacaoId}
+              accordionAberto={accordionsAbertos.includes('arquivos') ? 'arquivos' : null}
+              onToggleAccordion={toggleAccordion}
+            />
+            
+            <UploadFotos
+              organizacaoId={organizacaoId}
+              accordionAberto={accordionsAbertos.includes('fotos') ? 'fotos' : null}
               onToggleAccordion={toggleAccordion}
             />
             
             <DadosRepresentanteComponent
               dados={dadosRepresentante}
               onUpdate={updateRepresentante}
-              accordionAberto={accordionAberto}
+              accordionAberto={accordionsAbertos.includes('representante') ? 'representante' : null}
               onToggleAccordion={toggleAccordion}
             />
             
-            <CaracteristicasOrganizacao
+            <DadosColeta
               organizacao={organizacao}
-              onUpdate={updateOrganizacao}
-              accordionAberto={accordionAberto}
+              accordionAberto={accordionsAbertos.includes('dados-coleta') ? 'dados-coleta' : null}
               onToggleAccordion={toggleAccordion}
             />
           </>
@@ -242,7 +414,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         }}>
         <DiagnosticoArea
           titulo="ÁREA GERENCIAL: GOVERNANÇA ORGANIZACIONAL"
-          icone="🏛️"
+          icone={<Building2 size={16} />}
           area="governanca-main"
           dados={governancaOrganizacional}
           perguntas={gruposGovernanca}
@@ -253,7 +425,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
 
         <DiagnosticoArea
           titulo="ÁREA GERENCIAL: GESTÃO DE PESSOAS"
-          icone="👥"
+          icone={<Users size={16} />}
           area="pessoas-main"
           dados={gestaoPessoas}
           perguntas={gruposGestaoPessoas}
@@ -276,10 +448,24 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     </div>
   );
 
+  const renderAbaPlanoGestao = () => (
+    <div className="aba-content" style={{ width: '100%' }}>
+      <div className="plano-gestao-wrapper" style={{ 
+        width: '100%',
+        maxWidth: 'none'
+      }}>
+        <PlanoGestao onUpdate={(dados) => console.log('Dados atualizados:', dados)} />
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="loading-container">
-        <div className="loading-spinner">⏳ Carregando...</div>
+        <div className="loading-spinner">
+          <Loader2 size={16} className="spinning" style={{marginRight: '0.5rem'}} />
+          Carregando...
+        </div>
       </div>
     );
   }
@@ -287,7 +473,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   if (!organizacao) {
     return (
       <div className="error-container">
-        <div className="error-message">❌ Organização não encontrada</div>
+        <div className="error-message"><XCircle size={16} style={{marginRight: '0.5rem'}} /> Organização não encontrada</div>
         <button onClick={() => onNavigate('lista')} className="btn btn-primary">
           ← Voltar à Lista
         </button>
@@ -312,8 +498,10 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             ← Voltar
           </button>
         <div className="header-info">
-            <h1>✏️ Editando Organização</h1>
-            <h2>{organizacao.nome || 'Nome não informado'}</h2>
+            <h1 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center' }}>
+              <Edit size={20} style={{marginRight: '0.5rem'}} /> 
+              {organizacao.nome || 'Nome não informado'}
+            </h1>
           </div>
         </div>
       </div>
@@ -335,39 +523,83 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
 
       <div className="edicao-body">
         {/* Tabs Navigation */}
-        <div className="tabs-container">
-          <div className="tabs">
-            <button
-              className={`tab-button ${abaAtiva === 'organizacao' ? 'active' : ''}`}
-              onClick={() => setAbaAtiva('organizacao')}
-            >
-              🏢 Organização
-            </button>
-            <button
-              className={`tab-button ${abaAtiva === 'diagnostico' ? 'active' : ''}`}
-              onClick={() => setAbaAtiva('diagnostico')}
-            >
-              🔍 Diagnóstico
-            </button>
-          </div>
+        <div className="tabs-navigation">
+          <button
+            className={`tab-button ${abaAtiva === 'organizacao' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('organizacao')}
+          >
+            <Building2 size={14} style={{marginRight: '0.25rem'}} /> Organização
+          </button>
+          <button
+            className={`tab-button ${abaAtiva === 'diagnostico' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('diagnostico')}
+          >
+            <Search size={14} style={{marginRight: '0.25rem'}} /> Diagnóstico
+          </button>
+          <button
+            className={`tab-button ${abaAtiva === 'planoGestao' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('planoGestao')}
+          >
+            <Target size={14} style={{marginRight: '0.25rem'}} /> Plano de Gestão
+          </button>
         </div>
 
         {/* Tab Content */}
-        <div className="tab-content-container" style={{ 
-          width: '100%',
-          maxWidth: 'none'
-        }}>
+        <div className="tab-content">
           {abaAtiva === 'organizacao' && renderAbaOrganizacao()}
           {abaAtiva === 'diagnostico' && renderAbaDiagnostico()}
+          {abaAtiva === 'planoGestao' && renderAbaPlanoGestao()}
 
-          {/* Form Actions */}
-          <div className="form-actions">
+          {/* Form Actions - Botão Flutuante */}
+          <div style={{
+            position: 'fixed',
+            bottom: '30px',
+            right: '30px',
+            zIndex: 1000
+          }}>
             <button
               onClick={handleSubmit}
               disabled={saving}
-              className="btn btn-success btn-save"
+              style={{
+                padding: '14px 28px',
+                background: saving ? '#6c757d' : 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50px',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                fontSize: '16px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 15px rgba(40, 167, 69, 0.4)',
+                transition: 'all 0.3s ease',
+                transform: saving ? 'scale(0.95)' : 'scale(1)'
+              }}
+              onMouseOver={(e) => {
+                if (!saving) {
+                  e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(40, 167, 69, 0.5)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!saving) {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(40, 167, 69, 0.4)';
+                }
+              }}
             >
-              {saving ? '💾 Salvando...' : '💾 Salvar Alterações'}
+                {saving ? (
+                  <>
+                    <Loader2 size={18} className="spinning" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    Salvar Alterações
+                  </>
+                )}
             </button>
           </div>
         </div>

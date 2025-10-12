@@ -133,10 +133,10 @@ install_docker_compose() {
 # Função para instalar Node.js (para scripts auxiliares)
 install_nodejs() {
     log_step "Instalando Node.js..."
-    
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
     apt-get install -y nodejs
-    
+
     log_success "Node.js instalado ($(node --version))"
 }
 

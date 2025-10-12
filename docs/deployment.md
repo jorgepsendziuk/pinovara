@@ -214,22 +214,31 @@ git push heroku main
 ## ⚙️ Configuração de Servidor Web
 
 ### Nginx (Recomendado)
+
+⚠️ **IMPORTANTE:** Esta configuração é crítica para o React Router funcionar corretamente!
+
 ```nginx
 # /etc/nginx/sites-available/pinovara
 server {
     listen 80;
+    listen 443 ssl http2;
     server_name seu-dominio.com;
 
-    # Frontend (servir arquivos estáticos)
-    location / {
-        root /var/www/html;
-        index index.html;
-        try_files $uri $uri/ /index.html;
-    }
+    root /var/www/html;
+    index index.html;
 
-    # Backend API
-    location /api/ {
-        proxy_pass http://localhost:3001/;
+    # SSL (se usar HTTPS)
+    # ssl_certificate /etc/letsencrypt/live/seu-dominio.com/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/seu-dominio.com/privkey.pem;
+
+    # ===========================================
+    # ROTAS DE API - PROXY PARA BACKEND
+    # ===========================================
+    # IMPORTANTE: Estas rotas DEVEM vir ANTES do location /
+
+    # Auth API
+    location /auth/ {
+        proxy_pass http://localhost:3001/auth/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -240,10 +249,81 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 
+    # API Organizações - APENAS chamadas com ID numérico
+    location ~ ^/organizacoes/(\d+)(/|$) {
+        proxy_pass http://localhost:3001$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # API Estados e Municípios
+    location ~ ^/organizacoes/(estados|municipios) {
+        proxy_pass http://localhost:3001$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    # Admin API
+    location /admin/ {
+        proxy_pass http://localhost:3001/admin/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    # Health Check
+    location /health {
+        proxy_pass http://localhost:3001/health;
+        proxy_set_header Host $host;
+    }
+
+    # API Geral (fallback)
+    location /api/ {
+        proxy_pass http://localhost:3001/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    # ===========================================
+    # FRONTEND - REACT SPA
+    # ===========================================
+    # IMPORTANTE: Este location / deve ser o ÚLTIMO!
+
+    # Arquivos estáticos com cache
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Todas as outras rotas - servir index.html (React Router)
+    # Isso permite que /organizacoes/lista, /organizacoes/cadastro, etc
+    # funcionem corretamente quando o usuário dá refresh
+    location / {
+        try_files $uri $uri/ /index.html;
+        
+        # Sem cache no index.html
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Expires "0";
+    }
+
     # Logs
     access_log /var/log/nginx/pinovara_access.log;
     error_log /var/log/nginx/pinovara_error.log;
 }
+```
+
+### 🚨 **Pontos Críticos:**
+
+1. **Ordem importa!** As rotas de API devem vir ANTES do `location /`
+2. **location /** deve ser o ÚLTIMO para não capturar rotas de API
+3. **try_files $uri $uri/ /index.html** é essencial para React Router funcionar
+4. Rotas de API usam regex para diferenciar `/organizacoes/lista` (página) de `/organizacoes/123` (API)
+
+### 📖 **Documentação Adicional:**
+
+Veja também: `docs/nginx-spa-fix.md` para detalhes completos sobre o problema e solução.
 ```
 
 ### Apache

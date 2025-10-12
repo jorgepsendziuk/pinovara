@@ -27,34 +27,101 @@ class OrganizacaoService {
    * Listar organizações com filtros e paginação
    */
   async list(filters: OrganizacaoFilters = {}): Promise<OrganizacaoListResponse> {
-    const { page = 1, limit = 10 } = filters;
+    const { page = 1, limit = 10, nome, cnpj, estado, municipio, id_tecnico } = filters;
 
-    // Buscar dados reais do banco - começando simples
-    const total = await prisma.organizacao.count();
+    // Construir condições de filtro
+    const whereConditions: any = {
+      // Não mostrar organizações removidas por padrão
+      removido: { not: true }
+    };
+
+    // Aplicar filtros específicos
+    if (nome) {
+      whereConditions.nome = {
+        contains: nome,
+        mode: 'insensitive'
+      };
+    }
+
+    if (cnpj) {
+      whereConditions.cnpj = {
+        contains: cnpj,
+        mode: 'insensitive'
+      };
+    }
+
+    if (estado) {
+      whereConditions.estado = estado;
+    }
+
+    if (municipio) {
+      whereConditions.municipio = municipio;
+    }
+
+    // Filtro por técnico (importante para a role de técnico)
+    if (id_tecnico !== undefined) {
+      whereConditions.id_tecnico = id_tecnico;
+    }
+
+    // Buscar dados reais do banco
+    const total = await prisma.organizacao.count({ where: whereConditions });
     const skip = (page - 1) * limit;
     const totalPaginas = Math.ceil(total / limit);
 
-    const organizacoes = await prisma.organizacao.findMany({
-      select: {
-        id: true,
-        nome: true,
-        cnpj: true,
-        telefone: true,
-        email: true,
-        estado: true,
-        municipio: true,
-        data_visita: true,
-        data_fundacao: true,
-        gps_lat: true,
-        gps_lng: true,
-        removido: true
-      },
-      orderBy: {
-        id: 'asc'
-      },
-      take: limit,
-      skip
-    });
+    // Buscar organizações com nomes de estado e município
+    let sqlQuery = `
+      SELECT 
+        o.id,
+        o.nome,
+        o.cnpj,
+        o.telefone,
+        o.email,
+        o.estado,
+        e.descricao as estado_nome,
+        o.municipio,
+        m.descricao as municipio_nome,
+        o.data_visita,
+        o.data_fundacao,
+        o.gps_lat,
+        o.gps_lng,
+        o.removido,
+        o.meta_instance_id
+      FROM pinovara.organizacao o
+      LEFT JOIN pinovara_aux.estado e ON o.estado = e.id
+      LEFT JOIN pinovara_aux.municipio_ibge m ON o.municipio = m.id
+      WHERE o.removido = false
+    `;
+
+    // Aplicar filtros de busca
+    const conditions: string[] = [];
+    
+    if (nome) {
+      conditions.push(`o.nome ILIKE '%${nome}%'`);
+    }
+    
+    if (cnpj) {
+      conditions.push(`o.cnpj ILIKE '%${cnpj}%'`);
+    }
+    
+    if (estado) {
+      conditions.push(`o.estado = ${estado}`);
+    }
+    
+    if (municipio) {
+      conditions.push(`o.municipio = ${municipio}`);
+    }
+    
+    if (id_tecnico !== undefined) {
+      conditions.push(`o.id_tecnico = ${id_tecnico}`);
+    }
+    
+    if (conditions.length > 0) {
+      sqlQuery += ` AND (${conditions.join(' OR ')})`;
+    }
+
+    sqlQuery += ` ORDER BY o.id ASC LIMIT ${limit} OFFSET ${skip}`;
+
+    const organizacoes = await prisma.$queryRawUnsafe<any[]>(sqlQuery);
 
     return {
       organizacoes,
@@ -180,6 +247,21 @@ class OrganizacaoService {
           go_educacao_27_resposta: true, go_educacao_27_comentario: true, go_educacao_27_proposta: true,
           go_educacao_28_resposta: true, go_educacao_28_comentario: true, go_educacao_28_proposta: true,
           
+          // Campos ODK Metadata
+          meta_instance_id: true,
+          meta_instance_name: true,
+          uri: true,
+          creator_uri_user: true,
+          creation_date: true,
+          last_update_uri_user: true,
+          last_update_date: true,
+          model_version: true,
+          ui_version: true,
+          is_complete: true,
+          submission_date: true,
+          marked_as_complete_date: true,
+          complementado: true,
+          
           // TODO: Adicionar GP, GF, GC, GPP, GS, GI incrementalmente
           // Por enquanto, focando nos campos que já estavam funcionando
         }
@@ -286,13 +368,154 @@ class OrganizacaoService {
       where: { removido: false }
     });
 
+    // Organizações com GPS
+    const comGps = await prisma.organizacao.count({
+      where: {
+        removido: false,
+        gps_lat: { not: null },
+        gps_lng: { not: null }
+      }
+    });
+
+    // Organizações sem GPS
+    const semGps = total - comGps;
+
+    // Estatísticas por estado
+    const porEstado = await prisma.organizacao.groupBy({
+      by: ['estado'],
+      where: { removido: false },
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 10
+    });
+
+    // Organizações recentes (últimas 10)
+    const organizacoesRecentes = await prisma.organizacao.findMany({
+      where: { removido: false },
+      select: {
+        id: true,
+        nome: true,
+        data_visita: true,
+        estado: true,
+        gps_lat: true,
+        gps_lng: true
+      },
+      orderBy: { data_visita: 'desc' },
+      take: 10
+    });
+
+    // Estatísticas por estado com nomes
+    const porEstadoFormatado = await Promise.all(
+      porEstado.map(async (item) => ({
+        estado: await this.getEstadoNome(item.estado) || `Estado ${item.estado}`,
+        total: item._count.id
+      }))
+    );
+
+    // Organizações com GPS para o mapa
+    const organizacoesComGps = await prisma.organizacao.findMany({
+      where: {
+        removido: false,
+        gps_lat: { not: null },
+        gps_lng: { not: null }
+      },
+      select: {
+        id: true,
+        nome: true,
+        gps_lat: true,
+        gps_lng: true,
+        estado: true
+      },
+      take: 100 // Limitar para performance
+    });
+
     return {
       total,
-      comQuestionario: Math.floor(total * 0.3),
+      comGps,
+      semGps,
+      comQuestionario: Math.floor(total * 0.3), // Mantém cálculo aproximado por enquanto
       semQuestionario: Math.floor(total * 0.7),
-      porEstado: [],
-      organizacoesRecentes: []
+      porEstado: porEstadoFormatado,
+      organizacoesRecentes: organizacoesRecentes.map(org => ({
+        id: org.id,
+        nome: org.nome || 'Nome não informado',
+        dataVisita: org.data_visita,
+        estado: this.getEstadoNome(org.estado) || 'Não informado',
+        temGps: !!(org.gps_lat && org.gps_lng)
+      })),
+      organizacoesComGps: organizacoesComGps.map(org => ({
+        id: org.id,
+        nome: org.nome || 'Nome não informado',
+        lat: org.gps_lat,
+        lng: org.gps_lng,
+        estado: this.getEstadoNome(org.estado) || 'Não informado'
+      }))
     };
+  }
+
+  /**
+   * Buscar municípios (filtrados por estado opcionalmente)
+   */
+  async getMunicipios(estadoId?: number) {
+    try {
+      let municipios;
+
+      if (estadoId) {
+        // Buscar municípios de um estado específico
+        municipios = await prisma.$queryRaw`
+          SELECT
+            id,
+            descricao as nome,
+            id_estado as "estadoId"
+          FROM pinovara_aux.municipio_ibge
+          WHERE id_estado = ${estadoId}
+          ORDER BY descricao
+        `;
+      } else {
+        // Buscar todos os municípios
+        municipios = await prisma.$queryRaw`
+          SELECT
+            id,
+            descricao as nome,
+            id_estado as "estadoId"
+          FROM pinovara_aux.municipio_ibge
+          ORDER BY descricao
+        `;
+      }
+
+      return municipios;
+    } catch (error) {
+      console.error('Erro ao buscar municípios:', error);
+      throw new ApiError({
+        message: 'Erro ao buscar municípios',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
+   * Buscar estados
+   */
+  async getEstados() {
+    try {
+      const estados = await prisma.$queryRaw`
+        SELECT
+          id,
+          descricao as nome
+        FROM pinovara_aux.estado
+        ORDER BY descricao
+      `;
+
+      return estados;
+    } catch (error) {
+      console.error('Erro ao buscar estados:', error);
+      throw new ApiError({
+        message: 'Erro ao buscar estados',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
   }
 
   /**

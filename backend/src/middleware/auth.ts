@@ -61,9 +61,20 @@ export const authenticateToken = async (
       email: string;
     };
 
-    // Buscar usuário completo no banco
+    // Buscar usuário completo no banco com roles
     const user = await prisma.users.findUnique({
-      where: { id: decoded.userId }
+      where: { id: decoded.userId },
+      include: {
+        user_roles: {
+          include: {
+            roles: {
+              include: {
+                modules: true
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!user || !user.active) {
@@ -77,12 +88,22 @@ export const authenticateToken = async (
       return;
     }
 
+    // Formatar roles para o formato esperado
+    const roles = user.user_roles?.map((ur: any) => ({
+      id: ur.roles.id,
+      name: ur.roles.name,
+      module: {
+        id: ur.roles.modules.id,
+        name: ur.roles.modules.name
+      }
+    })) || [];
+
     // Adicionar dados do usuário à requisição
     req.user = {
       id: user.id,
       email: user.email,
       name: user.name,
-        roles: [] // Temporariamente vazio
+      roles: roles
     };
 
     next();
@@ -175,15 +196,36 @@ export const optionalAuth = async (
     };
 
     const user = await prisma.users.findUnique({
-      where: { id: decoded.userId }
+      where: { id: decoded.userId },
+      include: {
+        user_roles: {
+          include: {
+            roles: {
+              include: {
+                modules: true
+              }
+            }
+          }
+        }
+      }
     });
 
     if (user && user.active) {
+      // Formatar roles para o formato esperado
+      const roles = user.user_roles?.map((ur: any) => ({
+        id: ur.roles.id,
+        name: ur.roles.name,
+        module: {
+          id: ur.roles.modules.id,
+          name: ur.roles.modules.name
+        }
+      })) || [];
+
       req.user = {
         id: user.id,
         email: user.email,
         name: user.name,
-        roles: [] // Temporariamente vazio
+        roles: roles
       };
     }
 

@@ -69,6 +69,14 @@ class AuthService {
     const token = this.generateToken({ userId: user.id, email: user.email });
     const expiresIn = 7 * 24 * 60 * 60; // 7 dias
 
+    // Debug: Log roles loading for olivanrabelo@gmail.com
+    if (user.email === 'olivanrabelo@gmail.com') {
+      console.log('🔍 [DEBUG] Loading roles for olivanrabelo@gmail.com:');
+      console.log('- user.user_roles exists:', !!user.user_roles);
+      console.log('- user.user_roles length:', user.user_roles?.length || 0);
+      console.log('- user.user_roles data:', JSON.stringify(user.user_roles, null, 2));
+    }
+
     // Formatar resposta
     const userWithRoles: UserWithRoles = {
       id: user.id,
@@ -95,6 +103,11 @@ class AuthService {
         }
       })) : []
     };
+
+    // Debug: Log final roles count
+    if (user.email === 'olivanrabelo@gmail.com') {
+      console.log('🎭 [DEBUG] Final roles count for olivanrabelo@gmail.com:', userWithRoles.roles.length);
+    }
 
     return {
       user: userWithRoles,

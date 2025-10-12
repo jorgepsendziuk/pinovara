@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import Sidebar from '../../components/Sidebar';
+import VersionIndicator from '../../components/VersionIndicator';
 import Profile from '../Profile';
 import './PerfilModule.css';
 
@@ -25,6 +26,9 @@ function PerfilModule() {
 
   return (
     <div className="dashboard-layout">
+      {/* Indicador de versão discreto */}
+      <VersionIndicator position="top-right" theme="auto" />
+      
       <Sidebar />
 
       <div className="main-content">

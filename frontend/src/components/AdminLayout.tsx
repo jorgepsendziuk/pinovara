@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './Sidebar';
+import VersionIndicator from './VersionIndicator';
 
 function AdminLayout() {
   const { user, hasPermission } = useAuth();
@@ -30,6 +31,9 @@ function AdminLayout() {
 
   return (
     <div className="dashboard-layout">
+      {/* Indicador de versão discreto */}
+      <VersionIndicator position="top-right" theme="auto" />
+      
       <Sidebar />
 
       <div className="main-content">

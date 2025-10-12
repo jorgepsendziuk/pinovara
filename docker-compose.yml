@@ -1,0 +1,92 @@
+# ================================
+# PINOVARA - Docker Compose
+# ================================
+# Configuração para desenvolvimento e produção
+
+version: '3.8'
+
+services:
+  # ========== BACKEND ==========
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pinovara-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      # Database (configurar conforme seu ambiente)
+      - DATABASE_URL=${DATABASE_URL}
+      # JWT
+      - JWT_SECRET=${JWT_SECRET:-pinovara-secret-key-change-in-production}
+      # API
+      - API_TIMEOUT=${API_TIMEOUT:-10000}
+    volumes:
+      # Montar arquivos de log (opcional)
+      - ./backend/logs:/app/logs
+    networks:
+      - pinovara-network
+    # depends_on removido - usa banco remoto
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ========== BANCO REMOTO ==========
+  # PostgreSQL remoto já configurado via DATABASE_URL
+  # Não precisa de container local
+
+  # ========== NGINX (Proxy Reverso) ==========
+  nginx:
+    image: nginx:alpine
+    container_name: pinovara-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./frontend/dist:/var/www/html:ro
+    networks:
+      - pinovara-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ========== REDIS (Cache/Sessões - Opcional) ==========
+  redis:
+    image: redis:7-alpine
+    container_name: pinovara-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - pinovara-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+# ========== VOLUMES ==========
+volumes:
+  redis_data:
+    driver: local
+
+# ========== NETWORKS ==========
+networks:
+  pinovara-network:
+    driver: bridge

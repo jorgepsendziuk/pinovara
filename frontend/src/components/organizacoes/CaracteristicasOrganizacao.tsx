@@ -1,5 +1,6 @@
 import React from 'react';
 import { Organizacao } from '../../types/organizacao';
+import { BarChart, Users, Building2, ChevronDown, Coffee } from 'lucide-react';
 
 interface CaracteristicasOrganizacaoProps {
   organizacao: Organizacao;
@@ -20,10 +21,16 @@ export const CaracteristicasOrganizacao: React.FC<CaracteristicasOrganizacaoProp
         className="accordion-header"
         onClick={() => onToggleAccordion('caracteristicas')}
       >
-        <h3>📊 Características da Organização</h3>
-        <span className={`accordion-icon ${accordionAberto === 'caracteristicas' ? 'open' : ''}`}>
-          ▼
-        </span>
+        <h3><BarChart size={18} style={{marginRight: '0.5rem'}} /> Características da Organização</h3>
+        <ChevronDown
+          size={16}
+          className={`accordion-icon ${accordionAberto === 'caracteristicas' ? 'open' : ''}`}
+          style={{
+            marginLeft: '0.5rem',
+            transition: 'transform 0.2s ease',
+            transform: accordionAberto === 'caracteristicas' ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}
+        />
       </button>
       
       <div className={`accordion-content ${accordionAberto === 'caracteristicas' ? 'open' : ''}`}>
@@ -31,7 +38,7 @@ export const CaracteristicasOrganizacao: React.FC<CaracteristicasOrganizacaoProp
           
           {/* Seção: Dados Gerais dos Sócios */}
           <div className="subsection">
-            <h4>👥 Dados Gerais dos Sócios</h4>
+            <h4><Users size={16} style={{marginRight: '0.5rem'}} /> Dados Gerais dos Sócios</h4>
             <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="n_total_socios">Total de Sócios</label>
@@ -81,7 +88,7 @@ export const CaracteristicasOrganizacao: React.FC<CaracteristicasOrganizacaoProp
 
           {/* Seção: Programas Governamentais */}
           <div className="subsection">
-            <h4>🏛️ Programas Governamentais</h4>
+            <h4><Building2 size={16} style={{marginRight: '0.5rem'}} /> Programas Governamentais</h4>
             <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="n_socios_paa">Sócios PAA</label>
@@ -131,7 +138,7 @@ export const CaracteristicasOrganizacao: React.FC<CaracteristicasOrganizacaoProp
 
           {/* Seção: Tipos de Café */}
           <div className="subsection">
-            <h4>☕ Tipos de Café</h4>
+            <h4><Coffee size={16} style={{marginRight: '0.5rem'}} /> Tipos de Café</h4>
             <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="caf_organico">Café Orgânico</label>

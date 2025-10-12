@@ -1,4 +1,9 @@
 import { useState, useEffect } from 'react';
+import {
+  Users,
+  Edit,
+  Trash
+} from 'lucide-react';
 
 interface Module {
   id: number;
@@ -23,15 +28,46 @@ interface Role {
   _count?: { userRoles: number };
 }
 
+interface User {
+  id: number;
+  email: string;
+  name: string;
+  active: boolean;
+  roles: {
+    id: number;
+    name: string;
+    module: {
+      id: number;
+      name: string;
+    };
+  }[];
+}
+
+interface UserRole {
+  id: number;
+  userId: number;
+  roleId: number;
+  assignedAt: string;
+  assignedBy?: number;
+}
+
 function RoleManagement() {
   const [modules, setModules] = useState<Module[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'modules' | 'users'>('modules');
+
+  // Form states
   const [showModuleForm, setShowModuleForm] = useState(false);
   const [showRoleForm, setShowRoleForm] = useState(false);
+  const [showUserRoleModal, setShowUserRoleModal] = useState(false);
   const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  // Form data
   const [newModule, setNewModule] = useState({ name: '', description: '' });
   const [newRole, setNewRole] = useState({ name: '', description: '', moduleId: '' });
 
@@ -63,7 +99,7 @@ function RoleManagement() {
     try {
       setLoading(true);
       const token = localStorage.getItem('@pinovara:token');
-      
+
       const response = await fetch(`${API_BASE}/admin/roles`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -81,6 +117,74 @@ function RoleManagement() {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+
+      const response = await fetch(`${API_BASE}/admin/users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao carregar usuários');
+      }
+
+      const data = await response.json();
+      setUsers(data.data.users);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar usuários');
+    }
+  };
+
+  const handleAssignRole = async (userId: number, roleId: number) => {
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+
+      const response = await fetch(`${API_BASE}/admin/users/${userId}/roles`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ roleId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao atribuir papel');
+      }
+
+      await fetchUsers();
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao atribuir papel');
+    }
+  };
+
+  const handleRemoveRole = async (userId: number, roleId: number) => {
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+
+      const response = await fetch(`${API_BASE}/admin/users/${userId}/roles/${roleId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao remover papel');
+      }
+
+      await fetchUsers();
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao remover papel');
     }
   };
 
@@ -263,6 +367,7 @@ function RoleManagement() {
   useEffect(() => {
     fetchModules();
     fetchRoles();
+    fetchUsers();
   }, []);
 
   if (loading) {
@@ -277,27 +382,50 @@ function RoleManagement() {
 
   return (
     <div className="admin-page">
-      {/* Header Compacto */}
+      {/* Header Principal */}
       <div className="compact-header">
         <div className="compact-title">
-          <h1>Módulos & Papéis</h1>
+          <h1>Gestão de Roles & Permissões</h1>
           <div className="compact-stats">
             <span>{modules.filter(m => m.active).length} módulos</span>
             <span>{roles.filter(r => r.active).length} papéis</span>
+            <span>{users.filter(u => u.active).length} usuários</span>
           </div>
-        </div>
-
-        <div className="compact-actions">
-          <button onClick={() => setShowModuleForm(true)} className="btn btn-small btn-secondary">
-            + Módulo
-          </button>
-          <button onClick={() => setShowRoleForm(true)} className="btn btn-small btn-primary">
-            + Papel
-          </button>
         </div>
       </div>
 
-      {error && (
+      {/* Abas */}
+      <div className="role-tabs">
+        <button
+          className={`tab-button ${activeTab === 'modules' ? 'active' : ''}`}
+          onClick={() => setActiveTab('modules')}
+        >
+          📁 Módulos & Papéis
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
+          onClick={() => setActiveTab('users')}
+        >
+          <Users size={18} style={{marginRight: '0.5rem'}} /> Usuários & Atribuições
+        </button>
+      </div>
+
+      {/* Conteúdo das Abas */}
+      {activeTab === 'modules' && (
+        <>
+          {/* Header de Módulos */}
+          <div className="compact-header">
+            <div className="compact-actions">
+              <button onClick={() => setShowModuleForm(true)} className="btn btn-small btn-secondary">
+                + Módulo
+              </button>
+              <button onClick={() => setShowRoleForm(true)} className="btn btn-small btn-primary">
+                + Papel
+              </button>
+            </div>
+          </div>
+
+          {error && (
         <div className="alert alert-error alert-compact">
           <p>{error}</p>
           <button onClick={() => setError(null)}>×</button>
@@ -324,10 +452,10 @@ function RoleManagement() {
 
               <div className="compact-module-actions">
                 <button onClick={() => setEditingModule(module)} className="btn-icon" title="Editar módulo">
-                  ✏️
+                  <Edit size={14} />
                 </button>
                 <button onClick={() => handleDeleteModule(module.id)} className="btn-icon btn-danger" title="Excluir módulo">
-                  🗑️
+                  <Trash size={14} />
                 </button>
               </div>
             </div>
@@ -351,10 +479,10 @@ function RoleManagement() {
 
                     <div className="compact-role-actions">
                       <button onClick={() => setEditingRole(role)} className="btn-icon-small" title="Editar papel">
-                        ✏️
+                        <Edit size={14} />
                       </button>
                       <button onClick={() => handleDeleteRole(role.id)} className="btn-icon-small btn-danger" title="Excluir papel">
-                        🗑️
+                        <Trash size={14} />
                       </button>
                     </div>
                   </div>
@@ -371,6 +499,97 @@ function RoleManagement() {
           </div>
         )}
       </div>
+        </>
+      )}
+
+      {/* Aba de Usuários */}
+      {activeTab === 'users' && (
+        <div className="users-tab">
+          <div className="compact-header">
+            <div className="compact-title">
+              <h2>Atribuição de Papéis</h2>
+              <p>Gerencie quais papéis cada usuário possui</p>
+            </div>
+          </div>
+
+          {/* Lista de Usuários */}
+          <div className="users-list">
+            {users.map((user) => (
+              <div key={user.id} className="user-item">
+                <div className="user-info">
+                  <div className="user-header">
+                    <div className="user-name-email">
+                      <h3>{user.name}</h3>
+                      <span className="user-email">{user.email}</span>
+                    </div>
+                    <div className="user-status">
+                      <span className={`status-indicator ${user.active ? 'active' : 'inactive'}`}>
+                        {user.active ? '● Ativo' : '○ Inativo'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Papéis atuais do usuário */}
+                  <div className="user-roles">
+                    <h4>Papéis Atuais:</h4>
+                    <div className="role-tags">
+                      {user.roles.length > 0 ? (
+                        user.roles.map((role) => (
+                          <span key={role.id} className="role-tag">
+                            <span className="role-module">{role.module.name}:</span>
+                            <span className="role-name">{role.name}</span>
+                            <button
+                              onClick={() => handleRemoveRole(user.id, role.id)}
+                              className="role-remove-btn"
+                              title="Remover papel"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))
+                      ) : (
+                        <span className="no-roles">Nenhum papel atribuído</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Adicionar papel */}
+                  <div className="add-role-section">
+                    <h4>Adicionar Papel:</h4>
+                    <select
+                      onChange={(e) => {
+                        const roleId = parseInt(e.target.value);
+                        if (roleId) {
+                          handleAssignRole(user.id, roleId);
+                          e.target.value = '';
+                        }
+                      }}
+                      defaultValue=""
+                    >
+                      <option value="">Selecione um papel</option>
+                      {roles
+                        .filter(role => role.active && !user.roles.some(userRole => userRole.id === role.id))
+                        .map((role) => (
+                          <option key={role.id} value={role.id}>
+                            {role.module.name}: {role.name}
+                          </option>
+                        ))
+                      }
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {users.length === 0 && (
+            <div className="empty-state">
+              <h3>Nenhum usuário encontrado</h3>
+              <p>Não há usuários cadastrados no sistema.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Create Module Modal */}
       {showModuleForm && (

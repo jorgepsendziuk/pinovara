@@ -13,10 +13,14 @@ function Login() {
   const [healthStatus, setHealthStatus] = useState<{
     api: 'checking' | 'connected' | 'error';
     database: 'checking' | 'connected' | 'error';
+    apiUrl: string;
   }>({
     api: 'checking',
     database: 'checking',
+    apiUrl: '',
   });
+
+  const [isHealthExpanded, setIsHealthExpanded] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -28,19 +32,23 @@ function Login() {
 
   const checkSystemHealth = async () => {
     try {
+      // Get API URL from axios instance
+      const apiUrl = (api.defaults.baseURL || '').replace(/\/$/, ''); // Remove trailing slash
+
       // Check API connection
       await api.get('/');
-      setHealthStatus(prev => ({ ...prev, api: 'connected' }));
-      
+      setHealthStatus(prev => ({ ...prev, api: 'connected', apiUrl }));
+
       // Check database connection via health endpoint
       const healthResponse = await api.get('/health');
-      setHealthStatus(prev => ({ 
-        ...prev, 
-        database: healthResponse.data.database === 'connected' ? 'connected' : 'error'
+      setHealthStatus(prev => ({
+        ...prev,
+        database: healthResponse.data.data?.services?.database === 'up' ? 'connected' : 'error'
       }));
     } catch (error) {
       console.error('Health check failed:', error);
-      setHealthStatus({ api: 'error', database: 'error' });
+      const apiUrl = (api.defaults.baseURL || '').replace(/\/$/, '');
+      setHealthStatus({ api: 'error', database: 'error', apiUrl });
     }
   };
 
@@ -140,45 +148,60 @@ function Login() {
           </p>
         </div>
 
-        <div className="demo-credentials">
-          <h4>Credenciais de Demonstração:</h4>
-          <p>
-            <strong>Email:</strong> demo@pinovara.com.br<br />
-            <strong>Senha:</strong> Demo123
-          </p>
-          <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
-            Ou use: test@example.com / password123
-          </p>
-        </div>
 
         <div className="health-check">
-          <h4>Status do Sistema:</h4>
-          <div className="health-status">
-            <div className="health-item">
-              <span className="health-label">API:</span>
-              <span className={`health-indicator ${healthStatus.api}`}>
-                {healthStatus.api === 'checking' && '⏳ Verificando...'}
-                {healthStatus.api === 'connected' && '✅ Conectado'}
-                {healthStatus.api === 'error' && '❌ Erro'}
-              </span>
-            </div>
-            <div className="health-item">
-              <span className="health-label">Banco de Dados:</span>
-              <span className={`health-indicator ${healthStatus.database}`}>
-                {healthStatus.database === 'checking' && '⏳ Verificando...'}
-                {healthStatus.database === 'connected' && '✅ Conectado'}
-                {healthStatus.database === 'error' && '❌ Erro'}
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={checkSystemHealth}
-            className="btn btn-outline btn-small health-refresh"
-            disabled={healthStatus.api === 'checking'}
+          <div
+            className="health-header"
+            onClick={() => setIsHealthExpanded(!isHealthExpanded)}
           >
-            🔄 Verificar Novamente
-          </button>
+            <h4>Status do Sistema:</h4>
+            <div className="health-indicators-compact">
+              <span className={`status-dot ${healthStatus.api}`} title="API"></span>
+              <span className={`status-dot ${healthStatus.database}`} title="Banco de Dados"></span>
+            </div>
+            <span className={`accordion-arrow ${isHealthExpanded ? 'expanded' : ''}`}>
+              ▼
+            </span>
+          </div>
+
+          {isHealthExpanded && (
+            <div className="health-details">
+              <div className="health-status">
+                <div className="health-item">
+                  <span className="health-label">API:</span>
+                  <span className={`health-indicator ${healthStatus.api}`}>
+                    {healthStatus.api === 'checking' && '⏳ Verificando...'}
+                    {healthStatus.api === 'connected' && '✅ Conectado'}
+                    {healthStatus.api === 'error' && '❌ Erro'}
+                  </span>
+                </div>
+                <div className="health-item">
+                  <span className="health-label">Banco de Dados:</span>
+                  <span className={`health-indicator ${healthStatus.database}`}>
+                    {healthStatus.database === 'checking' && '⏳ Verificando...'}
+                    {healthStatus.database === 'connected' && '✅ Conectado'}
+                    {healthStatus.database === 'error' && '❌ Erro'}
+                  </span>
+                </div>
+                {healthStatus.apiUrl && (
+                  <div className="health-item">
+                    <span className="health-label">URL da API:</span>
+                    <span className="health-indicator api-url">
+                      🔗 {healthStatus.apiUrl}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={checkSystemHealth}
+                className="btn btn-outline btn-small health-refresh"
+                disabled={healthStatus.api === 'checking'}
+              >
+                🔄 Verificar Novamente
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

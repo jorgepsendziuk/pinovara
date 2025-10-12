@@ -329,17 +329,17 @@ export const auxiliarAPI = {
    */
   getEstados: async (): Promise<Estado[]> => {
     try {
-      const response = await api.get<ApiResponse<Estado[]>>('/auxiliar/estados');
-      
+      const response = await api.get<ApiResponse<Estado[]>>('/organizacoes/estados');
+
       if (!response.data.success) {
         throw new Error(response.data.error?.message || 'Erro ao carregar estados');
       }
-      
+
       return response.data.data!;
     } catch (error) {
       // Fallback para dados padrão se API não estiver disponível
       console.warn('Usando dados padrão para estados:', error);
-      
+
       return [
         { id: 1, nome: 'Minas Gerais', uf: 'MG', codigo_ibge: 31 },
         { id: 2, nome: 'Bahia', uf: 'BA', codigo_ibge: 29 },
@@ -354,13 +354,13 @@ export const auxiliarAPI = {
    */
   getMunicipios: async (estadoId?: number): Promise<Municipio[]> => {
     try {
-      const params = estadoId ? `?estadoId=${estadoId}` : '';
-      const response = await api.get<ApiResponse<Municipio[]>>(`/auxiliar/municipios${params}`);
-      
+      const params = estadoId ? `/${estadoId}` : '';
+      const response = await api.get<ApiResponse<Municipio[]>>(`/organizacoes/municipios${params}`);
+
       if (!response.data.success) {
         throw new Error(response.data.error?.message || 'Erro ao carregar municípios');
       }
-      
+
       return response.data.data!;
     } catch (error) {
       // Fallback para dados padrão
@@ -433,6 +433,252 @@ export const auxiliarAPI = {
       ];
     }
   }
+};
+
+// ========== SERVIÇOS DE DOCUMENTOS ==========
+
+export interface Documento {
+  id: number;
+  id_organizacao: number | null;
+  arquivo: string | null;
+  obs: string | null;
+  creator_uri_user: string;
+  creation_date: string;
+  last_update_uri_user: string | null;
+  last_update_date: string;
+  uri: string;
+  ordinal_number: number;
+}
+
+export const documentoAPI = {
+  /**
+   * Upload de documento
+   */
+  upload: async (organizacaoId: number, formData: FormData): Promise<Documento> => {
+    const response = await api.post<ApiResponse<Documento>>(
+      `/organizacoes/${organizacaoId}/documentos`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao enviar documento');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
+   * Listar documentos de uma organização
+   */
+  list: async (organizacaoId: number): Promise<Documento[]> => {
+    const response = await api.get<ApiResponse<Documento[]>>(
+      `/organizacoes/${organizacaoId}/documentos`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar documentos');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
+   * Download de documento
+   */
+  download: async (organizacaoId: number, documentoId: number): Promise<void> => {
+    const response = await api.get(
+      `/organizacoes/${organizacaoId}/documentos/${documentoId}/download`,
+      {
+        responseType: 'blob',
+      }
+    );
+
+    // Criar URL do blob e fazer download
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Extrair nome do arquivo do header ou usar padrão
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = 'documento.pdf';
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+      if (filenameMatch) {
+        filename = filenameMatch[1];
+      }
+    }
+    
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Deletar documento
+   */
+  delete: async (organizacaoId: number, documentoId: number): Promise<void> => {
+    const response = await api.delete<ApiResponse>(
+      `/organizacoes/${organizacaoId}/documentos/${documentoId}`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao deletar documento');
+    }
+  },
+
+  /**
+   * Sincronizar arquivos do ODK
+   */
+  syncFromODK: async (organizacaoId: number): Promise<any> => {
+    const response = await api.post<ApiResponse>(
+      `/organizacoes/${organizacaoId}/arquivos/sync`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao sincronizar arquivos do ODK');
+    }
+
+    return response.data.data;
+  },
+
+  /**
+   * Listar arquivos disponíveis no ODK
+   */
+  listODKAvailable: async (organizacaoId: number): Promise<any> => {
+    const response = await api.get<ApiResponse>(
+      `/organizacoes/${organizacaoId}/arquivos/odk-disponiveis`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar arquivos disponíveis no ODK');
+    }
+
+    return response.data.data;
+  }
+};
+
+// Interface para Foto
+export interface Foto {
+  id: number;
+  uri: string;
+  creator_uri_user: string;
+  creation_date: Date;
+  last_update_uri_user?: string | null;
+  last_update_date: Date;
+  parent_auri?: string | null;
+  ordinal_number: number;
+  top_level_auri?: string | null;
+  grupo?: number | null;
+  foto?: string | null;
+  obs?: string | null;
+  id_organizacao?: number | null;
+}
+
+export const fotoAPI = {
+  /**
+   * Upload de foto
+   */
+  upload: async (organizacaoId: number, formData: FormData): Promise<Foto> => {
+    const response = await api.post<ApiResponse<Foto>>(
+      `/organizacoes/${organizacaoId}/fotos`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao enviar foto');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
+   * Listar fotos de uma organização
+   */
+  list: async (organizacaoId: number): Promise<Foto[]> => {
+    const response = await api.get<ApiResponse<Foto[]>>(
+      `/organizacoes/${organizacaoId}/fotos`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar fotos');
+    }
+
+    return response.data.data || [];
+  },
+
+  /**
+   * Download de foto
+   */
+  download: async (organizacaoId: number, fotoId: number): Promise<void> => {
+    const response = await api.get(
+      `/organizacoes/${organizacaoId}/fotos/${fotoId}/download`,
+      { responseType: 'blob' }
+    );
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `foto_${fotoId}.jpg`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Deletar foto
+   */
+  delete: async (organizacaoId: number, fotoId: number): Promise<void> => {
+    const response = await api.delete<ApiResponse>(
+      `/organizacoes/${organizacaoId}/fotos/${fotoId}`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao deletar foto');
+    }
+  },
+
+  /**
+   * Sincronizar fotos do ODK
+   */
+  syncFromODK: async (organizacaoId: number): Promise<any> => {
+    const response = await api.post<ApiResponse>(
+      `/organizacoes/${organizacaoId}/fotos/sync`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao sincronizar fotos do ODK');
+    }
+
+    return response.data.data;
+  },
+
+  /**
+   * Listar fotos disponíveis no ODK
+   */
+  listODKAvailable: async (organizacaoId: number): Promise<any> => {
+    const response = await api.get<ApiResponse>(
+      `/organizacoes/${organizacaoId}/fotos/odk-disponiveis`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar fotos disponíveis no ODK');
+    }
+
+    return response.data.data;
+  },
 };
 
 export default api;

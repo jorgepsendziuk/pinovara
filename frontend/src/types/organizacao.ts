@@ -114,5 +114,5 @@ export interface GruposDiagnostico {
   [key: string]: RespostaDiagnostico;
 }
 
-export type AbaAtiva = 'organizacao' | 'diagnostico';
+export type AbaAtiva = 'organizacao' | 'diagnostico' | 'planoGestao';
 export type AccordionAberto = string | null;
