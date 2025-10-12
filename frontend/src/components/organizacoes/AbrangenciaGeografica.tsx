@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Plus, Edit2, Trash2, Save, X, Loader2, MapPin, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Loader2, MapPin, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 import './AbrangenciaGeografica.css';
 
@@ -26,8 +26,6 @@ interface AbrangenciaSocio {
 interface AbrangenciaGeograficaProps {
   organizacaoId: number;
   nTotalSocios?: number | null;
-  accordionAberto: string | null;
-  onToggleAccordion: (id: string) => void;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
@@ -35,10 +33,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000
 const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
   organizacaoId,
   nTotalSocios,
-  accordionAberto,
-  onToggleAccordion,
 }) => {
-  const isAberto = accordionAberto === 'abrangencia-geografica';
   
   const [items, setItems] = useState<AbrangenciaSocio[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,12 +59,12 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
     carregarEstados();
   }, []);
 
-  // Carregar dados quando abrir o accordion
+  // Carregar dados ao montar
   useEffect(() => {
-    if (isAberto && organizacaoId) {
+    if (organizacaoId) {
       carregarDados();
     }
-  }, [isAberto, organizacaoId]);
+  }, [organizacaoId]);
 
   const carregarEstados = async () => {
     try {
@@ -253,35 +248,32 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
   };
 
   return (
-    <div className="accordion-item">
-      <div 
-        className="accordion-header"
-        onClick={() => onToggleAccordion('abrangencia-geografica')}
-      >
-        <h3>
-          <MapPin size={20} style={{ marginRight: '0.5rem' }} />
-          Abrangência Geográfica
-        </h3>
-        <div className="accordion-header-right">
+    <div className="abrangencia-container">
+      <div className="page-header">
+        <div className="page-header-left">
+          <h2>
+            <MapPin size={24} style={{ marginRight: '0.5rem' }} />
+            Abrangência Geográfica
+          </h2>
+        </div>
+        <div className="page-header-right">
           {totalMunicipios > 0 && (
-            <span className="badge">
+            <div className="badge-info">
               {totalMunicipios} {totalMunicipios === 1 ? 'município' : 'municípios'}
-            </span>
+            </div>
           )}
           {nTotalSocios && totalSociosCadastrados > 0 && (
-            <span className={`status-badge badge-${statusTotal}`}>
+            <div className={`status-badge badge-${statusTotal}`}>
               {totalSociosCadastrados} / {nTotalSocios} sócios
               {statusTotal === 'success' && <CheckCircle size={16} style={{ marginLeft: '0.25rem' }} />}
               {statusTotal === 'warning' && <AlertTriangle size={16} style={{ marginLeft: '0.25rem' }} />}
               {statusTotal === 'error' && <AlertCircle size={16} style={{ marginLeft: '0.25rem' }} />}
-            </span>
+            </div>
           )}
-          {isAberto ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
         </div>
       </div>
 
-      {isAberto && (
-        <div className="accordion-content">
+      <div className="content-section">
           <p className="section-description">
             Liste todos os municípios onde residem os sócios da organização.
           </p>
@@ -484,8 +476,7 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
               </table>
             </div>
           )}
-        </div>
-      )}
+      </div>
     </div>
   );
 };

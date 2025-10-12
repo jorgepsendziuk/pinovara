@@ -6,6 +6,9 @@ import { useDiagnosticoData } from '../../hooks/useDiagnosticoData';
 import { DadosBasicos } from '../../components/organizacoes/DadosBasicos';
 import { EnderecoLocalizacao } from '../../components/organizacoes/EnderecoLocalizacao';
 import CaracteristicasAssociados from '../../components/organizacoes/CaracteristicasAssociados';
+import AbrangenciaGeografica from '../../components/organizacoes/AbrangenciaGeografica';
+import AssociadosJuridicos from '../../components/organizacoes/AssociadosJuridicos';
+import DadosProducao from '../../components/organizacoes/DadosProducao';
 import { DadosRepresentanteComponent } from '../../components/organizacoes/DadosRepresentante';
 import { DiagnosticoArea } from '../../components/organizacoes/DiagnosticoArea';
 import { PlanoGestao } from '../../components/organizacoes/PlanoGestao';
@@ -28,8 +31,6 @@ import {
   MapPin,
   Network,
   Wheat,
-  Award,
-  ShoppingCart,
   IdCard
 } from 'lucide-react';
 import '../../styles/tabs.css';
@@ -427,107 +428,25 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   );
 
   const renderAbaAbrangencia = () => (
-    <div className="aba-content" style={{ width: '100%', padding: '2rem' }}>
-      <div style={{
-        textAlign: 'center',
-        padding: '3rem',
-        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-        borderRadius: '12px',
-        border: '2px dashed #d1d5db'
-      }}>
-        <MapPin size={48} style={{ color: '#6b7280', marginBottom: '1rem' }} />
-        <h3 style={{ color: '#3b2313', marginBottom: '0.5rem' }}>Abrangência Geográfica</h3>
-        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-          Gestão dos municípios onde residem os associados
-        </p>
-        <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
-          Esta seção será implementada em breve
-        </p>
-      </div>
+    <div className="aba-content" style={{ width: '100%' }}>
+      {organizacao && (
+        <AbrangenciaGeografica
+          organizacaoId={organizacaoId}
+          nTotalSocios={organizacao.caracteristicas_n_total_socios}
+        />
+      )}
     </div>
   );
 
   const renderAbaAssociadosJuridicos = () => (
-    <div className="aba-content" style={{ width: '100%', padding: '2rem' }}>
-      <div style={{
-        textAlign: 'center',
-        padding: '3rem',
-        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-        borderRadius: '12px',
-        border: '2px dashed #d1d5db'
-      }}>
-        <Network size={48} style={{ color: '#6b7280', marginBottom: '1rem' }} />
-        <h3 style={{ color: '#3b2313', marginBottom: '0.5rem' }}>Associados Jurídicos</h3>
-        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-          Organizações filiadas e suas relações
-        </p>
-        <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
-          Esta seção será implementada em breve
-        </p>
-      </div>
+    <div className="aba-content" style={{ width: '100%' }}>
+      <AssociadosJuridicos organizacaoId={organizacaoId} />
     </div>
   );
 
   const renderAbaProducao = () => (
-    <div className="aba-content" style={{ width: '100%', padding: '2rem' }}>
-      <div style={{
-        textAlign: 'center',
-        padding: '3rem',
-        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-        borderRadius: '12px',
-        border: '2px dashed #d1d5db'
-      }}>
-        <Wheat size={48} style={{ color: '#6b7280', marginBottom: '1rem' }} />
-        <h3 style={{ color: '#3b2313', marginBottom: '0.5rem' }}>Dados de Produção</h3>
-        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-          Culturas, volumes e valores de produção
-        </p>
-        <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
-          Esta seção será implementada em breve
-        </p>
-      </div>
-    </div>
-  );
-
-  const renderAbaCertificacoes = () => (
-    <div className="aba-content" style={{ width: '100%', padding: '2rem' }}>
-      <div style={{
-        textAlign: 'center',
-        padding: '3rem',
-        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-        borderRadius: '12px',
-        border: '2px dashed #d1d5db'
-      }}>
-        <Award size={48} style={{ color: '#6b7280', marginBottom: '1rem' }} />
-        <h3 style={{ color: '#3b2313', marginBottom: '0.5rem' }}>Certificações e Selos</h3>
-        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-          Certificações orgânicas, selos de qualidade e conformidades
-        </p>
-        <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
-          Esta seção será implementada em breve
-        </p>
-      </div>
-    </div>
-  );
-
-  const renderAbaComercializacao = () => (
-    <div className="aba-content" style={{ width: '100%', padding: '2rem' }}>
-      <div style={{
-        textAlign: 'center',
-        padding: '3rem',
-        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-        borderRadius: '12px',
-        border: '2px dashed #d1d5db'
-      }}>
-        <ShoppingCart size={48} style={{ color: '#6b7280', marginBottom: '1rem' }} />
-        <h3 style={{ color: '#3b2313', marginBottom: '0.5rem' }}>Comercialização</h3>
-        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-          Canais de comercialização, compradores e valores
-        </p>
-        <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
-          Esta seção será implementada em breve
-        </p>
-      </div>
+    <div className="aba-content" style={{ width: '100%' }}>
+      <DadosProducao organizacaoId={organizacaoId} />
     </div>
   );
 
@@ -661,42 +580,28 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             onClick={() => setAbaAtiva('caracteristicas')}
             title="Características dos Associados"
           >
-            <Users size={16} /> <span>Características</span>
+            <Users size={16} /> <span>Características dos Associados</span>
           </button>
           <button
             className={`tab-button ${abaAtiva === 'abrangencia' ? 'active' : ''}`}
             onClick={() => setAbaAtiva('abrangencia')}
             title="Abrangência Geográfica"
           >
-            <MapPin size={16} /> <span>Abrangência</span>
+            <MapPin size={16} /> <span>Abrangência Geográfica</span>
           </button>
           <button
             className={`tab-button ${abaAtiva === 'associados-juridicos' ? 'active' : ''}`}
             onClick={() => setAbaAtiva('associados-juridicos')}
             title="Associados Jurídicos"
           >
-            <Network size={16} /> <span>Ass. Jurídicos</span>
+            <Network size={16} /> <span>Associados Jurídicos</span>
           </button>
           <button
             className={`tab-button ${abaAtiva === 'producao' ? 'active' : ''}`}
             onClick={() => setAbaAtiva('producao')}
             title="Dados de Produção"
           >
-            <Wheat size={16} /> <span>Produção</span>
-          </button>
-          <button
-            className={`tab-button ${abaAtiva === 'certificacoes' ? 'active' : ''}`}
-            onClick={() => setAbaAtiva('certificacoes')}
-            title="Certificações e Selos"
-          >
-            <Award size={16} /> <span>Certificações</span>
-          </button>
-          <button
-            className={`tab-button ${abaAtiva === 'comercializacao' ? 'active' : ''}`}
-            onClick={() => setAbaAtiva('comercializacao')}
-            title="Comercialização"
-          >
-            <ShoppingCart size={16} /> <span>Comercialização</span>
+            <Wheat size={16} /> <span>Dados de Produção</span>
           </button>
           <button
             className={`tab-button ${abaAtiva === 'diagnostico' ? 'active' : ''}`}
@@ -721,8 +626,6 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
           {abaAtiva === 'abrangencia' && renderAbaAbrangencia()}
           {abaAtiva === 'associados-juridicos' && renderAbaAssociadosJuridicos()}
           {abaAtiva === 'producao' && renderAbaProducao()}
-          {abaAtiva === 'certificacoes' && renderAbaCertificacoes()}
-          {abaAtiva === 'comercializacao' && renderAbaComercializacao()}
           {abaAtiva === 'diagnostico' && renderAbaDiagnostico()}
           {abaAtiva === 'planoGestao' && renderAbaPlanoGestao()}
 

@@ -884,6 +884,7 @@ model organizacao {
   sim_nao_organizacao_sim_nao_pjTosim_nao                            sim_nao?                        @relation("organizacao_sim_nao_pjTosim_nao", fields: [sim_nao_pj], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sim_nao_organizacao_sim_nao_producaoTosim_nao                      sim_nao?                        @relation("organizacao_sim_nao_producaoTosim_nao", fields: [sim_nao_producao], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sim_nao_organizacao_sim_nao_socioTosim_nao                         sim_nao?                        @relation("organizacao_sim_nao_socioTosim_nao", fields: [sim_nao_socio], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_tecnico                                                      users?                          @relation("organizacao_tecnico", fields: [id_tecnico], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organizacao_abrangencia_pj                                         organizacao_abrangencia_pj[]
   organizacao_abrangencia_socio                                      organizacao_abrangencia_socio[]
   organizacao_arquivo                                                organizacao_arquivo[]
@@ -1041,15 +1042,16 @@ model user_roles {
 }
 
 model users {
-  id         Int          @id @default(autoincrement())
-  email      String       @unique
-  password   String
-  name       String
-  active     Boolean      @default(true)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime
-  audit_logs audit_logs[]
-  user_roles user_roles[]
+  id                      Int             @id @default(autoincrement())
+  email                   String          @unique
+  password                String
+  name                    String
+  active                  Boolean         @default(true)
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime
+  audit_logs              audit_logs[]
+  user_roles              user_roles[]
+  organizacoes_criadas    organizacao[]   @relation("organizacao_tecnico")
 
   @@schema("pinovara")
 }

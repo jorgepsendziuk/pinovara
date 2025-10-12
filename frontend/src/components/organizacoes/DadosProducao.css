@@ -1,6 +1,6 @@
-/* Abrangência Geográfica - Estilos */
+/* Dados de Produção - Estilos */
 
-.abrangencia-container {
+.dados-producao-container {
   width: 100%;
   padding: 1.5rem;
 }
@@ -42,6 +42,16 @@
   box-shadow: 0 2px 8px rgba(5, 104, 57, 0.2);
 }
 
+.badge-valor {
+  padding: 0.5rem 1.25rem;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border-radius: 9999px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
 .content-section {
   width: 100%;
 }
@@ -52,7 +62,7 @@
   font-size: 0.95rem;
 }
 
-/* Form Card */
+/* Form */
 .form-card {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -67,6 +77,54 @@
   font-size: 1.1rem;
 }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-field-full {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.95rem;
+}
+
+.form-field input,
+.form-field select {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  outline: none;
+  border-color: #056839;
+  box-shadow: 0 0 0 3px rgba(5, 104, 57, 0.1);
+}
+
+.form-field input:disabled,
+.form-field select:disabled {
+  background: #e5e7eb;
+  cursor: not-allowed;
+}
+
+.required {
+  color: #dc2626;
+}
+
 .form-actions {
   display: flex;
   gap: 1rem;
@@ -78,42 +136,71 @@
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.75rem;
-  background: #056839;
-  color: white;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-right: 0.5rem;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.375rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.875rem;
   font-weight: 500;
 }
 
-.badge-success {
+/* Badges para tipos de produção */
+.badge-organica {
   background: #d1fae5;
   color: #065f46;
   border: 1px solid #10b981;
 }
 
-.badge-warning {
+.badge-agroecologica {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #3b82f6;
+}
+
+.badge-transicao {
   background: #fef3c7;
   color: #92400e;
   border: 1px solid #f59e0b;
 }
 
-.badge-error {
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #ef4444;
+.badge-convencional {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #9ca3af;
 }
 
-/* Tabela de Itens */
+.badge-secondary {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #9ca3af;
+}
+
+/* Alertas */
+.alert {
+  display: flex;
+  align-items: start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.alert svg {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.alert-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-left: 4px solid #dc2626;
+}
+
+.alert-success {
+  background: #d1fae5;
+  color: #065f46;
+  border-left: 4px solid #10b981;
+}
+
+/* Tabela */
 .items-table {
   overflow-x: auto;
   margin-top: 1.5rem;
@@ -155,13 +242,14 @@
 }
 
 .items-table tfoot .total-row {
-  background: #f3f4f6;
-  border-top: 2px solid #3b2313;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-top: 2px solid #f59e0b;
 }
 
 .items-table tfoot td {
   padding: 1rem;
   font-weight: 600;
+  color: #92400e;
 }
 
 /* Ações */
@@ -311,6 +399,10 @@
     padding: 1rem;
   }
 
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
   .form-actions {
     flex-direction: column;
   }
@@ -332,11 +424,6 @@
   .btn {
     padding: 0.625rem 1rem;
     font-size: 0.875rem;
-  }
-
-  .status-badge {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
   }
 }
 
@@ -387,22 +474,9 @@
   .items-table tfoot .total-row {
     display: flex;
     justify-content: space-between;
-    background: #f3f4f6;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
     border-radius: 8px;
     padding: 1rem;
-  }
-}
-
-/* Print Styles */
-@media print {
-  .form-card,
-  .btn,
-  .action-buttons {
-    display: none !important;
-  }
-
-  .items-table tbody tr:hover {
-    background: white;
   }
 }
 
