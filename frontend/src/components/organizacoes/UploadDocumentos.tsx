@@ -107,7 +107,7 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
       const result = await documentoAPI.syncFromODK(organizacaoId);
       
       // Montar mensagem com detalhes
-      let mensagem = `Sincronização concluída!
+      let mensagem = `Download concluído!
       
 Total no ODK: ${result.total_odk}
 Já existentes: ${result.ja_existentes}
@@ -129,7 +129,7 @@ Erros: ${result.erros}`;
       
       await loadDocumentos();
     } catch (error: any) {
-      alert('Erro ao sincronizar: ' + error.message);
+      alert('Erro ao baixar arquivos: ' + error.message);
     } finally {
       setSyncing(false);
     }
@@ -229,10 +229,10 @@ Erros: ${result.erros}`;
                 width: '100%',
                 justifyContent: 'center'
               }}
-              title="Sincronizar arquivos do ODK Collect"
+              title="Baixar arquivos do ODK Collect"
             >
               <RefreshCw size={16} className={syncing ? 'spinning' : ''} />
-              {syncing ? 'Sincronizando...' : 'Sincronizar ODK'}
+              {syncing ? 'Baixando...' : 'Baixar Arquivos'}
             </button>
 
             {uploadFormAberto && (

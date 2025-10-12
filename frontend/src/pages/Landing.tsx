@@ -743,12 +743,25 @@ function Landing() {
 
       <footer className="landing-footer">
         <div className="container">
-          <div className="footer-simple">
-            <p>&copy; 2025 PINOVARA - Universidade Federal da Bahia | Parceria INCRA/UFBA - TED nº 50/2023</p>
+          <div className="footer-content">
+            <div className="footer-links">
+              <button
+                onClick={() => navigate('/politica-privacidade')}
+                className="footer-link"
+              >
+                Política de Privacidade
+              </button>
+              <span className="footer-separator">•</span>
+              <a href="mailto:jorgefrpsendziuk@gmail.com" className="footer-link">
+                Contato
+              </a>
+            </div>
+            <div className="footer-copyright">
+              <p>&copy; 2025 PINOVARA - Universidade Federal da Bahia | Parceria INCRA/UFBA - TED nº 50/2023</p>
+            </div>
           </div>
         </div>
       </footer>
-
       {/* Modal de Imagens */}
       <ImageModal
         images={modalState.images}

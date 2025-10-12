@@ -37,6 +37,12 @@
 
 continuar a implementação de gestao de roles e papeis
 
+usar datagrid mais robusta nas listagens de:
+usuarios
+grid
+roles
+organizacoes etc
+
 documentar as ultimas modificacoes, verificar documentacao se esta refletindo o estado atual do sistema, caso necessário, olhe nos extratos do git...
 
 no relatorio, ta tudo muito quebrado.
@@ -45,12 +51,6 @@ vamos simplificar primeiro pra depois melhorar.
 -mantenha as formatacoes de texto, organize os textos em tabelas simples com linhas finas.
 -qual a engine de pdf ta sendo usava, quais libs, me mostre resumido o procedimento que é pra gerar um relatorio em pdf nesse sistema
 
-
-usar datagrid mais robusta nas listagens de:
-usuarios
-grid
-roles
-organizacoes etc
 
 baseado na premissa e nos dados das tabelas do projeto, elabore uma politica de privacidade e disponibilize no rodapé do website um link para ela
 contratante: UFBA
@@ -65,7 +65,16 @@ aviso de cookies
 
 contador de visitas sem salvar nada no banco é possivel?
 
-rastreabilidade 
+toda vez que uma versao modifica coisas no prisma e ou no backend o deploy automatico pelo github actions nao da certo e tenho que pedir pra ajustar e tentar de novo.
+me diga ai o que voce fez agora pro deploy funcionar, qual foi o erro no deploy automatico, e o que tenho que ajustar no deploy. me explique de uma maneira que possa passar pra inteligencia artificial ajustar no projeto pela minha IDE.
+
+baseado nos scripts de deploy do github actions, queria um script pra fazer o deploy somente do frontend, caso eu faça alguma mudanca no visual de alguma pagina por exemplo e nao queira um deploy completo tao longo...
+
+usuario sincronizar com odk
+
+usuario manter aceite dos termos, data do aceite
+
+rastreabilidade das acoes
 
 editar fotos
 

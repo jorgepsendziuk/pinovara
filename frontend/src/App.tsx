@@ -33,12 +33,16 @@ import AccessDenied from './pages/AccessDenied';
 import Profile from './pages/Profile';
 import ConfiguracaoODK from './pages/ConfiguracaoODK';
 import FormularioEnketo from './pages/FormularioEnketo';
+import PoliticaPrivacidade from './pages/PoliticaPrivacidade';
+import AvisoCookies from './components/AvisoCookies';
+import GoogleAnalytics from './components/GoogleAnalytics';
 import './App.css';
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
 
       <Route
         path="/login"
@@ -208,8 +212,10 @@ function App() {
   return (
     <Router>
       <AuthProvider>
+        <GoogleAnalytics />
         <div className="App">
           <AppRoutes />
+          <AvisoCookies />
         </div>
       </AuthProvider>
     </Router>
