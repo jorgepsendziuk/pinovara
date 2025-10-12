@@ -176,7 +176,7 @@ export const fotoSyncService = {
         )
       `;
 
-      const result = await prisma.$queryRawUnsafe<any[]>(query);
+      const result = await prisma.$queryRawUnsafe(query) as any[];
 
       return result.map(row => ({
         uri: row.uri,
