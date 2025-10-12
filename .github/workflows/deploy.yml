@@ -46,6 +46,14 @@ jobs:
       with:
         node-version: '20'
 
+    - name: 🧹 Clean npm cache and old files
+      run: |
+        echo "🧹 Cleaning npm cache and removing old files..."
+        npm cache clean --force
+        rm -rf node_modules backend/node_modules frontend/node_modules
+        rm -rf ~/.npm
+        echo "✅ Cache cleared"
+
     - name: 📦 Install Dependencies (Workspaces)
       run: |
         echo "📦 Installing all dependencies via npm workspaces..."
