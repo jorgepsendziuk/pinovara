@@ -6,7 +6,7 @@ export const useDiagnosticoData = () => {
   const [gestaoPessoas, setGestaoPessoas] = useState<GruposDiagnostico>({});
   const [gestaoFinanceira, setGestaoFinanceira] = useState<GruposDiagnostico>({});
   
-  const [diagnosticoAberto, setDiagnosticoAberto] = useState<string | null>('governanca-main');
+  const [diagnosticoAberto, setDiagnosticoAberto] = useState<string | null>(null);
 
   const updateGovernanca = useCallback((
     categoria: string, 

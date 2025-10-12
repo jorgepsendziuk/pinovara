@@ -1,5 +1,6 @@
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
+import VersionIndicator from '../components/VersionIndicator';
 
 function Dashboard() {
   const { user, hasPermission } = useAuth();
@@ -10,6 +11,9 @@ function Dashboard() {
 
   return (
     <div className="dashboard-layout">
+      {/* Indicador de versão discreto */}
+      <VersionIndicator position="top-right" theme="auto" />
+      
       <Sidebar />
 
       <div className="main-content">
@@ -53,7 +57,7 @@ function Dashboard() {
 
               {user.roles && user.roles.length > 0 ? (
                 <div className="roles-grid">
-                  {user.roles.map((role) => (
+                  {user.roles.map((role: any) => (
                     <div key={role.id} className="role-card">
                       <div className="role-header">
                         <h4>{role.name}</h4>

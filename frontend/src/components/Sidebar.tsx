@@ -1,27 +1,73 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Icon from './Icon';
+import {
+  BarChart,
+  TrendingUp,
+  Building,
+  Clipboard,
+  Plus,
+  Map,
+  Search,
+  Users,
+  Settings,
+  Sliders,
+  Package,
+  Tag,
+  Wrench,
+  HardDrive,
+  FileText,
+  Smartphone,
+  Link as LinkIcon,
+  FormInput,
+  Monitor,
+  FileCheck,
+  LogOut,
+  Menu,
+  X,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  ChevronRight as ChevronExpand
+} from 'lucide-react';
 
-// Hook personalizado para detectar se está em mobile
-const useIsMobile = () => {
+// Hook personalizado para detectar breakpoints responsivos
+const useResponsive = () => {
+  const [screenSize, setScreenSize] = useState(() => {
+    const width = window.innerWidth;
+    if (width < 480) return 'mobile-sm';
+    if (width < 768) return 'mobile';
+    if (width < 1024) return 'tablet';
+    return 'desktop';
+  });
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+      
+      if (width < 480) setScreenSize('mobile-sm');
+      else if (width < 768) setScreenSize('mobile');
+      else if (width < 1024) setScreenSize('tablet');
+      else setScreenSize('desktop');
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  return isMobile;
+  return { screenSize, isMobile, isTablet };
 };
 
 interface MenuItem {
   id: string;
   label: string;
-  icon: string;
+  icon: string | React.ComponentType<any>; // Suporte para emoji ou componente Lucide
   path: string;
   module: string;
   permission?: string;
@@ -32,7 +78,7 @@ const Sidebar: React.FC = () => {
   const { user, hasPermission, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+  const { screenSize, isMobile, isTablet } = useResponsive();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -40,8 +86,15 @@ const Sidebar: React.FC = () => {
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['sistema']));
   const sidebarRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<HTMLDivElement>(null);
+  const userExpandedRef = useRef<boolean>(false); // Track if user manually expanded
 
   const toggleMenu = (menuId: string) => {
+    // Se o menu está colapsado, expandir primeiro
+    if (isCollapsed && !isMobile) {
+      setIsCollapsed(false);
+      userExpandedRef.current = true; // Mark as user-expanded
+    }
+    
     const newExpanded = new Set(expandedMenus);
     if (newExpanded.has(menuId)) {
       newExpanded.delete(menuId);
@@ -109,25 +162,52 @@ const Sidebar: React.FC = () => {
     }
   }, [isCollapsed]);
 
-  // Fechar menu mobile automaticamente quando volta para desktop
+  // Auto-collapse e responsividade baseada no tamanho da tela
   useEffect(() => {
     if (!isMobile) {
       setIsMobileOpen(false);
     }
-  }, [isMobile]);
+    
+    // Auto-collapse em tablets e telas menores para economizar espaço
+    // Mas só se o usuário não expandiu manualmente
+    if ((isTablet || isMobile) && !isCollapsed && !userExpandedRef.current) {
+      setIsCollapsed(true);
+    }
+    
+    // Auto-expand em desktop se estiver colapsado (e não foi expansão manual)
+    if (!isTablet && !isMobile && isCollapsed && !userExpandedRef.current) {
+      setIsCollapsed(false);
+    }
+    
+    // Reset user expansion flag when screen size changes
+    if (isTablet || isMobile) {
+      userExpandedRef.current = false;
+    }
+    
+    // Ajustar largura baseada no tipo de dispositivo
+    if (screenSize === 'mobile-sm') {
+      setSidebarWidth(100); // Sidebar full-screen em mobile muito pequeno
+    } else if (screenSize === 'mobile') {
+      setSidebarWidth(280);
+    } else if (screenSize === 'tablet') {
+      setSidebarWidth(isCollapsed ? 70 : 260);
+    } else {
+      setSidebarWidth(isCollapsed ? 70 : 280);
+    }
+  }, [isMobile, isTablet, screenSize, isCollapsed]);
 
   const menuItems: MenuItem[] = [
     {
       id: 'dashboard',
       label: 'Dashboard',
-      icon: '📊',
+      icon: BarChart,
       path: '/pinovara',
       module: 'dashboard',
       children: [
         {
           id: 'dashboard-main',
           label: 'Dashboard Principal',
-          icon: '📈',
+          icon: TrendingUp,
           path: '/pinovara',
           module: 'dashboard'
         }
@@ -136,35 +216,35 @@ const Sidebar: React.FC = () => {
     {
       id: 'organizacoes',
       label: 'Organizações',
-      icon: '🏢',
+      icon: Building,
       path: '/organizacoes',
       module: 'organizacoes',
       children: [
         {
           id: 'organizacoes-dashboard',
           label: 'Dashboard',
-          icon: '📊',
+          icon: BarChart,
           path: '/organizacoes/dashboard',
           module: 'organizacoes'
         },
         {
           id: 'organizacoes-list',
           label: 'Lista de Organizações',
-          icon: '📋',
+          icon: Clipboard,
           path: '/organizacoes/lista',
           module: 'organizacoes'
         },
         {
           id: 'organizacoes-add',
           label: 'Adicionar Organização',
-          icon: '➕',
+          icon: Plus,
           path: '/organizacoes/cadastro',
           module: 'organizacoes'
         },
         {
           id: 'organizacoes-mapa',
           label: 'Mapa',
-          icon: '🗺️',
+          icon: Map,
           path: '/organizacoes/mapa',
           module: 'organizacoes'
         }
@@ -389,14 +469,14 @@ const Sidebar: React.FC = () => {
     {
       id: 'configuracao-odk',
       label: 'Configuração ODK',
-      icon: '📱',
+      icon: Smartphone,
       path: '/configuracao-odk',
       module: 'configuracao',
       children: [
         {
           id: 'configuracao-odk-main',
           label: 'Configuração ODK Collect',
-          icon: '🔗',
+          icon: LinkIcon,
           path: '/configuracao-odk',
           module: 'configuracao'
         }
@@ -405,14 +485,14 @@ const Sidebar: React.FC = () => {
     {
       id: 'visualizacao-formulario',
       label: 'Visualização do Formulário',
-      icon: '📄',
+      icon: FileText,
       path: '/formulario-enketo',
       module: 'configuracao',
       children: [
         {
           id: 'visualizacao-formulario-main',
           label: 'Formulário Enketo',
-          icon: '📝',
+          icon: FormInput,
           path: '/formulario-enketo',
           module: 'configuracao'
         }
@@ -421,7 +501,7 @@ const Sidebar: React.FC = () => {
     {
       id: 'administracao',
       label: 'Administração',
-      icon: '⚙️',
+      icon: Settings,
       path: '/admin',
       module: 'sistema',
       permission: 'admin',
@@ -429,7 +509,7 @@ const Sidebar: React.FC = () => {
         {
           id: 'admin-dashboard',
           label: 'Painel Admin',
-          icon: '🎛️',
+          icon: Sliders,
           path: '/admin',
           module: 'sistema',
           permission: 'admin'
@@ -437,7 +517,7 @@ const Sidebar: React.FC = () => {
         {
           id: 'usuarios',
           label: 'Usuários',
-          icon: '👥',
+          icon: Users,
           path: '/admin/users',
           module: 'sistema',
           permission: 'admin'
@@ -445,7 +525,7 @@ const Sidebar: React.FC = () => {
         {
           id: 'modulos',
           label: 'Módulos',
-          icon: '📦',
+          icon: Package,
           path: '/admin/modules',
           module: 'sistema',
           permission: 'admin'
@@ -453,7 +533,7 @@ const Sidebar: React.FC = () => {
         {
           id: 'roles',
           label: 'Papéis',
-          icon: '🏷️',
+          icon: Tag,
           path: '/admin/roles',
           module: 'sistema',
           permission: 'admin'
@@ -461,7 +541,7 @@ const Sidebar: React.FC = () => {
         {
           id: 'configuracoes',
           label: 'Configurações',
-          icon: '🔧',
+          icon: Wrench,
           path: '/admin/settings',
           module: 'sistema',
           permission: 'admin'
@@ -469,7 +549,7 @@ const Sidebar: React.FC = () => {
         {
           id: 'backup',
           label: 'Backup',
-          icon: '💾',
+          icon: HardDrive,
           path: '/admin/backup',
           module: 'sistema',
           permission: 'admin'
@@ -477,7 +557,7 @@ const Sidebar: React.FC = () => {
         {
           id: 'monitor',
           label: 'Monitor do Sistema',
-          icon: '🔍',
+          icon: Search,
           path: '/admin/monitor',
           module: 'sistema',
           permission: 'admin'
@@ -485,7 +565,7 @@ const Sidebar: React.FC = () => {
         {
           id: 'audit-logs',
           label: 'Logs de Auditoria',
-          icon: '📋',
+          icon: FileCheck,
           path: '/admin/audit-logs',
           module: 'sistema',
           permission: 'admin'
@@ -493,7 +573,7 @@ const Sidebar: React.FC = () => {
         {
           id: 'system-info',
           label: 'Informações do Sistema',
-          icon: '💻',
+          icon: Monitor,
           path: '/admin/system-info',
           module: 'sistema',
           permission: 'admin'
@@ -538,6 +618,23 @@ const Sidebar: React.FC = () => {
     if (isMobile) {
       setIsMobileOpen(false);
     }
+    // Se o menu está colapsado no desktop/tablet, expandir para mostrar o conteúdo
+    if (isCollapsed && !isMobile) {
+      setIsCollapsed(false);
+      userExpandedRef.current = true; // Mark as user-expanded
+    }
+  };
+
+  // Função auxiliar para renderizar ícones
+  const renderIcon = (icon: string | React.ComponentType<any>, size: number = 16, className: string = '') => {
+    if (typeof icon === 'string') {
+      // É um emoji
+      return <Icon emoji={icon as any} size={size} className={className} />;
+    } else {
+      // É um componente Lucide
+      const IconComponent = icon;
+      return <IconComponent size={size} className={className} />;
+    }
   };
 
   return (
@@ -549,14 +646,17 @@ const Sidebar: React.FC = () => {
           onClick={toggleSidebar}
           aria-label={isMobileOpen ? 'Fechar menu' : 'Abrir menu'}
         >
-          {isMobileOpen ? '✕' : '☰'}
+          {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       )}
 
       <aside
         ref={sidebarRef}
-        className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobile && isMobileOpen ? 'open' : ''} ${isResizing ? 'resizing' : ''}`}
-        style={{ width: isMobile ? '280px' : `${sidebarWidth}px` }}
+        className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobile && isMobileOpen ? 'open' : ''} ${isResizing ? 'resizing' : ''} ${screenSize}`}
+        style={{ 
+          width: isMobile ? (screenSize === 'mobile-sm' ? '100vw' : '280px') : `${sidebarWidth}px`,
+          maxWidth: screenSize === 'mobile-sm' ? '320px' : 'none'
+        }}
         onClick={handleOverlayClick}
       >
         {/* Header */}
@@ -601,9 +701,9 @@ const Sidebar: React.FC = () => {
           aria-label={isMobile ? (isMobileOpen ? 'Fechar menu' : 'Abrir menu') : (isCollapsed ? 'Expandir menu' : 'Recolher menu')}
         >
           {isMobile ? (
-            isMobileOpen ? '✕' : '☰'
+            isMobileOpen ? <X size={16} /> : <Menu size={16} />
           ) : (
-            isCollapsed ? '→' : '←'
+            isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />
           )}
         </button>
       </div>
@@ -621,12 +721,12 @@ const Sidebar: React.FC = () => {
                       className={`nav-button ${isMenuActive(item) ? 'active' : ''}`}
                       onClick={() => toggleMenu(item.id)}
                     >
-                      <span className="nav-icon">{item.icon}</span>
+                      <span className="nav-icon">{renderIcon(item.icon, 16)}</span>
                       {!isCollapsed && (
                         <>
                           <span className="nav-label">{item.label}</span>
                           <span className="nav-arrow">
-                            {expandedMenus.has(item.id) ? '▼' : '▶'}
+                            {expandedMenus.has(item.id) ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                           </span>
                         </>
                       )}
@@ -646,7 +746,7 @@ const Sidebar: React.FC = () => {
                                   handleNavLinkClick();
                                 }}
                               >
-                                <span className="nav-icon">{child.icon}</span>
+                                <span className="nav-icon">{renderIcon(child.icon, 14)}</span>
                                 <span className="nav-label">{child.label}</span>
                               </Link>
                             </li>
@@ -663,7 +763,7 @@ const Sidebar: React.FC = () => {
                       handleNavLinkClick();
                     }}
                   >
-                    <span className="nav-icon">{item.icon}</span>
+                    <span className="nav-icon">{renderIcon(item.icon, 16)}</span>
                     {!isCollapsed && (
                       <span className="nav-label">{item.label}</span>
                     )}
@@ -681,7 +781,7 @@ const Sidebar: React.FC = () => {
           onClick={handleLogout}
           title="Sair do sistema"
         >
-          <span className="logout-icon">🚪</span>
+          <span className="logout-icon"><LogOut size={16} /></span>
           {!isCollapsed && (
             <span className="logout-text">Sair</span>
           )}

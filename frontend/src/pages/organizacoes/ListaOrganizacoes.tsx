@@ -1,26 +1,35 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { PDFService, OrganizacaoData } from '../../services/pdfService';
+import { DataGrid, DataGridColumn } from '../../components/DataGrid';
+import {
+  Edit,
+  Trash,
+  Printer,
+  Building2,
+  Phone,
+  Mail,
+  MessageCircle,
+  Clipboard,
+  Monitor,
+  X
+} from 'lucide-react';
 
 interface Organizacao {
   id: number;
   nome: string;
   cnpj: string;
   estado: number | null;
+  estado_nome?: string;
   municipio: number | null;
+  municipio_nome?: string;
   gpsLat: number | null;
   gpsLng: number | null;
   telefone: string | null;
   email: string | null;
+  meta_instance_id?: string | null;
 }
 
-interface Filtros {
-  busca: string;
-  estado: string;
-  municipio: string;
-  status: string;
-  dataInicio: string;
-  dataFim: string;
-}
 
 interface ListaOrganizacoesProps {
   onNavigate: (view: 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa', organizacaoId?: number) => void;
@@ -30,37 +39,102 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const { } = useAuth();
   const [organizacoes, setOrganizacoes] = useState<Organizacao[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filtros, setFiltros] = useState<Filtros>({
-    busca: '',
-    estado: '',
-    municipio: '',
-    status: '',
-    dataInicio: '',
-    dataFim: ''
-  });
-  const [paginaAtual, setPaginaAtual] = useState(1);
-  const [totalPaginas, setTotalPaginas] = useState(1);
-  const [itensPorPagina] = useState(10);
-  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [gerandoPDF, setGerandoPDF] = useState<number | null>(null);
+
+  // Estados para DataGrid
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalOrganizacoes, setTotalOrganizacoes] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [legendaVisivel, setLegendaVisivel] = useState(true);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
+  // Funções auxiliares
+  const formatarCNPJ = (cnpj: string | null): string => {
+    if (!cnpj) return '-';
+    const cnpjNumeros = cnpj.replace(/\D/g, '');
+    return cnpjNumeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  };
+
+  const formatarTelefone = (telefone: string | null): string => {
+    if (!telefone) return '';
+    const tel = telefone.replace(/\D/g, '');
+    if (tel.length === 11) {
+      return tel.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    } else if (tel.length === 10) {
+      return tel.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    }
+    return telefone;
+  };
+
+  const getWhatsAppLink = (telefone: string | null): string => {
+    if (!telefone) return '';
+    const tel = telefone.replace(/\D/g, '');
+    return `https://wa.me/55${tel}`;
+  };
+
   useEffect(() => {
     fetchOrganizacoes();
-  }, [paginaAtual, filtros]);
+  }, [currentPage, pageSize, searchTerm]);
+
+  const gerarTermoAdesao = async (organizacaoId: number) => {
+    try {
+      setGerandoPDF(organizacaoId);
+
+      // Buscar dados completos da organização
+      const response = await fetch(`${API_BASE}/organizacoes/${organizacaoId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('@pinovara:token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao buscar dados da organização');
+      }
+
+      const responseData = await response.json();
+      const orgData = responseData.data || responseData; // Ajustar caso os dados venham dentro de 'data'
+
+      // Preparar dados para o PDF
+      const dadosPDF: OrganizacaoData = {
+        nome: orgData.nome || '',
+        cnpj: orgData.cnpj || '',
+        endereco: `${orgData.organizacao_end_logradouro || ''} ${orgData.organizacao_end_numero || ''}, ${orgData.organizacao_end_bairro || ''}, CEP: ${orgData.organizacao_end_cep || ''}`.trim(),
+        representanteNome: orgData.representante_nome || '',
+        representanteCPF: orgData.representante_cpf || '',
+        representanteRG: orgData.representante_rg || '',
+        representanteFuncao: orgData.representante_funcao || '',
+        representanteEndereco: `${orgData.representante_end_logradouro || ''} ${orgData.representante_end_numero || ''}, ${orgData.representante_end_bairro || ''}, CEP: ${orgData.representante_end_cep || ''}`.trim()
+      };
+
+      // Gerar PDF
+      await PDFService.gerarTermoAdesao(dadosPDF);
+
+    } catch (error) {
+      console.error('Erro ao gerar termo de adesão:', error);
+      if (error instanceof Error) {
+        alert(`Erro ao gerar termo de adesão: ${error.message}`);
+      } else {
+        alert('Erro ao gerar termo de adesão. Verifique se você está logado e tente novamente.');
+      }
+    } finally {
+      setGerandoPDF(null);
+    }
+  };
 
   const fetchOrganizacoes = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('@pinovara:token');
-      
-      // Construir URL com parâmetros de paginação
+
+      // Construir parâmetros de busca
       const params = new URLSearchParams({
-        page: paginaAtual.toString(),
-        limit: itensPorPagina.toString()
+        page: currentPage.toString(),
+        pageSize: pageSize.toString(),
+        ...(searchTerm && { search: searchTerm })
       });
-      
+
       const response = await fetch(`${API_BASE}/organizacoes?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -73,45 +147,22 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       }
 
       const data = await response.json();
-      
-      if (data.success && data.data) {
-        // API retorna: { success: true, data: { organizacoes: [], total: X, pagina: Y, ... } }
-        setOrganizacoes(data.data.organizacoes || []);
-        setTotalPaginas(data.data.totalPaginas || 1);
-      } else {
-        console.error('Formato de resposta inesperado:', data);
-        setOrganizacoes([]);
-      }
+      setOrganizacoes(data.data.organizacoes || []);
+      setTotalOrganizacoes(data.data.total || data.data.organizacoes.length);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      console.error('Erro ao carregar organizações:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFiltroChange = (campo: keyof Filtros, valor: string) => {
-    setFiltros(prev => ({ ...prev, [campo]: valor }));
-    setPaginaAtual(1); // Reset para primeira página ao filtrar
-  };
-
-  const limparFiltros = () => {
-    setFiltros({
-      busca: '',
-      estado: '',
-      municipio: '',
-      status: '',
-      dataInicio: '',
-      dataFim: ''
-    });
-    setPaginaAtual(1);
-  };
 
   const handleExcluir = async (id: number) => {
     if (!confirm('Tem certeza que deseja excluir esta organização?')) return;
 
     try {
       const token = localStorage.getItem('@pinovara:token');
-      
+
       const response = await fetch(`${API_BASE}/organizacoes/${id}`, {
         method: 'DELETE',
         headers: {
@@ -131,15 +182,228 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     }
   };
 
+  // Handlers para DataGrid
+  const handlePaginationChange = (page: number, pageSize: number) => {
+    setCurrentPage(page);
+    setPageSize(pageSize);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Resetar para primeira página ao buscar
+  };
+
+  // Definição das colunas da DataGrid
+  const columns: DataGridColumn<Organizacao>[] = [
+    {
+      key: 'id',
+      title: 'ID',
+      dataIndex: 'id',
+      width: '5%',
+      sortable: true,
+      align: 'center',
+      render: (id: number) => (
+        <span style={{ fontWeight: '600', color: '#666', fontSize: '13px' }}>{id}</span>
+      ),
+    },
+    {
+      key: 'nome',
+      title: 'Nome',
+      dataIndex: 'nome',
+      width: '45%',
+      sortable: true,
+      render: (nome: string, record: Organizacao) => {
+        const isODKCollect = record.meta_instance_id && record.meta_instance_id.trim() !== '';
+        
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span 
+              title={isODKCollect ? 'Cadastrado via ODK Collect (aplicativo)' : 'Cadastrado via sistema web'}
+              style={{ display: 'inline-flex', flexShrink: 0, minWidth: '16px', minHeight: '16px' }}
+            >
+              {isODKCollect ? (
+                <Clipboard size={16} color="#8b4513" />
+              ) : (
+                <Monitor size={16} color="#667eea" />
+              )}
+            </span>
+            <span style={{ fontWeight: '500' }}>{nome || '-'}</span>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'localizacao',
+      title: 'Localização',
+      dataIndex: 'municipio_nome',
+      width: '16%',
+      render: (_: any, record: Organizacao) => {
+        const municipio = record.municipio_nome || '-';
+        const estado = record.estado_nome || '';
+        return (
+          <span style={{ fontSize: '13px' }}>
+            {municipio}{estado && ` - ${estado}`}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'contato',
+      title: 'Contato',
+      dataIndex: 'telefone',
+      width: '18%',
+      responsive: {
+        hideOn: 'mobile'
+      },
+      render: (telefone: string, record: Organizacao) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
+          {telefone && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <a 
+                href={getWhatsAppLink(telefone)} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px', 
+                  color: '#25D366', 
+                  textDecoration: 'none',
+                  fontWeight: '500'
+                }}
+                title="Abrir no WhatsApp"
+              >
+                <MessageCircle size={14} />
+                {formatarTelefone(telefone)}
+              </a>
+            </div>
+          )}
+          {record.email && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <a 
+                href={`mailto:${record.email}`}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px', 
+                  color: '#666', 
+                  textDecoration: 'none'
+                }}
+                title="Enviar e-mail"
+              >
+                <Mail size={14} />
+                {record.email}
+              </a>
+            </div>
+          )}
+          {!telefone && !record.email && <span style={{ color: '#999' }}>-</span>}
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      title: 'Ações',
+      width: '17%',
+      align: 'center',
+      render: (_, record: Organizacao) => (
+        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+          <button
+            onClick={() => onNavigate('edicao', record.id)}
+            title="Editar organização"
+            style={{ 
+              padding: '6px 8px', 
+              border: '1px solid #007bff', 
+              background: 'white',
+              borderRadius: '4px',
+              cursor: 'pointer', 
+              color: '#007bff',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#007bff';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.color = '#007bff';
+            }}
+          >
+            <Edit size={14} />
+          </button>
+          <button
+            onClick={() => gerarTermoAdesao(record.id)}
+            title="Imprimir Termo de Adesão"
+            disabled={gerandoPDF === record.id}
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #28a745',
+              background: 'white',
+              borderRadius: '4px',
+              cursor: gerandoPDF === record.id ? 'not-allowed' : 'pointer',
+              color: gerandoPDF === record.id ? '#ccc' : '#28a745',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s',
+              opacity: gerandoPDF === record.id ? 0.5 : 1
+            }}
+            onMouseOver={(e) => {
+              if (gerandoPDF !== record.id) {
+                e.currentTarget.style.background = '#28a745';
+                e.currentTarget.style.color = 'white';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (gerandoPDF !== record.id) {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#28a745';
+              }
+            }}
+          >
+            <Printer size={14} />
+          </button>
+          <button
+            onClick={() => handleExcluir(record.id)}
+            title="Excluir organização"
+            style={{ 
+              padding: '6px 8px', 
+              border: '1px solid #dc3545', 
+              background: 'white',
+              borderRadius: '4px',
+              cursor: 'pointer', 
+              color: '#dc3545',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#dc3545';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.color = '#dc3545';
+            }}
+          >
+            <Trash size={14} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
 
   if (loading) {
     return (
       <div className="lista-content">
         <div className="content-header">
-          <h2>🏢 Lista de Organizações</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Building2 size={28} color="white" />
+            <h2>Lista de Organizações</h2>
+          </div>
           <p>Carregando organizações...</p>
         </div>
-        <div className="loading-spinner">⏳</div>
       </div>
     );
   }
@@ -147,181 +411,109 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   return (
     <div className="lista-content">
       <div className="content-header">
-        <div className="header-info">
-          <h2>🏢 Lista de Organizações</h2>
-          <p>Gerencie todas as organizações cadastradas no sistema</p>
+        <div className="header-info" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Building2 size={28} color="white" />
+          <h2>Lista de Organizações</h2>
+        </div>
+        <div className="header-actions">
+          <button
+            onClick={() => onNavigate('cadastro')}
+            className="btn btn-primary"
+          >
+            + Nova Organização
+          </button>
         </div>
       </div>
 
-      <div className="lista-body">
-        {/* Filtros */}
-        {mostrarFiltros && (
-          <div className="filters-panel">
-            <div className="filters-grid">
-              <div className="filter-group">
-                <label>Buscar</label>
-                <input
-                  type="text"
-                  placeholder="Nome, CNPJ..."
-                  value={filtros.busca}
-                  onChange={(e) => handleFiltroChange('busca', e.target.value)}
-                />
-              </div>
-
-              <div className="filter-group">
-                <label>Estado</label>
-                <select
-                  value={filtros.estado}
-                  onChange={(e) => handleFiltroChange('estado', e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  <option value="BA">Bahia</option>
-                  <option value="MG">Minas Gerais</option>
-                  <option value="ES">Espírito Santo</option>
-                </select>
-              </div>
-
-              <div className="filter-group">
-                <label>Status</label>
-                <select
-                  value={filtros.status}
-                  onChange={(e) => handleFiltroChange('status', e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  <option value="completo">Completo</option>
-                  <option value="pendente">Pendente</option>
-                  <option value="rascunho">Rascunho</option>
-                </select>
-              </div>
-
-              <div className="filter-group">
-                <label>Data Início</label>
-                <input
-                  type="date"
-                  value={filtros.dataInicio}
-                  onChange={(e) => handleFiltroChange('dataInicio', e.target.value)}
-                />
-              </div>
-
-              <div className="filter-group">
-                <label>Data Fim</label>
-                <input
-                  type="date"
-                  value={filtros.dataFim}
-                  onChange={(e) => handleFiltroChange('dataFim', e.target.value)}
-                />
-              </div>
-
-              <div className="filter-actions">
-                <button className="btn btn-secondary" onClick={limparFiltros}>
-                  🗑️ Limpar
-                </button>
-              </div>
+      {/* Legenda Flutuante */}
+      {legendaVisivel && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          background: 'white',
+          border: '2px solid #667eea',
+          borderRadius: '8px',
+          padding: '10px 12px',
+          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)',
+          zIndex: 999,
+          fontSize: '13px'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '8px'
+          }}>
+            <div style={{ fontWeight: '600', color: '#374151' }}>
+              Origem do Cadastro
+            </div>
+            <button
+              onClick={() => setLegendaVisivel(false)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                color: '#9ca3af',
+                transition: 'color 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.color = '#ef4444'}
+              onMouseOut={(e) => e.currentTarget.style.color = '#9ca3af'}
+              title="Fechar legenda"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Clipboard size={16} color="#8b4513" />
+              <span style={{ color: '#64748b' }}>ODK Collect (Aplicativo)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Monitor size={16} color="#667eea" />
+              <span style={{ color: '#64748b' }}>Sistema Web</span>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Tabela de Organizações */}
-        <div className="table-container">
-          {error ? (
-            <div className="error-message">
-              <p>❌ {error}</p>
-              <button onClick={fetchOrganizacoes} className="btn btn-primary">
-                Tentar Novamente
-              </button>
-            </div>
-          ) : organizacoes.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">🏢</div>
-              <h3>Nenhuma organização encontrada</h3>
-              <p>Não há organizações que correspondam aos filtros aplicados.</p>
-              <button className="btn btn-primary">
-                ➕ Cadastrar Primeira Organização
-              </button>
-            </div>
-          ) : (
-            <>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>CNPJ</th>
-                    <th>Localização</th>
-                    <th>Telefone</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {organizacoes.map((org) => (
-                    <tr key={org.id}>
-                      <td>
-                        <div className="org-info">
-                          <strong>{org.nome}</strong>
-                          <small>ID: {org.id}</small>
-                        </div>
-                      </td>
-                      <td>{org.cnpj || '-'}</td>
-                      <td>
-                        <div className="location-info">
-                          <span>{org.municipio || '-'}</span>
-                          <small>{org.estado || '-'}</small>
-                        </div>
-                      </td>
-                      <td>
-                        {org.telefone || '-'}
-                      </td>
-                      <td>
-                        <span className="status-badge status-complete">Ativo</span>
-                      </td>
-                      <td>
-                        <div className="action-buttons">
-                          <button 
-                            className="btn btn-sm btn-primary"
-                            onClick={() => onNavigate('edicao', org.id)}
-                            title="Editar"
-                          >
-                            ✏️ Editar
-                          </button>
-                          <button 
-                            className="btn btn-sm btn-danger"
-                            onClick={() => handleExcluir(org.id)}
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* Paginação */}
-              {totalPaginas > 1 && (
-                <div className="pagination">
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => setPaginaAtual(prev => Math.max(1, prev - 1))}
-                    disabled={paginaAtual === 1}
-                  >
-                    ← Anterior
-                  </button>
-                  
-                  <div className="pagination-info">
-                    Página {paginaAtual} de {totalPaginas}
-                  </div>
-                  
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => setPaginaAtual(prev => Math.min(totalPaginas, prev + 1))}
-                    disabled={paginaAtual === totalPaginas}
-                  >
-                    Próxima →
-                  </button>
-                </div>
-              )}
-            </>
-          )}
+      <div className="lista-body">
+        {/* DataGrid de Organizações */}
+        <div className="organizacoes-datagrid-container">
+          <DataGrid<Organizacao>
+            columns={columns}
+            dataSource={organizacoes}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              current: currentPage,
+              pageSize: pageSize,
+              total: totalOrganizacoes,
+              showSizeChanger: true,
+              onChange: handlePaginationChange,
+            }}
+            filters={{
+              searchable: true,
+              searchPlaceholder: 'Buscar por nome, CNPJ ou localização...',
+              onSearchChange: handleSearchChange,
+            }}
+            emptyState={{
+              title: 'Nenhuma organização encontrada',
+              description: searchTerm
+                ? `Não foram encontradas organizações que correspondam ao termo "${searchTerm}".`
+                : 'Não há organizações cadastradas no sistema ainda.',
+              action: {
+                label: 'Cadastrar primeira organização',
+                onClick: () => onNavigate('cadastro'),
+              },
+            }}
+            responsive={true}
+            size="compact"
+            className="organizacoes-datagrid"
+          />
         </div>
       </div>
     </div>

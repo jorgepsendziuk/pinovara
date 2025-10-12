@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar';
+import VersionIndicator from '../../components/VersionIndicator';
 import DashboardOrganizacoes from '../organizacoes/DashboardOrganizacoes';
 import ListaOrganizacoes from '../organizacoes/ListaOrganizacoes';
 import CadastroOrganizacao from '../organizacoes/CadastroOrganizacao';
 // import DetalhesOrganizacao from '../organizacoes/DetalhesOrganizacao'; // Removido
 import EdicaoOrganizacao from '../organizacoes/EdicaoOrganizacao';
-import MapaOrganizacoes from '../organizacoes/MapaOrganizacoes';
+import MapaOrganizacoesPage from '../organizacoes/MapaOrganizacoesPage';
 import '../organizacoes/OrganizacoesModule.css';
 
-type ViewType = 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa';
+type ViewType = 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa' | 'detalhes';
 
 function OrganizacoesModule() {
   const { } = useAuth();
@@ -67,7 +68,13 @@ function OrganizacoesModule() {
           navigate(`/organizacoes/edicao/${organizacaoId}`);
         }
         break;
-      // case 'detalhes': removido
+      case 'detalhes':
+        // Redireciona para edição (funcionalidade combinada)
+        if (organizacaoId) {
+          navigate(`/organizacoes/edicao/${organizacaoId}`);
+          setViewAtiva('edicao');
+        }
+        break;
     }
   };
 
@@ -80,10 +87,13 @@ function OrganizacoesModule() {
       case 'cadastro':
         return <CadastroOrganizacao onNavigate={handleNavegacao} />;
       case 'mapa':
-        return <MapaOrganizacoes />;
+        return <MapaOrganizacoesPage onNavigate={handleNavegacao} />;
       case 'edicao':
         return organizacaoSelecionada ? (
-          <EdicaoOrganizacao organizacaoId={organizacaoSelecionada} onNavigate={handleNavegacao} />
+          <EdicaoOrganizacao 
+            organizacaoId={organizacaoSelecionada} 
+            onNavigate={(pagina: string) => handleNavegacao(pagina as ViewType)} 
+          />
         ) : (
           <div className="error-message">
             <p>❌ ID da organização não fornecido</p>
@@ -92,7 +102,21 @@ function OrganizacoesModule() {
             </button>
           </div>
         );
-      // case 'detalhes': removido
+      case 'detalhes':
+        // Redireciona para edição (funcionalidade combinada)
+        return organizacaoSelecionada ? (
+          <EdicaoOrganizacao 
+            organizacaoId={organizacaoSelecionada} 
+            onNavigate={(pagina: string) => handleNavegacao(pagina as ViewType)} 
+          />
+        ) : (
+          <div className="error-message">
+            <p>❌ ID da organização não fornecido</p>
+            <button onClick={() => setViewAtiva('lista')} className="btn btn-primary">
+              Voltar para Lista
+            </button>
+          </div>
+        );
       default:
         return <DashboardOrganizacoes onNavigate={handleNavegacao} />;
     }
@@ -100,15 +124,18 @@ function OrganizacoesModule() {
 
   return (
     <div className="dashboard-layout">
+      {/* Indicador de versão discreto */}
+      <VersionIndicator position="top-right" theme="auto" />
+      
       <Sidebar />
 
       <div className="main-content">
-        <main className="dashboard-main">
-          <div className="container">
+        <main className="dashboard-main" style={{padding: viewAtiva === 'mapa' ? '0' : '20px'}}>
+          <div className={viewAtiva === 'mapa' ? 'full-width-container' : 'full-width-container'}>
             <div className="organizacoes-module">
 
               {/* Conteúdo do módulo */}
-              <div className="module-content">
+              <div className="module-content" style={{padding: viewAtiva === 'mapa' ? '0' : 'inherit'}}>
                 {renderView()}
               </div>
             </div>

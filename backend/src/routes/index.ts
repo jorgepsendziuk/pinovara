@@ -2,6 +2,13 @@ import { Router } from 'express';
 import authRoutes from './authRoutes';
 import organizacaoRoutes from './organizacaoRoutes';
 import healthRoutes from './healthRoutes';
+import debugRoutes from './debugRoutes';
+import adminRoutes from './adminRoutes';
+import documentoRoutes from './documentoRoutes';
+import fotoRoutes from './fotoRoutes';
+import fotoSyncRoutes from './fotoSyncRoutes';
+import arquivoSyncRoutes from './arquivoSyncRoutes';
+import relatorioRoutes from './relatorioRoutes';
 
 const router = Router();
 
@@ -27,7 +34,27 @@ router.get('/', (req, res) => {
         'GET /organizacoes/:id',
         'PUT /organizacoes/:id',
         'DELETE /organizacoes/:id',
-        'GET /organizacoes/dashboard'
+        'GET /organizacoes/dashboard',
+        'POST /organizacoes/:id/documentos',
+        'GET /organizacoes/:id/documentos',
+        'GET /organizacoes/:id/documentos/:docId/download',
+        'DELETE /organizacoes/:id/documentos/:docId',
+        'POST /organizacoes/:id/fotos',
+        'GET /organizacoes/:id/fotos',
+        'GET /organizacoes/:id/fotos/:fotoId/download',
+        'DELETE /organizacoes/:id/fotos/:fotoId'
+      ],
+      admin: [
+        'GET /admin/users',
+        'GET /admin/users/:id',
+        'POST /admin/users',
+        'PUT /admin/users/:id',
+        'DELETE /admin/users/:id',
+        'PUT /admin/users/:id/status',
+        'GET /admin/roles',
+        'POST /admin/users/:id/roles',
+        'DELETE /admin/users/:id/roles/:roleId',
+        'GET /admin/stats'
       ],
       system: [
         'GET /',
@@ -40,6 +67,13 @@ router.get('/', (req, res) => {
 // Registrar rotas dos módulos
 router.use('/', healthRoutes);  // Health routes no root
 router.use('/auth', authRoutes);
-router.use('/organizacoes', organizacaoRoutes);
+router.use('/organizacoes', fotoRoutes);  // Foto routes - ANTES de organizacaoRoutes (view é público)
+router.use('/', documentoRoutes);  // Documento routes - usa /organizacoes/:id/documentos (ANTES de organizacaoRoutes)
+router.use('/', fotoSyncRoutes);  // Foto sync ODK routes - usa /organizacoes/:id/fotos/sync
+router.use('/', arquivoSyncRoutes);  // Arquivo sync ODK routes - usa /organizacoes/:id/arquivos/sync
+router.use('/', relatorioRoutes);  // Relatorio routes - usa /organizacoes/:id/relatorio/pdf
+router.use('/organizacoes', organizacaoRoutes);  // Organizacao routes - usa auth global
+router.use('/admin', adminRoutes);  // Admin routes - requer autenticação e papel admin
+router.use('/debug', debugRoutes);  // DEBUG routes - REMOVER EM PRODUÇÃO
 
 export default router;

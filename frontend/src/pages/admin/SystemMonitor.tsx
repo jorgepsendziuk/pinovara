@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import {
+  Search,
+  Monitor,
+  Timer,
+  Settings,
+  TrendingUp
+} from 'lucide-react';
 
 interface SystemMetrics {
   cpu: {
@@ -177,7 +184,7 @@ function SystemMonitor() {
     <div className="admin-page">
       <div className="page-header">
         <div className="header-content">
-          <h1>🔍 Monitor do Sistema</h1>
+          <h1><Search size={24} style={{marginRight: '0.5rem'}} /> Monitor do Sistema</h1>
           <p>Monitoramento em tempo real do PINOVARA</p>
         </div>
 
@@ -219,7 +226,7 @@ function SystemMonitor() {
             <div className="status-cards-grid">
               <div className="status-card">
                 <div className="status-card-header">
-                  <span className="status-icon">🖥️</span>
+                  <span className="status-icon"><Monitor size={16} /></span>
                   <h3>CPU</h3>
                 </div>
                 <div className="status-card-content">
@@ -308,17 +315,17 @@ function SystemMonitor() {
             {/* System Info */}
             <div className="system-info-grid">
               <div className="info-card">
-                <h3>⏱️ Tempo de Atividade</h3>
+                <h3><Timer size={18} style={{marginRight: '0.5rem'}} /> Tempo de Atividade</h3>
                 <div className="info-value">{formatUptime(metrics.uptime)}</div>
               </div>
 
               <div className="info-card">
-                <h3>⚙️ Processos Ativos</h3>
+                <h3><Settings size={18} style={{marginRight: '0.5rem'}} /> Processos Ativos</h3>
                 <div className="info-value">{metrics.processes}</div>
               </div>
 
               <div className="info-card">
-                <h3>📈 Carga Média</h3>
+                <h3><TrendingUp size={18} style={{marginRight: '0.5rem'}} /> Carga Média</h3>
                 <div className="info-value">{metrics.loadAverage.join(', ')}</div>
               </div>
 

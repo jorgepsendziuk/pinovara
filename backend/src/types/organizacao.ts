@@ -76,6 +76,7 @@ export interface OrganizacaoFilters {
   cnpj?: string;
   estado?: number;
   municipio?: number;
+  id_tecnico?: number; // Filtro para técnicos específicos
   page?: number;
   limit?: number;
 }
