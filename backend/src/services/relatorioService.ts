@@ -311,68 +311,75 @@ export const relatorioService = {
         doc.moveDown(1);
       }
 
-      // === FOTOS ===
+      // === FOTOS (UMA POR PÁGINA) ===
       if (organizacao.organizacao_foto && organizacao.organizacao_foto.length > 0) {
-        // Nova página para fotos
-        doc.addPage();
-
-        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
-          .text('FOTOS DA ORGANIZAÇÃO', 50, 50);
-        doc.moveDown(0.5);
-        
-        doc.strokeColor('#056839')
-          .lineWidth(1)
-          .moveTo(50, doc.y)
-          .lineTo(doc.page.width - 50, doc.y)
-          .stroke();
-        doc.moveDown(1);
-
         for (const foto of organizacao.organizacao_foto) {
           if (!foto.foto) continue;
 
+          // Nova página para cada foto
+          doc.addPage();
+
           const fotoPath = path.join(UPLOAD_DIR, foto.foto);
-          
-          // Verificar se há espaço na página
-          if (doc.y > 600) {
-            doc.addPage();
-          }
 
           // Verificar se arquivo existe
           if (!fs.existsSync(fotoPath)) {
+            doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+              .text('FOTO NÃO ENCONTRADA', 50, 50);
+            doc.moveDown(0.5);
+            
+            doc.strokeColor('#056839')
+              .lineWidth(1)
+              .moveTo(50, doc.y)
+              .lineTo(doc.page.width - 50, doc.y)
+              .stroke();
+            doc.moveDown(1);
+
             doc.font('Helvetica').fontSize(9).fillColor('#666')
-              .text(`Foto não encontrada: ${foto.foto}`, 50, doc.y);
+              .text(`Arquivo: ${foto.foto}`, 50, doc.y);
             if (foto.obs) {
               doc.text(`Descrição: ${foto.obs}`, 50, doc.y + 12);
             }
-            doc.moveDown(2);
             continue;
           }
 
-          // Título da foto
-          doc.font('Helvetica-Bold').fontSize(10).fillColor('#3b2313')
-            .text(foto.obs || foto.foto || 'Sem descrição', 50, doc.y);
-          doc.moveDown(0.3);
+          // Cabeçalho da página de foto
+          doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+            .text('FOTO DA ORGANIZAÇÃO', 50, 50);
+          doc.moveDown(0.5);
+          
+          doc.strokeColor('#056839')
+            .lineWidth(1)
+            .moveTo(50, doc.y)
+            .lineTo(doc.page.width - 50, doc.y)
+            .stroke();
+          doc.moveDown(1);
 
-          // Informações
-          doc.font('Helvetica').fontSize(8).fillColor('#666')
-            .text(`Arquivo: ${foto.foto} | Data: ${new Date(foto.creation_date).toLocaleDateString('pt-BR')}`, 50, doc.y);
+          // Título/Descrição da foto
+          doc.font('Helvetica-Bold').fontSize(11).fillColor('#3b2313')
+            .text(foto.obs || 'Sem descrição', 50, doc.y);
           doc.moveDown(0.5);
 
-          // Inserir imagem
+          // Informações
+          doc.font('Helvetica').fontSize(9).fillColor('#666')
+            .text(`Arquivo: ${foto.foto}`, 50, doc.y);
+          doc.text(`Data: ${new Date(foto.creation_date).toLocaleDateString('pt-BR')} às ${new Date(foto.creation_date).toLocaleTimeString('pt-BR')}`, 50, doc.y + 12);
+          doc.moveDown(2);
+
+          // Inserir imagem (centralizada e maximizada)
           try {
             const maxWidth = doc.page.width - 100;
-            const maxHeight = 300;
+            const maxHeight = 550; // Altura maior para aproveitar a página
 
             doc.image(fotoPath, 50, doc.y, {
               fit: [maxWidth, maxHeight],
               align: 'center'
             });
 
-            doc.y += maxHeight + 20;
           } catch (error) {
-            doc.fontSize(9).fillColor('#666')
-              .text('Erro ao carregar imagem', 50, doc.y);
-            doc.moveDown(2);
+            doc.fillColor('#666')
+              .fontSize(10)
+              .text('Erro ao carregar imagem', 50, doc.y, { align: 'center' });
+            doc.text(`Detalhes: ${error}`, 50, doc.y + 20, { align: 'center' });
           }
         }
       }
