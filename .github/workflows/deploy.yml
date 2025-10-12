@@ -59,7 +59,8 @@ jobs:
     - name: 📦 Install Dependencies (Workspaces)
       run: |
         echo "📦 Installing all dependencies via npm workspaces..."
-        npm ci
+        echo "⚠️ Using npm install instead of npm ci (workspace compatibility)"
+        npm install --no-audit --no-fund
         echo "✅ All dependencies installed"
 
     - name: 🏗️ Build Backend
