@@ -4,7 +4,7 @@ import { Clipboard, Users, BarChart, Target, Handshake, GraduationCap } from 'lu
 
 interface DiagnosticoAreaProps {
   titulo: string;
-  icone: string;
+  icone: React.ReactNode;
   area: string;
   dados: GruposDiagnostico;
   perguntas: { [key: string]: any };
@@ -219,7 +219,7 @@ export const DiagnosticoArea: React.FC<DiagnosticoAreaProps> = ({
           cursor: 'pointer'
         }}
       >
-        <h3>{icone} {titulo}</h3>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{icone} {titulo}</h3>
         <span className={`accordion-icon ${diagnosticoAberto === area ? 'open' : ''}`}>
           ▼
         </span>
