@@ -83,8 +83,17 @@ jobs:
 
         # Copy files
         echo "📋 Preparing deployment files (FAST mode)..."
-        cp -r backend/package*.json backend/dist backend/prisma $DEPLOY_DIR/ 2>/dev/null || true
-        cp -r frontend/dist $DEPLOY_DIR/frontend-dist 2>/dev/null || true
+        
+        # Copy backend files explicitly (no glob patterns!)
+        cp backend/package.json $DEPLOY_DIR/package.json
+        cp backend/package-lock.json $DEPLOY_DIR/package-lock.json
+        cp -r backend/dist $DEPLOY_DIR/dist
+        cp -r backend/prisma $DEPLOY_DIR/prisma
+        
+        # Copy frontend
+        cp -r frontend/dist $DEPLOY_DIR/frontend-dist
+        
+        echo "📦 Files copied: package.json, package-lock.json, dist/, prisma/"
         echo "⚡ node_modules will be installed on server (npm ci is faster than copying)"
 
         # Create env file if config.env exists
@@ -195,10 +204,20 @@ jobs:
 
         # Copy files with full paths (no sudo needed now)
         if [ -f "package.json" ]; then
-            cp package*.json /var/www/pinovara/backend/
+            cp package.json /var/www/pinovara/backend/package.json
             echo "✅ package.json copied"
         else
             echo "❌ package.json not found in $DEPLOY_SOURCE"
+            exit 1
+        fi
+        
+        if [ -f "package-lock.json" ]; then
+            cp package-lock.json /var/www/pinovara/backend/package-lock.json
+            echo "✅ package-lock.json copied"
+        else
+            echo "❌ package-lock.json not found in $DEPLOY_SOURCE"
+            ls -la "$DEPLOY_SOURCE"
+            exit 1
         fi
 
         if [ -f ".env" ]; then
