@@ -532,6 +532,36 @@ export const documentoAPI = {
       throw new Error(response.data.error?.message || 'Erro ao deletar documento');
     }
   },
+
+  /**
+   * Sincronizar arquivos do ODK
+   */
+  syncFromODK: async (organizacaoId: number): Promise<any> => {
+    const response = await api.post<ApiResponse>(
+      `/organizacoes/${organizacaoId}/arquivos/sync`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao sincronizar arquivos do ODK');
+    }
+
+    return response.data.data;
+  },
+
+  /**
+   * Listar arquivos disponíveis no ODK
+   */
+  listODKAvailable: async (organizacaoId: number): Promise<any> => {
+    const response = await api.get<ApiResponse>(
+      `/organizacoes/${organizacaoId}/arquivos/odk-disponiveis`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar arquivos disponíveis no ODK');
+    }
+
+    return response.data.data;
+  }
 };
 
 // Interface para Foto

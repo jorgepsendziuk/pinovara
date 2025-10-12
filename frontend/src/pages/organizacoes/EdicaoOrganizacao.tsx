@@ -21,7 +21,8 @@ import {
   Save,
   Target,
   ChevronsDown,
-  ChevronsUp
+  ChevronsUp,
+  FileText
 } from 'lucide-react';
 
 interface EdicaoOrganizacaoProps {
@@ -36,6 +37,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   const [accordionsAbertos, setAccordionsAbertos] = useState<string[]>([]);
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [gerandoPDF, setGerandoPDF] = useState(false);
 
   // Hooks customizados
   const {
@@ -104,6 +106,41 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   const colapsarTodos = () => {
     // Fecha todos os accordions
     setAccordionsAbertos([]);
+  };
+
+  const handleGerarRelatorio = async () => {
+    if (!organizacao) return;
+
+    setGerandoPDF(true);
+    try {
+      // Chamar API para gerar PDF
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/relatorio/pdf`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('@pinovara:token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao gerar relatório');
+      }
+
+      // Baixar PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `relatorio_${organizacao.nome?.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      alert('✅ Relatório gerado com sucesso!');
+    } catch (error: any) {
+      alert(`❌ Erro ao gerar relatório: ${error.message}`);
+    } finally {
+      setGerandoPDF(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -242,22 +279,24 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   // Renderização das abas
   const renderAbaOrganizacao = () => (
     <div className="aba-content">
-      {/* Botão Expandir/Colapsar Todos */}
+      {/* Botões de Ação */}
       <div style={{ 
         display: 'flex', 
-        justifyContent: 'flex-end', 
+        justifyContent: 'space-between', 
         marginBottom: '15px',
         gap: '10px'
       }}>
+        {/* Botão Gerar Relatório */}
         <button
-          onClick={colapsarTodos}
+          onClick={handleGerarRelatorio}
+          disabled={gerandoPDF}
           style={{
             padding: '8px 16px',
-            background: '#6c757d',
+            background: gerandoPDF ? '#6c757d' : '#056839',
             color: 'white',
             border: 'none',
             borderRadius: '6px',
-            cursor: 'pointer',
+            cursor: gerandoPDF ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
@@ -265,34 +304,59 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             fontWeight: '500',
             transition: 'all 0.2s ease'
           }}
-          onMouseOver={(e) => e.currentTarget.style.background = '#5a6268'}
-          onMouseOut={(e) => e.currentTarget.style.background = '#6c757d'}
+          onMouseOver={(e) => !gerandoPDF && (e.currentTarget.style.background = '#045028')}
+          onMouseOut={(e) => !gerandoPDF && (e.currentTarget.style.background = '#056839')}
         >
-          <ChevronsUp size={16} />
-          Colapsar Todos
+          <FileText size={16} />
+          {gerandoPDF ? 'Gerando PDF...' : 'Gerar Relatório'}
         </button>
-        <button
-          onClick={expandirTodos}
-          style={{
-            padding: '8px 16px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '14px',
-            fontWeight: '500',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
-          onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-        >
-          <ChevronsDown size={16} />
-          Expandir Todos
-        </button>
+
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={colapsarTodos}
+            style={{
+              padding: '8px 16px',
+              background: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#5a6268'}
+            onMouseOut={(e) => e.currentTarget.style.background = '#6c757d'}
+          >
+            <ChevronsUp size={16} />
+            Recolher Todos
+          </button>
+          <button
+            onClick={expandirTodos}
+            style={{
+              padding: '8px 16px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <ChevronsDown size={16} />
+            Expandir Todos
+          </button>
+        </div>
       </div>
 
       <div className="accordions-container">

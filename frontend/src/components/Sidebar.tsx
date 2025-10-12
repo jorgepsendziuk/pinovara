@@ -86,8 +86,15 @@ const Sidebar: React.FC = () => {
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['sistema']));
   const sidebarRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<HTMLDivElement>(null);
+  const userExpandedRef = useRef<boolean>(false); // Track if user manually expanded
 
   const toggleMenu = (menuId: string) => {
+    // Se o menu está colapsado, expandir primeiro
+    if (isCollapsed && !isMobile) {
+      setIsCollapsed(false);
+      userExpandedRef.current = true; // Mark as user-expanded
+    }
+    
     const newExpanded = new Set(expandedMenus);
     if (newExpanded.has(menuId)) {
       newExpanded.delete(menuId);
@@ -161,10 +168,20 @@ const Sidebar: React.FC = () => {
       setIsMobileOpen(false);
     }
     
-    // Auto-collapse em tablets menores para economizar espaço
-    if (isTablet && !isCollapsed) {
-      // Opcional: auto-collapse em tablets pode ser ativado aqui
-      // setIsCollapsed(true);
+    // Auto-collapse em tablets e telas menores para economizar espaço
+    // Mas só se o usuário não expandiu manualmente
+    if ((isTablet || isMobile) && !isCollapsed && !userExpandedRef.current) {
+      setIsCollapsed(true);
+    }
+    
+    // Auto-expand em desktop se estiver colapsado (e não foi expansão manual)
+    if (!isTablet && !isMobile && isCollapsed && !userExpandedRef.current) {
+      setIsCollapsed(false);
+    }
+    
+    // Reset user expansion flag when screen size changes
+    if (isTablet || isMobile) {
+      userExpandedRef.current = false;
     }
     
     // Ajustar largura baseada no tipo de dispositivo
@@ -600,6 +617,11 @@ const Sidebar: React.FC = () => {
     // Em mobile, fechar o menu após clicar em um link
     if (isMobile) {
       setIsMobileOpen(false);
+    }
+    // Se o menu está colapsado no desktop/tablet, expandir para mostrar o conteúdo
+    if (isCollapsed && !isMobile) {
+      setIsCollapsed(false);
+      userExpandedRef.current = true; // Mark as user-expanded
     }
   };
 
