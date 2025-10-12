@@ -121,7 +121,7 @@ class OrganizacaoService {
 
     sqlQuery += ` ORDER BY o.id ASC LIMIT ${limit} OFFSET ${skip}`;
 
-    const organizacoes = await prisma.$queryRawUnsafe<any[]>(sqlQuery);
+    const organizacoes = await prisma.$queryRawUnsafe(sqlQuery) as any[];
 
     return {
       organizacoes,

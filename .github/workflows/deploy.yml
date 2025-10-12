@@ -45,20 +45,22 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
 
     - name: 🏗️ Build Backend
       working-directory: ./backend
       run: |
         echo "🔨 Building backend..."
-        npm ci
+        npm ci --production=false
         npm run build
-        echo "✅ Backend built successfully (FAST - no Prisma)"
+        echo "✅ Backend built successfully"
 
     - name: 🎨 Build Frontend
       working-directory: ./frontend
       run: |
         echo "🎨 Building frontend..."
-        npm ci
+        npm ci --production=false
         echo "📝 Generating version info..."
         node scripts/generate-version.cjs
         npm run build
@@ -81,9 +83,18 @@ jobs:
 
         # Copy files
         echo "📋 Preparing deployment files (FAST mode)..."
-        cp -r backend/package*.json backend/dist backend/prisma $DEPLOY_DIR/ 2>/dev/null || true
-        cp -r frontend/dist $DEPLOY_DIR/frontend-dist 2>/dev/null || true
-        echo "⚡ Skipping Prisma client copy (will reuse server's existing client)"
+        
+        # Copy backend files explicitly (no glob patterns!)
+        cp backend/package.json $DEPLOY_DIR/package.json
+        cp backend/package-lock.json $DEPLOY_DIR/package-lock.json
+        cp -r backend/dist $DEPLOY_DIR/dist
+        cp -r backend/prisma $DEPLOY_DIR/prisma
+        
+        # Copy frontend
+        cp -r frontend/dist $DEPLOY_DIR/frontend-dist
+        
+        echo "📦 Files copied: package.json, package-lock.json, dist/, prisma/"
+        echo "⚡ node_modules will be installed on server (npm ci is faster than copying)"
 
         # Create env file if config.env exists
         if [ -f "backend/config.env" ]; then
@@ -193,10 +204,20 @@ jobs:
 
         # Copy files with full paths (no sudo needed now)
         if [ -f "package.json" ]; then
-            cp package*.json /var/www/pinovara/backend/
+            cp package.json /var/www/pinovara/backend/package.json
             echo "✅ package.json copied"
         else
             echo "❌ package.json not found in $DEPLOY_SOURCE"
+            exit 1
+        fi
+        
+        if [ -f "package-lock.json" ]; then
+            cp package-lock.json /var/www/pinovara/backend/package-lock.json
+            echo "✅ package-lock.json copied"
+        else
+            echo "❌ package-lock.json not found in $DEPLOY_SOURCE"
+            ls -la "$DEPLOY_SOURCE"
+            exit 1
         fi
 
         if [ -f ".env" ]; then
@@ -243,9 +264,10 @@ jobs:
         
         sudo chmod -R 777 /var/www/pinovara/backend 
 
-        # Install dependencies with explicit working directory
-        echo "📦 Installing dependencies..."
-        cd /var/www/pinovara/backend && sudo npm ci --production --unsafe-perm
+        # Install dependencies on server (now with independent lockfiles!)
+        echo "📦 Installing backend dependencies on server..."
+        cd /var/www/pinovara/backend && npm ci --production --omit=dev
+        echo "✅ Dependencies installed successfully"
 
         # Prisma client strategy (ULTRA SMART!)
         echo "⚡ Checking existing Prisma client on server..."
