@@ -5,6 +5,7 @@ import { useRepresentanteData } from '../../hooks/useRepresentanteData';
 import { useDiagnosticoData } from '../../hooks/useDiagnosticoData';
 import { DadosBasicos } from '../../components/organizacoes/DadosBasicos';
 import { EnderecoLocalizacao } from '../../components/organizacoes/EnderecoLocalizacao';
+import CaracteristicasAssociados from '../../components/organizacoes/CaracteristicasAssociados';
 import { DadosRepresentanteComponent } from '../../components/organizacoes/DadosRepresentante';
 import { DiagnosticoArea } from '../../components/organizacoes/DiagnosticoArea';
 import { PlanoGestao } from '../../components/organizacoes/PlanoGestao';
@@ -16,14 +17,22 @@ import {
   Search,
   Building2,
   Users,
+  DollarSign,
   XCircle,
   Loader2,
   Save,
   Target,
   ChevronsDown,
   ChevronsUp,
-  FileText
+  FileText,
+  MapPin,
+  Network,
+  Wheat,
+  Award,
+  ShoppingCart,
+  IdCard
 } from 'lucide-react';
+import '../../styles/tabs.css';
 
 interface EdicaoOrganizacaoProps {
   organizacaoId: number;
@@ -33,7 +42,7 @@ interface EdicaoOrganizacaoProps {
 function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps) {
   
   // Estados principais
-  const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('organizacao');
+  const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('identificacao');
   const [accordionsAbertos, setAccordionsAbertos] = useState<string[]>([]);
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -92,7 +101,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   };
 
   const expandirTodos = () => {
-    // Abre todos os accordions da aba Organização
+    // Abre todos os accordions da aba de Identificação
     setAccordionsAbertos([
       'dados-basicos',
       'endereco-localizacao',
@@ -277,7 +286,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   };
 
   // Renderização das abas
-  const renderAbaOrganizacao = () => (
+  const renderAbaIdentificacao = () => (
     <div className="aba-content">
       {/* Botões de Ação */}
       <div style={{ 
@@ -406,6 +415,122 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     </div>
   );
 
+  const renderAbaCaracteristicas = () => (
+    <div className="aba-content" style={{ width: '100%' }}>
+      {organizacao && (
+        <CaracteristicasAssociados
+          organizacao={organizacao}
+          onUpdate={updateOrganizacao}
+        />
+      )}
+    </div>
+  );
+
+  const renderAbaAbrangencia = () => (
+    <div className="aba-content" style={{ width: '100%', padding: '2rem' }}>
+      <div style={{
+        textAlign: 'center',
+        padding: '3rem',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        borderRadius: '12px',
+        border: '2px dashed #d1d5db'
+      }}>
+        <MapPin size={48} style={{ color: '#6b7280', marginBottom: '1rem' }} />
+        <h3 style={{ color: '#3b2313', marginBottom: '0.5rem' }}>Abrangência Geográfica</h3>
+        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+          Gestão dos municípios onde residem os associados
+        </p>
+        <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
+          Esta seção será implementada em breve
+        </p>
+      </div>
+    </div>
+  );
+
+  const renderAbaAssociadosJuridicos = () => (
+    <div className="aba-content" style={{ width: '100%', padding: '2rem' }}>
+      <div style={{
+        textAlign: 'center',
+        padding: '3rem',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        borderRadius: '12px',
+        border: '2px dashed #d1d5db'
+      }}>
+        <Network size={48} style={{ color: '#6b7280', marginBottom: '1rem' }} />
+        <h3 style={{ color: '#3b2313', marginBottom: '0.5rem' }}>Associados Jurídicos</h3>
+        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+          Organizações filiadas e suas relações
+        </p>
+        <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
+          Esta seção será implementada em breve
+        </p>
+      </div>
+    </div>
+  );
+
+  const renderAbaProducao = () => (
+    <div className="aba-content" style={{ width: '100%', padding: '2rem' }}>
+      <div style={{
+        textAlign: 'center',
+        padding: '3rem',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        borderRadius: '12px',
+        border: '2px dashed #d1d5db'
+      }}>
+        <Wheat size={48} style={{ color: '#6b7280', marginBottom: '1rem' }} />
+        <h3 style={{ color: '#3b2313', marginBottom: '0.5rem' }}>Dados de Produção</h3>
+        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+          Culturas, volumes e valores de produção
+        </p>
+        <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
+          Esta seção será implementada em breve
+        </p>
+      </div>
+    </div>
+  );
+
+  const renderAbaCertificacoes = () => (
+    <div className="aba-content" style={{ width: '100%', padding: '2rem' }}>
+      <div style={{
+        textAlign: 'center',
+        padding: '3rem',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        borderRadius: '12px',
+        border: '2px dashed #d1d5db'
+      }}>
+        <Award size={48} style={{ color: '#6b7280', marginBottom: '1rem' }} />
+        <h3 style={{ color: '#3b2313', marginBottom: '0.5rem' }}>Certificações e Selos</h3>
+        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+          Certificações orgânicas, selos de qualidade e conformidades
+        </p>
+        <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
+          Esta seção será implementada em breve
+        </p>
+      </div>
+    </div>
+  );
+
+  const renderAbaComercializacao = () => (
+    <div className="aba-content" style={{ width: '100%', padding: '2rem' }}>
+      <div style={{
+        textAlign: 'center',
+        padding: '3rem',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        borderRadius: '12px',
+        border: '2px dashed #d1d5db'
+      }}>
+        <ShoppingCart size={48} style={{ color: '#6b7280', marginBottom: '1rem' }} />
+        <h3 style={{ color: '#3b2313', marginBottom: '0.5rem' }}>Comercialização</h3>
+        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+          Canais de comercialização, compradores e valores
+        </p>
+        <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
+          Esta seção será implementada em breve
+        </p>
+      </div>
+    </div>
+  );
+
   const renderAbaDiagnostico = () => (
     <div className="aba-content" style={{ width: '100%' }}>
         <div className="diagnostico-container" style={{ 
@@ -414,7 +539,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         }}>
         <DiagnosticoArea
           titulo="ÁREA GERENCIAL: GOVERNANÇA ORGANIZACIONAL"
-          icone={<Building2 size={16} />}
+          icone={<Building2 size={20} />}
           area="governanca-main"
           dados={governancaOrganizacional}
           perguntas={gruposGovernanca}
@@ -425,7 +550,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
 
         <DiagnosticoArea
           titulo="ÁREA GERENCIAL: GESTÃO DE PESSOAS"
-          icone={<Users size={16} />}
+          icone={<Users size={20} />}
           area="pessoas-main"
           dados={gestaoPessoas}
           perguntas={gruposGestaoPessoas}
@@ -436,7 +561,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
 
         <DiagnosticoArea
           titulo="ÁREA GERENCIAL: GESTÃO FINANCEIRA"
-          icone="💰"
+          icone={<DollarSign size={20} />}
           area="financeira-main"
           dados={gestaoFinanceira}
           perguntas={gruposGestaoFinanceira}
@@ -525,28 +650,79 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         {/* Tabs Navigation */}
         <div className="tabs-navigation">
           <button
-            className={`tab-button ${abaAtiva === 'organizacao' ? 'active' : ''}`}
-            onClick={() => setAbaAtiva('organizacao')}
+            className={`tab-button ${abaAtiva === 'identificacao' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('identificacao')}
+            title="Identificação e Caracterização"
           >
-            <Building2 size={14} style={{marginRight: '0.25rem'}} /> Organização
+            <IdCard size={16} /> <span>Identificação</span>
+          </button>
+          <button
+            className={`tab-button ${abaAtiva === 'caracteristicas' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('caracteristicas')}
+            title="Características dos Associados"
+          >
+            <Users size={16} /> <span>Características</span>
+          </button>
+          <button
+            className={`tab-button ${abaAtiva === 'abrangencia' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('abrangencia')}
+            title="Abrangência Geográfica"
+          >
+            <MapPin size={16} /> <span>Abrangência</span>
+          </button>
+          <button
+            className={`tab-button ${abaAtiva === 'associados-juridicos' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('associados-juridicos')}
+            title="Associados Jurídicos"
+          >
+            <Network size={16} /> <span>Ass. Jurídicos</span>
+          </button>
+          <button
+            className={`tab-button ${abaAtiva === 'producao' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('producao')}
+            title="Dados de Produção"
+          >
+            <Wheat size={16} /> <span>Produção</span>
+          </button>
+          <button
+            className={`tab-button ${abaAtiva === 'certificacoes' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('certificacoes')}
+            title="Certificações e Selos"
+          >
+            <Award size={16} /> <span>Certificações</span>
+          </button>
+          <button
+            className={`tab-button ${abaAtiva === 'comercializacao' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('comercializacao')}
+            title="Comercialização"
+          >
+            <ShoppingCart size={16} /> <span>Comercialização</span>
           </button>
           <button
             className={`tab-button ${abaAtiva === 'diagnostico' ? 'active' : ''}`}
             onClick={() => setAbaAtiva('diagnostico')}
+            title="Diagnóstico"
           >
-            <Search size={14} style={{marginRight: '0.25rem'}} /> Diagnóstico
+            <Search size={16} /> <span>Diagnóstico</span>
           </button>
           <button
             className={`tab-button ${abaAtiva === 'planoGestao' ? 'active' : ''}`}
             onClick={() => setAbaAtiva('planoGestao')}
+            title="Plano de Gestão"
           >
-            <Target size={14} style={{marginRight: '0.25rem'}} /> Plano de Gestão
+            <Target size={16} /> <span>Plano de Gestão</span>
           </button>
         </div>
 
         {/* Tab Content */}
         <div className="tab-content">
-          {abaAtiva === 'organizacao' && renderAbaOrganizacao()}
+          {abaAtiva === 'identificacao' && renderAbaIdentificacao()}
+          {abaAtiva === 'caracteristicas' && renderAbaCaracteristicas()}
+          {abaAtiva === 'abrangencia' && renderAbaAbrangencia()}
+          {abaAtiva === 'associados-juridicos' && renderAbaAssociadosJuridicos()}
+          {abaAtiva === 'producao' && renderAbaProducao()}
+          {abaAtiva === 'certificacoes' && renderAbaCertificacoes()}
+          {abaAtiva === 'comercializacao' && renderAbaComercializacao()}
           {abaAtiva === 'diagnostico' && renderAbaDiagnostico()}
           {abaAtiva === 'planoGestao' && renderAbaPlanoGestao()}
 

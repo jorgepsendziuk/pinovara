@@ -6,7 +6,7 @@ export const useOrganizacaoData = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const updateOrganizacao = useCallback((field: keyof Organizacao, value: any) => {
+  const updateOrganizacao = useCallback(async (field: keyof Organizacao, value: any) => {
     setOrganizacao(prev => prev ? { ...prev, [field]: value } : null);
   }, []);
 
