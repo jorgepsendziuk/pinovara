@@ -46,11 +46,16 @@ jobs:
       with:
         node-version: '20'
 
+    - name: 📦 Install Dependencies (Workspaces)
+      run: |
+        echo "📦 Installing all dependencies via npm workspaces..."
+        npm ci
+        echo "✅ All dependencies installed"
+
     - name: 🏗️ Build Backend
       working-directory: ./backend
       run: |
         echo "🔨 Building backend..."
-        npm ci
         npm run build
         echo "✅ Backend built successfully (FAST - no Prisma)"
 
@@ -58,7 +63,6 @@ jobs:
       working-directory: ./frontend
       run: |
         echo "🎨 Building frontend..."
-        npm ci
         echo "📝 Generating version info..."
         node scripts/generate-version.cjs
         npm run build
