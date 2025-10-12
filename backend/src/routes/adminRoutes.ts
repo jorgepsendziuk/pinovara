@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth';
 import { requireAdmin } from '../middleware/adminAuth';
 import adminController from '../controllers/adminController';
+import { migrateIdTecnico } from '../scripts/migrate-id-tecnico';
 
 const router = Router();
 
@@ -185,6 +186,42 @@ router.get('/system-info', async (req, res) => {
       success: false,
       error: {
         message: 'Erro ao obter informações do sistema',
+        statusCode: 500
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// ========== MIGRATION ROUTES ==========
+
+/**
+ * POST /admin/migrate-id-tecnico
+ * Executar migração para preencher id_tecnico nas organizações
+ * 
+ * Este endpoint extrai o email do campo _creator_uri_user do ODK
+ * e vincula com o usuário correspondente na tabela users.
+ */
+router.post('/migrate-id-tecnico', async (req, res) => {
+  try {
+    console.log('🚀 Iniciando migração de id_tecnico via endpoint...');
+    
+    const result = await migrateIdTecnico();
+    
+    res.json({
+      success: true,
+      message: 'Migração concluída com sucesso',
+      data: result,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ [AdminRoutes] Erro na migração:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Erro ao executar migração',
+        details: error instanceof Error ? error.message : 'Erro desconhecido',
         statusCode: 500
       },
       timestamp: new Date().toISOString()

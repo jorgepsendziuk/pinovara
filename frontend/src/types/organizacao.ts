@@ -120,8 +120,6 @@ export type AbaAtiva =
   | 'abrangencia' 
   | 'associados-juridicos'
   | 'producao'
-  | 'certificacoes'
-  | 'comercializacao'
   | 'diagnostico' 
   | 'planoGestao';
 export type AccordionAberto = string | null;

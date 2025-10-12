@@ -6,6 +6,7 @@ import {
   OrganizacaoListResponse 
 } from '../types/organizacao';
 import { ErrorCode, HttpStatus, PaginatedResponse } from '../types/api';
+import { extractEmailFromCreatorUri } from '../utils/odkHelper';
 
 class ApiError extends Error {
   statusCode: number;
@@ -25,9 +26,11 @@ const prisma = new PrismaClient();
 class OrganizacaoService {
   /**
    * Listar organizações com filtros e paginação
+   * Agora com filtro híbrido: se userId for fornecido e não for admin,
+   * filtra por id_tecnico = userId OU email no _creator_uri_user
    */
   async list(filters: OrganizacaoFilters = {}): Promise<OrganizacaoListResponse> {
-    const { page = 1, limit = 10, nome, cnpj, estado, municipio, id_tecnico } = filters;
+    const { page = 1, limit = 10, nome, cnpj, estado, municipio, id_tecnico, userId } = filters;
 
     // Construir condições de filtro
     const whereConditions: any = {
@@ -63,10 +66,26 @@ class OrganizacaoService {
       whereConditions.id_tecnico = id_tecnico;
     }
 
-    // Buscar dados reais do banco
-    const total = await prisma.organizacao.count({ where: whereConditions });
-    const skip = (page - 1) * limit;
-    const totalPaginas = Math.ceil(total / limit);
+    // Verificar se deve aplicar filtro híbrido por userId
+    let aplicarFiltroHibrido = false;
+    let userEmail: string | null = null;
+    
+    if (userId) {
+      const isAdmin = await this.isUserAdmin(userId);
+      
+      if (!isAdmin) {
+        // Usuário não é admin, aplicar filtro híbrido
+        aplicarFiltroHibrido = true;
+        
+        // Buscar email do usuário logado
+        const user = await prisma.users.findUnique({
+          where: { id: userId },
+          select: { email: true }
+        });
+        
+        userEmail = user?.email?.toLowerCase() || null;
+      }
+    }
 
     // Buscar organizações com nomes de estado e município
     let sqlQuery = `
@@ -85,7 +104,9 @@ class OrganizacaoService {
         o.gps_lat,
         o.gps_lng,
         o.removido,
-        o.meta_instance_id
+        o.meta_instance_id,
+        o.id_tecnico,
+        o._creator_uri_user
       FROM pinovara.organizacao o
       LEFT JOIN pinovara_aux.estado e ON o.estado = e.id
       LEFT JOIN pinovara_aux.municipio_ibge m ON o.municipio = m.id
@@ -119,12 +140,36 @@ class OrganizacaoService {
       sqlQuery += ` AND (${conditions.join(' OR ')})`;
     }
 
-    sqlQuery += ` ORDER BY o.id ASC LIMIT ${limit} OFFSET ${skip}`;
+    sqlQuery += ` ORDER BY o.id ASC`;
 
-    const organizacoes = await prisma.$queryRawUnsafe(sqlQuery) as any[];
+    let organizacoes = await prisma.$queryRawUnsafe(sqlQuery) as any[];
+
+    // Aplicar filtro híbrido se necessário (técnico não-admin)
+    if (aplicarFiltroHibrido && userId) {
+      organizacoes = organizacoes.filter(org => {
+        // Opção 1: id_tecnico já está preenchido e bate com userId
+        if (org.id_tecnico === userId) return true;
+        
+        // Opção 2: email no _creator_uri_user bate com userEmail
+        if (org._creator_uri_user && userEmail) {
+          const creatorEmail = extractEmailFromCreatorUri(org._creator_uri_user);
+          if (creatorEmail === userEmail) return true;
+        }
+        
+        return false;
+      });
+    }
+
+    // Calcular paginação APÓS filtro híbrido
+    const total = organizacoes.length;
+    const skip = (page - 1) * limit;
+    const totalPaginas = Math.ceil(total / limit);
+    
+    // Aplicar paginação manual
+    const organizacoesPaginadas = organizacoes.slice(skip, skip + limit);
 
     return {
-      organizacoes,
+      organizacoes: organizacoesPaginadas,
       total,
       totalPaginas,
       pagina: page,
@@ -280,9 +325,10 @@ class OrganizacaoService {
 
   /**
    * Criar nova organização
+   * Agora preenche automaticamente id_tecnico se houver _creator_uri_user
    */
   async create(data: Partial<Organizacao>): Promise<Organizacao> {
-    const { nome, cnpj, telefone, email, estado, municipio } = data;
+    const { nome, cnpj, telefone, email, estado, municipio, creator_uri_user } = data;
 
     // Validações básicas
     if (!nome || nome.trim().length === 0) {
@@ -293,6 +339,18 @@ class OrganizacaoService {
       });
     }
 
+    // Tentar vincular com técnico se houver _creator_uri_user
+    let id_tecnico: number | null = null;
+    if (creator_uri_user) {
+      const emailExtraido = extractEmailFromCreatorUri(creator_uri_user);
+      if (emailExtraido) {
+        id_tecnico = await this.findUserByEmail(emailExtraido);
+        if (id_tecnico) {
+          console.log(`✅ Organização vinculada ao técnico ID ${id_tecnico} através do email ${emailExtraido}`);
+        }
+      }
+    }
+
     const organizacao = await prisma.organizacao.create({
       data: {
         nome: nome.trim(),
@@ -301,7 +359,9 @@ class OrganizacaoService {
         email: email || null,
         estado: estado || null,
         municipio: municipio || null,
-        removido: false
+        removido: false,
+        creator_uri_user: creator_uri_user || null,
+        id_tecnico: id_tecnico
       }
     });
 
@@ -362,35 +422,32 @@ class OrganizacaoService {
 
   /**
    * Estatísticas do dashboard
+   * Agora com filtro híbrido para técnicos
    */
-  async getDashboardStats() {
-    const total = await prisma.organizacao.count({
-      where: { removido: false }
-    });
-
-    // Organizações com GPS
-    const comGps = await prisma.organizacao.count({
-      where: {
-        removido: false,
-        gps_lat: { not: null },
-        gps_lng: { not: null }
+  async getDashboardStats(userId?: number) {
+    // Verificar se deve aplicar filtro híbrido
+    let aplicarFiltroHibrido = false;
+    let userEmail: string | null = null;
+    
+    if (userId) {
+      const isAdmin = await this.isUserAdmin(userId);
+      
+      if (!isAdmin) {
+        // Usuário não é admin, aplicar filtro híbrido
+        aplicarFiltroHibrido = true;
+        
+        // Buscar email do usuário logado
+        const user = await prisma.users.findUnique({
+          where: { id: userId },
+          select: { email: true }
+        });
+        
+        userEmail = user?.email?.toLowerCase() || null;
       }
-    });
+    }
 
-    // Organizações sem GPS
-    const semGps = total - comGps;
-
-    // Estatísticas por estado
-    const porEstado = await prisma.organizacao.groupBy({
-      by: ['estado'],
-      where: { removido: false },
-      _count: { id: true },
-      orderBy: { _count: { id: 'desc' } },
-      take: 10
-    });
-
-    // Organizações recentes (últimas 10)
-    const organizacoesRecentes = await prisma.organizacao.findMany({
+    // Buscar todas organizações (depois filtraremos)
+    const todasOrganizacoes = await prisma.organizacao.findMany({
       where: { removido: false },
       select: {
         id: true,
@@ -398,36 +455,76 @@ class OrganizacaoService {
         data_visita: true,
         estado: true,
         gps_lat: true,
-        gps_lng: true
-      },
-      orderBy: { data_visita: 'desc' },
-      take: 10
+        gps_lng: true,
+        id_tecnico: true,
+        creator_uri_user: true
+      }
     });
+
+    // Aplicar filtro híbrido se necessário
+    let organizacoesFiltradas = todasOrganizacoes;
+    
+    if (aplicarFiltroHibrido && userId) {
+      organizacoesFiltradas = todasOrganizacoes.filter(org => {
+        // Opção 1: id_tecnico já está preenchido e bate com userId
+        if (org.id_tecnico === userId) return true;
+        
+        // Opção 2: email no _creator_uri_user bate com userEmail
+        if (org.creator_uri_user && userEmail) {
+          const creatorEmail = extractEmailFromCreatorUri(org.creator_uri_user);
+          if (creatorEmail === userEmail) return true;
+        }
+        
+        return false;
+      });
+    }
+
+    // Calcular estatísticas com base nas organizações filtradas
+    const total = organizacoesFiltradas.length;
+
+    // Organizações com GPS
+    const comGps = organizacoesFiltradas.filter(org => 
+      org.gps_lat !== null && org.gps_lng !== null
+    ).length;
+
+    // Organizações sem GPS
+    const semGps = total - comGps;
+
+    // Estatísticas por estado
+    const estadoCount: { [key: number]: number } = {};
+    organizacoesFiltradas.forEach(org => {
+      if (org.estado) {
+        estadoCount[org.estado] = (estadoCount[org.estado] || 0) + 1;
+      }
+    });
+
+    const porEstado = Object.entries(estadoCount)
+      .map(([estado, count]) => ({
+        estado: parseInt(estado),
+        count
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
 
     // Estatísticas por estado com nomes
-    const porEstadoFormatado = await Promise.all(
-      porEstado.map(async (item) => ({
-        estado: await this.getEstadoNome(item.estado) || `Estado ${item.estado}`,
-        total: item._count.id
-      }))
-    );
+    const porEstadoFormatado = porEstado.map(item => ({
+      estado: this.getEstadoNome(item.estado) || `Estado ${item.estado}`,
+      total: item.count
+    }));
 
-    // Organizações com GPS para o mapa
-    const organizacoesComGps = await prisma.organizacao.findMany({
-      where: {
-        removido: false,
-        gps_lat: { not: null },
-        gps_lng: { not: null }
-      },
-      select: {
-        id: true,
-        nome: true,
-        gps_lat: true,
-        gps_lng: true,
-        estado: true
-      },
-      take: 100 // Limitar para performance
-    });
+    // Organizações recentes (últimas 10)
+    const organizacoesRecentes = organizacoesFiltradas
+      .sort((a, b) => {
+        if (!a.data_visita) return 1;
+        if (!b.data_visita) return -1;
+        return new Date(b.data_visita).getTime() - new Date(a.data_visita).getTime();
+      })
+      .slice(0, 10);
+
+    // Organizações com GPS para o mapa (limitar a 100)
+    const organizacoesComGps = organizacoesFiltradas
+      .filter(org => org.gps_lat !== null && org.gps_lng !== null)
+      .slice(0, 100);
 
     return {
       total,
@@ -531,6 +628,56 @@ class OrganizacaoService {
     };
 
     return estados[codigo] || `Estado ${codigo}`;
+  }
+
+  /**
+   * Buscar usuário por email
+   * @private
+   */
+  private async findUserByEmail(email: string): Promise<number | null> {
+    try {
+      const user = await prisma.users.findUnique({
+        where: { email: email.toLowerCase() },
+        select: { id: true }
+      });
+      return user?.id || null;
+    } catch (error) {
+      console.error('Erro ao buscar usuário por email:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Buscar roles do usuário
+   * @private
+   */
+  private async getUserRoles(userId: number): Promise<Array<{ name: string }>> {
+    try {
+      const user = await prisma.users.findUnique({
+        where: { id: userId },
+        include: {
+          user_roles: {
+            include: {
+              roles: true
+            }
+          }
+        }
+      });
+
+      return user?.user_roles.map(ur => ({ name: ur.roles.name })) || [];
+    } catch (error) {
+      console.error('Erro ao buscar roles do usuário:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Verificar se o usuário é admin
+   * @private
+   */
+  private async isUserAdmin(userId: number): Promise<boolean> {
+    const roles = await this.getUserRoles(userId);
+    return roles.some(role => role.name === 'admin');
   }
 }
 

@@ -4,6 +4,7 @@ import { ApiError } from '../services/authService';
 import { OrganizacaoFilters } from '../types/organizacao';
 import { HttpStatus } from '../types/api';
 import { AuthRequest } from '../middleware/auth';
+import { extractEmailFromCreatorUri } from '../utils/odkHelper';
 
 class OrganizacaoController {
   /**
@@ -21,10 +22,8 @@ class OrganizacaoController {
         municipio: req.query.municipio ? parseInt(req.query.municipio as string) : undefined,
         page: req.query.page ? parseInt(req.query.page as string) : 1,
         limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
-        // Filtro por técnico se necessário
-        ...(userPermissions?.isTechnician && !userPermissions?.canAccessAll && {
-          id_tecnico: userPermissions.userId
-        })
+        // Passar userId para filtro híbrido (id_tecnico OU email em _creator_uri_user)
+        userId: userPermissions?.userId
       };
 
       const result = await organizacaoService.list(filters);
@@ -73,9 +72,24 @@ class OrganizacaoController {
         return;
       }
 
-      // Verificar se técnico tem acesso a esta organização
+      // Verificar se técnico tem acesso a esta organização (filtro híbrido)
       if (userPermissions?.isTechnician && !userPermissions?.canAccessAll) {
-        if (organizacao.id_tecnico !== userPermissions.userId) {
+        let temAcesso = false;
+        
+        // Opção 1: id_tecnico bate
+        if (organizacao.id_tecnico === userPermissions.userId) {
+          temAcesso = true;
+        }
+        
+        // Opção 2: email no _creator_uri_user bate
+        if (!temAcesso && organizacao.creator_uri_user) {
+          const creatorEmail = extractEmailFromCreatorUri(organizacao.creator_uri_user);
+          if (creatorEmail && creatorEmail === req.user?.email?.toLowerCase()) {
+            temAcesso = true;
+          }
+        }
+        
+        if (!temAcesso) {
           res.status(HttpStatus.FORBIDDEN).json({
             success: false,
             error: {
@@ -147,7 +161,7 @@ class OrganizacaoController {
         return;
       }
 
-      // Verificar se técnico tem acesso a esta organização antes de atualizar
+      // Verificar se técnico tem acesso a esta organização antes de atualizar (filtro híbrido)
       if (userPermissions?.isTechnician && !userPermissions?.canAccessAll) {
         const organizacaoExistente = await organizacaoService.getById(id);
         if (!organizacaoExistente) {
@@ -162,7 +176,22 @@ class OrganizacaoController {
           return;
         }
         
-        if (organizacaoExistente.id_tecnico !== userPermissions.userId) {
+        let temAcesso = false;
+        
+        // Opção 1: id_tecnico bate
+        if (organizacaoExistente.id_tecnico === userPermissions.userId) {
+          temAcesso = true;
+        }
+        
+        // Opção 2: email no _creator_uri_user bate
+        if (!temAcesso && organizacaoExistente.creator_uri_user) {
+          const creatorEmail = extractEmailFromCreatorUri(organizacaoExistente.creator_uri_user);
+          if (creatorEmail && creatorEmail === req.user?.email?.toLowerCase()) {
+            temAcesso = true;
+          }
+        }
+        
+        if (!temAcesso) {
           res.status(HttpStatus.FORBIDDEN).json({
             success: false,
             error: {
@@ -221,10 +250,14 @@ class OrganizacaoController {
 
   /**
    * GET /organizacoes/dashboard
+   * Agora com filtro híbrido para técnicos
    */
   async getDashboard(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const stats = await organizacaoService.getDashboardStats();
+      const userPermissions = (req as any).userPermissions;
+      
+      // Passar userId para aplicar filtro híbrido se necessário
+      const stats = await organizacaoService.getDashboardStats(userPermissions?.userId);
 
       res.status(HttpStatus.OK).json({
         success: true,
