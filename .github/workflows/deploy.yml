@@ -84,13 +84,8 @@ jobs:
         # Copy files
         echo "📋 Preparing deployment files (FAST mode)..."
         cp -r backend/package*.json backend/dist backend/prisma $DEPLOY_DIR/ 2>/dev/null || true
-        
-        # CRITICAL: Copy node_modules already installed (avoids npm ci issues on server)
-        echo "📦 Copying backend node_modules from CI..."
-        cp -r backend/node_modules $DEPLOY_DIR/node_modules 2>/dev/null || true
-        
         cp -r frontend/dist $DEPLOY_DIR/frontend-dist 2>/dev/null || true
-        echo "⚡ Dependencies copied from CI (no npm ci needed on server!)"
+        echo "⚡ node_modules will be installed on server (npm ci is faster than copying)"
 
         # Create env file if config.env exists
         if [ -f "backend/config.env" ]; then
@@ -250,9 +245,10 @@ jobs:
         
         sudo chmod -R 777 /var/www/pinovara/backend 
 
-        # Dependencies already copied from CI - skip npm install!
-        echo "✅ Dependencies already installed from CI"
-        echo "⚡ Skipping npm ci (node_modules copied from GitHub Actions)"
+        # Install dependencies on server (now with independent lockfiles!)
+        echo "📦 Installing backend dependencies on server..."
+        cd /var/www/pinovara/backend && npm ci --production --omit=dev
+        echo "✅ Dependencies installed successfully"
 
         # Prisma client strategy (ULTRA SMART!)
         echo "⚡ Checking existing Prisma client on server..."
