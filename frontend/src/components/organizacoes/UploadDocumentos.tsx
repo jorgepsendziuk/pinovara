@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Upload, FileText, Image, Trash2, Download, 
-  ChevronDown, ChevronUp, AlertCircle, Plus
+  ChevronDown, ChevronUp, AlertCircle, Plus, RefreshCw
 } from 'lucide-react';
 import { documentoAPI, Documento } from '../../services/api';
 
@@ -19,6 +19,7 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [uploadFormAberto, setUploadFormAberto] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [obs, setObs] = useState('');
@@ -100,6 +101,40 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
     }
   };
 
+  const handleSyncODK = async () => {
+    setSyncing(true);
+    try {
+      const result = await documentoAPI.syncFromODK(organizacaoId);
+      
+      // Montar mensagem com detalhes
+      let mensagem = `Sincronização concluída!
+      
+Total no ODK: ${result.total_odk}
+Já existentes: ${result.ja_existentes}
+Baixados agora: ${result.baixadas}
+Erros: ${result.erros}`;
+
+      // Adicionar detalhes dos arquivos
+      if (result.detalhes && result.detalhes.length > 0) {
+        mensagem += '\n\n';
+        mensagem += result.detalhes.map((d: any) => {
+          const status = d.status === 'baixada' ? '✓' : d.status === 'existente' ? '=' : '✗';
+          const nome = d.nome_arquivo || d.uri;
+          const msg = d.mensagem ? ` (${d.mensagem})` : '';
+          return `${status} ${nome}${msg}`;
+        }).join('\n');
+      }
+      
+      alert(mensagem);
+      
+      await loadDocumentos();
+    } catch (error: any) {
+      alert('Erro ao sincronizar: ' + error.message);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString('pt-BR');
@@ -171,6 +206,33 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
                 Enviar Novo Arquivo
               </span>
               {uploadFormAberto ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </button>
+
+            {/* Botão Sincronizar ODK */}
+            <button
+              onClick={handleSyncODK}
+              disabled={syncing}
+              style={{
+                marginTop: '10px',
+                padding: '12px 16px',
+                background: syncing ? '#6c757d' : '#17a2b8',
+                color: 'white',
+                border: '2px solid #17a2b8',
+                borderRadius: '8px',
+                cursor: syncing ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '15px',
+                fontWeight: '600',
+                transition: 'all 0.2s ease',
+                width: '100%',
+                justifyContent: 'center'
+              }}
+              title="Sincronizar arquivos do ODK Collect"
+            >
+              <RefreshCw size={16} className={syncing ? 'spinning' : ''} />
+              {syncing ? 'Sincronizando...' : 'Sincronizar ODK'}
             </button>
 
             {uploadFormAberto && (
@@ -368,3 +430,21 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
     </div>
   );
 };
+
+// CSS para animação de spinning
+const style = document.createElement('style');
+style.textContent = `
+  .spinning {
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
+document.head.appendChild(style);
