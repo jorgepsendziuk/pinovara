@@ -1,9 +1,42 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import VersionIndicator from '../components/VersionIndicator';
+import TermosUso from '../components/TermosUso';
 
 function Dashboard() {
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, logout } = useAuth();
+  const navigate = useNavigate();
+  const [mostrarTermos, setMostrarTermos] = useState(false);
+
+  useEffect(() => {
+    // Verificar se usuário já aceitou os termos
+    const termosAceitos = localStorage.getItem('termos_aceitos');
+    const cookieTermos = document.cookie.split(';').find(c => c.trim().startsWith('termos_aceitos='));
+    
+    if (!termosAceitos && !cookieTermos) {
+      setMostrarTermos(true);
+    }
+  }, []);
+
+  const handleAcceptTermos = () => {
+    // Salvar no localStorage
+    localStorage.setItem('termos_aceitos', 'true');
+    
+    // Criar cookie com validade de 1 ano
+    const dataExpiracao = new Date();
+    dataExpiracao.setFullYear(dataExpiracao.getFullYear() + 1);
+    document.cookie = `termos_aceitos=true; expires=${dataExpiracao.toUTCString()}; path=/; SameSite=Lax`;
+    
+    setMostrarTermos(false);
+  };
+
+  const handleDeclineTermos = () => {
+    // Fazer logout e redirecionar para landing
+    logout();
+    navigate('/');
+  };
 
   if (!user) {
     return <div>Carregando...</div>;
@@ -11,6 +44,14 @@ function Dashboard() {
 
   return (
     <div className="dashboard-layout">
+      {/* Modal de Termos de Uso */}
+      {mostrarTermos && (
+        <TermosUso
+          onAccept={handleAcceptTermos}
+          onDecline={handleDeclineTermos}
+        />
+      )}
+
       {/* Indicador de versão discreto */}
       <VersionIndicator position="top-right" theme="auto" />
       
@@ -100,17 +141,6 @@ function Dashboard() {
                 </div>
               </div>
             </div>
-
-            {/* Admin Access */}
-            {hasPermission('sistema', 'admin') && (
-              <div className="admin-access">
-                <h3>Administração</h3>
-                <p>Você tem acesso ao painel administrativo do sistema.</p>
-                <a href="/admin" className="btn btn-primary">
-                  Acessar Painel Admin
-                </a>
-              </div>
-            )}
           </div>
         </main>
       </div>

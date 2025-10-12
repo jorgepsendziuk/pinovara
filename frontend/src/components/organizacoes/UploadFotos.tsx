@@ -113,7 +113,7 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
   };
 
   const handleSyncODK = async () => {
-    if (!confirm('Deseja sincronizar fotos do ODK Collect para esta organização?')) {
+    if (!confirm('Deseja baixar fotos do ODK Collect para esta organização?')) {
       return;
     }
 
@@ -127,22 +127,22 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
       let tipo: 'success' | 'error' = 'success';
 
       if (resultado.baixadas > 0) {
-        mensagem = `✅ Sincronização concluída!\n\n📊 Resumo:\n• ${resultado.total_odk} fotos encontradas no ODK\n• ${resultado.baixadas} fotos baixadas\n• ${resultado.ja_existentes} já existiam\n• ${resultado.erros} erros`;
+        mensagem = `✅ Download concluído!\n\n📊 Resumo:\n• ${resultado.total_odk} fotos encontradas no ODK\n• ${resultado.baixadas} fotos baixadas\n• ${resultado.ja_existentes} já existiam\n• ${resultado.erros} erros`;
         await loadFotos();
       } else if (resultado.total_odk === 0) {
         mensagem = '⚠️ Nenhuma foto encontrada no ODK para esta organização.';
         tipo = 'error';
       } else {
-        mensagem = `✅ Todas as ${resultado.total_odk} fotos já foram sincronizadas anteriormente.`;
+        mensagem = `✅ Todas as ${resultado.total_odk} fotos já foram baixadas anteriormente.`;
       }
 
       alert(mensagem);
       setMessage({ type: tipo, text: mensagem.replace(/\n/g, ' ') });
       setTimeout(() => setMessage(null), 5000);
     } catch (error: any) {
-      const mensagemErro = `❌ Erro ao sincronizar fotos do ODK:\n\n${error.message}`;
+      const mensagemErro = `❌ Erro ao baixar fotos do ODK:\n\n${error.message}`;
       alert(mensagemErro);
-      setMessage({ type: 'error', text: error.message || 'Erro ao sincronizar fotos do ODK' });
+      setMessage({ type: 'error', text: error.message || 'Erro ao baixar fotos do ODK' });
     } finally {
       setSyncing(false);
     }
@@ -236,10 +236,10 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
                 transition: 'all 0.2s ease',
                 opacity: syncing ? 0.7 : 1
               }}
-              title="Sincronizar fotos do ODK Collect"
+              title="Baixar fotos do ODK Collect"
             >
               <RefreshCw size={18} className={syncing ? 'spin' : ''} />
-              {syncing ? 'Sincronizando...' : 'Sincronizar ODK'}
+              {syncing ? 'Baixando...' : 'Baixar Fotos'}
             </button>
           </div>
 
