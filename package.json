@@ -4,6 +4,9 @@
   "description": "Sistema PINOVARA - Full Stack TypeScript Application",
   "private": true,
   "type": "commonjs",
+  "workspaces": [
+    "backend"
+  ],
   "scripts": {
     "dev:start": "./scripts/dev/dev-start.sh",
     "dev:stop": "./scripts/dev/dev-stop.sh",
