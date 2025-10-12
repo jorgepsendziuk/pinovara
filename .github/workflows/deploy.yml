@@ -48,32 +48,19 @@ jobs:
         cache: 'npm'
         cache-dependency-path: '**/package-lock.json'
 
-    - name: 🧹 Clean npm cache and old files
-      run: |
-        echo "🧹 Cleaning npm cache and removing old files..."
-        npm cache clean --force
-        rm -rf node_modules backend/node_modules frontend/node_modules
-        rm -rf ~/.npm
-        echo "✅ Cache cleared"
-
-    - name: 📦 Install Dependencies (Workspaces)
-      run: |
-        echo "📦 Installing all dependencies via npm workspaces..."
-        echo "⚠️ Using npm install instead of npm ci (workspace compatibility)"
-        npm install --no-audit --no-fund
-        echo "✅ All dependencies installed"
-
     - name: 🏗️ Build Backend
       working-directory: ./backend
       run: |
         echo "🔨 Building backend..."
+        npm ci --production=false
         npm run build
-        echo "✅ Backend built successfully (FAST - no Prisma)"
+        echo "✅ Backend built successfully"
 
     - name: 🎨 Build Frontend
       working-directory: ./frontend
       run: |
         echo "🎨 Building frontend..."
+        npm ci --production=false
         echo "📝 Generating version info..."
         node scripts/generate-version.cjs
         npm run build
