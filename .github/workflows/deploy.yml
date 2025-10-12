@@ -94,6 +94,8 @@ jobs:
         # Copy files
         echo "📋 Preparing deployment files (FAST mode)..."
         cp -r backend/package*.json backend/dist backend/prisma $DEPLOY_DIR/ 2>/dev/null || true
+        # CRITICAL: Copy package-lock.json from ROOT (npm workspaces)
+        cp package-lock.json $DEPLOY_DIR/ 2>/dev/null || true
         cp -r frontend/dist $DEPLOY_DIR/frontend-dist 2>/dev/null || true
         echo "⚡ Skipping Prisma client copy (will reuse server's existing client)"
 
