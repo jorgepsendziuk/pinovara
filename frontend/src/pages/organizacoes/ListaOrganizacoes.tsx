@@ -7,12 +7,13 @@ import {
   Trash,
   Printer,
   Building2,
-  Phone,
   Mail,
   MessageCircle,
   Clipboard,
   Monitor,
-  X
+  X,
+  FileText,
+  User
 } from 'lucide-react';
 
 interface Organizacao {
@@ -28,6 +29,8 @@ interface Organizacao {
   telefone: string | null;
   email: string | null;
   meta_instance_id?: string | null;
+  tecnico_nome?: string | null;
+  tecnico_email?: string | null;
 }
 
 
@@ -40,6 +43,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const [organizacoes, setOrganizacoes] = useState<Organizacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [gerandoPDF, setGerandoPDF] = useState<number | null>(null);
+  const [gerandoRelatorio, setGerandoRelatorio] = useState<number | null>(null);
 
   // Estados para DataGrid
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,16 +51,13 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const [totalOrganizacoes, setTotalOrganizacoes] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [legendaVisivel, setLegendaVisivel] = useState(true);
+  
+  // Filtro de origem do cadastro
+  const [origemFiltro, setOrigemFiltro] = useState<'odk' | 'web' | 'todas'>('odk');
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
   // Funções auxiliares
-  const formatarCNPJ = (cnpj: string | null): string => {
-    if (!cnpj) return '-';
-    const cnpjNumeros = cnpj.replace(/\D/g, '');
-    return cnpjNumeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-  };
-
   const formatarTelefone = (telefone: string | null): string => {
     if (!telefone) return '';
     const tel = telefone.replace(/\D/g, '');
@@ -76,7 +77,39 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
 
   useEffect(() => {
     fetchOrganizacoes();
-  }, [currentPage, pageSize, searchTerm]);
+  }, [currentPage, pageSize, searchTerm, origemFiltro]);
+
+  const gerarRelatorio = async (organizacaoId: number, nomeOrganizacao: string) => {
+    setGerandoRelatorio(organizacaoId);
+    try {
+      const response = await fetch(`${API_BASE}/organizacoes/${organizacaoId}/relatorio/pdf`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('@pinovara:token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao gerar relatório');
+      }
+
+      // Baixar PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `relatorio_${nomeOrganizacao?.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      alert('✅ Relatório gerado com sucesso!');
+    } catch (error: any) {
+      alert(`❌ Erro ao gerar relatório: ${error.message}`);
+    } finally {
+      setGerandoRelatorio(null);
+    }
+  };
 
   const gerarTermoAdesao = async (organizacaoId: number) => {
     try {
@@ -128,10 +161,10 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       setLoading(true);
       const token = localStorage.getItem('@pinovara:token');
 
-      // Construir parâmetros de busca
+      // Buscar TODAS as organizações (sem paginação) para poder filtrar no frontend
       const params = new URLSearchParams({
-        page: currentPage.toString(),
-        pageSize: pageSize.toString(),
+        page: '1',
+        pageSize: '1000', // Buscar todas
         ...(searchTerm && { search: searchTerm })
       });
 
@@ -147,8 +180,36 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       }
 
       const data = await response.json();
-      setOrganizacoes(data.data.organizacoes || []);
-      setTotalOrganizacoes(data.data.total || data.data.organizacoes.length);
+      let todasOrganizacoes = data.data.organizacoes || [];
+      
+      console.log(`📊 Debug Filtro:`);
+      console.log(`   Backend retornou: ${todasOrganizacoes.length} organizações`);
+      console.log(`   Filtro selecionado: ${origemFiltro}`);
+      
+      // Aplicar filtro de origem
+      if (origemFiltro === 'odk') {
+        todasOrganizacoes = todasOrganizacoes.filter((org: Organizacao) => 
+          org.meta_instance_id && org.meta_instance_id.trim() !== ''
+        );
+        console.log(`   Após filtro ODK: ${todasOrganizacoes.length}`);
+      } else if (origemFiltro === 'web') {
+        todasOrganizacoes = todasOrganizacoes.filter((org: Organizacao) => 
+          !org.meta_instance_id || org.meta_instance_id.trim() === ''
+        );
+        console.log(`   Após filtro Web: ${todasOrganizacoes.length}`);
+      } else {
+        console.log(`   Sem filtro (todas): ${todasOrganizacoes.length}`);
+      }
+      
+      // Aplicar paginação no frontend
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const organizacoesPaginadas = todasOrganizacoes.slice(startIndex, endIndex);
+      
+      console.log(`   Paginação: página ${currentPage}, mostrando ${organizacoesPaginadas.length} de ${todasOrganizacoes.length}`);
+      
+      setOrganizacoes(organizacoesPaginadas);
+      setTotalOrganizacoes(todasOrganizacoes.length);
     } catch (err) {
       console.error('Erro ao carregar organizações:', err);
     } finally {
@@ -210,7 +271,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       key: 'nome',
       title: 'Nome',
       dataIndex: 'nome',
-      width: '45%',
+      width: '35%',
       sortable: true,
       render: (nome: string, record: Organizacao) => {
         const isODKCollect = record.meta_instance_id && record.meta_instance_id.trim() !== '';
@@ -261,10 +322,33 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       },
     },
     {
+      key: 'tecnico',
+      title: 'Técnico',
+      dataIndex: 'tecnico_nome',
+      width: '14%',
+      responsive: {
+        hideOn: 'mobile'
+      },
+      render: (tecnico_nome: string | null, record: Organizacao) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+          {tecnico_nome ? (
+            <>
+              <User size={14} color="#666" />
+              <span style={{ color: '#444', fontWeight: '500' }} title={record.tecnico_email || undefined}>
+                {tecnico_nome}
+              </span>
+            </>
+          ) : (
+            <span style={{ color: '#999', fontStyle: 'italic' }}>Sem técnico</span>
+          )}
+        </div>
+      ),
+    },
+    {
       key: 'contato',
       title: 'Contato',
       dataIndex: 'telefone',
-      width: '18%',
+      width: '14%',
       responsive: {
         hideOn: 'mobile'
       },
@@ -316,10 +400,10 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     {
       key: 'actions',
       title: 'Ações',
-      width: '17%',
+      width: '20%',
       align: 'center',
       render: (_, record: Organizacao) => (
-        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button
             onClick={() => onNavigate('edicao', record.id)}
             title="Editar organização"
@@ -344,6 +428,36 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
             }}
           >
             <Edit size={14} />
+          </button>
+          <button
+            onClick={() => gerarRelatorio(record.id, record.nome)}
+            title="Gerar Relatório Completo"
+            disabled={gerandoRelatorio === record.id}
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #056839',
+              background: 'white',
+              borderRadius: '4px',
+              cursor: gerandoRelatorio === record.id ? 'not-allowed' : 'pointer',
+              color: gerandoRelatorio === record.id ? '#ccc' : '#056839',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              if (gerandoRelatorio !== record.id) {
+                e.currentTarget.style.background = '#056839';
+                e.currentTarget.style.color = 'white';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (gerandoRelatorio !== record.id) {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#056839';
+              }
+            }}
+          >
+            <FileText size={14} />
           </button>
           <button
             onClick={() => gerarTermoAdesao(record.id)}
@@ -438,6 +552,70 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         </div>
       </div>
 
+      {/* Filtros */}
+      <div style={{
+        background: 'white',
+        padding: '1rem 1.5rem',
+        marginBottom: '1rem',
+        borderRadius: '8px',
+        border: '1px solid #e5e7eb',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem'
+      }}>
+        <label style={{ 
+          fontWeight: '600', 
+          color: '#374151',
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <Clipboard size={18} />
+          Origem do Cadastro:
+        </label>
+        <select 
+          value={origemFiltro}
+          onChange={(e) => {
+            setOrigemFiltro(e.target.value as 'odk' | 'web' | 'todas');
+            setCurrentPage(1); // Resetar para primeira página ao filtrar
+          }}
+          style={{
+            padding: '0.5rem 1rem',
+            borderRadius: '6px',
+            border: '1px solid #d1d5db',
+            fontSize: '0.95rem',
+            cursor: 'pointer',
+            minWidth: '200px',
+            background: 'white'
+          }}
+        >
+          <option value="odk">📋 ODK Collect (Aplicativo)</option>
+          <option value="web">💻 Sistema Web</option>
+          <option value="todas">📊 Todas as Origens</option>
+        </select>
+        
+        <div style={{ 
+          marginLeft: 'auto',
+          fontSize: '0.875rem',
+          color: '#6b7280',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <span style={{ fontWeight: '500' }}>Total:</span>
+          <span style={{ 
+            background: '#f3f4f6', 
+            padding: '0.25rem 0.75rem', 
+            borderRadius: '12px',
+            fontWeight: '600',
+            color: '#374151'
+          }}>
+            {totalOrganizacoes}
+          </span>
+        </div>
+      </div>
+
       {/* Legenda Flutuante */}
       {legendaVisivel && (
         <div style={{
@@ -524,7 +702,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               },
             }}
             responsive={true}
-            size="compact"
+            size="small"
             className="organizacoes-datagrid"
           />
         </div>

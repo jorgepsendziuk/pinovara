@@ -30,7 +30,13 @@ editar fotos
 http://localhost:5173/organizacoes/lista
 - adicionar filtros nos cabecalhos da datagrid, é possivel?
 
+filtro antes do datagrid de organizacao, select para escolher 
+Origem do Cadastro
 
+-ODK Collect (Aplicativo)
+-Sistema Web
+
+e iniciar selecionado mostrar somente os via ODK Collect (Aplicativo)
 
 design system:
 vamos criar um design system desse sistema, um padrao onde todas as novas paginas devem se inspirar, e atualizar as paginas existentes com esses padroes.

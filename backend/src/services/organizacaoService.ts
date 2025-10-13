@@ -87,7 +87,7 @@ class OrganizacaoService {
       }
     }
 
-    // Buscar organizações com nomes de estado e município
+    // Buscar organizações com nomes de estado, município e técnico
     let sqlQuery = `
       SELECT 
         o.id,
@@ -106,10 +106,13 @@ class OrganizacaoService {
         o.removido,
         o.meta_instance_id,
         o.id_tecnico,
-        o._creator_uri_user
+        o._creator_uri_user,
+        u.name as tecnico_nome,
+        u.email as tecnico_email
       FROM pinovara.organizacao o
       LEFT JOIN pinovara_aux.estado e ON o.estado = e.id
       LEFT JOIN pinovara_aux.municipio_ibge m ON o.municipio = m.id
+      LEFT JOIN pinovara.users u ON o.id_tecnico = u.id
       WHERE o.removido = false
     `;
 
@@ -143,9 +146,13 @@ class OrganizacaoService {
     sqlQuery += ` ORDER BY o.id ASC`;
 
     let organizacoes = await prisma.$queryRawUnsafe(sqlQuery) as any[];
+    const totalInicial = organizacoes.length;
 
     // Aplicar filtro híbrido se necessário (técnico não-admin)
     if (aplicarFiltroHibrido && userId) {
+      console.log(`🔍 Filtro híbrido ativo para userId ${userId} (${userEmail})`);
+      console.log(`   Organizações antes do filtro: ${totalInicial}`);
+      
       organizacoes = organizacoes.filter(org => {
         // Opção 1: id_tecnico já está preenchido e bate com userId
         if (org.id_tecnico === userId) return true;
@@ -158,6 +165,10 @@ class OrganizacaoService {
         
         return false;
       });
+      
+      console.log(`   Organizações após filtro: ${organizacoes.length}`);
+    } else {
+      console.log(`📊 Sem filtro híbrido (admin ou sem userId). Total: ${totalInicial}`);
     }
 
     // Calcular paginação APÓS filtro híbrido
@@ -167,6 +178,17 @@ class OrganizacaoService {
     
     // Aplicar paginação manual
     const organizacoesPaginadas = organizacoes.slice(skip, skip + limit);
+
+    // Log para debug
+    if (organizacoesPaginadas.length > 0) {
+      console.log('📊 Amostra de organização:', {
+        id: organizacoesPaginadas[0].id,
+        nome: organizacoesPaginadas[0].nome,
+        tecnico_nome: organizacoesPaginadas[0].tecnico_nome,
+        tecnico_email: organizacoesPaginadas[0].tecnico_email,
+        id_tecnico: organizacoesPaginadas[0].id_tecnico
+      });
+    }
 
     return {
       organizacoes: organizacoesPaginadas,

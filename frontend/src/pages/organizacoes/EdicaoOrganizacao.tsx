@@ -15,6 +15,7 @@ import { PlanoGestao } from '../../components/organizacoes/PlanoGestao';
 import { UploadDocumentos } from '../../components/organizacoes/UploadDocumentos';
 import { UploadFotos } from '../../components/organizacoes/UploadFotos';
 import { DadosColeta } from '../../components/organizacoes/DadosColeta';
+import api from '../../services/api';
 import {
   Edit,
   Search,
@@ -124,18 +125,12 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     setGerandoPDF(true);
     try {
       // Chamar API para gerar PDF
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/relatorio/pdf`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('@pinovara:token')}`
-        }
+      const response = await api.get(`/organizacoes/${organizacaoId}/relatorio/pdf`, {
+        responseType: 'blob'
       });
 
-      if (!response.ok) {
-        throw new Error('Erro ao gerar relatório');
-      }
-
       // Baixar PDF
-      const blob = await response.blob();
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -147,7 +142,8 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
 
       alert('✅ Relatório gerado com sucesso!');
     } catch (error: any) {
-      alert(`❌ Erro ao gerar relatório: ${error.message}`);
+      const errorMsg = error.response?.data?.error?.message || error.message || 'Erro desconhecido';
+      alert(`❌ Erro ao gerar relatório: ${errorMsg}`);
     } finally {
       setGerandoPDF(false);
     }
@@ -175,34 +171,41 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         representante_end_numero: dadosRepresentante.endNumero || null,
         representante_end_cep: dadosRepresentante.endCep || null,
         representante_funcao: dadosRepresentante.funcao || null,
-        // Dados de diagnóstico
+        // Dados de diagnóstico (converter respostas para número)
         ...Object.fromEntries(
-          Object.entries(governancaOrganizacional).map(([key, value]) => [key, value.resposta || value.comentario || value.proposta])
+          Object.entries(governancaOrganizacional).map(([key, value]) => {
+            const val = value.resposta || value.comentario || value.proposta;
+            // Se for campo de resposta e tiver valor, converter para número
+            if (key.endsWith('_resposta') && val !== null && val !== undefined && val !== '') {
+              return [key, parseInt(val) || null];
+            }
+            return [key, val];
+          })
         ),
         ...Object.fromEntries(
-          Object.entries(gestaoPessoas).map(([key, value]) => [key, value.resposta || value.comentario || value.proposta])
+          Object.entries(gestaoPessoas).map(([key, value]) => {
+            const val = value.resposta || value.comentario || value.proposta;
+            if (key.endsWith('_resposta') && val !== null && val !== undefined && val !== '') {
+              return [key, parseInt(val) || null];
+            }
+            return [key, val];
+          })
         ),
         ...Object.fromEntries(
-          Object.entries(gestaoFinanceira).map(([key, value]) => [key, value.resposta || value.comentario || value.proposta])
+          Object.entries(gestaoFinanceira).map(([key, value]) => {
+            const val = value.resposta || value.comentario || value.proposta;
+            if (key.endsWith('_resposta') && val !== null && val !== undefined && val !== '') {
+              return [key, parseInt(val) || null];
+            }
+            return [key, val];
+          })
         ),
       };
 
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Token de autenticação não encontrado');
-      }
+      const response = await api.put(`/organizacoes/${organizacao.id}`, dadosCompletos);
 
-      const response = await fetch(`http://localhost:3001/organizacoes/${organizacao.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dadosCompletos)
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao salvar organização');
+      if (!response.data.success) {
+        throw new Error(response.data.error?.message || 'Erro ao salvar organização');
       }
 
       setSuccess('Organização salva com sucesso!');
@@ -210,9 +213,10 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       setTimeout(() => {
         setSuccess(null);
       }, 3000);
+
       
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || err.message || 'Erro desconhecido');
     } finally {
       setSaving(false);
     }
