@@ -126,40 +126,58 @@ exports.arquivoSyncService = {
             }
             const connectionString = connResult[0].conn_string;
             const escapedUri = organizacaoUri.replace(/'/g, "''");
-            const sqlQuery = `
-        SELECT 
-          ref."_URI",
-          ref."_TOP_LEVEL_AURI",
-          blob."_CREATION_DATE",
-          blob."VALUE",
-          octet_length(blob."VALUE") as tamanho
-        FROM odk_prod."ORGANIZACAO_ARQUIVO_REF" ref
-        INNER JOIN odk_prod."ORGANIZACAO_ARQUIVO_BLB" blob 
-          ON blob."_URI" = ref."_SUB_AURI"
-        WHERE ref."_TOP_LEVEL_AURI" = ''${escapedUri}''
-          AND blob."VALUE" IS NOT NULL
-          AND octet_length(blob."VALUE") > 0
-      `.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-            const query = `
-        SELECT * FROM public.dblink(
-          '${connectionString}'::text,
-          '${sqlQuery}'::text
-        ) AS t(
-          uri varchar,
-          top_level_auri varchar,
-          creation_date timestamp,
-          arquivo_blob bytea,
-          tamanho_bytes bigint
-        )
-      `;
-            console.log('🔍 Buscando arquivos no ODK...');
+            console.log('🔍 Tentando buscar arquivos das tabelas ORGANIZACAO_...');
+            let arquivos = await this.buscarArquivosTabela(connectionString, escapedUri, 'ORGANIZACAO');
+            if (arquivos.length === 0) {
+                console.log('⚠️ Nenhum arquivo encontrado em ORGANIZACAO_, tentando PINOVARA_...');
+                arquivos = await this.buscarArquivosTabela(connectionString, escapedUri, 'PINOVARA');
+            }
+            console.log(`📊 Total de arquivos encontrados: ${arquivos.length}`);
+            return arquivos;
+        }
+        catch (error) {
+            console.error('❌ Erro ao buscar arquivos do ODK:', error);
+            throw new Error(`Erro ao conectar com banco ODK: ${error.message}`);
+        }
+    },
+    async buscarArquivosTabela(connectionString, escapedUri, prefixo) {
+        const sqlQuery = `
+      SELECT 
+        a."_URI",
+        a."_PARENT_AURI",
+        bn."_CREATION_DATE",
+        blb."VALUE",
+        octet_length(blb."VALUE") as tamanho,
+        bn."UNROOTED_FILE_PATH"
+      FROM odk_prod."${prefixo}_FILE" a
+      INNER JOIN odk_prod."${prefixo}_ARQUIVO_BN" bn ON bn."_PARENT_AURI" = a."_URI"
+      INNER JOIN odk_prod."${prefixo}_ARQUIVO_REF" ref ON ref."_DOM_AURI" = bn."_URI"
+      INNER JOIN odk_prod."${prefixo}_ARQUIVO_BLB" blb ON blb."_URI" = ref."_SUB_AURI"
+      WHERE a."_PARENT_AURI" = ''${escapedUri}''
+        AND blb."VALUE" IS NOT NULL
+        AND octet_length(blb."VALUE") > 0
+    `.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        const query = `
+      SELECT * FROM public.dblink(
+        '${connectionString}'::text,
+        '${sqlQuery}'::text
+      ) AS t(
+        uri varchar,
+        parent_auri varchar,
+        creation_date timestamp,
+        arquivo_blob bytea,
+        tamanho_bytes bigint,
+        nome_arquivo varchar
+      )
+    `;
+        try {
             const result = await prisma.$queryRawUnsafe(query);
-            const arquivos = result.map((row, index) => {
-                const timestamp = new Date(row.creation_date).getTime();
-                const nomeArquivo = `${timestamp}_${index}.pdf`;
+            console.log(`   Tabela ${prefixo}_: ${result.length} arquivos encontrados`);
+            return result.map((row) => {
+                const nomeArquivo = row.nome_arquivo || `${new Date(row.creation_date).getTime()}.pdf`;
                 return {
                     uri: row.uri,
-                    parent_auri: row.top_level_auri,
+                    parent_auri: row.parent_auri,
                     grupo: null,
                     arquivo_obs: null,
                     creation_date: new Date(row.creation_date),
@@ -168,12 +186,10 @@ exports.arquivoSyncService = {
                     nome_arquivo: nomeArquivo
                 };
             });
-            console.log(`📊 Arquivos encontrados: ${arquivos.length}`);
-            return arquivos;
         }
         catch (error) {
-            console.error('❌ Erro ao buscar arquivos do ODK:', error);
-            throw new Error(`Erro ao conectar com banco ODK: ${error.message}`);
+            console.error(`   Tabela ${prefixo}_: ${error.message}`);
+            return [];
         }
     },
     async salvarBlobComoArquivo(blob, nomeOriginal) {

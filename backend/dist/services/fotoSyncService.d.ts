@@ -2,6 +2,7 @@ import { FotoODK, SyncResult } from '../types/fotoSync';
 export declare const fotoSyncService: {
     syncFotosFromODK(organizacaoId: number, userEmail: string): Promise<SyncResult>;
     getFotosODK(organizacaoUri: string | null): Promise<FotoODK[]>;
+    buscarFotosTabela(connectionString: string, escapedUri: string, prefixo: "ORGANIZACAO" | "PINOVARA"): Promise<FotoODK[]>;
     salvarBlobComoArquivo(blob: Buffer, nomeOriginal: string): Promise<string>;
     listarFotosDisponiveis(organizacaoId: number): Promise<{
         total: number;

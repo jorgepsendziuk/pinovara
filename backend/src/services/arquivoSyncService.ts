@@ -124,7 +124,7 @@ export const arquivoSyncService = {
   },
 
   /**
-   * Busca arquivos do ODK via dblink
+   * Busca arquivos do ODK via dblink (tenta ORGANIZACAO_ primeiro, depois PINOVARA_)
    */
   async getArquivosODK(organizacaoUri: string | null): Promise<ArquivoODK[]> {
     if (!organizacaoUri) {
@@ -147,50 +147,73 @@ export const arquivoSyncService = {
       }
 
       const connectionString = connResult[0].conn_string;
-
-      // Escapar aspas simples no URI para evitar SQL injection
       const escapedUri = organizacaoUri.replace(/'/g, "''");
 
-      // Query SQL com dblink para buscar arquivos (versão original que funciona)
-      const sqlQuery = `
-        SELECT 
-          ref."_URI",
-          ref."_TOP_LEVEL_AURI",
-          blob."_CREATION_DATE",
-          blob."VALUE",
-          octet_length(blob."VALUE") as tamanho
-        FROM odk_prod."ORGANIZACAO_ARQUIVO_REF" ref
-        INNER JOIN odk_prod."ORGANIZACAO_ARQUIVO_BLB" blob 
-          ON blob."_URI" = ref."_SUB_AURI"
-        WHERE ref."_TOP_LEVEL_AURI" = ''${escapedUri}''
-          AND blob."VALUE" IS NOT NULL
-          AND octet_length(blob."VALUE") > 0
-      `.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-
-      const query = `
-        SELECT * FROM public.dblink(
-          '${connectionString}'::text,
-          '${sqlQuery}'::text
-        ) AS t(
-          uri varchar,
-          top_level_auri varchar,
-          creation_date timestamp,
-          arquivo_blob bytea,
-          tamanho_bytes bigint
-        )
-      `;
-
-      console.log('🔍 Buscando arquivos no ODK...');
-      const result = await prisma.$queryRawUnsafe(query);
+      // Tentar buscar das tabelas ORGANIZACAO_ (versão nova)
+      console.log('🔍 Tentando buscar arquivos das tabelas ORGANIZACAO_...');
+      let arquivos = await this.buscarArquivosTabela(connectionString, escapedUri, 'ORGANIZACAO');
       
-      const arquivos: ArquivoODK[] = (result as any[]).map((row, index) => {
-        // Gerar nome de arquivo baseado no timestamp
-        const timestamp = new Date(row.creation_date).getTime();
-        const nomeArquivo = `${timestamp}_${index}.pdf`;
+      // Se não encontrou, tentar tabelas PINOVARA_ (versão antiga)
+      if (arquivos.length === 0) {
+        console.log('⚠️ Nenhum arquivo encontrado em ORGANIZACAO_, tentando PINOVARA_...');
+        arquivos = await this.buscarArquivosTabela(connectionString, escapedUri, 'PINOVARA');
+      }
+
+      console.log(`📊 Total de arquivos encontrados: ${arquivos.length}`);
+      return arquivos;
+
+    } catch (error: any) {
+      console.error('❌ Erro ao buscar arquivos do ODK:', error);
+      throw new Error(`Erro ao conectar com banco ODK: ${error.message}`);
+    }
+  },
+
+  /**
+   * Busca arquivos de uma tabela específica (ORGANIZACAO ou PINOVARA)
+   */
+  async buscarArquivosTabela(connectionString: string, escapedUri: string, prefixo: 'ORGANIZACAO' | 'PINOVARA'): Promise<ArquivoODK[]> {
+    const sqlQuery = `
+      SELECT 
+        a."_URI",
+        a."_PARENT_AURI",
+        bn."_CREATION_DATE",
+        blb."VALUE",
+        octet_length(blb."VALUE") as tamanho,
+        bn."UNROOTED_FILE_PATH"
+      FROM odk_prod."${prefixo}_FILE" a
+      INNER JOIN odk_prod."${prefixo}_ARQUIVO_BN" bn ON bn."_PARENT_AURI" = a."_URI"
+      INNER JOIN odk_prod."${prefixo}_ARQUIVO_REF" ref ON ref."_DOM_AURI" = bn."_URI"
+      INNER JOIN odk_prod."${prefixo}_ARQUIVO_BLB" blb ON blb."_URI" = ref."_SUB_AURI"
+      WHERE a."_PARENT_AURI" = ''${escapedUri}''
+        AND blb."VALUE" IS NOT NULL
+        AND octet_length(blb."VALUE") > 0
+    `.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+
+    const query = `
+      SELECT * FROM public.dblink(
+        '${connectionString}'::text,
+        '${sqlQuery}'::text
+      ) AS t(
+        uri varchar,
+        parent_auri varchar,
+        creation_date timestamp,
+        arquivo_blob bytea,
+        tamanho_bytes bigint,
+        nome_arquivo varchar
+      )
+    `;
+
+    try {
+      const result = await prisma.$queryRawUnsafe(query) as any[];
+      console.log(`   Tabela ${prefixo}_: ${result.length} arquivos encontrados`);
+
+      return (result as any[]).map((row) => {
+        // Usar nome do arquivo vindo do UNROOTED_FILE_PATH
+        const nomeArquivo = row.nome_arquivo || `${new Date(row.creation_date).getTime()}.pdf`;
         
         return {
           uri: row.uri,
-          parent_auri: row.top_level_auri,
+          parent_auri: row.parent_auri,
           grupo: null,
           arquivo_obs: null,
           creation_date: new Date(row.creation_date),
@@ -199,13 +222,9 @@ export const arquivoSyncService = {
           nome_arquivo: nomeArquivo
         };
       });
-
-      console.log(`📊 Arquivos encontrados: ${arquivos.length}`);
-      return arquivos;
-
     } catch (error: any) {
-      console.error('❌ Erro ao buscar arquivos do ODK:', error);
-      throw new Error(`Erro ao conectar com banco ODK: ${error.message}`);
+      console.error(`   Tabela ${prefixo}_: ${error.message}`);
+      return [];
     }
   },
 
