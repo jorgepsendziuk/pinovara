@@ -22,8 +22,9 @@ declare class OrganizacaoService {
             data_visita: Date | null;
             estado: number | null;
             municipio: number | null;
-            estado_nome: string | null;
-            municipio_nome: string | null;
+            estado_nome: string | null | undefined;
+            municipio_nome: string | null | undefined;
+            localizacao: string;
             temGps: boolean;
         }[];
         organizacoesComGps: {
@@ -37,6 +38,7 @@ declare class OrganizacaoService {
     }>;
     getMunicipios(estadoId?: number): Promise<unknown>;
     getEstados(): Promise<unknown>;
+    private getEstadoSigla;
     getEstadoNome(codigo?: number | null): string;
     private findUserByEmail;
     private getUserRoles;

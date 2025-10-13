@@ -329,25 +329,33 @@ class OrganizacaoService {
                 userEmail = user?.email?.toLowerCase() || null;
             }
         }
-        const todasOrganizacoes = await prisma.$queryRaw `
-      SELECT 
-        o.id,
-        o.nome,
-        o.data_visita,
-        o.estado,
-        o.municipio,
-        o.gps_lat,
-        o.gps_lng,
-        o.id_tecnico,
-        o._creator_uri_user as creator_uri_user,
-        e.descricao as estado_nome,
-        m.descricao as municipio_nome
-      FROM pinovara.organizacao o
-      LEFT JOIN pinovara_aux.estado e ON o.estado = e.id
-      LEFT JOIN pinovara_aux.municipio_ibge m ON o.municipio = m.id
-      WHERE o.removido = false
-      ORDER BY o.data_visita DESC NULLS LAST
-    `;
+        const todasOrganizacoes = await prisma.organizacao.findMany({
+            where: { removido: false },
+            select: {
+                id: true,
+                nome: true,
+                data_visita: true,
+                estado: true,
+                municipio: true,
+                gps_lat: true,
+                gps_lng: true,
+                id_tecnico: true,
+                creator_uri_user: true,
+                estado_organizacao_estadoToestado: {
+                    select: {
+                        descricao: true
+                    }
+                },
+                municipio_ibge: {
+                    select: {
+                        descricao: true
+                    }
+                }
+            },
+            orderBy: {
+                data_visita: 'desc'
+            }
+        });
         let organizacoesFiltradas = todasOrganizacoes;
         if (aplicarFiltroHibrido && userId) {
             organizacoesFiltradas = todasOrganizacoes.filter(org => {
@@ -400,25 +408,35 @@ class OrganizacaoService {
             comQuestionario: Math.floor(total * 0.3),
             semQuestionario: Math.floor(total * 0.7),
             porEstado: porEstadoFormatado,
-            organizacoesRecentes: organizacoesRecentes.map(org => ({
-                id: org.id,
-                nome: org.nome || 'Nome não informado',
-                dataVisita: org.data_visita,
-                data_visita: org.data_visita,
-                estado: org.estado,
-                municipio: org.municipio,
-                estado_nome: org.estado_nome,
-                municipio_nome: org.municipio_nome,
-                temGps: !!(org.gps_lat && org.gps_lng)
-            })),
-            organizacoesComGps: organizacoesComGps.map(org => ({
-                id: org.id,
-                nome: org.nome || 'Nome não informado',
-                lat: org.gps_lat,
-                lng: org.gps_lng,
-                estado: org.estado,
-                estado_nome: org.estado_nome || 'Não informado'
-            }))
+            organizacoesRecentes: organizacoesRecentes.map(org => {
+                const estadoNome = org.estado_organizacao_estadoToestado?.descricao;
+                const municipioNome = org.municipio_ibge?.descricao;
+                const estadoSigla = this.getEstadoSigla(estadoNome);
+                return {
+                    id: org.id,
+                    nome: org.nome || 'Nome não informado',
+                    dataVisita: org.data_visita,
+                    data_visita: org.data_visita,
+                    estado: org.estado,
+                    municipio: org.municipio,
+                    estado_nome: estadoNome,
+                    municipio_nome: municipioNome,
+                    localizacao: estadoSigla && municipioNome ? `${estadoSigla} - ${municipioNome}` : (estadoSigla || municipioNome || 'Não informado'),
+                    temGps: !!(org.gps_lat && org.gps_lng)
+                };
+            }),
+            organizacoesComGps: organizacoesComGps.map(org => {
+                const estadoNome = org.estado_organizacao_estadoToestado?.descricao;
+                const estadoSigla = this.getEstadoSigla(estadoNome);
+                return {
+                    id: org.id,
+                    nome: org.nome || 'Nome não informado',
+                    lat: org.gps_lat,
+                    lng: org.gps_lng,
+                    estado: org.estado,
+                    estado_nome: estadoSigla || estadoNome || 'Não informado'
+                };
+            })
         };
     }
     async getMunicipios(estadoId) {
@@ -475,6 +493,40 @@ class OrganizacaoService {
                 code: api_1.ErrorCode.DATABASE_ERROR
             });
         }
+    }
+    getEstadoSigla(nomeEstado) {
+        if (!nomeEstado)
+            return '';
+        const siglasEstados = {
+            'Acre': 'AC',
+            'Alagoas': 'AL',
+            'Amapá': 'AP',
+            'Amazonas': 'AM',
+            'Bahia': 'BA',
+            'Ceará': 'CE',
+            'Distrito Federal': 'DF',
+            'Espírito Santo': 'ES',
+            'Goiás': 'GO',
+            'Maranhão': 'MA',
+            'Mato Grosso': 'MT',
+            'Mato Grosso do Sul': 'MS',
+            'Minas Gerais': 'MG',
+            'Pará': 'PA',
+            'Paraíba': 'PB',
+            'Paraná': 'PR',
+            'Pernambuco': 'PE',
+            'Piauí': 'PI',
+            'Rio de Janeiro': 'RJ',
+            'Rio Grande do Norte': 'RN',
+            'Rio Grande do Sul': 'RS',
+            'Rondônia': 'RO',
+            'Roraima': 'RR',
+            'Santa Catarina': 'SC',
+            'São Paulo': 'SP',
+            'Sergipe': 'SE',
+            'Tocantins': 'TO'
+        };
+        return siglasEstados[nomeEstado] || nomeEstado;
     }
     getEstadoNome(codigo) {
         if (!codigo)
