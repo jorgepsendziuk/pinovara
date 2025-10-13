@@ -41,6 +41,7 @@ const auth_1 = require("../middleware/auth");
 const adminAuth_1 = require("../middleware/adminAuth");
 const adminController_1 = __importDefault(require("../controllers/adminController"));
 const analyticsController_1 = require("../controllers/analyticsController");
+const odkSyncController_1 = require("../controllers/odkSyncController");
 const migrate_id_tecnico_1 = require("../scripts/migrate-id-tecnico");
 const router = (0, express_1.Router)();
 router.use(auth_1.authenticateToken);
@@ -140,6 +141,8 @@ router.get('/system-info', async (req, res) => {
     }
 });
 router.get('/analytics/metrics', analyticsController_1.analyticsController.getMetrics.bind(analyticsController_1.analyticsController));
+router.get('/odk/stats', odkSyncController_1.odkSyncController.getStats);
+router.post('/odk/sync-all', odkSyncController_1.odkSyncController.syncAll);
 router.post('/migrate-id-tecnico', async (req, res) => {
     try {
         console.log('🚀 Iniciando migração de id_tecnico via endpoint...');

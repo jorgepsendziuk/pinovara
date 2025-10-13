@@ -3,6 +3,7 @@ import { authenticateToken } from '../middleware/auth';
 import { requireAdmin } from '../middleware/adminAuth';
 import adminController from '../controllers/adminController';
 import { analyticsController } from '../controllers/analyticsController';
+import { odkSyncController } from '../controllers/odkSyncController';
 import { migrateIdTecnico } from '../scripts/migrate-id-tecnico';
 
 const router = Router();
@@ -201,6 +202,20 @@ router.get('/system-info', async (req, res) => {
  * Buscar métricas do sistema para o painel de analytics
  */
 router.get('/analytics/metrics', analyticsController.getMetrics.bind(analyticsController));
+
+// ========== ODK SYNC ROUTES ==========
+
+/**
+ * GET /admin/odk/stats
+ * Estatísticas de fotos/arquivos ODK
+ */
+router.get('/odk/stats', odkSyncController.getStats);
+
+/**
+ * POST /admin/odk/sync-all
+ * Sincronizar fotos e arquivos de todas as organizações
+ */
+router.post('/odk/sync-all', odkSyncController.syncAll);
 
 // ========== MIGRATION ROUTES ==========
 
