@@ -7,9 +7,7 @@ const express_1 = __importDefault(require("express"));
 const fotoSyncController_1 = require("../controllers/fotoSyncController");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-// Sincronizar fotos do ODK
 router.post('/organizacoes/:id/fotos/sync', auth_1.authenticateToken, fotoSyncController_1.fotoSyncController.sync);
-// Listar fotos disponíveis no ODK
 router.get('/organizacoes/:id/fotos/odk-disponiveis', auth_1.authenticateToken, fotoSyncController_1.fotoSyncController.listODKAvailable);
 exports.default = router;
 //# sourceMappingURL=fotoSyncRoutes.js.map

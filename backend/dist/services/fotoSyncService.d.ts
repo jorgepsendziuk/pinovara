@@ -1,31 +1,27 @@
 import { FotoODK, SyncResult } from '../types/fotoSync';
 export declare const fotoSyncService: {
-    /**
-     * Sincroniza fotos do ODK para uma organização
-     */
     syncFotosFromODK(organizacaoId: number, userEmail: string): Promise<SyncResult>;
-    /**
-     * Busca fotos do ODK via dblink
-     */
     getFotosODK(organizacaoUri: string | null): Promise<FotoODK[]>;
-    /**
-     * Salva BLOB como arquivo no disco
-     */
     salvarBlobComoArquivo(blob: Buffer, nomeOriginal: string): Promise<string>;
-    /**
-     * Lista fotos disponíveis no ODK (sem baixar)
-     */
     listarFotosDisponiveis(organizacaoId: number): Promise<{
         total: number;
-        fotos: any[];
+        fotos: never[];
         mensagem: string;
         ja_sincronizadas?: undefined;
         disponiveis?: undefined;
     } | {
-        total: any;
+        total: number;
         ja_sincronizadas: number;
         disponiveis: number;
-        fotos: any[];
+        fotos: {
+            uri: string;
+            grupo: string | null;
+            obs: string | null;
+            nome_arquivo: string;
+            creation_date: Date;
+            tamanho_mb: string;
+            ja_sincronizada: boolean;
+        }[];
         mensagem?: undefined;
     }>;
 };

@@ -4,7 +4,6 @@ exports.documentoService = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 exports.documentoService = {
-    // Criar novo documento
     async create(data) {
         const now = new Date();
         return await prisma.organizacao_arquivo.create({
@@ -20,20 +19,17 @@ exports.documentoService = {
             },
         });
     },
-    // Buscar documentos de uma organização
     async findByOrganizacao(organizacaoId) {
         return await prisma.organizacao_arquivo.findMany({
             where: { id_organizacao: organizacaoId },
             orderBy: { creation_date: 'desc' },
         });
     },
-    // Buscar documento por ID
     async findById(id) {
         return await prisma.organizacao_arquivo.findUnique({
             where: { id },
         });
     },
-    // Atualizar documento
     async update(id, data) {
         return await prisma.organizacao_arquivo.update({
             where: { id },
@@ -43,13 +39,11 @@ exports.documentoService = {
             },
         });
     },
-    // Deletar documento
     async delete(id) {
         return await prisma.organizacao_arquivo.delete({
             where: { id },
         });
     },
-    // Contar documentos
     async count(organizacaoId) {
         return await prisma.organizacao_arquivo.count({
             where: {

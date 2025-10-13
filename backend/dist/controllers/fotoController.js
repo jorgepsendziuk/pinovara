@@ -8,9 +8,7 @@ const fotoService_1 = require("../services/fotoService");
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-// Configuração do Multer para upload de fotos
 const UPLOAD_DIR = '/var/pinovara/shared/uploads/fotos';
-// Garantir que o diretório existe
 if (!fs_1.default.existsSync(UPLOAD_DIR)) {
     fs_1.default.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
@@ -22,10 +20,10 @@ const storage = multer_1.default.diskStorage({
         const ext = path_1.default.extname(file.originalname).toLowerCase();
         const baseName = path_1.default.basename(file.originalname, ext)
             .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-            .replace(/[^a-z0-9]/gi, '-') // Substitui especiais por hífen
-            .replace(/-+/g, '-') // Remove hífens duplicados
-            .replace(/^-|-$/g, '') // Remove hífens início/fim
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]/gi, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '')
             .toLowerCase();
         const cleanName = `${baseName}${ext}`;
         cb(null, cleanName);
@@ -33,7 +31,7 @@ const storage = multer_1.default.diskStorage({
 });
 const upload = (0, multer_1.default)({
     storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|gif|webp/;
         const extname = allowedTypes.test(path_1.default.extname(file.originalname).toLowerCase());
@@ -48,7 +46,6 @@ const upload = (0, multer_1.default)({
 });
 exports.uploadMiddleware = upload.single('foto');
 exports.fotoController = {
-    // Upload de foto
     async upload(req, res) {
         try {
             if (!req.file) {
@@ -79,7 +76,6 @@ exports.fotoController = {
             });
         }
     },
-    // Listar fotos de uma organização
     async list(req, res) {
         try {
             const organizacaoId = parseInt(req.params.id);
@@ -97,7 +93,6 @@ exports.fotoController = {
             });
         }
     },
-    // Visualizar foto (retorna a imagem para exibição)
     async view(req, res) {
         try {
             const fotoId = parseInt(req.params.fotoId);
@@ -119,7 +114,6 @@ exports.fotoController = {
                 });
             }
             console.log(`✅ Arquivo encontrado: ${foto.foto}`);
-            // Detectar tipo MIME baseado na extensão
             const ext = path_1.default.extname(foto.foto).toLowerCase();
             const mimeTypes = {
                 '.jpg': 'image/jpeg',
@@ -140,7 +134,6 @@ exports.fotoController = {
             });
         }
     },
-    // Download de foto
     async download(req, res) {
         try {
             const fotoId = parseInt(req.params.fotoId);
@@ -158,7 +151,6 @@ exports.fotoController = {
                     error: 'Arquivo não encontrado no servidor'
                 });
             }
-            // Garantir que arquivo tenha extensão no download
             const nomeDownload = foto.foto.includes('.') ? foto.foto : `${foto.foto}.jpg`;
             res.download(filePath, nomeDownload);
         }
@@ -170,7 +162,6 @@ exports.fotoController = {
             });
         }
     },
-    // Deletar foto
     async delete(req, res) {
         try {
             const fotoId = parseInt(req.params.fotoId);
@@ -181,14 +172,12 @@ exports.fotoController = {
                     error: 'Foto não encontrada'
                 });
             }
-            // Deletar arquivo físico
             if (foto.foto) {
                 const filePath = path_1.default.join(UPLOAD_DIR, foto.foto);
                 if (fs_1.default.existsSync(filePath)) {
                     fs_1.default.unlinkSync(filePath);
                 }
             }
-            // Deletar registro do banco
             await fotoService_1.fotoService.delete(fotoId);
             res.json({
                 success: true,

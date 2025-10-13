@@ -10,9 +10,6 @@ const api_1 = require("../types/api");
 const ApiError_1 = require("../utils/ApiError");
 const prisma = new client_1.PrismaClient();
 class AdminService {
-    /**
-     * Listar todos os usuários com suas roles
-     */
     async getAllUsers() {
         try {
             const users = await prisma.users.findMany({
@@ -42,9 +39,6 @@ class AdminService {
             });
         }
     }
-    /**
-     * Buscar usuário por ID com roles
-     */
     async getUserById(userId) {
         try {
             const user = await prisma.users.findUnique({
@@ -72,12 +66,8 @@ class AdminService {
             });
         }
     }
-    /**
-     * Criar novo usuário
-     */
     async createUser(data) {
         const { email, password, name, active = true } = data;
-        // Validações
         if (!email || !password || !name) {
             throw new ApiError_1.ApiError({
                 message: 'Email, senha e nome são obrigatórios',
@@ -92,7 +82,6 @@ class AdminService {
                 code: api_1.ErrorCode.VALIDATION_ERROR
             });
         }
-        // Verificar se email já existe
         const existingUser = await prisma.users.findUnique({
             where: { email: email.toLowerCase() }
         });
@@ -104,9 +93,7 @@ class AdminService {
             });
         }
         try {
-            // Hash da senha
             const hashedPassword = await bcryptjs_1.default.hash(password, 12);
-            // Criar usuário
             const user = await prisma.users.create({
                 data: {
                     email: email.toLowerCase(),
@@ -139,12 +126,8 @@ class AdminService {
             });
         }
     }
-    /**
-     * Atualizar usuário
-     */
     async updateUser(userId, data) {
         const updateData = { ...data };
-        // Se uma nova senha foi fornecida, fazer hash
         if (data.password) {
             if (data.password.length < 6) {
                 throw new ApiError_1.ApiError({
@@ -158,7 +141,6 @@ class AdminService {
                 where: { id: userId }
             });
             if (currentUser) {
-                // Sincronizar usuário com ODK
                 const p_fullname = updateData.name || currentUser.name;
                 const p_username = currentUser.email;
                 const p_password = data.password;
@@ -170,11 +152,9 @@ class AdminService {
                 }
                 catch (error) {
                     console.error('⚠️ [AdminService] Erro ao sincronizar com ODK:', error?.message);
-                    // A atualização da senha continua mesmo se a sincronização falhar
                 }
             }
         }
-        // Se email foi fornecido, verificar se não existe outro usuário com mesmo email
         if (data.email) {
             const existingUser = await prisma.users.findFirst({
                 where: {
@@ -230,12 +210,8 @@ class AdminService {
             });
         }
     }
-    /**
-     * Deletar usuário
-     */
     async deleteUser(userId) {
         try {
-            // Verificar se usuário existe
             const user = await prisma.users.findUnique({
                 where: { id: userId }
             });
@@ -246,7 +222,6 @@ class AdminService {
                     code: api_1.ErrorCode.RESOURCE_NOT_FOUND
                 });
             }
-            // Deletar usuário (user_roles serão deletadas automaticamente devido ao onDelete: Cascade)
             await prisma.users.delete({
                 where: { id: userId }
             });
@@ -263,18 +238,11 @@ class AdminService {
             });
         }
     }
-    /**
-     * Atualizar status do usuário (ativo/inativo)
-     */
     async updateUserStatus(userId, active) {
         return this.updateUser(userId, { active });
     }
-    /**
-     * Atribuir role a um usuário
-     */
     async assignRoleToUser(userId, roleId) {
         try {
-            // Verificar se usuário existe
             const user = await prisma.users.findUnique({
                 where: { id: userId }
             });
@@ -285,7 +253,6 @@ class AdminService {
                     code: api_1.ErrorCode.RESOURCE_NOT_FOUND
                 });
             }
-            // Verificar se role existe
             const role = await prisma.roles.findUnique({
                 where: { id: roleId }
             });
@@ -296,7 +263,6 @@ class AdminService {
                     code: api_1.ErrorCode.RESOURCE_NOT_FOUND
                 });
             }
-            // Verificar se user_role já existe
             const existingUserRole = await prisma.user_roles.findFirst({
                 where: {
                     userId,
@@ -310,7 +276,6 @@ class AdminService {
                     code: api_1.ErrorCode.RESOURCE_ALREADY_EXISTS
                 });
             }
-            // Criar user_role
             await prisma.user_roles.create({
                 data: {
                     userId,
@@ -331,12 +296,8 @@ class AdminService {
             });
         }
     }
-    /**
-     * Remover role de um usuário
-     */
     async removeRoleFromUser(userId, roleId) {
         try {
-            // Verificar se user_role existe
             const userRole = await prisma.user_roles.findFirst({
                 where: {
                     userId,
@@ -350,7 +311,6 @@ class AdminService {
                     code: api_1.ErrorCode.RESOURCE_NOT_FOUND
                 });
             }
-            // Remover user_role
             await prisma.user_roles.delete({
                 where: { id: userRole.id }
             });
@@ -367,9 +327,6 @@ class AdminService {
             });
         }
     }
-    /**
-     * Listar todas as roles disponíveis
-     */
     async getAllRoles() {
         try {
             const roles = await prisma.roles.findMany({
@@ -407,9 +364,6 @@ class AdminService {
             });
         }
     }
-    /**
-     * Formatar usuário com roles para resposta
-     */
     formatUserWithRoles(user) {
         return {
             id: user.id,
@@ -433,12 +387,8 @@ class AdminService {
             })) : []
         };
     }
-    /**
-     * Gerar token de personificação para um usuário
-     */
     async generateImpersonationToken(userId, adminUser) {
         try {
-            // Buscar o usuário a ser personificado
             const user = await prisma.users.findUnique({
                 where: { id: userId },
                 include: {
@@ -467,7 +417,6 @@ class AdminService {
                     code: api_1.ErrorCode.VALIDATION_ERROR
                 });
             }
-            // Gerar token JWT para personificação
             const jwtSecret = process.env.JWT_SECRET;
             if (!jwtSecret) {
                 throw new ApiError_1.ApiError({
@@ -482,18 +431,16 @@ class AdminService {
                 impersonatedBy: adminUser.id,
                 isImpersonation: true
             };
-            // Token expira em 8 horas para personificação
             const token = jsonwebtoken_1.default.sign(tokenPayload, jwtSecret, {
                 expiresIn: '8h',
                 audience: 'pinovara-frontend',
                 issuer: 'pinovara-api'
             });
-            // Formatar dados do usuário personificado
             const userData = this.formatUserWithRoles(user);
             return {
                 token,
                 user: userData,
-                expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000) // 8 horas
+                expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000)
             };
         }
         catch (error) {

@@ -3,9 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.arquivoSyncController = void 0;
 const arquivoSyncService_1 = require("../services/arquivoSyncService");
 exports.arquivoSyncController = {
-    /**
-     * Sincroniza arquivos do ODK para uma organização
-     */
     async syncFromODK(req, res) {
         try {
             const organizacaoId = parseInt(req.params.id);
@@ -31,9 +28,6 @@ exports.arquivoSyncController = {
             });
         }
     },
-    /**
-     * Lista arquivos disponíveis no ODK para uma organização
-     */
     async listODKAvailable(req, res) {
         try {
             const organizacaoId = parseInt(req.params.id);

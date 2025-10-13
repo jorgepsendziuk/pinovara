@@ -13,38 +13,29 @@ const prisma = new client_1.PrismaClient();
 const UPLOAD_DIR = '/var/pinovara/shared/uploads/fotos';
 const DOCUMENTS_DIR = '/var/pinovara/shared/uploads/arquivos';
 exports.relatorioService = {
-    /**
-     * Gera PDF com dados da organização e fotos
-     */
     async gerarRelatorioPDF(organizacaoId) {
         const doc = new pdfkit_1.default({ margin: 50, size: 'A4' });
         const stream = new stream_1.PassThrough();
         doc.pipe(stream);
-        // Definir fonte padrão
         doc.font('Helvetica');
         try {
-            // Buscar dados completos da organização
             const organizacao = await prisma.organizacao.findUnique({
                 where: { id: organizacaoId },
                 select: {
-                    // Campos básicos
                     id: true,
                     nome: true,
                     cnpj: true,
                     telefone: true,
                     email: true,
                     data_fundacao: true,
-                    // Endereço da organização
                     organizacao_end_logradouro: true,
                     organizacao_end_bairro: true,
                     organizacao_end_complemento: true,
                     organizacao_end_numero: true,
                     organizacao_end_cep: true,
-                    // GPS
                     gps_lat: true,
                     gps_lng: true,
                     gps_alt: true,
-                    // Dados do representante
                     representante_nome: true,
                     representante_cpf: true,
                     representante_rg: true,
@@ -56,7 +47,6 @@ exports.relatorioService = {
                     representante_end_numero: true,
                     representante_end_cep: true,
                     representante_funcao: true,
-                    // Relacionamentos
                     estado_organizacao_estadoToestado: true,
                     municipio_ibge: true,
                     organizacao_foto: {
@@ -71,17 +61,13 @@ exports.relatorioService = {
             if (!organizacao) {
                 throw new Error('Organização não encontrada');
             }
-            // === CABEÇALHO BONITO (APENAS PRIMEIRA PÁGINA) ===
-            // Fundo claro para o cabeçalho
             doc.rect(0, 0, doc.page.width, 100)
                 .fill('#f8f9fa');
-            // Borda inferior verde
             doc.strokeColor('#056839')
                 .lineWidth(3)
                 .moveTo(0, 100)
                 .lineTo(doc.page.width, 100)
                 .stroke();
-            // Logo PINOVARA
             let logoAdded = false;
             const logoPaths = [
                 path_1.default.join(__dirname, '../../public/pinovara.png'),
@@ -96,11 +82,9 @@ exports.relatorioService = {
                         break;
                     }
                     catch (e) {
-                        // Continua tentando outros caminhos
                     }
                 }
             }
-            // Texto do cabeçalho com cores
             const textX = logoAdded ? 120 : 50;
             doc.fillColor('#056839')
                 .font('Helvetica-Bold')
@@ -114,7 +98,6 @@ exports.relatorioService = {
                 .fontSize(8)
                 .text(`Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, textX, 65);
             doc.y = 120;
-            // Título do relatório
             doc.fillColor('#3b2313')
                 .font('Helvetica-Bold')
                 .fontSize(16)
@@ -123,18 +106,15 @@ exports.relatorioService = {
                 .fontSize(14)
                 .text(organizacao.nome || 'Sem nome', 50, doc.y + 22, { align: 'center' });
             doc.y += 55;
-            // Linha divisória
             doc.strokeColor('#056839')
                 .lineWidth(1)
                 .moveTo(50, doc.y)
                 .lineTo(doc.page.width - 50, doc.y)
                 .stroke();
             doc.moveDown(1.5);
-            // Função auxiliar para criar tabela de 2 colunas
             const criarTabela2Colunas = (dados) => {
                 const colunaEsquerda = [];
                 const colunaDireita = [];
-                // Dividir dados em 2 colunas
                 dados.forEach((item, index) => {
                     if (index % 2 === 0) {
                         colunaEsquerda.push(item);
@@ -143,12 +123,10 @@ exports.relatorioService = {
                         colunaDireita.push(item);
                     }
                 });
-                // Calcular altura da tabela
                 const maxLinhas = Math.max(colunaEsquerda.length, colunaDireita.length);
                 const alturaLinha = 20;
                 const alturaTotalTabela = maxLinhas * alturaLinha;
                 const larguraColuna = (doc.page.width - 100) / 2 - 10;
-                // Desenhar bordas da tabela
                 doc.strokeColor('#000')
                     .lineWidth(1)
                     .rect(50, doc.y, larguraColuna, alturaTotalTabela)
@@ -156,14 +134,12 @@ exports.relatorioService = {
                 doc.rect(50 + larguraColuna + 10, doc.y, larguraColuna, alturaTotalTabela)
                     .stroke();
                 const startY = doc.y;
-                // Coluna Esquerda
                 let currentY = startY + 5;
                 colunaEsquerda.forEach(([label, value]) => {
                     doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
                         .text(label, 55, currentY, { width: 100, continued: false });
                     doc.font('Helvetica').fontSize(9)
                         .text(value, 160, currentY, { width: larguraColuna - 110 });
-                    // Linha divisória horizontal
                     currentY += alturaLinha;
                     if (currentY < startY + alturaTotalTabela) {
                         doc.strokeColor('#ddd').lineWidth(0.5)
@@ -172,7 +148,6 @@ exports.relatorioService = {
                             .stroke();
                     }
                 });
-                // Coluna Direita
                 currentY = startY + 5;
                 colunaDireita.forEach(([label, value]) => {
                     const xOffset = 50 + larguraColuna + 10;
@@ -180,7 +155,6 @@ exports.relatorioService = {
                         .text(label, xOffset + 5, currentY, { width: 100, continued: false });
                     doc.font('Helvetica').fontSize(9)
                         .text(value, xOffset + 110, currentY, { width: larguraColuna - 115 });
-                    // Linha divisória horizontal
                     currentY += alturaLinha;
                     if (currentY < startY + alturaTotalTabela) {
                         doc.strokeColor('#ddd').lineWidth(0.5)
@@ -191,7 +165,6 @@ exports.relatorioService = {
                 });
                 doc.y = startY + alturaTotalTabela + 20;
             };
-            // === TABELA DE DADOS BÁSICOS ===
             const org = organizacao;
             doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                 .text('DADOS BÁSICOS DA ORGANIZAÇÃO', 50, doc.y);
@@ -212,7 +185,6 @@ exports.relatorioService = {
             if (org.municipio_ibge?.descricao)
                 tabelaDados.push(['Município:', org.municipio_ibge.descricao]);
             criarTabela2Colunas(tabelaDados);
-            // === TABELA DE ENDEREÇO ===
             if (doc.y > 650) {
                 doc.addPage();
             }
@@ -237,7 +209,6 @@ exports.relatorioService = {
                     tabelaEndereco.push(['Altitude:', `${organizacao.gps_alt}m`]);
             }
             criarTabela2Colunas(tabelaEndereco);
-            // === TABELA DO REPRESENTANTE ===
             if (org.representante_nome || org.organizacao_participante?.length > 0) {
                 if (doc.y > 650) {
                     doc.addPage();
@@ -268,7 +239,6 @@ exports.relatorioService = {
                     tabelaRepresentante.push(['CEP:', org.representante_end_cep]);
                 criarTabela2Colunas(tabelaRepresentante);
             }
-            // === LISTA DE DOCUMENTOS ===
             if (organizacao.organizacao_arquivo && organizacao.organizacao_arquivo.length > 0) {
                 if (doc.y > 650) {
                     doc.addPage();
@@ -291,15 +261,12 @@ exports.relatorioService = {
                 });
                 doc.moveDown(1);
             }
-            // === FOTOS (UMA POR PÁGINA) ===
             if (organizacao.organizacao_foto && organizacao.organizacao_foto.length > 0) {
                 for (const foto of organizacao.organizacao_foto) {
                     if (!foto.foto)
                         continue;
-                    // Nova página para cada foto
                     doc.addPage();
                     const fotoPath = path_1.default.join(UPLOAD_DIR, foto.foto);
-                    // Verificar se arquivo existe
                     if (!fs_1.default.existsSync(fotoPath)) {
                         doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                             .text('FOTO NÃO ENCONTRADA', 50, 50);
@@ -317,7 +284,6 @@ exports.relatorioService = {
                         }
                         continue;
                     }
-                    // Cabeçalho da página de foto
                     doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                         .text('FOTO DA ORGANIZAÇÃO', 50, 50);
                     doc.moveDown(0.5);
@@ -327,19 +293,16 @@ exports.relatorioService = {
                         .lineTo(doc.page.width - 50, doc.y)
                         .stroke();
                     doc.moveDown(1);
-                    // Título/Descrição da foto
                     doc.font('Helvetica-Bold').fontSize(11).fillColor('#3b2313')
                         .text(foto.obs || 'Sem descrição', 50, doc.y);
                     doc.moveDown(0.5);
-                    // Informações
                     doc.font('Helvetica').fontSize(9).fillColor('#666')
                         .text(`Arquivo: ${foto.foto}`, 50, doc.y);
                     doc.text(`Data: ${new Date(foto.creation_date).toLocaleDateString('pt-BR')} às ${new Date(foto.creation_date).toLocaleTimeString('pt-BR')}`, 50, doc.y + 12);
                     doc.moveDown(2);
-                    // Inserir imagem (centralizada e maximizada)
                     try {
                         const maxWidth = doc.page.width - 100;
-                        const maxHeight = 550; // Altura maior para aproveitar a página
+                        const maxHeight = 550;
                         doc.image(fotoPath, 50, doc.y, {
                             fit: [maxWidth, maxHeight],
                             align: 'center'
@@ -353,7 +316,6 @@ exports.relatorioService = {
                     }
                 }
             }
-            // Finalizar o documento
             doc.end();
             return stream;
         }

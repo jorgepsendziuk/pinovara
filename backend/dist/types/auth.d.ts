@@ -1,6 +1,3 @@
-/**
- * Tipos relacionados à autenticação
- */
 export interface User {
     id: number;
     email: string;

@@ -1,10 +1,6 @@
 "use strict";
-/**
- * Tipos completos para organizações baseados na modelagem real do banco
- */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CAMPOS_OBRIGATORIOS_REPRESENTANTE = exports.CAMPOS_OBRIGATORIOS_CADASTRO = exports.MODULOS_QUESTIONARIO = void 0;
-// ========== VALIDAÇÃO E CONSTANTES ==========
 exports.MODULOS_QUESTIONARIO = {
     GO: 'Gestão Organizacional',
     GPP: 'Gestão de Processos Produtivos',

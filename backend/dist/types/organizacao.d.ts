@@ -1,6 +1,3 @@
-/**
- * Tipos relacionados às organizações
- */
 export interface Organizacao {
     id: number;
     nome?: string | null;
@@ -20,6 +17,7 @@ export interface Organizacao {
     data_visita?: Date | null;
     meta_instance_id?: string | null;
     meta_instance_name?: string | null;
+    creator_uri_user?: string | null;
     removido?: boolean | null;
     id_tecnico?: number | null;
 }
@@ -69,6 +67,7 @@ export interface OrganizacaoFilters {
     estado?: number;
     municipio?: number;
     id_tecnico?: number;
+    userId?: number;
     page?: number;
     limit?: number;
 }

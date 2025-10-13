@@ -1,6 +1,3 @@
-/**
- * Tipos completos para organizações baseados na modelagem real do banco
- */
 export interface OrganizacaoBase {
     id: number;
     nome?: string;

@@ -3,10 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.fotoSyncController = void 0;
 const fotoSyncService_1 = require("../services/fotoSyncService");
 exports.fotoSyncController = {
-    /**
-     * POST /api/organizacoes/:id/fotos/sync
-     * Sincroniza fotos do ODK para organização
-     */
     async sync(req, res) {
         try {
             const organizacaoId = parseInt(req.params.id);
@@ -37,10 +33,6 @@ exports.fotoSyncController = {
             });
         }
     },
-    /**
-     * GET /api/organizacoes/:id/fotos/odk-disponiveis
-     * Lista fotos disponíveis no ODK (sem sincronizar)
-     */
     async listODKAvailable(req, res) {
         try {
             const organizacaoId = parseInt(req.params.id);

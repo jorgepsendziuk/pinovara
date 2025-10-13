@@ -8,12 +8,9 @@ const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const documentoService_1 = require("../services/documentoService");
-// Pasta única para todos os arquivos
 const UPLOAD_DIR = '/var/pinovara/shared/uploads/arquivos';
-// Configurar storage do multer
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
-        // Criar pasta se não existir
         if (!fs_1.default.existsSync(UPLOAD_DIR)) {
             fs_1.default.mkdirSync(UPLOAD_DIR, { recursive: true });
         }
@@ -32,7 +29,6 @@ const storage = multer_1.default.diskStorage({
         cb(null, nomeArquivoFinal);
     }
 });
-// Filtro de arquivos permitidos
 const fileFilter = (req, file, cb) => {
     const allowedTypes = [
         'application/pdf',
@@ -49,16 +45,14 @@ const fileFilter = (req, file, cb) => {
         cb(new Error('Tipo de arquivo não permitido. Apenas PDF, JPG, PNG, DOC e DOCX são aceitos.'));
     }
 };
-// Configurar upload
 exports.upload = (0, multer_1.default)({
     storage,
     fileFilter,
     limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB
+        fileSize: 10 * 1024 * 1024,
     },
 });
 class DocumentoController {
-    // Upload de documento
     async uploadDocumento(req, res) {
         try {
             const organizacaoId = parseInt(req.params.id);
@@ -71,12 +65,9 @@ class DocumentoController {
                 });
                 return;
             }
-            // Gerar URI único para o arquivo
             const timestamp = Date.now();
             const uri = `uuid:${organizacaoId}-${timestamp}-${Math.random().toString(36).substring(7)}`;
-            // Contar arquivos existentes para definir ordinal_number
             const count = await documentoService_1.documentoService.count(organizacaoId);
-            // Criar registro no banco
             const documento = await documentoService_1.documentoService.create({
                 id_organizacao: organizacaoId,
                 arquivo: file.filename,
@@ -98,7 +89,6 @@ class DocumentoController {
             });
         }
     }
-    // Listar documentos de uma organização
     async listDocumentos(req, res) {
         try {
             const organizacaoId = parseInt(req.params.id);
@@ -116,7 +106,6 @@ class DocumentoController {
             });
         }
     }
-    // Download de documento
     async downloadDocumento(req, res) {
         try {
             const documentoId = parseInt(req.params.docId);
@@ -128,9 +117,7 @@ class DocumentoController {
                 });
                 return;
             }
-            // Caminho do arquivo na pasta única
             const filePath = path_1.default.join(UPLOAD_DIR, documento.arquivo);
-            // Verificar se arquivo existe
             if (!fs_1.default.existsSync(filePath)) {
                 res.status(404).json({
                     success: false,
@@ -138,7 +125,6 @@ class DocumentoController {
                 });
                 return;
             }
-            // Fazer download
             res.download(filePath, documento.arquivo);
         }
         catch (error) {
@@ -149,7 +135,6 @@ class DocumentoController {
             });
         }
     }
-    // Deletar documento
     async deleteDocumento(req, res) {
         try {
             const documentoId = parseInt(req.params.docId);
@@ -161,13 +146,10 @@ class DocumentoController {
                 });
                 return;
             }
-            // Caminho do arquivo na pasta única
             const filePath = path_1.default.join(UPLOAD_DIR, documento.arquivo);
-            // Deletar arquivo físico se existir
             if (fs_1.default.existsSync(filePath)) {
                 fs_1.default.unlinkSync(filePath);
             }
-            // Deletar registro do banco
             await documentoService_1.documentoService.delete(documentoId);
             res.json({
                 success: true,

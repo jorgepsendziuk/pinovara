@@ -53,7 +53,7 @@ export declare const documentoService: {
         top_level_auri: string | null;
         arquivo: string | null;
         id_organizacao: number | null;
-    }>;
+    } | null>;
     update(id: number, data: UpdateDocumentoDTO): Promise<{
         id: number;
         uri: string;

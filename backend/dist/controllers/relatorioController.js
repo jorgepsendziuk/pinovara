@@ -3,10 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.relatorioController = void 0;
 const relatorioService_1 = require("../services/relatorioService");
 exports.relatorioController = {
-    /**
-     * GET /api/organizacoes/:id/relatorio/pdf
-     * Gera relatório PDF da organização
-     */
     async gerarPDF(req, res) {
         try {
             const organizacaoId = parseInt(req.params.id);

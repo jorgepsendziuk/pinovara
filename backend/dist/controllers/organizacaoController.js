@@ -7,13 +7,10 @@ exports.organizacaoController = void 0;
 const organizacaoService_1 = __importDefault(require("../services/organizacaoService"));
 const authService_1 = require("../services/authService");
 const api_1 = require("../types/api");
+const odkHelper_1 = require("../utils/odkHelper");
 class OrganizacaoController {
-    /**
-     * GET /organizacoes
-     */
     async list(req, res) {
         try {
-            // Verificar permissões do usuário
             const userPermissions = req.userPermissions;
             const filters = {
                 nome: req.query.nome,
@@ -22,10 +19,7 @@ class OrganizacaoController {
                 municipio: req.query.municipio ? parseInt(req.query.municipio) : undefined,
                 page: req.query.page ? parseInt(req.query.page) : 1,
                 limit: req.query.limit ? parseInt(req.query.limit) : 10,
-                // Filtro por técnico se necessário
-                ...(userPermissions?.isTechnician && !userPermissions?.canAccessAll && {
-                    id_tecnico: userPermissions.userId
-                })
+                userId: userPermissions?.userId
             };
             const result = await organizacaoService_1.default.list(filters);
             res.status(api_1.HttpStatus.OK).json({
@@ -38,9 +32,6 @@ class OrganizacaoController {
             this.handleError(error, res);
         }
     }
-    /**
-     * GET /organizacoes/:id
-     */
     async getById(req, res) {
         try {
             const id = parseInt(req.params.id);
@@ -68,9 +59,18 @@ class OrganizacaoController {
                 });
                 return;
             }
-            // Verificar se técnico tem acesso a esta organização
             if (userPermissions?.isTechnician && !userPermissions?.canAccessAll) {
-                if (organizacao.id_tecnico !== userPermissions.userId) {
+                let temAcesso = false;
+                if (organizacao.id_tecnico === userPermissions.userId) {
+                    temAcesso = true;
+                }
+                if (!temAcesso && organizacao.creator_uri_user) {
+                    const creatorEmail = (0, odkHelper_1.extractEmailFromCreatorUri)(organizacao.creator_uri_user);
+                    if (creatorEmail && creatorEmail === req.user?.email?.toLowerCase()) {
+                        temAcesso = true;
+                    }
+                }
+                if (!temAcesso) {
                     res.status(api_1.HttpStatus.FORBIDDEN).json({
                         success: false,
                         error: {
@@ -92,13 +92,9 @@ class OrganizacaoController {
             this.handleError(error, res);
         }
     }
-    /**
-     * POST /organizacoes
-     */
     async create(req, res) {
         try {
             const userPermissions = req.userPermissions;
-            // Se for técnico, automaticamente definir id_tecnico
             const data = {
                 ...req.body,
                 ...(userPermissions?.isTechnician && {
@@ -117,9 +113,6 @@ class OrganizacaoController {
             this.handleError(error, res);
         }
     }
-    /**
-     * PUT /organizacoes/:id
-     */
     async update(req, res) {
         try {
             const id = parseInt(req.params.id);
@@ -136,7 +129,6 @@ class OrganizacaoController {
                 });
                 return;
             }
-            // Verificar se técnico tem acesso a esta organização antes de atualizar
             if (userPermissions?.isTechnician && !userPermissions?.canAccessAll) {
                 const organizacaoExistente = await organizacaoService_1.default.getById(id);
                 if (!organizacaoExistente) {
@@ -150,7 +142,17 @@ class OrganizacaoController {
                     });
                     return;
                 }
-                if (organizacaoExistente.id_tecnico !== userPermissions.userId) {
+                let temAcesso = false;
+                if (organizacaoExistente.id_tecnico === userPermissions.userId) {
+                    temAcesso = true;
+                }
+                if (!temAcesso && organizacaoExistente.creator_uri_user) {
+                    const creatorEmail = (0, odkHelper_1.extractEmailFromCreatorUri)(organizacaoExistente.creator_uri_user);
+                    if (creatorEmail && creatorEmail === req.user?.email?.toLowerCase()) {
+                        temAcesso = true;
+                    }
+                }
+                if (!temAcesso) {
                     res.status(api_1.HttpStatus.FORBIDDEN).json({
                         success: false,
                         error: {
@@ -174,9 +176,6 @@ class OrganizacaoController {
             this.handleError(error, res);
         }
     }
-    /**
-     * DELETE /organizacoes/:id
-     */
     async delete(req, res) {
         try {
             const id = parseInt(req.params.id);
@@ -202,12 +201,10 @@ class OrganizacaoController {
             this.handleError(error, res);
         }
     }
-    /**
-     * GET /organizacoes/dashboard
-     */
     async getDashboard(req, res) {
         try {
-            const stats = await organizacaoService_1.default.getDashboardStats();
+            const userPermissions = req.userPermissions;
+            const stats = await organizacaoService_1.default.getDashboardStats(userPermissions?.userId);
             res.status(api_1.HttpStatus.OK).json({
                 success: true,
                 data: stats,
@@ -218,9 +215,6 @@ class OrganizacaoController {
             this.handleError(error, res);
         }
     }
-    /**
-     * GET /organizacoes/estados
-     */
     async getEstados(req, res) {
         try {
             const estados = await organizacaoService_1.default.getEstados();
@@ -235,9 +229,6 @@ class OrganizacaoController {
             this.handleError(error, res);
         }
     }
-    /**
-     * GET /organizacoes/municipios/:estadoId?
-     */
     async getMunicipios(req, res) {
         try {
             const estadoId = req.params.estadoId ? parseInt(req.params.estadoId) : undefined;
@@ -253,9 +244,6 @@ class OrganizacaoController {
             this.handleError(error, res);
         }
     }
-    /**
-     * Tratar erros de forma padronizada
-     */
     handleError(error, res) {
         console.error('Organizacao Controller Error:', error);
         if (error instanceof authService_1.ApiError) {
@@ -271,7 +259,6 @@ class OrganizacaoController {
             });
             return;
         }
-        // Erro genérico
         res.status(api_1.HttpStatus.INTERNAL_SERVER_ERROR).json({
             success: false,
             error: {

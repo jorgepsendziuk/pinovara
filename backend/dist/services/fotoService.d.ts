@@ -52,7 +52,7 @@ export declare const fotoService: {
         id_organizacao: number | null;
         foto: string | null;
         grupo: number | null;
-    }>;
+    } | null>;
     update(id: number, data: UpdateFotoDTO): Promise<{
         id: number;
         uri: string;

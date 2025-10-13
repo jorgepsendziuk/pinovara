@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const api_1 = require("../types/api");
+const odkHelper_1 = require("../utils/odkHelper");
 class ApiError extends Error {
     constructor({ message, statusCode, code, details }) {
         super(message);
@@ -12,17 +13,11 @@ class ApiError extends Error {
 }
 const prisma = new client_1.PrismaClient();
 class OrganizacaoService {
-    /**
-     * Listar organizações com filtros e paginação
-     */
     async list(filters = {}) {
-        const { page = 1, limit = 10, nome, cnpj, estado, municipio, id_tecnico } = filters;
-        // Construir condições de filtro
+        const { page = 1, limit = 10, nome, cnpj, estado, municipio, id_tecnico, userId } = filters;
         const whereConditions = {
-            // Não mostrar organizações removidas por padrão
             removido: { not: true }
         };
-        // Aplicar filtros específicos
         if (nome) {
             whereConditions.nome = {
                 contains: nome,
@@ -41,15 +36,22 @@ class OrganizacaoService {
         if (municipio) {
             whereConditions.municipio = municipio;
         }
-        // Filtro por técnico (importante para a role de técnico)
         if (id_tecnico !== undefined) {
             whereConditions.id_tecnico = id_tecnico;
         }
-        // Buscar dados reais do banco
-        const total = await prisma.organizacao.count({ where: whereConditions });
-        const skip = (page - 1) * limit;
-        const totalPaginas = Math.ceil(total / limit);
-        // Buscar organizações com nomes de estado e município
+        let aplicarFiltroHibrido = false;
+        let userEmail = null;
+        if (userId) {
+            const isAdmin = await this.isUserAdmin(userId);
+            if (!isAdmin) {
+                aplicarFiltroHibrido = true;
+                const user = await prisma.users.findUnique({
+                    where: { id: userId },
+                    select: { email: true }
+                });
+                userEmail = user?.email?.toLowerCase() || null;
+            }
+        }
         let sqlQuery = `
       SELECT 
         o.id,
@@ -66,13 +68,14 @@ class OrganizacaoService {
         o.gps_lat,
         o.gps_lng,
         o.removido,
-        o.meta_instance_id
+        o.meta_instance_id,
+        o.id_tecnico,
+        o._creator_uri_user
       FROM pinovara.organizacao o
       LEFT JOIN pinovara_aux.estado e ON o.estado = e.id
       LEFT JOIN pinovara_aux.municipio_ibge m ON o.municipio = m.id
       WHERE o.removido = false
     `;
-        // Aplicar filtros de busca
         const conditions = [];
         if (nome) {
             conditions.push(`o.nome ILIKE '%${nome}%'`);
@@ -92,25 +95,37 @@ class OrganizacaoService {
         if (conditions.length > 0) {
             sqlQuery += ` AND (${conditions.join(' OR ')})`;
         }
-        sqlQuery += ` ORDER BY o.id ASC LIMIT ${limit} OFFSET ${skip}`;
-        const organizacoes = await prisma.$queryRawUnsafe(sqlQuery);
+        sqlQuery += ` ORDER BY o.id ASC`;
+        let organizacoes = await prisma.$queryRawUnsafe(sqlQuery);
+        if (aplicarFiltroHibrido && userId) {
+            organizacoes = organizacoes.filter(org => {
+                if (org.id_tecnico === userId)
+                    return true;
+                if (org._creator_uri_user && userEmail) {
+                    const creatorEmail = (0, odkHelper_1.extractEmailFromCreatorUri)(org._creator_uri_user);
+                    if (creatorEmail === userEmail)
+                        return true;
+                }
+                return false;
+            });
+        }
+        const total = organizacoes.length;
+        const skip = (page - 1) * limit;
+        const totalPaginas = Math.ceil(total / limit);
+        const organizacoesPaginadas = organizacoes.slice(skip, skip + limit);
         return {
-            organizacoes,
+            organizacoes: organizacoesPaginadas,
             total,
             totalPaginas,
             pagina: page,
             limit
         };
     }
-    /**
-     * Buscar organização por ID - TODOS OS CAMPOS PARA EDIÇÃO
-     */
     async getById(organizacaoId) {
         try {
             const organizacao = await prisma.organizacao.findUnique({
                 where: { id: organizacaoId },
                 select: {
-                    // Campos básicos
                     id: true,
                     inicio: true,
                     fim: true,
@@ -128,13 +143,11 @@ class OrganizacaoService {
                     email: true,
                     data_fundacao: true,
                     removido: true,
-                    // Endereço da organização
                     organizacao_end_logradouro: true,
                     organizacao_end_bairro: true,
                     organizacao_end_complemento: true,
                     organizacao_end_numero: true,
                     organizacao_end_cep: true,
-                    // Dados do representante
                     representante_nome: true,
                     representante_cpf: true,
                     representante_rg: true,
@@ -146,7 +159,6 @@ class OrganizacaoService {
                     representante_end_numero: true,
                     representante_end_cep: true,
                     representante_funcao: true,
-                    // Características
                     caracteristicas_n_total_socios: true,
                     caracteristicas_n_total_socios_caf: true,
                     caracteristicas_n_distintos_caf: true,
@@ -176,7 +188,6 @@ class OrganizacaoService {
                     caracteristicas_ta_caf_agroecologico: true,
                     caracteristicas_ta_caf_transicao: true,
                     caracteristicas_ta_caf_organico: true,
-                    // GOVERNANÇA ORGANIZACIONAL (GO)
                     go_organizacao_7_resposta: true, go_organizacao_7_comentario: true, go_organizacao_7_proposta: true,
                     go_organizacao_8_resposta: true, go_organizacao_8_comentario: true, go_organizacao_8_proposta: true,
                     go_organizacao_9_resposta: true, go_organizacao_9_comentario: true, go_organizacao_9_proposta: true,
@@ -207,7 +218,6 @@ class OrganizacaoService {
                     go_educacao_26_resposta: true, go_educacao_26_comentario: true, go_educacao_26_proposta: true,
                     go_educacao_27_resposta: true, go_educacao_27_comentario: true, go_educacao_27_proposta: true,
                     go_educacao_28_resposta: true, go_educacao_28_comentario: true, go_educacao_28_proposta: true,
-                    // Campos ODK Metadata
                     meta_instance_id: true,
                     meta_instance_name: true,
                     uri: true,
@@ -221,8 +231,6 @@ class OrganizacaoService {
                     submission_date: true,
                     marked_as_complete_date: true,
                     complementado: true,
-                    // TODO: Adicionar GP, GF, GC, GPP, GS, GI incrementalmente
-                    // Por enquanto, focando nos campos que já estavam funcionando
                 }
             });
             if (!organizacao) {
@@ -235,18 +243,24 @@ class OrganizacaoService {
             throw error;
         }
     }
-    /**
-     * Criar nova organização
-     */
     async create(data) {
-        const { nome, cnpj, telefone, email, estado, municipio } = data;
-        // Validações básicas
+        const { nome, cnpj, telefone, email, estado, municipio, creator_uri_user } = data;
         if (!nome || nome.trim().length === 0) {
             throw new ApiError({
                 message: 'Nome da organização é obrigatório',
                 statusCode: api_1.HttpStatus.BAD_REQUEST,
                 code: api_1.ErrorCode.MISSING_REQUIRED_FIELD
             });
+        }
+        let id_tecnico = null;
+        if (creator_uri_user) {
+            const emailExtraido = (0, odkHelper_1.extractEmailFromCreatorUri)(creator_uri_user);
+            if (emailExtraido) {
+                id_tecnico = await this.findUserByEmail(emailExtraido);
+                if (id_tecnico) {
+                    console.log(`✅ Organização vinculada ao técnico ID ${id_tecnico} através do email ${emailExtraido}`);
+                }
+            }
         }
         const organizacao = await prisma.organizacao.create({
             data: {
@@ -256,16 +270,14 @@ class OrganizacaoService {
                 email: email || null,
                 estado: estado || null,
                 municipio: municipio || null,
-                removido: false
+                removido: false,
+                creator_uri_user: creator_uri_user || null,
+                id_tecnico: id_tecnico
             }
         });
         return organizacao;
     }
-    /**
-     * Atualizar organização
-     */
     async update(id, data) {
-        // Verificar se organização existe
         const existingOrg = await prisma.organizacao.findUnique({
             where: { id }
         });
@@ -280,14 +292,11 @@ class OrganizacaoService {
             where: { id },
             data: {
                 ...data,
-                id: undefined // Remover ID dos dados de atualização
+                id: undefined
             }
         });
         return organizacao;
     }
-    /**
-     * Remover organização (soft delete)
-     */
     async delete(id) {
         const existingOrg = await prisma.organizacao.findUnique({
             where: { id }
@@ -306,33 +315,21 @@ class OrganizacaoService {
             }
         });
     }
-    /**
-     * Estatísticas do dashboard
-     */
-    async getDashboardStats() {
-        const total = await prisma.organizacao.count({
-            where: { removido: false }
-        });
-        // Organizações com GPS
-        const comGps = await prisma.organizacao.count({
-            where: {
-                removido: false,
-                gps_lat: { not: null },
-                gps_lng: { not: null }
+    async getDashboardStats(userId) {
+        let aplicarFiltroHibrido = false;
+        let userEmail = null;
+        if (userId) {
+            const isAdmin = await this.isUserAdmin(userId);
+            if (!isAdmin) {
+                aplicarFiltroHibrido = true;
+                const user = await prisma.users.findUnique({
+                    where: { id: userId },
+                    select: { email: true }
+                });
+                userEmail = user?.email?.toLowerCase() || null;
             }
-        });
-        // Organizações sem GPS
-        const semGps = total - comGps;
-        // Estatísticas por estado
-        const porEstado = await prisma.organizacao.groupBy({
-            by: ['estado'],
-            where: { removido: false },
-            _count: { id: true },
-            orderBy: { _count: { id: 'desc' } },
-            take: 10
-        });
-        // Organizações recentes (últimas 10)
-        const organizacoesRecentes = await prisma.organizacao.findMany({
+        }
+        const todasOrganizacoes = await prisma.organizacao.findMany({
             where: { removido: false },
             select: {
                 id: true,
@@ -340,37 +337,61 @@ class OrganizacaoService {
                 data_visita: true,
                 estado: true,
                 gps_lat: true,
-                gps_lng: true
-            },
-            orderBy: { data_visita: 'desc' },
-            take: 10
-        });
-        // Estatísticas por estado com nomes
-        const porEstadoFormatado = await Promise.all(porEstado.map(async (item) => ({
-            estado: await this.getEstadoNome(item.estado) || `Estado ${item.estado}`,
-            total: item._count.id
-        })));
-        // Organizações com GPS para o mapa
-        const organizacoesComGps = await prisma.organizacao.findMany({
-            where: {
-                removido: false,
-                gps_lat: { not: null },
-                gps_lng: { not: null }
-            },
-            select: {
-                id: true,
-                nome: true,
-                gps_lat: true,
                 gps_lng: true,
-                estado: true
-            },
-            take: 100 // Limitar para performance
+                id_tecnico: true,
+                creator_uri_user: true
+            }
         });
+        let organizacoesFiltradas = todasOrganizacoes;
+        if (aplicarFiltroHibrido && userId) {
+            organizacoesFiltradas = todasOrganizacoes.filter(org => {
+                if (org.id_tecnico === userId)
+                    return true;
+                if (org.creator_uri_user && userEmail) {
+                    const creatorEmail = (0, odkHelper_1.extractEmailFromCreatorUri)(org.creator_uri_user);
+                    if (creatorEmail === userEmail)
+                        return true;
+                }
+                return false;
+            });
+        }
+        const total = organizacoesFiltradas.length;
+        const comGps = organizacoesFiltradas.filter(org => org.gps_lat !== null && org.gps_lng !== null).length;
+        const semGps = total - comGps;
+        const estadoCount = {};
+        organizacoesFiltradas.forEach(org => {
+            if (org.estado) {
+                estadoCount[org.estado] = (estadoCount[org.estado] || 0) + 1;
+            }
+        });
+        const porEstado = Object.entries(estadoCount)
+            .map(([estado, count]) => ({
+            estado: parseInt(estado),
+            count
+        }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
+        const porEstadoFormatado = porEstado.map(item => ({
+            estado: this.getEstadoNome(item.estado) || `Estado ${item.estado}`,
+            total: item.count
+        }));
+        const organizacoesRecentes = organizacoesFiltradas
+            .sort((a, b) => {
+            if (!a.data_visita)
+                return 1;
+            if (!b.data_visita)
+                return -1;
+            return new Date(b.data_visita).getTime() - new Date(a.data_visita).getTime();
+        })
+            .slice(0, 10);
+        const organizacoesComGps = organizacoesFiltradas
+            .filter(org => org.gps_lat !== null && org.gps_lng !== null)
+            .slice(0, 100);
         return {
             total,
             comGps,
             semGps,
-            comQuestionario: Math.floor(total * 0.3), // Mantém cálculo aproximado por enquanto
+            comQuestionario: Math.floor(total * 0.3),
             semQuestionario: Math.floor(total * 0.7),
             porEstado: porEstadoFormatado,
             organizacoesRecentes: organizacoesRecentes.map(org => ({
@@ -389,14 +410,10 @@ class OrganizacaoService {
             }))
         };
     }
-    /**
-     * Buscar municípios (filtrados por estado opcionalmente)
-     */
     async getMunicipios(estadoId) {
         try {
             let municipios;
             if (estadoId) {
-                // Buscar municípios de um estado específico
                 municipios = await prisma.$queryRaw `
           SELECT
             id,
@@ -408,7 +425,6 @@ class OrganizacaoService {
         `;
             }
             else {
-                // Buscar todos os municípios
                 municipios = await prisma.$queryRaw `
           SELECT
             id,
@@ -429,9 +445,6 @@ class OrganizacaoService {
             });
         }
     }
-    /**
-     * Buscar estados
-     */
     async getEstados() {
         try {
             const estados = await prisma.$queryRaw `
@@ -452,18 +465,50 @@ class OrganizacaoService {
             });
         }
     }
-    /**
-     * Helper para obter nome do estado
-     */
     getEstadoNome(codigo) {
         if (!codigo)
             return 'Não informado';
         const estados = {
             1: 'Acre', 2: 'Alagoas', 3: 'Amapá', 4: 'Amazonas',
             5: 'Bahia', 6: 'Ceará', 7: 'Distrito Federal', 8: 'Espírito Santo',
-            // ... adicionar outros estados conforme necessário
         };
         return estados[codigo] || `Estado ${codigo}`;
+    }
+    async findUserByEmail(email) {
+        try {
+            const user = await prisma.users.findUnique({
+                where: { email: email.toLowerCase() },
+                select: { id: true }
+            });
+            return user?.id || null;
+        }
+        catch (error) {
+            console.error('Erro ao buscar usuário por email:', error);
+            return null;
+        }
+    }
+    async getUserRoles(userId) {
+        try {
+            const user = await prisma.users.findUnique({
+                where: { id: userId },
+                include: {
+                    user_roles: {
+                        include: {
+                            roles: true
+                        }
+                    }
+                }
+            });
+            return user?.user_roles.map(ur => ({ name: ur.roles.name })) || [];
+        }
+        catch (error) {
+            console.error('Erro ao buscar roles do usuário:', error);
+            return [];
+        }
+    }
+    async isUserAdmin(userId) {
+        const roles = await this.getUserRoles(userId);
+        return roles.some(role => role.name === 'admin');
     }
 }
 exports.default = new OrganizacaoService();

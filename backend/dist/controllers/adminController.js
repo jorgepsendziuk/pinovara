@@ -7,10 +7,6 @@ const adminService_1 = __importDefault(require("../services/adminService"));
 const api_1 = require("../types/api");
 const ApiError_1 = require("../utils/ApiError");
 class AdminController {
-    /**
-     * GET /admin/users
-     * Listar todos os usuários
-     */
     async getUsers(req, res) {
         try {
             const users = await adminService_1.default.getAllUsers();
@@ -53,10 +49,6 @@ class AdminController {
             }
         }
     }
-    /**
-     * GET /admin/users/:id
-     * Buscar usuário específico
-     */
     async getUser(req, res) {
         try {
             const userId = parseInt(req.params.id);
@@ -96,10 +88,6 @@ class AdminController {
             this.handleError(res, error);
         }
     }
-    /**
-     * POST /admin/users
-     * Criar novo usuário
-     */
     async createUser(req, res) {
         try {
             const { email, password, name, active = true } = req.body;
@@ -120,10 +108,6 @@ class AdminController {
             this.handleError(res, error);
         }
     }
-    /**
-     * PUT /admin/users/:id
-     * Atualizar usuário
-     */
     async updateUser(req, res) {
         try {
             const userId = parseInt(req.params.id);
@@ -157,10 +141,6 @@ class AdminController {
             this.handleError(res, error);
         }
     }
-    /**
-     * DELETE /admin/users/:id
-     * Deletar usuário
-     */
     async deleteUser(req, res) {
         try {
             const userId = parseInt(req.params.id);
@@ -177,7 +157,6 @@ class AdminController {
                 });
                 return;
             }
-            // Proteção: não pode deletar a si mesmo
             if (userId === currentUserId) {
                 res.status(api_1.HttpStatus.FORBIDDEN).json({
                     success: false,
@@ -201,10 +180,6 @@ class AdminController {
             this.handleError(res, error);
         }
     }
-    /**
-     * PUT /admin/users/:id/status
-     * Atualizar status do usuário (ativo/inativo)
-     */
     async updateUserStatus(req, res) {
         try {
             const userId = parseInt(req.params.id);
@@ -234,7 +209,6 @@ class AdminController {
                 });
                 return;
             }
-            // Proteção: não pode desativar a si mesmo
             if (userId === currentUserId && !active) {
                 res.status(api_1.HttpStatus.FORBIDDEN).json({
                     success: false,
@@ -259,10 +233,6 @@ class AdminController {
             this.handleError(res, error);
         }
     }
-    /**
-     * POST /admin/users/:id/roles
-     * Atribuir role a usuário
-     */
     async assignRole(req, res) {
         try {
             const userId = parseInt(req.params.id);
@@ -302,10 +272,6 @@ class AdminController {
             this.handleError(res, error);
         }
     }
-    /**
-     * DELETE /admin/users/:id/roles/:roleId
-     * Remover role de usuário
-     */
     async removeRole(req, res) {
         try {
             const userId = parseInt(req.params.id);
@@ -333,10 +299,6 @@ class AdminController {
             this.handleError(res, error);
         }
     }
-    /**
-     * GET /admin/roles
-     * Listar todas as roles disponíveis
-     */
     async getRoles(req, res) {
         try {
             const roles = await adminService_1.default.getAllRoles();
@@ -354,9 +316,6 @@ class AdminController {
             this.handleError(res, error);
         }
     }
-    /**
-     * Tratamento de erro padrão
-     */
     handleError(res, error) {
         console.error('❌ [AdminController] Error:', error);
         if (error instanceof ApiError_1.ApiError) {
@@ -382,10 +341,6 @@ class AdminController {
             });
         }
     }
-    /**
-     * POST /admin/impersonate/:userId
-     * Personificar um usuário
-     */
     async impersonateUser(req, res) {
         try {
             const { userId } = req.params;
@@ -402,7 +357,6 @@ class AdminController {
                 });
                 return;
             }
-            // Verificar se o admin tem permissão
             const isAdmin = adminUser.roles?.some(role => role.name === 'admin' && role.module.name === 'sistema');
             if (!isAdmin) {
                 res.status(api_1.HttpStatus.FORBIDDEN).json({
@@ -416,7 +370,6 @@ class AdminController {
                 });
                 return;
             }
-            // Não permitir personificar a si mesmo
             if (adminUser.id === parseInt(userId)) {
                 res.status(api_1.HttpStatus.BAD_REQUEST).json({
                     success: false,
@@ -429,7 +382,6 @@ class AdminController {
                 });
                 return;
             }
-            // Gerar token para o usuário personificado
             const impersonationData = await adminService_1.default.generateImpersonationToken(parseInt(userId), adminUser);
             res.json({
                 success: true,

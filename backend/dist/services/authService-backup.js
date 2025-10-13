@@ -10,12 +10,8 @@ const client_1 = require("@prisma/client");
 const api_1 = require("../types/api");
 const prisma = new client_1.PrismaClient();
 class AuthService {
-    /**
-     * Fazer login do usuário
-     */
     async login(data) {
         const { email, password } = data;
-        // Validações básicas
         if (!email || !password) {
             throw new ApiError({
                 message: 'Email e senha são obrigatórios',
@@ -23,7 +19,6 @@ class AuthService {
                 code: api_1.ErrorCode.MISSING_REQUIRED_FIELD
             });
         }
-        // Buscar usuário com relacionamentos de roles
         const user = await prisma.users.findUnique({
             where: { email: email.toLowerCase() },
             include: {
@@ -45,7 +40,6 @@ class AuthService {
                 code: api_1.ErrorCode.INVALID_CREDENTIALS
             });
         }
-        // Verificar senha
         const isPasswordValid = await bcryptjs_1.default.compare(password, user.password);
         if (!isPasswordValid) {
             throw new ApiError({
@@ -54,7 +48,6 @@ class AuthService {
                 code: api_1.ErrorCode.INVALID_CREDENTIALS
             });
         }
-        // Verificar se usuário está ativo
         if (!user.active) {
             throw new ApiError({
                 message: 'Usuário inativo',
@@ -62,10 +55,8 @@ class AuthService {
                 code: api_1.ErrorCode.INSUFFICIENT_PERMISSIONS
             });
         }
-        // Gerar token
         const token = this.generateToken({ userId: user.id, email: user.email });
-        const expiresIn = 7 * 24 * 60 * 60; // 7 dias
-        // Formatar resposta
+        const expiresIn = 7 * 24 * 60 * 60;
         const userWithRoles = {
             id: user.id,
             email: user.email,
@@ -73,7 +64,7 @@ class AuthService {
             active: user.active,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
-            roles: [] // Temporariamente vazio
+            roles: []
         };
         return {
             user: userWithRoles,
@@ -81,12 +72,8 @@ class AuthService {
             expiresIn
         };
     }
-    /**
-     * Registrar novo usuário
-     */
     async register(data) {
         const { email, password, name } = data;
-        // Validações
         if (!email || !password || !name) {
             throw new ApiError({
                 message: 'Email, senha e nome são obrigatórios',
@@ -101,7 +88,6 @@ class AuthService {
                 code: api_1.ErrorCode.VALIDATION_ERROR
             });
         }
-        // Verificar se email já existe
         const existingUser = await prisma.users.findUnique({
             where: { email: email.toLowerCase() }
         });
@@ -112,9 +98,7 @@ class AuthService {
                 code: api_1.ErrorCode.RESOURCE_ALREADY_EXISTS
             });
         }
-        // Hash da senha
         const hashedPassword = await bcryptjs_1.default.hash(password, 12);
-        // Criar usuário
         const user = await prisma.users.create({
             data: {
                 email: email.toLowerCase(),
@@ -123,12 +107,9 @@ class AuthService {
                 active: true,
                 updatedAt: new Date()
             },
-            // Sem includes por enquanto
         });
-        // Gerar token
         const token = this.generateToken({ userId: user.id, email: user.email });
-        const expiresIn = 7 * 24 * 60 * 60; // 7 dias
-        // Formatar resposta
+        const expiresIn = 7 * 24 * 60 * 60;
         const userWithRoles = {
             id: user.id,
             email: user.email,
@@ -136,7 +117,7 @@ class AuthService {
             active: user.active,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
-            roles: [] // Temporariamente vazio
+            roles: []
         };
         return {
             user: userWithRoles,
@@ -144,13 +125,9 @@ class AuthService {
             expiresIn
         };
     }
-    /**
-     * Obter dados do usuário por ID
-     */
     async getUserById(userId) {
         const user = await prisma.users.findUnique({
             where: { id: userId },
-            // Sem includes por enquanto
         });
         if (!user) {
             throw new ApiError({
@@ -166,12 +143,9 @@ class AuthService {
             active: user.active,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
-            roles: [] // Temporariamente vazio
+            roles: []
         };
     }
-    /**
-     * Verificar se token é válido
-     */
     async verifyToken(token) {
         if (!process.env.JWT_SECRET) {
             throw new ApiError({
@@ -202,12 +176,8 @@ class AuthService {
             throw error;
         }
     }
-    /**
-     * Atualizar perfil do usuário
-     */
     async updateProfile(userId, data) {
         const { name, email } = data;
-        // Validações básicas
         if (!name || !email) {
             throw new ApiError({
                 message: 'Nome e email são obrigatórios',
@@ -229,7 +199,6 @@ class AuthService {
                 code: api_1.ErrorCode.VALIDATION_ERROR
             });
         }
-        // Verificar se o email já está em uso por outro usuário
         const existingUser = await prisma.users.findFirst({
             where: {
                 email: email.toLowerCase(),
@@ -243,7 +212,6 @@ class AuthService {
                 code: api_1.ErrorCode.RESOURCE_ALREADY_EXISTS
             });
         }
-        // Atualizar usuário
         const updatedUser = await prisma.users.update({
             where: { id: userId },
             data: {
@@ -252,7 +220,6 @@ class AuthService {
                 updatedAt: new Date()
             }
         });
-        // Retornar dados formatados
         return {
             id: updatedUser.id,
             email: updatedUser.email,
@@ -260,12 +227,9 @@ class AuthService {
             active: updatedUser.active,
             createdAt: updatedUser.createdAt,
             updatedAt: updatedUser.updatedAt,
-            roles: [] // Temporariamente vazio
+            roles: []
         };
     }
-    /**
-     * Gerar token JWT
-     */
     generateToken(payload) {
         if (!process.env.JWT_SECRET) {
             throw new Error('JWT_SECRET não configurado');
@@ -277,7 +241,6 @@ class AuthService {
         });
     }
 }
-// Classe personalizada para erros da API
 class ApiError extends Error {
     constructor(options) {
         super(options.message);
