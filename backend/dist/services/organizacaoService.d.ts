@@ -19,7 +19,11 @@ declare class OrganizacaoService {
             id: number;
             nome: string;
             dataVisita: Date | null;
-            estado: string;
+            data_visita: Date | null;
+            estado: number | null;
+            municipio: number | null;
+            estado_nome: string | null;
+            municipio_nome: string | null;
             temGps: boolean;
         }[];
         organizacoesComGps: {
@@ -27,7 +31,8 @@ declare class OrganizacaoService {
             nome: string;
             lat: number | null;
             lng: number | null;
-            estado: string;
+            estado: number | null;
+            estado_nome: string;
         }[];
     }>;
     getMunicipios(estadoId?: number): Promise<unknown>;
