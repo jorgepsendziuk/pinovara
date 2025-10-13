@@ -235,14 +235,27 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     {
       key: 'localizacao',
       title: 'Localização',
-      dataIndex: 'municipio_nome',
+      dataIndex: 'estado_nome',
       width: '16%',
       render: (_: any, record: Organizacao) => {
-        const municipio = record.municipio_nome || '-';
-        const estado = record.estado_nome || '';
+        // Obter sigla do estado
+        const estadoNome = record.estado_nome || '';
+        const siglasEstados: { [key: string]: string } = {
+          'Bahia': 'BA', 'São Paulo': 'SP', 'Minas Gerais': 'MG', 'Espírito Santo': 'ES',
+          'Rio de Janeiro': 'RJ', 'Paraná': 'PR', 'Santa Catarina': 'SC', 'Rio Grande do Sul': 'RS'
+        };
+        const estadoSigla = siglasEstados[estadoNome] || estadoNome;
+        
+        // Remover estado duplicado do município
+        let municipio = record.municipio_nome || '';
+        if (municipio && municipio.includes(' - ')) {
+          const partes = municipio.split(' - ');
+          municipio = partes[partes.length - 1];
+        }
+        
         return (
           <span style={{ fontSize: '13px' }}>
-            {municipio}{estado && ` - ${estado}`}
+            {estadoSigla && municipio ? `${estadoSigla} - ${municipio}` : (estadoSigla || municipio || '-')}
           </span>
         );
       },

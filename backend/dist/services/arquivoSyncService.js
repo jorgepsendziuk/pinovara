@@ -128,18 +128,17 @@ exports.arquivoSyncService = {
             const escapedUri = organizacaoUri.replace(/'/g, "''");
             const sqlQuery = `
         SELECT 
-          f."_URI",
-          f."_PARENT_AURI",
-          f."_CREATION_DATE",
-          blb."VALUE",
-          octet_length(blb."VALUE"),
-          bn."UNROOTED_FILE_PATH"
-        FROM odk_prod."ORGANIZACAO_FILE" f
-        INNER JOIN odk_prod."ORGANIZACAO_ARQUIVO_BN" bn ON bn."_PARENT_AURI" = f."_URI"
-        INNER JOIN odk_prod."ORGANIZACAO_ARQUIVO_REF" ref ON ref."_DOM_AURI" = bn."_URI"
-        INNER JOIN odk_prod."ORGANIZACAO_ARQUIVO_BLB" blb ON blb."_URI" = ref."_SUB_AURI"
-        WHERE f."_PARENT_AURI" = ''${escapedUri}''
-          AND blb."VALUE" IS NOT NULL
+          ref."_URI",
+          ref."_TOP_LEVEL_AURI",
+          blob."_CREATION_DATE",
+          blob."VALUE",
+          octet_length(blob."VALUE") as tamanho
+        FROM odk_prod."ORGANIZACAO_ARQUIVO_REF" ref
+        INNER JOIN odk_prod."ORGANIZACAO_ARQUIVO_BLB" blob 
+          ON blob."_URI" = ref."_SUB_AURI"
+        WHERE ref."_TOP_LEVEL_AURI" = ''${escapedUri}''
+          AND blob."VALUE" IS NOT NULL
+          AND octet_length(blob."VALUE") > 0
       `.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
             const query = `
         SELECT * FROM public.dblink(
@@ -147,26 +146,29 @@ exports.arquivoSyncService = {
           '${sqlQuery}'::text
         ) AS t(
           uri varchar,
-          parent_auri varchar,
+          top_level_auri varchar,
           creation_date timestamp,
           arquivo_blob bytea,
-          tamanho_bytes bigint,
-          nome_arquivo varchar
+          tamanho_bytes bigint
         )
       `;
-            console.log('🔍 Executando query ODK para arquivos...');
+            console.log('🔍 Buscando arquivos no ODK...');
             const result = await prisma.$queryRawUnsafe(query);
-            const arquivos = result.map(row => ({
-                uri: row.uri,
-                parent_auri: row.parent_auri,
-                grupo: null,
-                arquivo_obs: null,
-                creation_date: new Date(row.creation_date),
-                arquivo_blob: row.arquivo_blob,
-                tamanho_bytes: parseInt(row.tamanho_bytes),
-                nome_arquivo: row.nome_arquivo
-            }));
-            console.log(`📊 Query retornou ${arquivos.length} arquivos`);
+            const arquivos = result.map((row, index) => {
+                const timestamp = new Date(row.creation_date).getTime();
+                const nomeArquivo = `${timestamp}_${index}.pdf`;
+                return {
+                    uri: row.uri,
+                    parent_auri: row.top_level_auri,
+                    grupo: null,
+                    arquivo_obs: null,
+                    creation_date: new Date(row.creation_date),
+                    arquivo_blob: row.arquivo_blob,
+                    tamanho_bytes: parseInt(row.tamanho_bytes),
+                    nome_arquivo: nomeArquivo
+                };
+            });
+            console.log(`📊 Arquivos encontrados: ${arquivos.length}`);
             return arquivos;
         }
         catch (error) {

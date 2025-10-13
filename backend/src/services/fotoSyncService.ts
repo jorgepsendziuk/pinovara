@@ -37,6 +37,12 @@ export const fotoSyncService = {
 
       // 2. Buscar fotos do ODK via dblink
       console.log(`🔍 Buscando fotos no ODK para organização ${organizacaoId}, URI: ${organizacao.uri}`);
+      
+      // Adicionar log de debug detalhado
+      if (!organizacao.uri) {
+        console.log('⚠️ Organização não tem URI (formulário pode ter sido criado manualmente)');
+      }
+      
       const fotosODK = await this.getFotosODK(organizacao.uri);
       console.log(`📊 Fotos encontradas no ODK: ${fotosODK.length}`);
 
@@ -140,8 +146,7 @@ export const fotoSyncService = {
       // Escapar aspas simples no URI para evitar SQL injection
       const escapedUri = organizacaoUri.replace(/'/g, "''");
 
-      // Query SQL com dblink para buscar fotos (versão corrigida)
-      // ORGANIZACAO_FOTO_REF -> ORGANIZACAO_FOTO_BLB
+      // Query SQL com dblink para buscar fotos (versão original que funciona)
       const sqlQuery = `
         SELECT 
           ref."_URI",
@@ -154,6 +159,7 @@ export const fotoSyncService = {
           ON blob."_URI" = ref."_SUB_AURI"
         WHERE ref."_TOP_LEVEL_AURI" = ''${escapedUri}''
           AND blob."VALUE" IS NOT NULL
+          AND octet_length(blob."VALUE") > 0
       `.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
 
       const query = `
@@ -169,8 +175,11 @@ export const fotoSyncService = {
         )
       `;
 
-      console.log('📝 Query dblink:', query.substring(0, 200) + '...');
+      console.log('🔍 Buscando fotos no ODK...');
+      console.log('   URI: ${escapedUri}');
+      
       const result = await prisma.$queryRawUnsafe(query) as any[];
+      console.log(`📊 Fotos encontradas: ${result.length}`);
 
       return result.map((row, index) => {
         // Gerar nome de arquivo baseado no timestamp

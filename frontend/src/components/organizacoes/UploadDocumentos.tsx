@@ -103,33 +103,29 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
 
   const handleSyncODK = async () => {
     setSyncing(true);
+    setMessage({ type: 'success', text: '🔄 Sincronizando arquivos com ODK Collect...' });
+
     try {
       const result = await documentoAPI.syncFromODK(organizacaoId);
       
-      // Montar mensagem com detalhes
-      let mensagem = `Download concluído!
-      
-Total no ODK: ${result.total_odk}
-Já existentes: ${result.ja_existentes}
-Baixados agora: ${result.baixadas}
-Erros: ${result.erros}`;
+      let mensagem = '';
+      let tipo: 'success' | 'error' = 'success';
 
-      // Adicionar detalhes dos arquivos
-      if (result.detalhes && result.detalhes.length > 0) {
-        mensagem += '\n\n';
-        mensagem += result.detalhes.map((d: any) => {
-          const status = d.status === 'baixada' ? '✓' : d.status === 'existente' ? '=' : '✗';
-          const nome = d.nome_arquivo || d.uri;
-          const msg = d.mensagem ? ` (${d.mensagem})` : '';
-          return `${status} ${nome}${msg}`;
-        }).join('\n');
+      if (result.baixadas > 0) {
+        mensagem = `✅ Download concluído! 📊 ${result.total_odk} arquivos encontrados • ${result.baixadas} baixados • ${result.ja_existentes} já existiam • ${result.erros} erros`;
+        await loadDocumentos();
+      } else if (result.total_odk === 0) {
+        mensagem = '⚠️ Nenhum arquivo encontrado no ODK para esta organização';
+        tipo = 'error';
+      } else {
+        mensagem = `✅ Todos os ${result.total_odk} arquivos já foram baixados anteriormente`;
       }
-      
-      alert(mensagem);
-      
-      await loadDocumentos();
+
+      setMessage({ type: tipo, text: mensagem });
+      setTimeout(() => setMessage(null), 8000);
     } catch (error: any) {
-      alert('Erro ao baixar arquivos: ' + error.message);
+      setMessage({ type: 'error', text: `❌ Erro ao baixar arquivos do ODK: ${error.message}` });
+      setTimeout(() => setMessage(null), 8000);
     } finally {
       setSyncing(false);
     }
@@ -181,6 +177,22 @@ Erros: ${result.erros}`;
 
       <div className={`accordion-content ${isAberto ? 'open' : ''}`}>
         <div className="accordion-section">
+          {/* Mensagens de Feedback */}
+          {message && (
+            <div style={{
+              padding: '12px 16px',
+              marginBottom: '20px',
+              borderRadius: '8px',
+              background: message.type === 'success' ? '#d4edda' : '#f8d7da',
+              color: message.type === 'success' ? '#155724' : '#721c24',
+              border: `1px solid ${message.type === 'success' ? '#c3e6cb' : '#f5c6cb'}`,
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+              {message.text}
+            </div>
+          )}
+
           {/* Sub-accordion para Upload */}
           <div style={{ marginBottom: '20px' }}>
             <button
