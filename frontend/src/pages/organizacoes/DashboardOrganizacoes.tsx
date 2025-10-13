@@ -57,34 +57,6 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
-  // Funções auxiliares
-  const formatarCNPJ = (cnpj: string | null): string => {
-    if (!cnpj) return '-';
-    const cnpjNumeros = cnpj.replace(/\D/g, '');
-    return cnpjNumeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-  };
-
-  const getNomeEstado = (estadoId: number | null): string => {
-    const estados = [
-      { id: 1, nome: 'Minas Gerais', uf: 'MG' },
-      { id: 2, nome: 'Bahia', uf: 'BA' },
-      { id: 3, nome: 'Espírito Santo', uf: 'ES' }
-    ];
-    const estado = estados.find(e => e.id === estadoId);
-    return estado ? estado.uf : '-';
-  };
-
-  const getNomeMunicipio = (municipioId: number | null): string => {
-    const municipios = [
-      { id: 1, nome: 'Diamantina' },
-      { id: 2, nome: 'Belo Horizonte' },
-      { id: 3, nome: 'Salvador' },
-      { id: 4, nome: 'Vitória' }
-    ];
-    const municipio = municipios.find(m => m.id === municipioId);
-    return municipio ? municipio.nome : '-';
-  };
-
   const gerarTermoAdesao = async (organizacaoId: number) => {
     try {
       // Buscar dados completos da organização
@@ -160,7 +132,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
       key: 'id',
       title: 'ID',
       dataIndex: 'id',
-      width: '8%',
+      width: '10%',
       sortable: true,
       align: 'center',
       render: (id: number) => (
@@ -171,53 +143,32 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
       key: 'nome',
       title: 'Nome',
       dataIndex: 'nome',
-      width: '22%',
+      width: '35%',
       sortable: true,
       render: (nome: string) => nome || '-',
     },
     {
-      key: 'cnpj',
-      title: 'CNPJ',
-      dataIndex: 'cnpj',
-      width: '18%',
-      sortable: true,
-      render: (cnpj: string) => formatarCNPJ(cnpj),
-    },
-    {
       key: 'localizacao',
       title: 'Localização',
-      dataIndex: 'municipio',
-      width: '20%',
-      render: (municipio: number, record: any) => {
-        const municipioNome = getNomeMunicipio(municipio);
-        const estadoSigla = getNomeEstado(record.estado);
-        return `${municipioNome} - ${estadoSigla}`;
+      dataIndex: 'estado_nome',
+      width: '25%',
+      render: (estadoNome: string, record: any) => {
+        return record.municipio_nome && record.estado_nome 
+          ? `${record.municipio_nome} - ${record.estado_nome}` 
+          : (estadoNome || '-');
       },
     },
     {
       key: 'dataVisita',
       title: 'Data da Visita',
-      dataIndex: 'dataVisita',
+      dataIndex: 'data_visita',
       width: '15%',
       render: (dataVisita: string) => dataVisita ? new Date(dataVisita).toLocaleDateString('pt-BR') : '-',
     },
     {
-      key: 'status',
-      title: 'Status',
-      dataIndex: 'temGps',
-      width: '10%',
-      align: 'center',
-      render: (temGps: boolean) => (
-        <div className="status-indicators">
-          {temGps && <span className="gps-indicator" title="Tem localização GPS"><MapPin size={14} /></span>}
-          <span className="status-badge status-pending">Pendente</span>
-        </div>
-      ),
-    },
-    {
       key: 'actions',
       title: 'Ações',
-      width: '17%',
+      width: '15%',
       align: 'center',
       render: (_, record: any) => (
         <div className="action-buttons" style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
@@ -377,13 +328,11 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Nome</th>
-                      <th>CNPJ</th>
-                      <th>Localização</th>
-                      <th>Data da Visita</th>
-                      <th>Status</th>
-                      <th>Ações</th>
+                      <th style={{ width: '10%' }}>ID</th>
+                      <th style={{ width: '35%' }}>Nome</th>
+                      <th style={{ width: '25%' }}>Localização</th>
+                      <th style={{ width: '15%' }}>Data da Visita</th>
+                      <th style={{ width: '15%' }}>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -395,17 +344,19 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
                         <td>
                           <div className="org-info">
                             <strong>{org.nome}</strong>
+                            {org.temGps && (
+                              <span style={{ marginLeft: '8px', color: '#0f9d58' }} title="Tem localização GPS">
+                                <MapPin size={14} style={{ verticalAlign: 'middle' }} />
+                              </span>
+                            )}
                           </div>
                         </td>
-                        <td>{formatarCNPJ(org.cnpj)}</td>
-                        <td>{`${getNomeMunicipio(org.municipio)} - ${getNomeEstado(org.estado)}`}</td>
-                        <td>{new Date(org.dataVisita).toLocaleDateString('pt-BR')}</td>
                         <td>
-                          <div className="status-indicators">
-                            {org.temGps && <span className="gps-indicator" title="Tem localização GPS"><MapPin size={14} /></span>}
-                            <span className="status-badge status-pending">Pendente</span>
-                          </div>
+                          {org.municipio_nome && org.estado_nome 
+                            ? `${org.municipio_nome} - ${org.estado_nome}` 
+                            : (org.estado || '-')}
                         </td>
+                        <td>{org.dataVisita ? new Date(org.dataVisita).toLocaleDateString('pt-BR') : '-'}</td>
                         <td>
                           <div className="action-buttons" style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
                             <button

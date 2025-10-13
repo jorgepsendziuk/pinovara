@@ -329,19 +329,25 @@ class OrganizacaoService {
                 userEmail = user?.email?.toLowerCase() || null;
             }
         }
-        const todasOrganizacoes = await prisma.organizacao.findMany({
-            where: { removido: false },
-            select: {
-                id: true,
-                nome: true,
-                data_visita: true,
-                estado: true,
-                gps_lat: true,
-                gps_lng: true,
-                id_tecnico: true,
-                creator_uri_user: true
-            }
-        });
+        const todasOrganizacoes = await prisma.$queryRaw `
+      SELECT 
+        o.id,
+        o.nome,
+        o.data_visita,
+        o.estado,
+        o.municipio,
+        o.gps_lat,
+        o.gps_lng,
+        o.id_tecnico,
+        o._creator_uri_user as creator_uri_user,
+        e.descricao as estado_nome,
+        m.descricao as municipio_nome
+      FROM pinovara.organizacao o
+      LEFT JOIN pinovara_aux.estado e ON o.estado = e.id
+      LEFT JOIN pinovara_aux.municipio_ibge m ON o.municipio = m.id
+      WHERE o.removido = false
+      ORDER BY o.data_visita DESC NULLS LAST
+    `;
         let organizacoesFiltradas = todasOrganizacoes;
         if (aplicarFiltroHibrido && userId) {
             organizacoesFiltradas = todasOrganizacoes.filter(org => {
@@ -398,7 +404,11 @@ class OrganizacaoService {
                 id: org.id,
                 nome: org.nome || 'Nome não informado',
                 dataVisita: org.data_visita,
-                estado: this.getEstadoNome(org.estado) || 'Não informado',
+                data_visita: org.data_visita,
+                estado: org.estado,
+                municipio: org.municipio,
+                estado_nome: org.estado_nome,
+                municipio_nome: org.municipio_nome,
                 temGps: !!(org.gps_lat && org.gps_lng)
             })),
             organizacoesComGps: organizacoesComGps.map(org => ({
@@ -406,7 +416,8 @@ class OrganizacaoService {
                 nome: org.nome || 'Nome não informado',
                 lat: org.gps_lat,
                 lng: org.gps_lng,
-                estado: this.getEstadoNome(org.estado) || 'Não informado'
+                estado: org.estado,
+                estado_nome: org.estado_nome || 'Não informado'
             }))
         };
     }
