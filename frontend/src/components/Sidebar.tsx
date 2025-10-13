@@ -29,7 +29,8 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronLeft,
-  ChevronRight as ChevronExpand
+  ChevronRight as ChevronExpand,
+  Database
 } from 'lucide-react';
 
 // Hook personalizado para detectar breakpoints responsivos
@@ -519,6 +520,14 @@ const Sidebar: React.FC = () => {
           label: 'Analytics e Métricas',
           icon: BarChart,
           path: '/admin/analytics',
+          module: 'sistema',
+          permission: 'admin'
+        },
+        {
+          id: 'sync-odk',
+          label: 'Sincronização ODK',
+          icon: Database,
+          path: '/admin/sync-odk',
           module: 'sistema',
           permission: 'admin'
         },

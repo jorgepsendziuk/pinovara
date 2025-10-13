@@ -10,16 +10,31 @@ Sistema completo para sincronizar fotos do banco ODK Collect para o sistema PINO
 
 ```
 Banco ODK (app.pinovaraufba.com.br)
-├── ORGANIZACAO_FOTO_REF (_TOP_LEVEL_AURI)
-└── ORGANIZACAO_FOTO_BLB (_SUB_AURI → VALUE bytea)
+├── {PREFIXO}_FOTOS (registro de cada grupo de fotos)
+│   ├── _URI (ID único da foto)
+│   └── _PARENT_AURI (UUID da organização)
+├── {PREFIXO}_FOTO_BN (metadados do arquivo)
+│   ├── _URI (ID único)
+│   ├── _PARENT_AURI → liga com _FOTOS._URI
+│   ├── UNROOTED_FILE_PATH (nome original do arquivo!)
+│   └── _CREATION_DATE
+├── {PREFIXO}_FOTO_REF (referência ao blob)
+│   ├── _URI
+│   ├── _DOM_AURI → liga com _FOTO_BN._URI
+│   └── _SUB_AURI → liga com _FOTO_BLB._URI
+└── {PREFIXO}_FOTO_BLB (o arquivo binário)
+    ├── _URI
+    └── VALUE (bytea - blob da imagem)
         ↓ dblink (somente leitura)
 Banco PINOVARA Local
 ├── db_connections (credenciais ODK)
 └── organizacao_foto (registros das fotos)
         ↓
 Disco: /var/pinovara/shared/uploads/fotos/
-└── {timestamp}.jpg
+└── {nome_original}.jpg (do UNROOTED_FILE_PATH)
 ```
+
+**Nota:** {PREFIXO} pode ser `ORGANIZACAO` ou `PINOVARA` (versão antiga do formulário).
 
 ---
 
@@ -27,17 +42,25 @@ Disco: /var/pinovara/shared/uploads/fotos/
 
 ```sql
 SELECT 
-  ref."_URI",
-  ref."_TOP_LEVEL_AURI",
-  blob."_CREATION_DATE",
-  blob."VALUE",
-  octet_length(blob."VALUE")
-FROM odk_prod."ORGANIZACAO_FOTO_REF" ref
-INNER JOIN odk_prod."ORGANIZACAO_FOTO_BLB" blob 
-  ON blob."_URI" = ref."_SUB_AURI"
-WHERE ref."_TOP_LEVEL_AURI" = 'uuid:organizacao'
-  AND blob."VALUE" IS NOT NULL
+  f."_URI",
+  f."_PARENT_AURI",
+  bn."_CREATION_DATE",
+  blb."VALUE",
+  octet_length(blb."VALUE") as tamanho,
+  bn."UNROOTED_FILE_PATH"
+FROM odk_prod."{PREFIXO}_FOTOS" f
+INNER JOIN odk_prod."{PREFIXO}_FOTO_BN" bn 
+  ON bn."_PARENT_AURI" = f."_URI"
+INNER JOIN odk_prod."{PREFIXO}_FOTO_REF" ref 
+  ON ref."_DOM_AURI" = bn."_URI"
+INNER JOIN odk_prod."{PREFIXO}_FOTO_BLB" blb 
+  ON blb."_URI" = ref."_SUB_AURI"
+WHERE f."_PARENT_AURI" = 'uuid:organizacao'
+  AND blb."VALUE" IS NOT NULL
+  AND octet_length(blb."VALUE") > 0
 ```
+
+**Fallback:** O sistema primeiro tenta com `ORGANIZACAO_*`, se não encontrar, tenta com `PINOVARA_*` (formulários antigos).
 
 ---
 
@@ -99,8 +122,26 @@ GRANT SELECT ON pinovara.db_connections TO PUBLIC;
 CREATE USER pinovara_sync WITH PASSWORD 'Uef9tWW28NTnzjCP';
 GRANT CONNECT ON DATABASE odk_prod TO pinovara_sync;
 GRANT USAGE ON SCHEMA odk_prod TO pinovara_sync;
+
+-- Permissões para tabelas ORGANIZACAO (atual)
+GRANT SELECT ON odk_prod."ORGANIZACAO_FOTOS" TO pinovara_sync;
+GRANT SELECT ON odk_prod."ORGANIZACAO_FOTO_BN" TO pinovara_sync;
 GRANT SELECT ON odk_prod."ORGANIZACAO_FOTO_REF" TO pinovara_sync;
 GRANT SELECT ON odk_prod."ORGANIZACAO_FOTO_BLB" TO pinovara_sync;
+GRANT SELECT ON odk_prod."ORGANIZACAO_FILE" TO pinovara_sync;
+GRANT SELECT ON odk_prod."ORGANIZACAO_ARQUIVO_BN" TO pinovara_sync;
+GRANT SELECT ON odk_prod."ORGANIZACAO_ARQUIVO_REF" TO pinovara_sync;
+GRANT SELECT ON odk_prod."ORGANIZACAO_ARQUIVO_BLB" TO pinovara_sync;
+
+-- Permissões para tabelas PINOVARA (antiga)
+GRANT SELECT ON odk_prod."PINOVARA_FOTOS" TO pinovara_sync;
+GRANT SELECT ON odk_prod."PINOVARA_FOTO_BN" TO pinovara_sync;
+GRANT SELECT ON odk_prod."PINOVARA_FOTO_REF" TO pinovara_sync;
+GRANT SELECT ON odk_prod."PINOVARA_FOTO_BLB" TO pinovara_sync;
+GRANT SELECT ON odk_prod."PINOVARA_FILE" TO pinovara_sync;
+GRANT SELECT ON odk_prod."PINOVARA_ARQUIVO_BN" TO pinovara_sync;
+GRANT SELECT ON odk_prod."PINOVARA_ARQUIVO_REF" TO pinovara_sync;
+GRANT SELECT ON odk_prod."PINOVARA_ARQUIVO_BLB" TO pinovara_sync;
 ```
 
 ---
@@ -119,14 +160,21 @@ GRANT SELECT ON odk_prod."ORGANIZACAO_FOTO_BLB" TO pinovara_sync;
 ## 📁 Nomenclatura de Arquivos
 
 ### Fotos do ODK
-- **Formato:** `{timestamp}.jpg`
-- **Exemplo:** `1760141617920.jpg`
+- **Formato:** Nome original do arquivo (`UNROOTED_FILE_PATH`)
+- **Exemplo:** `foto_organizacao.jpg`, `foto_sede.jpg`
+- **Fallback:** Se não houver nome original, usa `{timestamp}.jpg`
 - **Local:** `/var/pinovara/shared/uploads/fotos/`
 
-### Fotos de Upload Manual
+### Documentos do ODK
+- **Formato:** Nome original do arquivo (`UNROOTED_FILE_PATH`)
+- **Exemplo:** `termo_adesao.pdf`, `ata_reuniao.pdf`
+- **Fallback:** Se não houver nome original, usa `{timestamp}.pdf`
+- **Local:** `/var/pinovara/shared/uploads/documentos/`
+
+### Fotos/Documentos de Upload Manual
 - **Formato:** `{timestamp}.{ext}`
-- **Exemplo:** `1760114616011.jpg`, `1760114616012.png`
-- **Local:** `/var/pinovara/shared/uploads/fotos/`
+- **Exemplo:** `1760114616011.jpg`, `1760114616012.pdf`
+- **Local:** Mesmos diretórios acima
 
 ---
 
