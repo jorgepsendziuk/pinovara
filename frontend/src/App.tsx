@@ -13,6 +13,7 @@ import UserManagement from './pages/admin/UserManagement';
 import RoleManagement from './pages/admin/RoleManagement';
 import BackupManager from './pages/admin/BackupManager';
 import SystemMonitor from './pages/admin/SystemMonitor';
+import AnalyticsPanel from './pages/admin/AnalyticsPanel';
 
 // Module Pages
 import OrganizacoesModule from './pages/modules/OrganizacoesModule';
@@ -190,6 +191,7 @@ function AppRoutes() {
         <Route path="users" element={<UserManagement />} />
         <Route path="modules" element={<RoleManagement />} />
         <Route path="roles" element={<RoleManagement />} />
+        <Route path="analytics" element={<AnalyticsPanel />} />
         <Route path="test-permissions" element={<TestPermissions />} />
         <Route path="test-access-denied" element={<AccessDenied
           title="Teste de Acesso Negado"

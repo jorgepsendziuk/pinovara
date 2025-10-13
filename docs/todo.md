@@ -9,14 +9,6 @@ organizacoes etc
 
 documentar as ultimas modificacoes, verificar documentacao se esta refletindo o estado atual do sistema, caso necessário, olhe nos extratos do git...
 
-no relatorio, ta tudo muito quebrado.
-vamos simplificar primeiro pra depois melhorar.
--tire todas as caixas, cores de fundo, rodapé, numero de paginas etc.. esse cabeçalho que esta la nao precisa ter em todas as paginas, so na primeira no comeco do documento.
--mantenha as formatacoes de texto, organize os textos em tabelas simples com linhas finas.
--qual a engine de pdf ta sendo usava, quais libs, me mostre resumido o procedimento que é pra gerar um relatorio em pdf nesse sistema
-
-analitics colocar um painel no admin
-
 toda vez que uma versao modifica coisas no prisma e ou no backend o deploy automatico pelo github actions nao da certo e tenho que pedir pra ajustar e tentar de novo.
 me diga ai o que voce fez agora pro deploy funcionar, qual foi o erro no deploy automatico, e o que tenho que ajustar no deploy. me explique de uma maneira que possa passar pra inteligencia artificial ajustar no projeto pela minha IDE.
 
@@ -27,6 +19,10 @@ usuario sincronizar com odk
 usuario manter aceite dos termos, data do aceite
 
 rastreabilidade das acoes
+
+na Dashboard - Organizações tirar  CNPJ	e	Status, 
+arrumar Localização nao ta aparecendo
+
 
 editar fotos
 
