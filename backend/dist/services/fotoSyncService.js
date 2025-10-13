@@ -115,42 +115,58 @@ exports.fotoSyncService = {
             }
             const connectionString = connResult[0].conn_string;
             const escapedUri = organizacaoUri.replace(/'/g, "''");
-            const sqlQuery = `
-        SELECT 
-          ref."_URI",
-          ref."_TOP_LEVEL_AURI",
-          blob."_CREATION_DATE",
-          blob."VALUE",
-          octet_length(blob."VALUE") as tamanho
-        FROM odk_prod."ORGANIZACAO_FOTO_REF" ref
-        INNER JOIN odk_prod."ORGANIZACAO_FOTO_BLB" blob 
-          ON blob."_URI" = ref."_SUB_AURI"
-        WHERE ref."_TOP_LEVEL_AURI" = ''${escapedUri}''
-          AND blob."VALUE" IS NOT NULL
-          AND octet_length(blob."VALUE") > 0
-      `.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-            const query = `
-        SELECT * FROM public.dblink(
-          '${connectionString}'::text,
-          '${sqlQuery}'::text
-        ) AS t(
-          uri varchar,
-          top_level_auri varchar,
-          creation_date timestamp,
-          foto_blob bytea,
-          tamanho_bytes bigint
-        )
-      `;
-            console.log('🔍 Buscando fotos no ODK...');
-            console.log('   URI: ${escapedUri}');
+            console.log('🔍 Tentando buscar fotos das tabelas ORGANIZACAO_...');
+            let fotos = await this.buscarFotosTabela(connectionString, escapedUri, 'ORGANIZACAO');
+            if (fotos.length === 0) {
+                console.log('⚠️ Nenhuma foto encontrada em ORGANIZACAO_, tentando PINOVARA_...');
+                fotos = await this.buscarFotosTabela(connectionString, escapedUri, 'PINOVARA');
+            }
+            console.log(`📊 Total de fotos encontradas: ${fotos.length}`);
+            return fotos;
+        }
+        catch (error) {
+            console.error('Erro ao buscar fotos do ODK:', error);
+            throw new Error(`Erro ao conectar com banco ODK: ${error.message}`);
+        }
+    },
+    async buscarFotosTabela(connectionString, escapedUri, prefixo) {
+        const sqlQuery = `
+      SELECT 
+        f."_URI",
+        f."_PARENT_AURI",
+        bn."_CREATION_DATE",
+        blb."VALUE",
+        octet_length(blb."VALUE") as tamanho,
+        bn."UNROOTED_FILE_PATH"
+      FROM odk_prod."${prefixo}_FOTOS" f
+      INNER JOIN odk_prod."${prefixo}_FOTO_BN" bn ON bn."_PARENT_AURI" = f."_URI"
+      INNER JOIN odk_prod."${prefixo}_FOTO_REF" ref ON ref."_DOM_AURI" = bn."_URI"
+      INNER JOIN odk_prod."${prefixo}_FOTO_BLB" blb ON blb."_URI" = ref."_SUB_AURI"
+      WHERE f."_PARENT_AURI" = ''${escapedUri}''
+        AND blb."VALUE" IS NOT NULL
+        AND octet_length(blb."VALUE") > 0
+    `.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        const query = `
+      SELECT * FROM public.dblink(
+        '${connectionString}'::text,
+        '${sqlQuery}'::text
+      ) AS t(
+        uri varchar,
+        parent_auri varchar,
+        creation_date timestamp,
+        foto_blob bytea,
+        tamanho_bytes bigint,
+        nome_arquivo varchar
+      )
+    `;
+        try {
             const result = await prisma.$queryRawUnsafe(query);
-            console.log(`📊 Fotos encontradas: ${result.length}`);
-            return result.map((row, index) => {
-                const timestamp = new Date(row.creation_date).getTime();
-                const nomeArquivo = `${timestamp}_${index}.jpg`;
+            console.log(`   Tabela ${prefixo}_: ${result.length} fotos encontradas`);
+            return result.map((row) => {
+                const nomeArquivo = row.nome_arquivo || `${new Date(row.creation_date).getTime()}.jpg`;
                 return {
                     uri: row.uri,
-                    parent_auri: row.top_level_auri,
+                    parent_auri: row.parent_auri,
                     grupo: null,
                     foto_obs: null,
                     creation_date: new Date(row.creation_date),
@@ -161,8 +177,8 @@ exports.fotoSyncService = {
             });
         }
         catch (error) {
-            console.error('Erro ao buscar fotos do ODK:', error);
-            throw new Error(`Erro ao conectar com banco ODK: ${error.message}`);
+            console.error(`   Tabela ${prefixo}_: ${error.message}`);
+            return [];
         }
     },
     async salvarBlobComoArquivo(blob, nomeOriginal) {
