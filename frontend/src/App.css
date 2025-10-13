@@ -1286,11 +1286,12 @@ main, section, article, aside, header, footer {
 
 /* Landing Footer */
 .landing-footer {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: linear-gradient(135deg, #056839 0%, #034d28 50%, #023821 100%);
+  color: rgba(255, 255, 255, 0.95);
   padding: 4rem 0 2rem;
   text-align: center;
   position: relative;
+  box-shadow: 0 -4px 20px rgba(5, 104, 57, 0.2);
 }
 
 .landing-footer::before {
@@ -1299,8 +1300,8 @@ main, section, article, aside, header, footer {
   top: 0;
   left: 0;
   right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(59, 35, 19, 0.1), transparent);
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
 }
 
 .landing-footer .container {
@@ -1309,9 +1310,10 @@ main, section, article, aside, header, footer {
 
 .landing-footer p {
   margin: 0;
-  opacity: 0.8;
+  opacity: 0.9;
   font-size: 1rem;
   font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* Auth Pages */
@@ -8005,21 +8007,23 @@ main, section, article, aside, header, footer {
 .footer-link {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
   font-size: 14px;
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
   padding: 4px 8px;
+  border-radius: 4px;
 }
 
 .footer-link:hover {
   color: white;
-  text-decoration: underline;
+  background: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
 }
 
 .footer-separator {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.4);
   font-size: 14px;
 }
 
@@ -8030,7 +8034,8 @@ main, section, article, aside, header, footer {
 .footer-copyright p {
   margin: 0;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 400;
 }
 
 /* Animação para botão desabilitado */

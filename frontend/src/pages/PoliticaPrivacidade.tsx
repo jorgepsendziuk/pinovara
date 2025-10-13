@@ -1,7 +1,13 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 function PoliticaPrivacidade() {
   const navigate = useNavigate();
+
+  // Scroll para o topo ao abrir a página
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   return (
     <div style={{

@@ -122,7 +122,9 @@ class OrganizacaoService {
         const total = organizacoes.length;
         const skip = (page - 1) * limit;
         const totalPaginas = Math.ceil(total / limit);
+        console.log(`📄 Paginação: total=${total}, page=${page}, limit=${limit}, skip=${skip}`);
         const organizacoesPaginadas = organizacoes.slice(skip, skip + limit);
+        console.log(`   Retornando: ${organizacoesPaginadas.length} organizações`);
         if (organizacoesPaginadas.length > 0) {
             console.log('📊 Amostra de organização:', {
                 id: organizacoesPaginadas[0].id,
