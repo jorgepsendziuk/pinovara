@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Organizacao, DadosRepresentante, DadosCaracteristicas } from '../types/organizacao';
+import api from '../services/api';
 
 export const useOrganizacaoData = () => {
   const [organizacao, setOrganizacao] = useState<Organizacao | null>(null);
@@ -14,32 +15,16 @@ export const useOrganizacaoData = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const token = localStorage.getItem('@pinovara:token');
-      if (!token) {
-        throw new Error('Token de autenticação não encontrado');
-      }
 
-      const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
-      const response = await fetch(`${API_BASE}/organizacoes/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await api.get(`/organizacoes/${id}`);
 
-      if (!response.ok) {
-        throw new Error('Erro ao carregar organização');
-      }
-
-      const result = await response.json();
-      if (result.success) {
-        setOrganizacao(result.data);
+      if (response.data.success) {
+        setOrganizacao(response.data.data);
       } else {
-        throw new Error(result.error?.message || 'Erro ao carregar organização');
+        throw new Error(response.data.error?.message || 'Erro ao carregar organização');
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || err.message || 'Erro desconhecido');
     } finally {
       setLoading(false);
     }
@@ -52,28 +37,15 @@ export const useOrganizacaoData = () => {
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('@pinovara:token');
-      if (!token) {
-        throw new Error('Token de autenticação não encontrado');
-      }
+      const response = await api.put(`/organizacoes/${organizacao.id}`, organizacao);
 
-      const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
-      const response = await fetch(`${API_BASE}/organizacoes/${organizacao.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(organizacao)
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao salvar organização');
+      if (!response.data.success) {
+        throw new Error(response.data.error?.message || 'Erro ao salvar organização');
       }
 
       return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || err.message || 'Erro desconhecido');
       return false;
     } finally {
       setLoading(false);

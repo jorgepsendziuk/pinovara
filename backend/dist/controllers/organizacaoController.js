@@ -18,7 +18,8 @@ class OrganizacaoController {
                 estado: req.query.estado ? parseInt(req.query.estado) : undefined,
                 municipio: req.query.municipio ? parseInt(req.query.municipio) : undefined,
                 page: req.query.page ? parseInt(req.query.page) : 1,
-                limit: req.query.limit ? parseInt(req.query.limit) : 10,
+                limit: req.query.limit ? parseInt(req.query.limit) :
+                    req.query.pageSize ? parseInt(req.query.pageSize) : 10,
                 userId: userPermissions?.userId
             };
             const result = await organizacaoService_1.default.list(filters);
@@ -97,7 +98,7 @@ class OrganizacaoController {
             const userPermissions = req.userPermissions;
             const data = {
                 ...req.body,
-                ...(userPermissions?.isTechnician && {
+                ...(userPermissions?.userId && {
                     id_tecnico: userPermissions.userId
                 })
             };

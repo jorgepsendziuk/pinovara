@@ -21,7 +21,9 @@ class OrganizacaoController {
         estado: req.query.estado ? parseInt(req.query.estado as string) : undefined,
         municipio: req.query.municipio ? parseInt(req.query.municipio as string) : undefined,
         page: req.query.page ? parseInt(req.query.page as string) : 1,
-        limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
+        // Aceitar tanto 'limit' quanto 'pageSize'
+        limit: req.query.limit ? parseInt(req.query.limit as string) : 
+               req.query.pageSize ? parseInt(req.query.pageSize as string) : 10,
         // Passar userId para filtro híbrido (id_tecnico OU email em _creator_uri_user)
         userId: userPermissions?.userId
       };
@@ -119,10 +121,11 @@ class OrganizacaoController {
     try {
       const userPermissions = (req as any).userPermissions;
       
-      // Se for técnico, automaticamente definir id_tecnico
+      // Automaticamente definir id_tecnico com o usuário que está criando
+      // (seja técnico, admin ou qualquer outro)
       const data = {
         ...req.body,
-        ...(userPermissions?.isTechnician && {
+        ...(userPermissions?.userId && {
           id_tecnico: userPermissions.userId
         })
       };
