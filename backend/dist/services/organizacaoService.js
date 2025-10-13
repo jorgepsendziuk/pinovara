@@ -410,8 +410,12 @@ class OrganizacaoService {
             porEstado: porEstadoFormatado,
             organizacoesRecentes: organizacoesRecentes.map(org => {
                 const estadoNome = org.estado_organizacao_estadoToestado?.descricao;
-                const municipioNome = org.municipio_ibge?.descricao;
+                let municipioNome = org.municipio_ibge?.descricao;
                 const estadoSigla = this.getEstadoSigla(estadoNome);
+                if (municipioNome && municipioNome.includes(' - ')) {
+                    const partes = municipioNome.split(' - ');
+                    municipioNome = partes[partes.length - 1];
+                }
                 return {
                     id: org.id,
                     nome: org.nome || 'Nome não informado',
