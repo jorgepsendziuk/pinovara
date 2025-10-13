@@ -515,6 +515,14 @@ const Sidebar: React.FC = () => {
           permission: 'admin'
         },
         {
+          id: 'analytics',
+          label: 'Analytics e Métricas',
+          icon: BarChart,
+          path: '/admin/analytics',
+          module: 'sistema',
+          permission: 'admin'
+        },
+        {
           id: 'usuarios',
           label: 'Usuários',
           icon: Users,

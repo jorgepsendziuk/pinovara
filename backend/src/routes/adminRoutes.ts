@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth';
 import { requireAdmin } from '../middleware/adminAuth';
 import adminController from '../controllers/adminController';
+import { analyticsController } from '../controllers/analyticsController';
 import { migrateIdTecnico } from '../scripts/migrate-id-tecnico';
 
 const router = Router();
@@ -192,6 +193,14 @@ router.get('/system-info', async (req, res) => {
     });
   }
 });
+
+// ========== ANALYTICS ROUTES ==========
+
+/**
+ * GET /admin/analytics/metrics
+ * Buscar métricas do sistema para o painel de analytics
+ */
+router.get('/analytics/metrics', analyticsController.getMetrics.bind(analyticsController));
 
 // ========== MIGRATION ROUTES ==========
 

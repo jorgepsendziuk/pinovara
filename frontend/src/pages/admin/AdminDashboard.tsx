@@ -150,6 +150,14 @@ function AdminDashboard() {
       stats: `${systemInfo?.users.active || 0} ativos`
     },
     {
+      title: 'Analytics e Métricas',
+      description: 'Visualize estatísticas do Google Analytics',
+      icon: '📊',
+      path: '/admin/analytics',
+      color: 'purple',
+      stats: 'Métricas em tempo real'
+    },
+    {
       title: 'Configurações do Sistema',
       description: 'Ajustar parâmetros e configurações gerais',
       icon: '⚙️',
