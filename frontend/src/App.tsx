@@ -38,9 +38,13 @@ import FormularioEnketo from './pages/FormularioEnketo';
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade';
 import AvisoCookies from './components/AvisoCookies';
 import GoogleAnalytics from './components/GoogleAnalytics';
+import { usePageTitle } from './hooks/usePageTitle';
 import './App.css';
 
 function AppRoutes() {
+  // Atualiza o título da página automaticamente baseado na rota
+  usePageTitle();
+  
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
