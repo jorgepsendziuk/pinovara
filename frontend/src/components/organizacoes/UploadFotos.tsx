@@ -113,12 +113,8 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
   };
 
   const handleSyncODK = async () => {
-    if (!confirm('Deseja baixar fotos do ODK Collect para esta organização?')) {
-      return;
-    }
-
     setSyncing(true);
-    setMessage(null);
+    setMessage({ type: 'success', text: '🔄 Sincronizando com ODK Collect...' });
 
     try {
       const resultado = await fotoAPI.syncFromODK(organizacaoId);
@@ -127,22 +123,20 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
       let tipo: 'success' | 'error' = 'success';
 
       if (resultado.baixadas > 0) {
-        mensagem = `✅ Download concluído!\n\n📊 Resumo:\n• ${resultado.total_odk} fotos encontradas no ODK\n• ${resultado.baixadas} fotos baixadas\n• ${resultado.ja_existentes} já existiam\n• ${resultado.erros} erros`;
+        mensagem = `✅ Download concluído! 📊 ${resultado.total_odk} fotos encontradas • ${resultado.baixadas} baixadas • ${resultado.ja_existentes} já existiam • ${resultado.erros} erros`;
         await loadFotos();
       } else if (resultado.total_odk === 0) {
-        mensagem = '⚠️ Nenhuma foto encontrada no ODK para esta organização.';
+        mensagem = '⚠️ Nenhuma foto encontrada no ODK para esta organização';
         tipo = 'error';
       } else {
-        mensagem = `✅ Todas as ${resultado.total_odk} fotos já foram baixadas anteriormente.`;
+        mensagem = `✅ Todas as ${resultado.total_odk} fotos já foram baixadas anteriormente`;
       }
 
-      alert(mensagem);
-      setMessage({ type: tipo, text: mensagem.replace(/\n/g, ' ') });
-      setTimeout(() => setMessage(null), 5000);
+      setMessage({ type: tipo, text: mensagem });
+      setTimeout(() => setMessage(null), 8000);
     } catch (error: any) {
-      const mensagemErro = `❌ Erro ao baixar fotos do ODK:\n\n${error.message}`;
-      alert(mensagemErro);
-      setMessage({ type: 'error', text: error.message || 'Erro ao baixar fotos do ODK' });
+      setMessage({ type: 'error', text: `❌ Erro ao baixar fotos do ODK: ${error.message}` });
+      setTimeout(() => setMessage(null), 8000);
     } finally {
       setSyncing(false);
     }
@@ -187,6 +181,22 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
 
       <div className={`accordion-content ${isAberto ? 'open' : ''}`}>
         <div className="accordion-section">
+          {/* Mensagens de Feedback */}
+          {message && (
+            <div style={{
+              padding: '12px 16px',
+              marginBottom: '20px',
+              borderRadius: '8px',
+              background: message.type === 'success' ? '#d4edda' : '#f8d7da',
+              color: message.type === 'success' ? '#155724' : '#721c24',
+              border: `1px solid ${message.type === 'success' ? '#c3e6cb' : '#f5c6cb'}`,
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+              {message.text}
+            </div>
+          )}
+
           {/* Botões de Ação */}
           <div style={{ marginBottom: '20px', display: 'flex', gap: '12px' }}>
             {/* Botão Upload */}
@@ -293,22 +303,6 @@ export const UploadFotos: React.FC<UploadFotosProps> = ({
                   }}
                 />
               </div>
-
-            {message && (
-              <div style={{
-                padding: '10px',
-                marginTop: '15px',
-                borderRadius: '4px',
-                background: message.type === 'success' ? '#d4edda' : '#f8d7da',
-                color: message.type === 'success' ? '#155724' : '#721c24',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <AlertCircle size={16} />
-                {message.text}
-              </div>
-            )}
 
                   <button
                     type="button"

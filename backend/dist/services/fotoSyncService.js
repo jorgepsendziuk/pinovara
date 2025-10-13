@@ -32,6 +32,9 @@ exports.fotoSyncService = {
                 };
             }
             console.log(`🔍 Buscando fotos no ODK para organização ${organizacaoId}, URI: ${organizacao.uri}`);
+            if (!organizacao.uri) {
+                console.log('⚠️ Organização não tem URI (formulário pode ter sido criado manualmente)');
+            }
             const fotosODK = await this.getFotosODK(organizacao.uri);
             console.log(`📊 Fotos encontradas no ODK: ${fotosODK.length}`);
             if (fotosODK.length === 0) {
@@ -124,6 +127,7 @@ exports.fotoSyncService = {
           ON blob."_URI" = ref."_SUB_AURI"
         WHERE ref."_TOP_LEVEL_AURI" = ''${escapedUri}''
           AND blob."VALUE" IS NOT NULL
+          AND octet_length(blob."VALUE") > 0
       `.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
             const query = `
         SELECT * FROM public.dblink(
@@ -137,8 +141,10 @@ exports.fotoSyncService = {
           tamanho_bytes bigint
         )
       `;
-            console.log('📝 Query dblink:', query.substring(0, 200) + '...');
+            console.log('🔍 Buscando fotos no ODK...');
+            console.log('   URI: ${escapedUri}');
             const result = await prisma.$queryRawUnsafe(query);
+            console.log(`📊 Fotos encontradas: ${result.length}`);
             return result.map((row, index) => {
                 const timestamp = new Date(row.creation_date).getTime();
                 const nomeArquivo = `${timestamp}_${index}.jpg`;
