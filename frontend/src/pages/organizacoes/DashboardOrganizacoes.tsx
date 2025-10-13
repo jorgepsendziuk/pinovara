@@ -150,13 +150,9 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
     {
       key: 'localizacao',
       title: 'Localização',
-      dataIndex: 'estado_nome',
+      dataIndex: 'localizacao',
       width: '25%',
-      render: (estadoNome: string, record: any) => {
-        return record.municipio_nome && record.estado_nome 
-          ? `${record.municipio_nome} - ${record.estado_nome}` 
-          : (estadoNome || '-');
-      },
+      render: (localizacao: string) => localizacao || '-',
     },
     {
       key: 'dataVisita',
@@ -352,9 +348,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
                           </div>
                         </td>
                         <td>
-                          {org.municipio_nome && org.estado_nome 
-                            ? `${org.municipio_nome} - ${org.estado_nome}` 
-                            : (org.estado || '-')}
+                          {org.localizacao || '-'}
                         </td>
                         <td>{org.dataVisita ? new Date(org.dataVisita).toLocaleDateString('pt-BR') : '-'}</td>
                         <td>
