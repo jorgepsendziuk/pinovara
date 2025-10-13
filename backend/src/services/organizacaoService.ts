@@ -176,8 +176,12 @@ class OrganizacaoService {
     const skip = (page - 1) * limit;
     const totalPaginas = Math.ceil(total / limit);
     
+    console.log(`📄 Paginação: total=${total}, page=${page}, limit=${limit}, skip=${skip}`);
+    
     // Aplicar paginação manual
     const organizacoesPaginadas = organizacoes.slice(skip, skip + limit);
+    
+    console.log(`   Retornando: ${organizacoesPaginadas.length} organizações`);
 
     // Log para debug
     if (organizacoesPaginadas.length > 0) {
