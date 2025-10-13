@@ -140,24 +140,20 @@ export const fotoSyncService = {
       // Escapar aspas simples no URI para evitar SQL injection
       const escapedUri = organizacaoUri.replace(/'/g, "''");
 
-      // Query SQL com dblink para buscar fotos
-      // ORGANIZACAO_FOTOS -> ORGANIZACAO_FOTO_BN -> ORGANIZACAO_FOTO_REF -> ORGANIZACAO_FOTO_BLB
+      // Query SQL com dblink para buscar fotos (versão corrigida)
+      // ORGANIZACAO_FOTO_REF -> ORGANIZACAO_FOTO_BLB
       const sqlQuery = `
         SELECT 
-          f."_URI",
-          f."_PARENT_AURI",
-          f."GRUPO",
-          f."FOTO_OBS",
-          f."_CREATION_DATE",
-          blb."VALUE",
-          octet_length(blb."VALUE"),
-          bn."UNROOTED_FILE_PATH"
-        FROM odk_prod."ORGANIZACAO_FOTOS" f
-        INNER JOIN odk_prod."ORGANIZACAO_FOTO_BN" bn ON bn."_PARENT_AURI" = f."_URI"
-        INNER JOIN odk_prod."ORGANIZACAO_FOTO_REF" ref ON ref."_DOM_AURI" = bn."_URI"
-        INNER JOIN odk_prod."ORGANIZACAO_FOTO_BLB" blb ON blb."_URI" = ref."_SUB_AURI"
-        WHERE f."_PARENT_AURI" = ''${escapedUri}''
-          AND blb."VALUE" IS NOT NULL
+          ref."_URI",
+          ref."_TOP_LEVEL_AURI",
+          blob."_CREATION_DATE",
+          blob."VALUE",
+          octet_length(blob."VALUE") as tamanho
+        FROM odk_prod."ORGANIZACAO_FOTO_REF" ref
+        INNER JOIN odk_prod."ORGANIZACAO_FOTO_BLB" blob 
+          ON blob."_URI" = ref."_SUB_AURI"
+        WHERE ref."_TOP_LEVEL_AURI" = ''${escapedUri}''
+          AND blob."VALUE" IS NOT NULL
       `.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
 
       const query = `
@@ -166,28 +162,32 @@ export const fotoSyncService = {
           '${sqlQuery}'::text
         ) AS t(
           uri varchar,
-          parent_auri varchar,
-          grupo varchar,
-          foto_obs varchar,
+          top_level_auri varchar,
           creation_date timestamp,
           foto_blob bytea,
-          tamanho_bytes bigint,
-          nome_arquivo varchar
+          tamanho_bytes bigint
         )
       `;
 
+      console.log('📝 Query dblink:', query.substring(0, 200) + '...');
       const result = await prisma.$queryRawUnsafe(query) as any[];
 
-      return result.map(row => ({
-        uri: row.uri,
-        parent_auri: row.parent_auri,
-        grupo: row.grupo,
-        foto_obs: row.foto_obs,
-        creation_date: new Date(row.creation_date),
-        foto_blob: row.foto_blob,
-        tamanho_bytes: parseInt(row.tamanho_bytes),
-        nome_arquivo: row.nome_arquivo
-      }));
+      return result.map((row, index) => {
+        // Gerar nome de arquivo baseado no timestamp
+        const timestamp = new Date(row.creation_date).getTime();
+        const nomeArquivo = `${timestamp}_${index}.jpg`;
+        
+        return {
+          uri: row.uri,
+          parent_auri: row.top_level_auri,
+          grupo: null,
+          foto_obs: null,
+          creation_date: new Date(row.creation_date),
+          foto_blob: row.foto_blob,
+          tamanho_bytes: parseInt(row.tamanho_bytes),
+          nome_arquivo: nomeArquivo
+        };
+      });
 
     } catch (error: any) {
       console.error('Erro ao buscar fotos do ODK:', error);
