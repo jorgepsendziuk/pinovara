@@ -7,9 +7,6 @@ exports.optionalAuth = exports.requirePermission = exports.authenticateToken = v
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
-/**
- * Middleware de autenticação JWT
- */
 const authenticateToken = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -35,9 +32,7 @@ const authenticateToken = async (req, res, next) => {
             });
             return;
         }
-        // Verificar e decodificar token
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
-        // Buscar usuário completo no banco com roles
         const user = await prisma.users.findUnique({
             where: { id: decoded.userId },
             include: {
@@ -62,7 +57,6 @@ const authenticateToken = async (req, res, next) => {
             });
             return;
         }
-        // Formatar roles para o formato esperado
         const roles = user.user_roles?.map((ur) => ({
             id: ur.roles.id,
             name: ur.roles.name,
@@ -71,7 +65,6 @@ const authenticateToken = async (req, res, next) => {
                 name: ur.roles.modules.name
             }
         })) || [];
-        // Adicionar dados do usuário à requisição
         req.user = {
             id: user.id,
             email: user.email,
@@ -102,9 +95,6 @@ const authenticateToken = async (req, res, next) => {
     }
 };
 exports.authenticateToken = authenticateToken;
-/**
- * Middleware para verificar permissões específicas
- */
 const requirePermission = (moduleName, roleName) => {
     return (req, res, next) => {
         if (!req.user) {
@@ -136,9 +126,6 @@ const requirePermission = (moduleName, roleName) => {
     };
 };
 exports.requirePermission = requirePermission;
-/**
- * Middleware opcional - não bloqueia se token não estiver presente
- */
 const optionalAuth = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -167,7 +154,6 @@ const optionalAuth = async (req, res, next) => {
             }
         });
         if (user && user.active) {
-            // Formatar roles para o formato esperado
             const roles = user.user_roles?.map((ur) => ({
                 id: ur.roles.id,
                 name: ur.roles.name,
@@ -186,7 +172,6 @@ const optionalAuth = async (req, res, next) => {
         next();
     }
     catch (error) {
-        // Em caso de erro, apenas prosseguir sem autenticação
         next();
     }
 };

@@ -1,7 +1,3 @@
-/**
- * Classe personalizada para erros da API
- * Centralizada para uso em todo o sistema
- */
 export declare class ApiError extends Error {
     statusCode: number;
     code?: string;

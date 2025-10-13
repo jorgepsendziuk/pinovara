@@ -2,9 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.hasAccessToOrganizacao = exports.checkOrganizacaoPermission = exports.requireTechnician = exports.requireRole = void 0;
 const api_1 = require("../types/api");
-/**
- * Middleware para verificar se o usuário tem role específico
- */
 const requireRole = (moduleName, roleName) => {
     return (req, res, next) => {
         if (!req.user) {
@@ -40,13 +37,7 @@ const requireRole = (moduleName, roleName) => {
     };
 };
 exports.requireRole = requireRole;
-/**
- * Middleware para verificar se usuário é técnico
- */
 exports.requireTechnician = (0, exports.requireRole)('organizacoes', 'tecnico');
-/**
- * Middleware para verificar permissões nas organizações baseado na role
- */
 const checkOrganizacaoPermission = (req, res, next) => {
     if (!req.user) {
         res.status(api_1.HttpStatus.UNAUTHORIZED).json({
@@ -60,11 +51,8 @@ const checkOrganizacaoPermission = (req, res, next) => {
         });
         return;
     }
-    // Verificar se é admin (acesso total)
     const isAdmin = req.user.roles?.some(role => role.name === 'admin' && role.module.name === 'sistema');
-    // Verificar se é técnico
     const isTechnician = req.user.roles?.some(role => role.name === 'tecnico' && role.module.name === 'organizacoes');
-    // Adicionar informações sobre permissões à requisição
     req.userPermissions = {
         isAdmin,
         isTechnician,
@@ -74,19 +62,13 @@ const checkOrganizacaoPermission = (req, res, next) => {
     next();
 };
 exports.checkOrganizacaoPermission = checkOrganizacaoPermission;
-/**
- * Helper para verificar se usuário tem acesso a uma organização específica
- */
 const hasAccessToOrganizacao = (userPermissions, organizacao) => {
-    // Admin tem acesso a tudo
     if (userPermissions.canAccessAll) {
         return true;
     }
-    // Técnico só tem acesso às organizações que ele criou
     if (userPermissions.isTechnician) {
         return organizacao.id_tecnico === userPermissions.userId;
     }
-    // Por padrão, não tem acesso
     return false;
 };
 exports.hasAccessToOrganizacao = hasAccessToOrganizacao;

@@ -10,16 +10,12 @@ const path_1 = __importDefault(require("path"));
 const prisma = new client_1.PrismaClient();
 const UPLOAD_DIR = '/var/pinovara/shared/uploads/fotos';
 exports.fotoSyncService = {
-    /**
-     * Sincroniza fotos do ODK para uma organização
-     */
     async syncFotosFromODK(organizacaoId, userEmail) {
         const detalhes = [];
         let baixadas = 0;
         let erros = 0;
         let ja_existentes = 0;
         try {
-            // 1. Buscar organização e obter URI
             const organizacao = await prisma.organizacao.findUnique({
                 where: { id: organizacaoId },
                 select: { uri: true, nome: true }
@@ -35,7 +31,6 @@ exports.fotoSyncService = {
                     mensagem: 'Organização não encontrada'
                 };
             }
-            // 2. Buscar fotos do ODK via dblink
             console.log(`🔍 Buscando fotos no ODK para organização ${organizacaoId}, URI: ${organizacao.uri}`);
             const fotosODK = await this.getFotosODK(organizacao.uri);
             console.log(`📊 Fotos encontradas no ODK: ${fotosODK.length}`);
@@ -50,10 +45,8 @@ exports.fotoSyncService = {
                     mensagem: 'Nenhuma foto encontrada no ODK para esta organização'
                 };
             }
-            // 3. Processar cada foto
             for (const fotoODK of fotosODK) {
                 try {
-                    // Verificar se arquivo existe no disco (não no banco)
                     const caminhoCompleto = path_1.default.join(UPLOAD_DIR, fotoODK.nome_arquivo);
                     const arquivoExiste = await promises_1.default.access(caminhoCompleto)
                         .then(() => true)
@@ -68,7 +61,6 @@ exports.fotoSyncService = {
                         });
                         continue;
                     }
-                    // Salvar BLOB como arquivo (usando nome original do ODK)
                     await this.salvarBlobComoArquivo(fotoODK.foto_blob, fotoODK.nome_arquivo);
                     baixadas++;
                     detalhes.push({
@@ -102,15 +94,11 @@ exports.fotoSyncService = {
             throw new Error(`Erro ao sincronizar fotos do ODK: ${error.message}`);
         }
     },
-    /**
-     * Busca fotos do ODK via dblink
-     */
     async getFotosODK(organizacaoUri) {
         if (!organizacaoUri) {
             return [];
         }
         try {
-            // Buscar connection string do banco
             const connResult = await prisma.$queryRaw `
         SELECT 
           format('host=%s port=%s dbname=%s user=%s password=%s',
@@ -123,10 +111,7 @@ exports.fotoSyncService = {
                 throw new Error('Configuração de conexão ODK não encontrada');
             }
             const connectionString = connResult[0].conn_string;
-            // Escapar aspas simples no URI para evitar SQL injection
             const escapedUri = organizacaoUri.replace(/'/g, "''");
-            // Query SQL com dblink para buscar fotos
-            // ORGANIZACAO_FOTOS -> ORGANIZACAO_FOTO_BN -> ORGANIZACAO_FOTO_REF -> ORGANIZACAO_FOTO_BLB
             const sqlQuery = `
         SELECT 
           f."_URI",
@@ -176,17 +161,11 @@ exports.fotoSyncService = {
             throw new Error(`Erro ao conectar com banco ODK: ${error.message}`);
         }
     },
-    /**
-     * Salva BLOB como arquivo no disco
-     */
     async salvarBlobComoArquivo(blob, nomeOriginal) {
         try {
-            // Garantir que diretório existe
             await promises_1.default.mkdir(UPLOAD_DIR, { recursive: true });
-            // Usar nome original do ODK (já vem correto)
             const nomeArquivo = nomeOriginal;
             const caminhoCompleto = path_1.default.join(UPLOAD_DIR, nomeArquivo);
-            // Salvar arquivo
             await promises_1.default.writeFile(caminhoCompleto, blob);
             return nomeArquivo;
         }
@@ -195,9 +174,6 @@ exports.fotoSyncService = {
             throw new Error(`Erro ao salvar foto: ${error.message}`);
         }
     },
-    /**
-     * Lista fotos disponíveis no ODK (sem baixar)
-     */
     async listarFotosDisponiveis(organizacaoId) {
         try {
             const organizacao = await prisma.organizacao.findUnique({
@@ -212,7 +188,6 @@ exports.fotoSyncService = {
                 };
             }
             const fotosODK = await this.getFotosODK(organizacao.uri);
-            // Verificar quais arquivos já existem no disco
             const fotosComStatus = await Promise.all(fotosODK.map(async (foto) => {
                 const caminhoCompleto = path_1.default.join(UPLOAD_DIR, foto.nome_arquivo);
                 const arquivoExiste = await promises_1.default.access(caminhoCompleto)

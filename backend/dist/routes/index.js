@@ -15,7 +15,6 @@ const fotoSyncRoutes_1 = __importDefault(require("./fotoSyncRoutes"));
 const arquivoSyncRoutes_1 = __importDefault(require("./arquivoSyncRoutes"));
 const relatorioRoutes_1 = __importDefault(require("./relatorioRoutes"));
 const router = (0, express_1.Router)();
-// Rota raiz da API
 router.get('/', (req, res) => {
     res.json({
         success: true,
@@ -66,16 +65,15 @@ router.get('/', (req, res) => {
         }
     });
 });
-// Registrar rotas dos módulos
-router.use('/', healthRoutes_1.default); // Health routes no root
+router.use('/', healthRoutes_1.default);
 router.use('/auth', authRoutes_1.default);
-router.use('/organizacoes', fotoRoutes_1.default); // Foto routes - ANTES de organizacaoRoutes (view é público)
-router.use('/', documentoRoutes_1.default); // Documento routes - usa /organizacoes/:id/documentos (ANTES de organizacaoRoutes)
-router.use('/', fotoSyncRoutes_1.default); // Foto sync ODK routes - usa /organizacoes/:id/fotos/sync
-router.use('/', arquivoSyncRoutes_1.default); // Arquivo sync ODK routes - usa /organizacoes/:id/arquivos/sync
-router.use('/', relatorioRoutes_1.default); // Relatorio routes - usa /organizacoes/:id/relatorio/pdf
-router.use('/organizacoes', organizacaoRoutes_1.default); // Organizacao routes - usa auth global
-router.use('/admin', adminRoutes_1.default); // Admin routes - requer autenticação e papel admin
-router.use('/debug', debugRoutes_1.default); // DEBUG routes - REMOVER EM PRODUÇÃO
+router.use('/organizacoes', fotoRoutes_1.default);
+router.use('/', documentoRoutes_1.default);
+router.use('/', fotoSyncRoutes_1.default);
+router.use('/', arquivoSyncRoutes_1.default);
+router.use('/', relatorioRoutes_1.default);
+router.use('/organizacoes', organizacaoRoutes_1.default);
+router.use('/admin', adminRoutes_1.default);
+router.use('/debug', debugRoutes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map

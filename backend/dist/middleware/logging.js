@@ -6,14 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.rateLimiter = exports.appLogger = exports.errorLogger = exports.accessLogger = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-// Gerar ID único para requisição
 const generateRequestId = () => {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
 };
-// Logger simples para arquivos
 class Logger {
     constructor() {
-        this.maxLogSize = 10 * 1024 * 1024; // 10MB
+        this.maxLogSize = 10 * 1024 * 1024;
         this.maxLogFiles = 5;
         this.logDir = process.env.LOG_DIR || path_1.default.join(process.cwd(), 'logs');
         this.ensureLogDirectory();
@@ -35,7 +33,6 @@ class Logger {
                     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
                     const rotatedPath = filePath.replace('.log', `-${timestamp}.log`);
                     fs_1.default.renameSync(filePath, rotatedPath);
-                    // Limpar logs antigos
                     this.cleanOldLogs(path_1.default.dirname(filePath), path_1.default.basename(filePath, '.log'));
                 }
             }
@@ -54,7 +51,6 @@ class Logger {
                 stats: fs_1.default.statSync(path_1.default.join(logDir, file))
             }))
                 .sort((a, b) => b.stats.mtime.getTime() - a.stats.mtime.getTime());
-            // Manter apenas os arquivos mais recentes
             for (let i = this.maxLogFiles; i < files.length; i++) {
                 fs_1.default.unlinkSync(files[i].path);
             }
@@ -75,7 +71,6 @@ class Logger {
         }
     }
     logAccess(entry) {
-        // Log no console em desenvolvimento
         if (process.env.NODE_ENV !== 'production') {
             const color = (entry.statusCode || 0) >= 400 ? '\x1b[31m' : '\x1b[32m';
             const reset = '\x1b[0m';
@@ -93,12 +88,9 @@ class Logger {
     }
 }
 const logger = new Logger();
-// Middleware de logging de acesso
 const accessLogger = (req, res, next) => {
-    // Adicionar requestId e timestamp à requisição
     req.requestId = generateRequestId();
     req.startTime = Date.now();
-    // Capturar o método original res.end para calcular tempo de resposta
     const originalEnd = res.end;
     res.end = function (...args) {
         const responseTime = Date.now() - (req.startTime || 0);
@@ -115,15 +107,12 @@ const accessLogger = (req, res, next) => {
             requestId: req.requestId
         };
         logger.logAccess(logEntry);
-        // Chamar o método original
         return originalEnd.apply(this, args);
     };
-    // Adicionar requestId aos headers da resposta (útil para debugging)
     res.setHeader('X-Request-ID', req.requestId);
     next();
 };
 exports.accessLogger = accessLogger;
-// Middleware para logging de erros
 const errorLogger = (error, req, res, next) => {
     const logEntry = {
         timestamp: new Date().toISOString(),
@@ -141,7 +130,6 @@ const errorLogger = (error, req, res, next) => {
     next(error);
 };
 exports.errorLogger = errorLogger;
-// Funcões utilitárias para logging da aplicação
 exports.appLogger = {
     info: (message, data) => {
         const entry = {
@@ -194,7 +182,6 @@ exports.appLogger = {
         }
     }
 };
-// Middleware para rate limiting por IP
 const rateLimiter = (windowMs = 15 * 60 * 1000, maxRequests = 100) => {
     const requests = new Map();
     return (req, res, next) => {
@@ -202,7 +189,6 @@ const rateLimiter = (windowMs = 15 * 60 * 1000, maxRequests = 100) => {
         const now = Date.now();
         const requestData = requests.get(ip);
         if (!requestData || now > requestData.resetTime) {
-            // Nova janela de tempo
             requests.set(ip, {
                 count: 1,
                 resetTime: now + windowMs
@@ -211,7 +197,6 @@ const rateLimiter = (windowMs = 15 * 60 * 1000, maxRequests = 100) => {
             return;
         }
         if (requestData.count >= maxRequests) {
-            // Limite excedido
             exports.appLogger.warn(`Rate limit exceeded for IP: ${ip}`, {
                 count: requestData.count,
                 maxRequests,
@@ -227,10 +212,8 @@ const rateLimiter = (windowMs = 15 * 60 * 1000, maxRequests = 100) => {
             });
             return;
         }
-        // Incrementar contador
         requestData.count++;
         requests.set(ip, requestData);
-        // Adicionar headers informativos
         res.setHeader('X-RateLimit-Limit', maxRequests);
         res.setHeader('X-RateLimit-Remaining', Math.max(0, maxRequests - requestData.count));
         res.setHeader('X-RateLimit-Reset', Math.ceil(requestData.resetTime / 1000));

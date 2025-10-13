@@ -1,6 +1,3 @@
-/**
- * Tipos para padronização de respostas da API
- */
 export interface ApiResponse<T = any> {
     success: boolean;
     message?: string;
@@ -33,9 +30,6 @@ export interface PaginatedResponse<T> {
         hasPrev: boolean;
     };
 }
-/**
- * Tipos de resposta de sucesso padronizados
- */
 export interface SuccessResponse<T = any> extends ApiResponse<T> {
     success: true;
     data: T;
@@ -44,9 +38,6 @@ export interface ErrorResponse extends ApiResponse {
     success: false;
     error: ApiError;
 }
-/**
- * Status codes comuns
- */
 export declare enum HttpStatus {
     OK = 200,
     CREATED = 201,
@@ -61,9 +52,6 @@ export declare enum HttpStatus {
     INTERNAL_SERVER_ERROR = 500,
     SERVICE_UNAVAILABLE = 503
 }
-/**
- * Códigos de erro personalizados
- */
 export declare enum ErrorCode {
     AUTHENTICATION_REQUIRED = "AUTHENTICATION_REQUIRED",
     INVALID_CREDENTIALS = "INVALID_CREDENTIALS",

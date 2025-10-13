@@ -10,16 +10,12 @@ const path_1 = __importDefault(require("path"));
 const prisma = new client_1.PrismaClient();
 const UPLOAD_DIR = '/var/pinovara/shared/uploads/arquivos';
 exports.arquivoSyncService = {
-    /**
-     * Sincroniza arquivos do ODK para uma organização
-     */
     async syncArquivosFromODK(organizacaoId, userEmail) {
         const detalhes = [];
         let baixadas = 0;
         let erros = 0;
         let ja_existentes = 0;
         try {
-            // 1. Buscar organização e obter URI
             const organizacao = await prisma.organizacao.findUnique({
                 where: { id: organizacaoId },
                 select: { uri: true, nome: true }
@@ -35,7 +31,6 @@ exports.arquivoSyncService = {
                     mensagem: 'Organização não encontrada'
                 };
             }
-            // 2. Buscar arquivos do ODK via dblink
             console.log(`🔍 Buscando arquivos no ODK para organização ${organizacaoId}, URI: ${organizacao.uri}`);
             const arquivosODK = await this.getArquivosODK(organizacao.uri);
             console.log(`📊 Arquivos encontrados no ODK: ${arquivosODK.length}`);
@@ -50,13 +45,10 @@ exports.arquivoSyncService = {
                     mensagem: 'Nenhum arquivo encontrado no ODK para esta organização'
                 };
             }
-            // 3. Garantir que o diretório existe
             await this.garantirDiretorioExiste();
-            // 4. Processar cada arquivo
             for (const arquivo of arquivosODK) {
                 try {
                     console.log(`📄 Processando arquivo: ${arquivo.nome_arquivo}`);
-                    // Verificar se o arquivo já existe no disco
                     const arquivoExiste = await this.verificarArquivoExiste(arquivo.nome_arquivo);
                     if (arquivoExiste) {
                         console.log(`✓ Arquivo já existe: ${arquivo.nome_arquivo}`);
@@ -69,7 +61,6 @@ exports.arquivoSyncService = {
                         });
                     }
                     else {
-                        // Salvar arquivo
                         await this.salvarBlobComoArquivo(arquivo.arquivo_blob, arquivo.nome_arquivo);
                         console.log(`💾 Arquivo salvo: ${arquivo.nome_arquivo}`);
                         baixadas++;
@@ -117,15 +108,11 @@ exports.arquivoSyncService = {
             };
         }
     },
-    /**
-     * Busca arquivos do ODK via dblink
-     */
     async getArquivosODK(organizacaoUri) {
         if (!organizacaoUri) {
             return [];
         }
         try {
-            // Buscar connection string do banco
             const connResult = await prisma.$queryRaw `
         SELECT 
           format('host=%s port=%s dbname=%s user=%s password=%s',
@@ -138,10 +125,7 @@ exports.arquivoSyncService = {
                 throw new Error('Configuração de conexão ODK não encontrada');
             }
             const connectionString = connResult[0].conn_string;
-            // Escapar aspas simples no URI para evitar SQL injection
             const escapedUri = organizacaoUri.replace(/'/g, "''");
-            // Query SQL com dblink para buscar arquivos
-            // ORGANIZACAO_FILE -> ORGANIZACAO_ARQUIVO_BN -> ORGANIZACAO_ARQUIVO_REF -> ORGANIZACAO_ARQUIVO_BLB
             const sqlQuery = `
         SELECT 
           f."_URI",
@@ -175,8 +159,8 @@ exports.arquivoSyncService = {
             const arquivos = result.map(row => ({
                 uri: row.uri,
                 parent_auri: row.parent_auri,
-                grupo: null, // Campo não disponível na tabela ORGANIZACAO_FILE
-                arquivo_obs: null, // Campo não disponível na tabela ORGANIZACAO_FILE
+                grupo: null,
+                arquivo_obs: null,
                 creation_date: new Date(row.creation_date),
                 arquivo_blob: row.arquivo_blob,
                 tamanho_bytes: parseInt(row.tamanho_bytes),
@@ -190,20 +174,12 @@ exports.arquivoSyncService = {
             throw new Error(`Erro ao conectar com banco ODK: ${error.message}`);
         }
     },
-    /**
-     * Salva blob como arquivo no disco
-     */
     async salvarBlobComoArquivo(blob, nomeOriginal) {
         const filePath = path_1.default.join(UPLOAD_DIR, nomeOriginal);
-        // Garantir que o diretório existe
         await this.garantirDiretorioExiste();
-        // Escrever arquivo
         await promises_1.default.writeFile(filePath, blob);
         console.log(`💾 Arquivo salvo: ${filePath}`);
     },
-    /**
-     * Verifica se arquivo já existe no disco
-     */
     async verificarArquivoExiste(nomeArquivo) {
         try {
             const filePath = path_1.default.join(UPLOAD_DIR, nomeArquivo);
@@ -214,9 +190,6 @@ exports.arquivoSyncService = {
             return false;
         }
     },
-    /**
-     * Garante que o diretório de upload existe
-     */
     async garantirDiretorioExiste() {
         try {
             await promises_1.default.mkdir(UPLOAD_DIR, { recursive: true });
@@ -226,9 +199,6 @@ exports.arquivoSyncService = {
             throw new Error('Não foi possível criar diretório de arquivos');
         }
     },
-    /**
-     * Lista arquivos disponíveis no ODK (sem baixar)
-     */
     async listarArquivosDisponiveis(organizacaoId) {
         try {
             const organizacao = await prisma.organizacao.findUnique({

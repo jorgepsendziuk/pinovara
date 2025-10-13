@@ -40,90 +40,23 @@ const express_1 = require("express");
 const auth_1 = require("../middleware/auth");
 const adminAuth_1 = require("../middleware/adminAuth");
 const adminController_1 = __importDefault(require("../controllers/adminController"));
+const analyticsController_1 = require("../controllers/analyticsController");
+const migrate_id_tecnico_1 = require("../scripts/migrate-id-tecnico");
 const router = (0, express_1.Router)();
-// Aplicar autenticação e autorização admin a todas as rotas
 router.use(auth_1.authenticateToken);
 router.use(adminAuth_1.requireAdmin);
-// ========== USER MANAGEMENT ROUTES ==========
-/**
- * GET /admin/users
- * Listar todos os usuários com suas roles
- */
 router.get('/users', adminController_1.default.getUsers);
-/**
- * GET /admin/users/:id
- * Buscar usuário específico por ID
- */
 router.get('/users/:id', adminController_1.default.getUser);
-/**
- * POST /admin/impersonate/:userId
- * Personificar um usuário (apenas para admins)
- * Gera um token JWT para o usuário personificado
- */
 router.post('/impersonate/:userId', adminController_1.default.impersonateUser);
-/**
- * POST /admin/users
- * Criar novo usuário
- *
- * Body: {
- *   email: string,
- *   password: string,
- *   name: string,
- *   active?: boolean
- * }
- */
 router.post('/users', adminController_1.default.createUser);
-/**
- * PUT /admin/users/:id
- * Atualizar usuário existente
- *
- * Body: {
- *   email?: string,
- *   name?: string,
- *   active?: boolean,
- *   password?: string
- * }
- */
 router.put('/users/:id', adminController_1.default.updateUser);
-/**
- * DELETE /admin/users/:id
- * Deletar usuário
- * Nota: Não é possível deletar seu próprio usuário
- */
 router.delete('/users/:id', adminController_1.default.deleteUser);
-/**
- * PUT /admin/users/:id/status
- * Atualizar status do usuário (ativo/inativo)
- *
- * Body: { active: boolean }
- */
 router.put('/users/:id/status', adminController_1.default.updateUserStatus);
-// ========== ROLE MANAGEMENT ROUTES ==========
-/**
- * GET /admin/roles
- * Listar todas as roles disponíveis
- */
 router.get('/roles', adminController_1.default.getRoles);
-/**
- * POST /admin/users/:id/roles
- * Atribuir role a um usuário
- *
- * Body: { roleId: number }
- */
 router.post('/users/:id/roles', adminController_1.default.assignRole);
-/**
- * DELETE /admin/users/:id/roles/:roleId
- * Remover role de um usuário
- */
 router.delete('/users/:id/roles/:roleId', adminController_1.default.removeRole);
-// ========== ADMIN INFO ROUTES ==========
-/**
- * GET /admin/stats
- * Estatísticas gerais do sistema (admin dashboard)
- */
 router.get('/stats', async (req, res) => {
     try {
-        // Esta rota pode ser expandida no futuro
         res.json({
             success: true,
             message: 'Estatísticas administrativas',
@@ -145,15 +78,10 @@ router.get('/stats', async (req, res) => {
         });
     }
 });
-/**
- * GET /admin/system-info
- * Informações detalhadas do sistema para o painel administrativo
- */
 router.get('/system-info', async (req, res) => {
     try {
         const { PrismaClient } = await Promise.resolve().then(() => __importStar(require('@prisma/client')));
         const prisma = new PrismaClient();
-        // Verificar conexão com banco de dados
         let dbStatus = 'connected';
         let userCount = 0;
         let orgCount = 0;
@@ -178,7 +106,7 @@ router.get('/system-info', async (req, res) => {
             },
             users: {
                 total: userCount,
-                active: userCount // Por simplicidade, consideramos todos ativos por agora
+                active: userCount
             },
             organizations: {
                 total: orgCount
@@ -205,6 +133,31 @@ router.get('/system-info', async (req, res) => {
             success: false,
             error: {
                 message: 'Erro ao obter informações do sistema',
+                statusCode: 500
+            },
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+router.get('/analytics/metrics', analyticsController_1.analyticsController.getMetrics.bind(analyticsController_1.analyticsController));
+router.post('/migrate-id-tecnico', async (req, res) => {
+    try {
+        console.log('🚀 Iniciando migração de id_tecnico via endpoint...');
+        const result = await (0, migrate_id_tecnico_1.migrateIdTecnico)();
+        res.json({
+            success: true,
+            message: 'Migração concluída com sucesso',
+            data: result,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ [AdminRoutes] Erro na migração:', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                message: 'Erro ao executar migração',
+                details: error instanceof Error ? error.message : 'Erro desconhecido',
                 statusCode: 500
             },
             timestamp: new Date().toISOString()

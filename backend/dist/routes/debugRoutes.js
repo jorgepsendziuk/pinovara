@@ -4,10 +4,6 @@ const express_1 = require("express");
 const client_1 = require("@prisma/client");
 const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
-/**
- * DEBUG: Endpoint temporário para diagnosticar problema de roles
- * REMOVER EM PRODUÇÃO!
- */
 router.get('/roles-debug/:email', async (req, res) => {
     try {
         const { email } = req.params;
@@ -17,7 +13,6 @@ router.get('/roles-debug/:email', async (req, res) => {
             });
         }
         console.log('🔍 [DEBUG] Starting roles debug for:', email);
-        // Teste 1: Buscar usuário simples
         const userSimple = await prisma.users.findUnique({
             where: { email: email.toLowerCase() }
         });
@@ -25,12 +20,10 @@ router.get('/roles-debug/:email', async (req, res) => {
         if (!userSimple) {
             return res.json({ error: 'User not found', email });
         }
-        // Teste 2: Buscar user_roles separadamente
         const userRoles = await prisma.user_roles.findMany({
             where: { userId: userSimple.id }
         });
         console.log('🎭 [DEBUG] User roles found:', userRoles.length);
-        // Teste 3: Buscar user_roles com joins
         const userRolesWithData = await prisma.user_roles.findMany({
             where: { userId: userSimple.id },
             include: {
@@ -42,7 +35,6 @@ router.get('/roles-debug/:email', async (req, res) => {
             }
         });
         console.log('🔗 [DEBUG] User roles with joins:', userRolesWithData.length);
-        // Teste 4: Query completa como no AuthService
         const userComplete = await prisma.users.findUnique({
             where: { email: email.toLowerCase() },
             include: {
@@ -58,7 +50,6 @@ router.get('/roles-debug/:email', async (req, res) => {
             }
         });
         console.log('📊 [DEBUG] Complete query user_roles:', userComplete?.user_roles?.length || 0);
-        // Teste 5: Estrutura da tabela
         const tableInfo = await prisma.$queryRaw `
       SELECT column_name, data_type 
       FROM information_schema.columns 

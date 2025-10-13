@@ -4,9 +4,6 @@ exports.authController = void 0;
 const authService_1 = require("../services/authService");
 const api_1 = require("../types/api");
 class AuthController {
-    /**
-     * POST /auth/login
-     */
     async login(req, res) {
         try {
             const loginData = req.body;
@@ -22,9 +19,6 @@ class AuthController {
             this.handleError(error, res);
         }
     }
-    /**
-     * POST /auth/register
-     */
     async register(req, res) {
         try {
             const registerData = req.body;
@@ -40,9 +34,6 @@ class AuthController {
             this.handleError(error, res);
         }
     }
-    /**
-     * GET /auth/me
-     */
     async me(req, res) {
         try {
             if (!req.user) {
@@ -67,9 +58,6 @@ class AuthController {
             this.handleError(error, res);
         }
     }
-    /**
-     * GET /auth/verify
-     */
     async verify(req, res) {
         try {
             const authHeader = req.headers.authorization;
@@ -96,7 +84,6 @@ class AuthController {
             });
         }
         catch (error) {
-            // Para verificação, retornar não autenticado ao invés de erro
             if (error instanceof authService_1.ApiError) {
                 res.status(api_1.HttpStatus.OK).json({
                     success: true,
@@ -110,13 +97,8 @@ class AuthController {
             this.handleError(error, res);
         }
     }
-    /**
-     * POST /auth/logout
-     */
     async logout(req, res) {
         try {
-            // Em uma implementação completa, aqui seria adicionado o token a uma blacklist
-            // Por enquanto, apenas retorna sucesso
             res.status(api_1.HttpStatus.OK).json({
                 success: true,
                 message: 'Logout realizado com sucesso',
@@ -127,9 +109,6 @@ class AuthController {
             this.handleError(error, res);
         }
     }
-    /**
-     * PUT /auth/profile
-     */
     async updateProfile(req, res) {
         try {
             if (!req.user) {
@@ -156,9 +135,6 @@ class AuthController {
             this.handleError(error, res);
         }
     }
-    /**
-     * Tratar erros de forma padronizada
-     */
     handleError(error, res) {
         console.error('Auth Controller Error:', error);
         if (error instanceof authService_1.ApiError) {
@@ -174,7 +150,6 @@ class AuthController {
             });
             return;
         }
-        // Erro genérico
         res.status(api_1.HttpStatus.INTERNAL_SERVER_ERROR).json({
             success: false,
             error: {
