@@ -23,7 +23,7 @@ rastreabilidade das acoes
 na Dashboard - Organizações tirar  CNPJ	e	Status, 
 arrumar Localização nao ta aparecendo
 
-na parte de administracao vamos criar um painel para baixar todas as fotos e documentos, verificar quantas tem ou nao, baixar tudo de uma vez, usando essa logica que criamos para cada formulario, mas buscando em todos 
+
 
 editar fotos
 
