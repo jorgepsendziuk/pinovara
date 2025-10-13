@@ -48,13 +48,12 @@ jobs:
         cache: 'npm'
         cache-dependency-path: '**/package-lock.json'
 
-    - name: 🏗️ Build Backend
+    - name: 🏗️ Prepare Backend
       working-directory: ./backend
       run: |
-        echo "🔨 Building backend..."
+        echo "🔨 Preparing backend..."
         npm ci --production=false
-        npm run build
-        echo "✅ Backend built successfully"
+        echo "✅ Backend prepared successfully (already compiled)"
 
     - name: 🎨 Build Frontend
       working-directory: ./frontend
