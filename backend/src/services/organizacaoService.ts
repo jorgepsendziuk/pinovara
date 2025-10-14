@@ -501,7 +501,7 @@ class OrganizacaoService {
             descricao: true
           }
         },
-        users_tecnico: {
+        users: {
           select: {
             name: true,
             email: true
@@ -608,8 +608,8 @@ class OrganizacaoService {
           municipio_nome: municipioNome,
           localizacao: estadoSigla && municipioNome ? `${estadoSigla} - ${municipioNome}` : (estadoSigla || municipioNome || 'Não informado'),
           temGps: !!(org.gps_lat && org.gps_lng),
-          tecnico_nome: org.users_tecnico?.name || null,
-          tecnico_email: org.users_tecnico?.email || null,
+          tecnico_nome: org.users?.name || null,
+          tecnico_email: org.users?.email || null,
           validacao_status: org.validacao_status
         };
       }),

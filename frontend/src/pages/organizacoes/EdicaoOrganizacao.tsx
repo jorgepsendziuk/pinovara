@@ -130,15 +130,27 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   };
 
   const expandirTodos = () => {
-    // Abre todos os accordions da aba de Identificação
-    setAccordionsAbertos([
-      'dados-basicos',
-      'endereco-localizacao',
-      'arquivos',
-      'fotos',
-      'representante',
-      'dados-coleta'
-    ]);
+    // Abre todos os accordions da aba atual
+    if (abaAtiva === 'identificacao') {
+      setAccordionsAbertos([
+        'dados-basicos',
+        'endereco-localizacao',
+        'arquivos',
+        'fotos',
+        'representante',
+        'dados-coleta'
+      ]);
+    } else if (abaAtiva === 'complementos') {
+      setAccordionsAbertos([
+        'descricao',
+        'orientacoes-tecnicas',
+        'indicadores',
+        'participantes',
+        'observacoes'
+      ]);
+    } else {
+      setAccordionsAbertos([]);
+    }
   };
 
   const colapsarTodos = () => {
@@ -306,7 +318,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     ]
   };
 
-  const gruposGestaoPessoas = {
+    const gruposGestaoPessoas = {
     p_organizacao: [
       { numero: 1, texto: "Possui descrição formalizada de cargos, funções e atividades?" },
       { numero: 2, texto: "As relações de trabalho encontram-se formalizadas?" },
@@ -337,7 +349,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     ]
   };
 
-  const gruposGestaoFinanceira = {
+    const gruposGestaoFinanceira = {
     balanco: [
       { numero: 1, texto: "Possui contabilidade realizada por um contador?" },
       { numero: 2, texto: "Possui Balanço Patrimonial atualizado?" },
