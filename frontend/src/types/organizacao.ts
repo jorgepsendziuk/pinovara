@@ -20,6 +20,12 @@ export interface Organizacao {
   removido: boolean | null;
   id_tecnico: number | null;
 
+  // Campos de validação
+  validacao_status: number | null;
+  validacao_usuario: number | null;
+  validacao_data: Date | string | null;
+  validacao_obs: string | null;
+
   // Campos do representante
   representante_nome: string | null;
   representante_cpf: string | null;
@@ -121,5 +127,6 @@ export type AbaAtiva =
   | 'associados-juridicos'
   | 'producao'
   | 'diagnostico' 
-  | 'planoGestao';
+  | 'planoGestao'
+  | 'validacao';
 export type AccordionAberto = string | null;

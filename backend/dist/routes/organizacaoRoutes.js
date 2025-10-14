@@ -2,6 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const organizacaoController_1 = require("../controllers/organizacaoController");
+const abrangenciaController_1 = require("../controllers/abrangenciaController");
+const associadosJuridicosController_1 = require("../controllers/associadosJuridicosController");
+const producaoController_1 = require("../controllers/producaoController");
 const auth_1 = require("../middleware/auth");
 const roleAuth_1 = require("../middleware/roleAuth");
 const router = (0, express_1.Router)();
@@ -15,5 +18,17 @@ router.post('/', organizacaoController_1.organizacaoController.create.bind(organ
 router.get('/:id', organizacaoController_1.organizacaoController.getById.bind(organizacaoController_1.organizacaoController));
 router.put('/:id', organizacaoController_1.organizacaoController.update.bind(organizacaoController_1.organizacaoController));
 router.delete('/:id', organizacaoController_1.organizacaoController.delete.bind(organizacaoController_1.organizacaoController));
+router.get('/:id/abrangencia-socios', abrangenciaController_1.abrangenciaController.list);
+router.post('/:id/abrangencia-socios', abrangenciaController_1.abrangenciaController.create);
+router.put('/:id/abrangencia-socios/:itemId', abrangenciaController_1.abrangenciaController.update);
+router.delete('/:id/abrangencia-socios/:itemId', abrangenciaController_1.abrangenciaController.delete);
+router.get('/:id/associados-juridicos', associadosJuridicosController_1.associadosJuridicosController.list);
+router.post('/:id/associados-juridicos', associadosJuridicosController_1.associadosJuridicosController.create);
+router.put('/:id/associados-juridicos/:itemId', associadosJuridicosController_1.associadosJuridicosController.update);
+router.delete('/:id/associados-juridicos/:itemId', associadosJuridicosController_1.associadosJuridicosController.delete);
+router.get('/:id/producao', producaoController_1.producaoController.list);
+router.post('/:id/producao', producaoController_1.producaoController.create);
+router.put('/:id/producao/:itemId', producaoController_1.producaoController.update);
+router.delete('/:id/producao/:itemId', producaoController_1.producaoController.delete);
 exports.default = router;
 //# sourceMappingURL=organizacaoRoutes.js.map

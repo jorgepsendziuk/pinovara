@@ -26,6 +26,8 @@ declare class OrganizacaoService {
             municipio_nome: string | null | undefined;
             localizacao: string;
             temGps: boolean;
+            tecnico_nome: string | null;
+            tecnico_email: string | null;
         }[];
         organizacoesComGps: {
             id: number;
@@ -34,6 +36,7 @@ declare class OrganizacaoService {
             lng: number | null;
             estado: number | null;
             estado_nome: string;
+            municipio_nome: string | null;
         }[];
     }>;
     getMunicipios(estadoId?: number): Promise<unknown>;
@@ -43,6 +46,7 @@ declare class OrganizacaoService {
     private findUserByEmail;
     private getUserRoles;
     private isUserAdmin;
+    private isUserCoordinator;
 }
 declare const _default: OrganizacaoService;
 export default _default;

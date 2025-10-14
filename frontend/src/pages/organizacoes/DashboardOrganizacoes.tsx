@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import MapaOrganizacoes from '../../components/organizacoes/MapaOrganizacoes';
 import { DataGrid, DataGridColumn } from '../../components/DataGrid';
+import { StatusValidacaoBadge } from '../../utils/validacaoHelpers';
 import { PDFService, OrganizacaoData } from '../../services/pdfService';
 import {
   Building,
@@ -12,10 +13,9 @@ import {
   Plus,
   Map,
   XCircle,
-  ChevronDown,
-  Edit,
-  Printer,
-  Trash
+  FileText,
+  User,
+  ChevronDown
 } from 'lucide-react';
 
 interface OrganizacaoStats {
@@ -34,6 +34,11 @@ interface OrganizacaoStats {
     dataVisita: string;
     estado: string;
     temGps: boolean;
+    estado_nome?: string;
+    municipio_nome?: string;
+    localizacao?: string;
+    tecnico_nome?: string;
+    tecnico_email?: string;
   }>;
   organizacoesComGps: Array<{
     id: number;
@@ -49,11 +54,13 @@ interface DashboardOrganizacoesProps {
 }
 
 function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
-  const { } = useAuth();
+  const { isCoordinator } = useAuth();
   const [stats, setStats] = useState<OrganizacaoStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedView, setExpandedView] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
@@ -126,17 +133,48 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
     }
   };
 
+  // Função para gerar relatório
+  const gerarRelatorio = async (organizacaoId: number, nomeOrganizacao: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/organizacoes/${organizacaoId}/relatorio/pdf`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('@pinovara:token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao gerar relatório');
+      }
+
+      // Baixar PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `relatorio_${nomeOrganizacao?.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      alert('✅ Relatório gerado com sucesso!');
+    } catch (error: any) {
+      alert(`❌ Erro ao gerar relatório: ${error.message}`);
+    }
+  };
+
   // Definição das colunas da DataGrid
   const columns: DataGridColumn<any>[] = [
     {
       key: 'id',
       title: 'ID',
       dataIndex: 'id',
-      width: '10%',
+      width: '8%',
       sortable: true,
+      defaultSortOrder: 'descend',
       align: 'center',
       render: (id: number) => (
-        <span style={{ fontWeight: 'bold', color: '#666' }}>#{id}</span>
+        <span style={{ fontWeight: '600', color: '#666', fontSize: '13px' }}>{id}</span>
       ),
     },
     {
@@ -145,58 +183,97 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
       dataIndex: 'nome',
       width: '35%',
       sortable: true,
-      render: (nome: string) => nome || '-',
+      render: (nome: string, record: any) => (
+        <span style={{ fontWeight: '500' }}>{nome || '-'}</span>
+      ),
     },
     {
       key: 'localizacao',
       title: 'Localização',
       dataIndex: 'localizacao',
-      width: '25%',
-      render: (localizacao: string) => localizacao || '-',
+      width: '20%',
+      render: (localizacao: string, record: any) => {
+        // Obter sigla do estado
+        const estadoNome = record.estado_nome || record.estado || '';
+        const siglasEstados: { [key: string]: string } = {
+          'Bahia': 'BA', 'São Paulo': 'SP', 'Minas Gerais': 'MG', 'Espírito Santo': 'ES',
+          'Rio de Janeiro': 'RJ', 'Paraná': 'PR', 'Santa Catarina': 'SC', 'Rio Grande do Sul': 'RS'
+        };
+        const estadoSigla = siglasEstados[estadoNome] || estadoNome;
+        
+        // Remover estado duplicado do município
+        let municipio = record.municipio_nome || '';
+        if (municipio && municipio.includes(' - ')) {
+          const partes = municipio.split(' - ');
+          municipio = partes[partes.length - 1];
+        }
+        
+        // Se já tiver localizacao formatada no record, usar ela
+        if (localizacao && localizacao !== '-') {
+          return <span style={{ fontSize: '13px' }}>{localizacao}</span>;
+        }
+        
+        return (
+          <span style={{ fontSize: '13px' }}>
+            {estadoSigla && municipio ? `${estadoSigla} - ${municipio}` : (estadoSigla || municipio || '-')}
+          </span>
+        );
+      },
     },
     {
-      key: 'dataVisita',
-      title: 'Data da Visita',
-      dataIndex: 'data_visita',
-      width: '15%',
-      render: (dataVisita: string) => dataVisita ? new Date(dataVisita).toLocaleDateString('pt-BR') : '-',
+      key: 'tecnico',
+      title: 'Técnico',
+      dataIndex: 'tecnico_nome',
+      width: '20%',
+      render: (tecnico_nome: string | null, record: any) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+          {tecnico_nome ? (
+            <>
+              <User size={14} color="#666" />
+              <span style={{ color: '#444', fontWeight: '500' }} title={record.tecnico_email || undefined}>
+                {tecnico_nome}
+              </span>
+            </>
+          ) : (
+            <span style={{ color: '#999', fontStyle: 'italic' }}>Sem técnico</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'validacao',
+      title: 'Validação',
+      dataIndex: 'validacao_status',
+      width: '10%',
+      align: 'center',
+      render: (validacao_status: number | null) => (
+        <StatusValidacaoBadge status={validacao_status} showLabel={false} />
+      ),
     },
     {
       key: 'actions',
       title: 'Ações',
-      width: '15%',
+      width: '17%',
       align: 'center',
       render: (_, record: any) => (
-        <div className="action-buttons" style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
+        <div className="action-buttons" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
           <button
-            onClick={() => onNavigate('detalhes', record.id)}
+            onClick={() => gerarRelatorio(record.id, record.nome)}
             className="btn-icon"
-            title="Ver organização"
-            style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#007bff' }}
-          >
-            <Eye size={16} />
-          </button>
-          <button
-            onClick={() => onNavigate('edicao', record.id)}
-            className="btn-icon"
-            title="Editar organização"
-            style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#007bff' }}
-          >
-            <Edit size={16} />
-          </button>
-          <button
-            onClick={() => gerarTermoAdesao(record.id)}
-            className="btn-icon"
-            title="Imprimir Termo de Adesão"
+            title="Gerar Relatório"
             style={{
-              padding: '0.25rem',
+              padding: '0.4rem',
               border: 'none',
               background: 'transparent',
               cursor: 'pointer',
-              color: '#28a745'
+              color: '#28a745',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem'
             }}
           >
-            <Printer size={16} />
+            <FileText size={16} />
+            <span style={{ fontSize: '12px', fontWeight: '500' }}>Ver Relatório</span>
           </button>
         </div>
       ),
@@ -241,42 +318,18 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
       </div>
 
       <div className="dashboard-body">
-        {/* Cards de Estatísticas - Indicadores Discretos */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon"><Building size={24} /></div>
-            <div className="stat-content">
-              <h3>Total de Organizações</h3>
-              <p className="stat-number">{stats?.total || 0}</p>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon"><MapPin size={24} /></div>
-            <div className="stat-content">
-              <h3>Com Localização GPS</h3>
-              <p className="stat-number">{stats?.comGps || 0}</p>
-              <small className="stat-percentage">
-                {stats?.total ? Math.round((stats.comGps / stats.total) * 100) : 0}% do total
-              </small>
-            </div>
-          </div>
-
-
-          <div className="stat-card">
-            <div className="stat-icon"><Clock size={24} /></div>
-            <div className="stat-content">
-              <h3>Pendentes</h3>
-              <p className="stat-number">{stats?.semQuestionario || 0}</p>
-            </div>
-          </div>
-        </div>
-
-
         {/* Organizações Recentes - DESTAQUE PRINCIPAL */}
         <div className="dashboard-card recentes-destaque">
           <div className="card-header-with-actions">
-            <h3><Clock3 size={18} style={{marginRight: '0.5rem'}} /> Organizações Recentes</h3>
+            <h3>
+              <Clock3 size={18} style={{marginRight: '0.5rem'}} /> 
+              Organizações Recentemente Cadastradas
+              {stats?.organizacoesRecentes && stats.organizacoesRecentes.length > 0 && (
+                <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: '#666', fontWeight: 'normal' }}>
+                  ({stats.organizacoesRecentes.length} {stats.organizacoesRecentes.length === 1 ? 'cadastro' : 'cadastros'})
+                </span>
+              )}
+            </h3>
             {stats?.organizacoesRecentes && stats.organizacoesRecentes.length > 3 && (
               <button
                 className="btn btn-secondary btn-sm"
@@ -301,12 +354,18 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
               <div className="organizacoes-datagrid-container">
                 <DataGrid<any>
                   columns={columns}
-                  dataSource={stats.organizacoesRecentes}
+                  dataSource={[...stats.organizacoesRecentes].sort((a, b) => b.id - a.id)}
                   rowKey="id"
                   pagination={{
-                    pageSize: 10,
-                    showSizeChanger: false,
+                    current: currentPage,
+                    pageSize: pageSize,
+                    total: stats.organizacoesRecentes.length,
+                    showSizeChanger: true,
                     showQuickJumper: false,
+                    onChange: (page: number, newPageSize: number) => {
+                      setCurrentPage(page);
+                      setPageSize(newPageSize);
+                    }
                   }}
                   emptyState={{
                     title: 'Nenhuma organização recente',
@@ -319,69 +378,67 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
                 />
               </div>
             ) : (
-              // Tabela reduzida com as 3 últimas organizações
+              // Preview com as 3 últimas organizações
               <div className="table-container">
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th style={{ width: '10%' }}>ID</th>
-                      <th style={{ width: '35%' }}>Nome</th>
-                      <th style={{ width: '25%' }}>Localização</th>
-                      <th style={{ width: '15%' }}>Data da Visita</th>
-                      <th style={{ width: '15%' }}>Ações</th>
+                      <th style={{ width: '8%', textAlign: 'center' }}>ID</th>
+                      <th style={{ width: '30%' }}>Nome</th>
+                      <th style={{ width: '18%' }}>Localização</th>
+                      <th style={{ width: '16%' }}>Técnico</th>
+                      <th style={{ width: '11%', textAlign: 'center' }}>Validação</th>
+                      <th style={{ width: '17%', textAlign: 'center' }}>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {stats.organizacoesRecentes.slice(0, 3).map((org) => (
+                    {[...stats.organizacoesRecentes].sort((a, b) => b.id - a.id).slice(0, 3).map((org) => (
                       <tr key={org.id}>
-                        <td>
-                          <span style={{ fontWeight: 'bold', color: '#666' }}>#{org.id}</span>
+                        <td style={{ textAlign: 'center' }}>
+                          <span style={{ fontWeight: '600', color: '#666', fontSize: '13px' }}>{org.id}</span>
                         </td>
                         <td>
-                          <div className="org-info">
-                            <strong>{org.nome}</strong>
-                            {org.temGps && (
-                              <span style={{ marginLeft: '8px', color: '#0f9d58' }} title="Tem localização GPS">
-                                <MapPin size={14} style={{ verticalAlign: 'middle' }} />
-                              </span>
+                          <span style={{ fontWeight: '500' }}>{org.nome || '-'}</span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '13px' }}>{org.localizacao || '-'}</span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                            {org.tecnico_nome ? (
+                              <>
+                                <User size={14} color="#666" />
+                                <span style={{ color: '#444', fontWeight: '500' }} title={org.tecnico_email || undefined}>
+                                  {org.tecnico_nome}
+                                </span>
+                              </>
+                            ) : (
+                              <span style={{ color: '#999', fontStyle: 'italic' }}>Sem técnico</span>
                             )}
                           </div>
                         </td>
-                        <td>
-                          {org.localizacao || '-'}
+                        <td style={{ textAlign: 'center' }}>
+                          <StatusValidacaoBadge status={org.validacao_status} showLabel={false} />
                         </td>
-                        <td>{org.dataVisita ? new Date(org.dataVisita).toLocaleDateString('pt-BR') : '-'}</td>
-                        <td>
-                          <div className="action-buttons" style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
+                        <td style={{ textAlign: 'center' }}>
+                          <div className="action-buttons" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                             <button
+                              onClick={() => gerarRelatorio(org.id, org.nome)}
                               className="btn-icon"
-                              onClick={() => onNavigate('detalhes', org.id)}
-                              title="Ver organização"
-                              style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#007bff' }}
-                            >
-                              <Eye size={16} />
-                            </button>
-                            <button
-                              className="btn-icon"
-                              onClick={() => onNavigate('edicao', org.id)}
-                              title="Editar organização"
-                              style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#007bff' }}
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              className="btn-icon"
-                              onClick={() => gerarTermoAdesao(org.id)}
-                              title="Imprimir Termo de Adesão"
+                              title="Gerar Relatório"
                               style={{
-                                padding: '0.25rem',
+                                padding: '0.4rem',
                                 border: 'none',
                                 background: 'transparent',
                                 cursor: 'pointer',
-                                color: '#28a745'
+                                color: '#28a745',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem'
                               }}
                             >
-                              <Printer size={16} />
+                              <FileText size={16} />
+                              <span style={{ fontSize: '12px', fontWeight: '500' }}>Ver Relatório</span>
                             </button>
                           </div>
                         </td>
@@ -413,7 +470,7 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
             </p>
             <MapaOrganizacoes
               organizacoes={stats.organizacoesComGps}
-              onOrganizacaoClick={(id) => onNavigate('detalhes', id)}
+              onGerarRelatorio={gerarRelatorio}
             />
           </div>
         )}

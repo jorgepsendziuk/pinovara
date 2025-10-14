@@ -387,25 +387,7 @@ const CaracteristicasAssociados: React.FC<CaracteristicasAssociadosProps> = ({
           <div className="subsection">
             <h4>
               Por Categoria e Gênero
-              <span className="status-badge" data-status={statusConsistencia.categorias}>
-                {renderStatusIcon(statusConsistencia.categorias)}
-                {totalizadores.totalPorCategorias} / {organizacao.caracteristicas_n_total_socios || 0}
-              </span>
             </h4>
-
-            {statusConsistencia.categorias === 'error' && (
-              <div className="alert alert-error">
-                <AlertCircle size={18} />
-                A soma das categorias ({totalizadores.totalPorCategorias}) excede o total de sócios ({organizacao.caracteristicas_n_total_socios})
-              </div>
-            )}
-
-            {statusConsistencia.categorias === 'warning' && (
-              <div className="alert alert-warning">
-                <AlertTriangle size={18} />
-                A soma das categorias ({totalizadores.totalPorCategorias}) é menor que o total de sócios ({organizacao.caracteristicas_n_total_socios})
-              </div>
-            )}
 
             <div className="categorias-table">
               <table>
@@ -580,25 +562,7 @@ const CaracteristicasAssociados: React.FC<CaracteristicasAssociadosProps> = ({
           <div className="subsection">
             <h4>
               Por Tipo de Produção (Sócios com CAF)
-              <span className="status-badge" data-status={statusConsistencia.producao}>
-                {renderStatusIcon(statusConsistencia.producao)}
-                {totalizadores.totalPorProducao} / {organizacao.caracteristicas_n_total_socios_caf || 0}
-              </span>
             </h4>
-
-            {statusConsistencia.producao === 'error' && (
-              <div className="alert alert-error">
-                <AlertCircle size={18} />
-                A soma dos tipos de produção ({totalizadores.totalPorProducao}) excede o total de sócios com CAF ({organizacao.caracteristicas_n_total_socios_caf})
-              </div>
-            )}
-
-            {statusConsistencia.producao === 'warning' && (
-              <div className="alert alert-warning">
-                <AlertTriangle size={18} />
-                A soma dos tipos de produção ({totalizadores.totalPorProducao}) é menor que o total de sócios com CAF ({organizacao.caracteristicas_n_total_socios_caf})
-              </div>
-            )}
 
             <div className="form-grid">
               <div className="form-field">

@@ -60,9 +60,31 @@ function Dashboard() {
       <div className="main-content">
         <main className="dashboard-main">
           <div className="container">
-            <div className="welcome-section">
-              <h2>Bem-vindo, {user.name}!</h2>
-              <p>Este é o dashboard do sistema PINOVARA.</p>
+            <div className="page-header">
+              <div className="header-content">
+                <h2>Dashboard do Usuário</h2>
+                <p>Gerencie suas informações e visualize seus dados</p>
+              </div>
+            </div>
+
+            {/* Card de acesso rápido ao perfil */}
+            <div className="quick-access-card">
+              <div className="card-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              <div className="card-content">
+                <h3>Meu Perfil</h3>
+                <p>Atualize suas informações pessoais, altere sua senha e gerencie suas preferências</p>
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => navigate('/perfil')}
+                >
+                  Acessar Perfil
+                </button>
+              </div>
             </div>
 
             <div className="user-details">

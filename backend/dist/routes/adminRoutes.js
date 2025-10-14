@@ -43,6 +43,7 @@ const adminController_1 = __importDefault(require("../controllers/adminControlle
 const analyticsController_1 = require("../controllers/analyticsController");
 const odkSyncController_1 = require("../controllers/odkSyncController");
 const migrate_id_tecnico_1 = require("../scripts/migrate-id-tecnico");
+const create_coordenador_role_1 = require("../scripts/create-coordenador-role");
 const router = (0, express_1.Router)();
 router.use(auth_1.authenticateToken);
 router.use(adminAuth_1.requireAdmin);
@@ -160,6 +161,30 @@ router.post('/migrate-id-tecnico', async (req, res) => {
             success: false,
             error: {
                 message: 'Erro ao executar migração',
+                details: error instanceof Error ? error.message : 'Erro desconhecido',
+                statusCode: 500
+            },
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+router.post('/create-coordenador-role', async (req, res) => {
+    try {
+        console.log('🚀 Iniciando criação de role coordenador...');
+        const result = await (0, create_coordenador_role_1.createCoordenadorRole)();
+        res.json({
+            success: true,
+            message: result.message,
+            data: result.details,
+            timestamp: new Date().toISOString()
+        });
+    }
+    catch (error) {
+        console.error('❌ [AdminRoutes] Erro ao criar coordenador:', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                message: 'Erro ao criar role coordenador',
                 details: error instanceof Error ? error.message : 'Erro desconhecido',
                 statusCode: 500
             },

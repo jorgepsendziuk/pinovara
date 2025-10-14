@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AbaAtiva } from '../../types/organizacao';
+import { useAuth } from '../../contexts/AuthContext';
 import { useOrganizacaoData } from '../../hooks/useOrganizacaoData';
 import { useRepresentanteData } from '../../hooks/useRepresentanteData';
 import { useDiagnosticoData } from '../../hooks/useDiagnosticoData';
@@ -15,6 +16,7 @@ import { PlanoGestao } from '../../components/organizacoes/PlanoGestao';
 import { UploadDocumentos } from '../../components/organizacoes/UploadDocumentos';
 import { UploadFotos } from '../../components/organizacoes/UploadFotos';
 import { DadosColeta } from '../../components/organizacoes/DadosColeta';
+import Validacao from '../../components/organizacoes/Validacao';
 import api from '../../services/api';
 import {
   Edit,
@@ -32,7 +34,9 @@ import {
   MapPin,
   Network,
   Wheat,
-  IdCard
+  IdCard,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
 import '../../styles/tabs.css';
 
@@ -42,6 +46,9 @@ interface EdicaoOrganizacaoProps {
 }
 
 function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps) {
+  
+  // Verificação de permissão
+  const { isCoordinator } = useAuth();
   
   // Estados principais
   const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('identificacao');
@@ -157,7 +164,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       setError(null);
       
       // Preparar dados completos
-      const dadosCompletos = {
+      const dadosBrutos = {
         ...organizacao,
         // Dados do representante
         representante_nome: dadosRepresentante.nome || null,
@@ -171,36 +178,34 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         representante_end_numero: dadosRepresentante.endNumero || null,
         representante_end_cep: dadosRepresentante.endCep || null,
         representante_funcao: dadosRepresentante.funcao || null,
-        // Dados de diagnóstico (converter respostas para número)
-        ...Object.fromEntries(
-          Object.entries(governancaOrganizacional).map(([key, value]) => {
-            const val = value.resposta || value.comentario || value.proposta;
-            // Se for campo de resposta e tiver valor, converter para número
-            if (key.endsWith('_resposta') && val !== null && val !== undefined && val !== '') {
-              return [key, parseInt(val) || null];
-            }
-            return [key, val];
-          })
-        ),
-        ...Object.fromEntries(
-          Object.entries(gestaoPessoas).map(([key, value]) => {
-            const val = value.resposta || value.comentario || value.proposta;
-            if (key.endsWith('_resposta') && val !== null && val !== undefined && val !== '') {
-              return [key, parseInt(val) || null];
-            }
-            return [key, val];
-          })
-        ),
-        ...Object.fromEntries(
-          Object.entries(gestaoFinanceira).map(([key, value]) => {
-            const val = value.resposta || value.comentario || value.proposta;
-            if (key.endsWith('_resposta') && val !== null && val !== undefined && val !== '') {
-              return [key, parseInt(val) || null];
-            }
-            return [key, val];
-          })
-        ),
       };
+
+      // Processar dados de diagnóstico - extrair apenas os valores corretos
+      const processarDiagnostico = (diagnostico: any) => {
+        const resultado: any = {};
+        Object.entries(diagnostico).forEach(([chave, valor]: [string, any]) => {
+          if (valor && typeof valor === 'object') {
+            resultado[chave] = valor.resposta || valor.comentario || valor.proposta || null;
+          }
+        });
+        return resultado;
+      };
+
+      // Adicionar dados de diagnóstico processados
+      Object.assign(dadosBrutos, processarDiagnostico(governancaOrganizacional));
+      Object.assign(dadosBrutos, processarDiagnostico(gestaoPessoas));
+      Object.assign(dadosBrutos, processarDiagnostico(gestaoFinanceira));
+
+      // Converter todos os campos de resposta para inteiro
+      const dadosCompletos = Object.fromEntries(
+        Object.entries(dadosBrutos).map(([key, value]) => {
+          // Se for campo de resposta e tiver valor string, converter para número
+          if (key.endsWith('_resposta') && typeof value === 'string' && value !== '') {
+            return [key, parseInt(value) || null];
+          }
+          return [key, value];
+        })
+      );
 
       const response = await api.put(`/organizacoes/${organizacao.id}`, dadosCompletos);
 
@@ -507,12 +512,76 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     </div>
   );
 
+  const renderAbaValidacao = () => (
+    <div className="aba-content">
+      <Validacao
+        organizacaoId={organizacaoId}
+        validacaoStatus={organizacao?.validacao_status || null}
+        validacaoUsuario={organizacao?.validacao_usuario || null}
+        validacaoData={organizacao?.validacao_data ? new Date(organizacao.validacao_data) : null}
+        validacaoObs={organizacao?.validacao_obs || null}
+        onUpdate={updateOrganizacao}
+      />
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="loading-container">
         <div className="loading-spinner">
           <Loader2 size={16} className="spinning" style={{marginRight: '0.5rem'}} />
           Carregando...
+        </div>
+      </div>
+    );
+  }
+
+  // Mensagem amigável para coordenadores
+  if (isCoordinator()) {
+    return (
+      <div style={{
+        maxWidth: '800px',
+        margin: '4rem auto',
+        padding: '3rem',
+        background: 'white',
+        borderRadius: '12px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          width: '80px',
+          height: '80px',
+          background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 2rem'
+        }}>
+          <AlertCircle size={40} color="white" />
+        </div>
+        <h2 style={{ color: '#374151', marginBottom: '1rem', fontSize: '1.5rem' }}>
+          Acesso Somente Leitura
+        </h2>
+        <p style={{ color: '#6b7280', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.6' }}>
+          Como <strong>coordenador</strong>, você pode visualizar todas as organizações e gerar relatórios, 
+          mas não tem permissão para criar ou editar cadastros.
+        </p>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => onNavigate('lista')} 
+            className="btn btn-primary"
+            style={{ padding: '0.75rem 2rem' }}
+          >
+            Ver Lista de Organizações
+          </button>
+          <button 
+            onClick={() => onNavigate('dashboard')} 
+            className="btn"
+            style={{ padding: '0.75rem 2rem', background: '#6b7280' }}
+          >
+            Ver Dashboard
+          </button>
         </div>
       </div>
     );
@@ -621,6 +690,13 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
           >
             <Target size={16} /> <span>Plano de Gestão</span>
           </button>
+          <button
+            className={`tab-button ${abaAtiva === 'validacao' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('validacao')}
+            title="Validação do Cadastro"
+          >
+            <CheckCircle size={16} /> <span>Validação</span>
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -632,6 +708,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
           {abaAtiva === 'producao' && renderAbaProducao()}
           {abaAtiva === 'diagnostico' && renderAbaDiagnostico()}
           {abaAtiva === 'planoGestao' && renderAbaPlanoGestao()}
+          {abaAtiva === 'validacao' && renderAbaValidacao()}
 
           {/* Form Actions - Botão Flutuante */}
           <div style={{

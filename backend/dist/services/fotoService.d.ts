@@ -16,11 +16,11 @@ export declare const fotoService: {
         creation_date: Date;
         last_update_uri_user: string | null;
         last_update_date: Date;
-        grupo: number | null;
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
         id_organizacao: number | null;
+        grupo: number | null;
         foto: string | null;
     }>;
     listByOrganizacao(organizacaoId: number): Promise<{
@@ -31,11 +31,11 @@ export declare const fotoService: {
         creation_date: Date;
         last_update_uri_user: string | null;
         last_update_date: Date;
-        grupo: number | null;
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
         id_organizacao: number | null;
+        grupo: number | null;
         foto: string | null;
     }[]>;
     findById(id: number): Promise<{
@@ -46,11 +46,11 @@ export declare const fotoService: {
         creation_date: Date;
         last_update_uri_user: string | null;
         last_update_date: Date;
-        grupo: number | null;
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
         id_organizacao: number | null;
+        grupo: number | null;
         foto: string | null;
     } | null>;
     update(id: number, data: UpdateFotoDTO): Promise<{
@@ -61,11 +61,11 @@ export declare const fotoService: {
         creation_date: Date;
         last_update_uri_user: string | null;
         last_update_date: Date;
-        grupo: number | null;
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
         id_organizacao: number | null;
+        grupo: number | null;
         foto: string | null;
     }>;
     delete(id: number): Promise<{
@@ -76,11 +76,11 @@ export declare const fotoService: {
         creation_date: Date;
         last_update_uri_user: string | null;
         last_update_date: Date;
-        grupo: number | null;
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
         id_organizacao: number | null;
+        grupo: number | null;
         foto: string | null;
     }>;
 };

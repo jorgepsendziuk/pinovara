@@ -23,8 +23,8 @@ export declare const documentoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        arquivo: string | null;
         id_organizacao: number | null;
+        arquivo: string | null;
     }>;
     findByOrganizacao(organizacaoId: number): Promise<{
         id: number;
@@ -37,8 +37,8 @@ export declare const documentoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        arquivo: string | null;
         id_organizacao: number | null;
+        arquivo: string | null;
     }[]>;
     findById(id: number): Promise<{
         id: number;
@@ -51,8 +51,8 @@ export declare const documentoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        arquivo: string | null;
         id_organizacao: number | null;
+        arquivo: string | null;
     } | null>;
     update(id: number, data: UpdateDocumentoDTO): Promise<{
         id: number;
@@ -65,8 +65,8 @@ export declare const documentoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        arquivo: string | null;
         id_organizacao: number | null;
+        arquivo: string | null;
     }>;
     delete(id: number): Promise<{
         id: number;
@@ -79,8 +79,8 @@ export declare const documentoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        arquivo: string | null;
         id_organizacao: number | null;
+        arquivo: string | null;
     }>;
     count(organizacaoId: number): Promise<number>;
 };

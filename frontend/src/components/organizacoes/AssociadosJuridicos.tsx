@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Loader2, Network, AlertCircle, CheckCircle } from 'lucide-react';
-import axios from 'axios';
+import api from '../../services/api';
 import './AssociadosJuridicos.css';
 
 interface AssociadoJuridico {
@@ -15,8 +15,6 @@ interface AssociadoJuridico {
 interface AssociadosJuridicosProps {
   organizacaoId: number;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 const TIPOS_RELACAO = [
   { value: 'federada', label: 'Federada' },
@@ -64,11 +62,11 @@ const AssociadosJuridicos: React.FC<AssociadosJuridicosProps> = ({
     setLoading(true);
     setErro(null);
     try {
-      const response = await axios.get(`${API_BASE_URL}/organizacoes/${organizacaoId}/associados-juridicos`);
-      setItems(response.data);
+      const response = await api.get(`/organizacoes/${organizacaoId}/associados-juridicos`);
+      setItems(response.data.data || response.data || []);
     } catch (error: any) {
       console.error('Erro ao carregar associados jurídicos:', error);
-      setErro(error.response?.data?.error || 'Erro ao carregar dados');
+      setErro(error.response?.data?.error?.message || 'Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
@@ -167,15 +165,15 @@ const AssociadosJuridicos: React.FC<AssociadosJuridicosProps> = ({
     try {
       if (editando) {
         // Atualizar
-        await axios.put(
-          `${API_BASE_URL}/organizacoes/${organizacaoId}/associados-juridicos/${editando}`,
+        await api.put(
+          `/organizacoes/${organizacaoId}/associados-juridicos/${editando}`,
           formData
         );
         setSucesso('Organização atualizada com sucesso!');
       } else {
         // Adicionar
-        await axios.post(
-          `${API_BASE_URL}/organizacoes/${organizacaoId}/associados-juridicos`,
+        await api.post(
+          `/organizacoes/${organizacaoId}/associados-juridicos`,
           formData
         );
         setSucesso('Organização adicionada com sucesso!');
@@ -187,7 +185,7 @@ const AssociadosJuridicos: React.FC<AssociadosJuridicosProps> = ({
       setTimeout(() => setSucesso(null), 3000);
     } catch (error: any) {
       console.error('Erro ao salvar:', error);
-      setErro(error.response?.data?.error || 'Erro ao salvar dados');
+      setErro(error.response?.data?.error?.message || 'Erro ao salvar dados');
     } finally {
       setSalvando(false);
     }
@@ -202,13 +200,13 @@ const AssociadosJuridicos: React.FC<AssociadosJuridicosProps> = ({
     setErro(null);
 
     try {
-      await axios.delete(`${API_BASE_URL}/organizacoes/${organizacaoId}/associados-juridicos/${id}`);
+      await api.delete(`/organizacoes/${organizacaoId}/associados-juridicos/${id}`);
       setSucesso('Organização excluída com sucesso!');
       await carregarDados();
       setTimeout(() => setSucesso(null), 3000);
     } catch (error: any) {
       console.error('Erro ao excluir:', error);
-      setErro(error.response?.data?.error || 'Erro ao excluir');
+      setErro(error.response?.data?.error?.message || 'Erro ao excluir');
     } finally {
       setSalvando(false);
     }

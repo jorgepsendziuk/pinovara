@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import VersionIndicator from '../components/VersionIndicator';
@@ -14,6 +14,22 @@ function Landing() {
     images: [] as string[],
     currentIndex: 0
   });
+
+  // Estado para o menu mobile
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Estado para detectar se o usuário rolou a página (para adicionar sombra no header)
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Detectar scroll para adicionar sombra no header
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Handler para abrir o modal
   const openModal = (images: string[], index: number) => {
@@ -32,7 +48,12 @@ function Landing() {
     }));
   };
 
-  // Função para scroll suave para as seções
+  // Handler para toggle do menu mobile
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(prev => !prev);
+  };
+
+  // Função para scroll suave para as seções e fechar o menu mobile
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -40,6 +61,8 @@ function Landing() {
         behavior: 'smooth',
         block: 'start'
       });
+      // Fechar menu mobile após clicar em um item
+      setIsMobileMenuOpen(false);
     }
   };
 
@@ -48,14 +71,28 @@ function Landing() {
       {/* Indicador de versão discreto */}
       <VersionIndicator position="top-right" theme="auto" />
       
-      <header className="landing-header">
+      <header className={`landing-header ${isScrolled ? 'scrolled' : ''}`}>
         <div className="container">
-          <div className="brand">
+          <div className="brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
             <h1 className="brand-title">PINOVARA</h1>
             <p className="brand-subtitle">Pesquisa Inovadora em Gestão do Programa Nacional da Reforma Agrária</p>
           </div>
 
-          <nav className="nav">
+          {/* Botão Hamburger para Mobile */}
+          <button 
+            className="mobile-menu-toggle"
+            onClick={toggleMobileMenu}
+            aria-label="Menu de navegação"
+            aria-expanded={isMobileMenuOpen}
+          >
+            <span className={`hamburger ${isMobileMenuOpen ? 'active' : ''}`}>
+              <span className="line"></span>
+              <span className="line"></span>
+              <span className="line"></span>
+            </span>
+          </button>
+
+          <nav className={`nav ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
             <div className="nav-menu">
               <button
                 className="nav-link"
@@ -89,7 +126,10 @@ function Landing() {
                   <span className="user-greeting">Olá, {user.name}</span>
                   <button 
                     className="nav-btn nav-btn-primary"
-                    onClick={() => navigate('/pinovara')}
+                    onClick={() => {
+                      navigate('/pinovara');
+                      setIsMobileMenuOpen(false);
+                    }}
                   >
                     Acessar Sistema
                   </button>
@@ -98,13 +138,19 @@ function Landing() {
                 <div className="auth-nav">
                   <button 
                     className="nav-btn nav-btn-outline"
-                    onClick={() => navigate('/login')}
+                    onClick={() => {
+                      navigate('/login');
+                      setIsMobileMenuOpen(false);
+                    }}
                   >
                     Entrar
                   </button>
                   <button 
                     className="nav-btn nav-btn-success"
-                    onClick={() => navigate('/register')}
+                    onClick={() => {
+                      navigate('/register');
+                      setIsMobileMenuOpen(false);
+                    }}
                   >
                     Cadastrar
                   </button>

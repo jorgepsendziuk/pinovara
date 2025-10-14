@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Loader2, Wheat, AlertCircle, CheckCircle } from 'lucide-react';
-import axios from 'axios';
+import api from '../../services/api';
 import './DadosProducao.css';
 
 interface Producao {
@@ -16,8 +16,6 @@ interface Producao {
 interface DadosProducaoProps {
   organizacaoId: number;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 const UNIDADES_MEDIDA = [
   { value: 'kg', label: 'Quilograma (kg)' },
@@ -77,11 +75,11 @@ const DadosProducao: React.FC<DadosProducaoProps> = ({ organizacaoId }) => {
     setLoading(true);
     setErro(null);
     try {
-      const response = await axios.get(`${API_BASE_URL}/organizacoes/${organizacaoId}/producao`);
-      setItems(response.data);
+      const response = await api.get(`/organizacoes/${organizacaoId}/producao`);
+      setItems(response.data.data || response.data || []);
     } catch (error: any) {
       console.error('Erro ao carregar dados de produção:', error);
-      setErro(error.response?.data?.error || 'Erro ao carregar dados');
+      setErro(error.response?.data?.error?.message || 'Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
@@ -163,14 +161,14 @@ const DadosProducao: React.FC<DadosProducaoProps> = ({ organizacaoId }) => {
 
     try {
       if (editando) {
-        await axios.put(
-          `${API_BASE_URL}/organizacoes/${organizacaoId}/producao/${editando}`,
+        await api.put(
+          `/organizacoes/${organizacaoId}/producao/${editando}`,
           formData
         );
         setSucesso('Cultura atualizada com sucesso!');
       } else {
-        await axios.post(
-          `${API_BASE_URL}/organizacoes/${organizacaoId}/producao`,
+        await api.post(
+          `/organizacoes/${organizacaoId}/producao`,
           formData
         );
         setSucesso('Cultura adicionada com sucesso!');
@@ -182,7 +180,7 @@ const DadosProducao: React.FC<DadosProducaoProps> = ({ organizacaoId }) => {
       setTimeout(() => setSucesso(null), 3000);
     } catch (error: any) {
       console.error('Erro ao salvar:', error);
-      setErro(error.response?.data?.error || 'Erro ao salvar dados');
+      setErro(error.response?.data?.error?.message || 'Erro ao salvar dados');
     } finally {
       setSalvando(false);
     }
@@ -197,13 +195,13 @@ const DadosProducao: React.FC<DadosProducaoProps> = ({ organizacaoId }) => {
     setErro(null);
 
     try {
-      await axios.delete(`${API_BASE_URL}/organizacoes/${organizacaoId}/producao/${id}`);
+      await api.delete(`/organizacoes/${organizacaoId}/producao/${id}`);
       setSucesso('Cultura excluída com sucesso!');
       await carregarDados();
       setTimeout(() => setSucesso(null), 3000);
     } catch (error: any) {
       console.error('Erro ao excluir:', error);
-      setErro(error.response?.data?.error || 'Erro ao excluir');
+      setErro(error.response?.data?.error?.message || 'Erro ao excluir');
     } finally {
       setSalvando(false);
     }
