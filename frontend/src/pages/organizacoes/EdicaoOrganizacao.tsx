@@ -207,6 +207,14 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         })
       );
 
+      console.log('Dados sendo enviados:', dadosCompletos);
+      console.log('Campos de validação:', {
+        validacao_status: dadosCompletos.validacao_status,
+        validacao_usuario: dadosCompletos.validacao_usuario,
+        validacao_data: dadosCompletos.validacao_data,
+        validacao_obs: dadosCompletos.validacao_obs
+      });
+
       const response = await api.put(`/organizacoes/${organizacao.id}`, dadosCompletos);
 
       if (!response.data.success) {
