@@ -36,6 +36,7 @@ export function IndicadoresAtividade({
   const [loading, setLoading] = useState(false);
   const isAberto = accordionAberto === 'indicadores';
 
+
   useEffect(() => {
     if (isAberto) {
       loadIndicadores();
@@ -47,7 +48,7 @@ export function IndicadoresAtividade({
       setLoading(true);
       const response = await api.get(`/organizacoes/${organizacaoId}/indicadores`);
       if (response.data.success && Array.isArray(response.data.data)) {
-        const ids = response.data.data.map((ind: any) => ind.id_indicador);
+        const ids = response.data.data.map((ind: any) => ind.valor);
         setIndicadoresSelecionados(ids);
       }
     } catch (error) {

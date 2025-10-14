@@ -55,7 +55,55 @@ exports.relatorioService = {
                     organizacao_arquivo: {
                         orderBy: { ordinal_number: 'asc' }
                     },
-                    organizacao_participante: true
+                    organizacao_participante: true,
+                    organizacao_indicador: true,
+                    organizacao_producao: true,
+                    organizacao_abrangencia_socio: true,
+                    organizacao_abrangencia_pj: true,
+                    descricao: true,
+                    eixos_trabalhados: true,
+                    enfase: true,
+                    enfase_outros: true,
+                    metodologia: true,
+                    orientacoes: true,
+                    obs: true,
+                    assinatura_rep_legal: true,
+                    participantes_menos_10: true,
+                    caracteristicas_n_total_socios: true,
+                    caracteristicas_n_total_socios_caf: true,
+                    caracteristicas_n_distintos_caf: true,
+                    caracteristicas_n_ativos_total: true,
+                    caracteristicas_n_ativos_caf: true,
+                    caracteristicas_n_naosocio_op_total: true,
+                    caracteristicas_n_naosocio_op_caf: true,
+                    caracteristicas_n_ingressaram_total_12_meses: true,
+                    caracteristicas_n_ingressaram_caf_12_meses: true,
+                    caracteristicas_n_socios_paa: true,
+                    caracteristicas_n_naosocios_paa: true,
+                    caracteristicas_n_socios_pnae: true,
+                    caracteristicas_n_naosocios_pnae: true,
+                    caracteristicas_ta_af_homem: true,
+                    caracteristicas_ta_af_mulher: true,
+                    caracteristicas_ta_a_homem: true,
+                    caracteristicas_ta_a_mulher: true,
+                    caracteristicas_ta_p_homem: true,
+                    caracteristicas_ta_p_mulher: true,
+                    caracteristicas_ta_i_homem: true,
+                    caracteristicas_ta_i_mulher: true,
+                    caracteristicas_ta_q_homem: true,
+                    caracteristicas_ta_q_mulher: true,
+                    caracteristicas_ta_e_homem: true,
+                    caracteristicas_ta_e_mulher: true,
+                    caracteristicas_ta_o_homem: true,
+                    caracteristicas_ta_o_mulher: true,
+                    caracteristicas_ta_caf_organico: true,
+                    caracteristicas_ta_caf_agroecologico: true,
+                    caracteristicas_ta_caf_transicao: true,
+                    caracteristicas_ta_caf_convencional: true,
+                    sim_nao_file: true,
+                    sim_nao_producao: true,
+                    sim_nao_socio: true,
+                    sim_nao_pj: true
                 }
             });
             if (!organizacao) {
@@ -258,6 +306,266 @@ exports.relatorioService = {
                         doc.fontSize(9).fillColor('#000');
                     }
                     doc.moveDown(0.5);
+                });
+                doc.moveDown(1);
+            }
+            if (organizacao.caracteristicas_n_total_socios ||
+                organizacao.caracteristicas_n_total_socios_caf ||
+                organizacao.caracteristicas_n_distintos_caf) {
+                if (doc.y > 600) {
+                    doc.addPage();
+                }
+                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+                    .text('CARACTERÍSTICAS DOS ASSOCIADOS', 50, doc.y);
+                doc.moveDown(0.5);
+                const tabelaCaracteristicas = [];
+                if (organizacao.caracteristicas_n_total_socios) {
+                    tabelaCaracteristicas.push(['Total de Sócios:', String(organizacao.caracteristicas_n_total_socios)]);
+                }
+                if (organizacao.caracteristicas_n_total_socios_caf) {
+                    tabelaCaracteristicas.push(['Sócios com CAF:', String(organizacao.caracteristicas_n_total_socios_caf)]);
+                }
+                if (organizacao.caracteristicas_n_distintos_caf) {
+                    tabelaCaracteristicas.push(['CAF Distintos:', String(organizacao.caracteristicas_n_distintos_caf)]);
+                }
+                if (organizacao.caracteristicas_n_ativos_total) {
+                    tabelaCaracteristicas.push(['Sócios Ativos (Total):', String(organizacao.caracteristicas_n_ativos_total)]);
+                }
+                if (organizacao.caracteristicas_n_ativos_caf) {
+                    tabelaCaracteristicas.push(['Sócios Ativos (CAF):', String(organizacao.caracteristicas_n_ativos_caf)]);
+                }
+                if (organizacao.caracteristicas_n_ingressaram_total_12_meses) {
+                    tabelaCaracteristicas.push(['Novos Sócios (12 meses):', String(organizacao.caracteristicas_n_ingressaram_total_12_meses)]);
+                }
+                if (organizacao.caracteristicas_n_ingressaram_caf_12_meses) {
+                    tabelaCaracteristicas.push(['Novos Sócios CAF (12 meses):', String(organizacao.caracteristicas_n_ingressaram_caf_12_meses)]);
+                }
+                if (organizacao.caracteristicas_n_socios_paa) {
+                    tabelaCaracteristicas.push(['Sócios PAA:', String(organizacao.caracteristicas_n_socios_paa)]);
+                }
+                if (organizacao.caracteristicas_n_socios_pnae) {
+                    tabelaCaracteristicas.push(['Sócios PNAE:', String(organizacao.caracteristicas_n_socios_pnae)]);
+                }
+                criarTabela2Colunas(tabelaCaracteristicas);
+                if (doc.y > 650) {
+                    doc.addPage();
+                }
+                doc.moveDown(0.5);
+                doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
+                    .text('DISTRIBUIÇÃO POR CATEGORIA E GÊNERO', 50, doc.y);
+                doc.moveDown(0.3);
+                const categorias = [
+                    { nome: 'Agricultura Familiar', campo: 'caracteristicas_ta_af' },
+                    { nome: 'Assentado', campo: 'caracteristicas_ta_a' },
+                    { nome: 'Pescador', campo: 'caracteristicas_ta_p' },
+                    { nome: 'Indígena', campo: 'caracteristicas_ta_i' },
+                    { nome: 'Quilombola', campo: 'caracteristicas_ta_q' },
+                    { nome: 'Extrativista', campo: 'caracteristicas_ta_e' },
+                    { nome: 'Outro', campo: 'caracteristicas_ta_o' }
+                ];
+                categorias.forEach(cat => {
+                    const homem = organizacao[`${cat.campo}_homem`] || 0;
+                    const mulher = organizacao[`${cat.campo}_mulher`] || 0;
+                    const total = homem + mulher;
+                    if (total > 0) {
+                        doc.font('Helvetica').fontSize(9).fillColor('#000')
+                            .text(`${cat.nome}: ${total} (${homem}H / ${mulher}M)`, 70, doc.y);
+                        doc.moveDown(0.3);
+                    }
+                });
+                doc.moveDown(0.3);
+                doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
+                    .text('TIPOS DE PRODUÇÃO', 50, doc.y);
+                doc.moveDown(0.3);
+                const tiposProducao = [
+                    { nome: 'Orgânico', campo: 'caracteristicas_ta_caf_organico' },
+                    { nome: 'Agroecológico', campo: 'caracteristicas_ta_caf_agroecologico' },
+                    { nome: 'Transição', campo: 'caracteristicas_ta_caf_transicao' },
+                    { nome: 'Convencional', campo: 'caracteristicas_ta_caf_convencional' }
+                ];
+                tiposProducao.forEach(tipo => {
+                    const valor = organizacao[tipo.campo] || 0;
+                    if (valor > 0) {
+                        doc.font('Helvetica').fontSize(9).fillColor('#000')
+                            .text(`${tipo.nome}: ${valor}`, 70, doc.y);
+                        doc.moveDown(0.3);
+                    }
+                });
+            }
+            if (organizacao.organizacao_producao && organizacao.organizacao_producao.length > 0) {
+                if (doc.y > 600) {
+                    doc.addPage();
+                }
+                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+                    .text('DADOS DE PRODUÇÃO', 50, doc.y);
+                doc.moveDown(0.5);
+                doc.font('Helvetica').fontSize(9).fillColor('#000');
+                organizacao.organizacao_producao.forEach((producao, index) => {
+                    doc.font('Helvetica-Bold')
+                        .text(`${index + 1}. ${producao.cultura}`, 50, doc.y);
+                    doc.font('Helvetica')
+                        .text(`   Mensal: ${producao.mensal}kg | Anual: ${producao.anual}kg`, 70, doc.y + 12);
+                    doc.moveDown(1);
+                });
+            }
+            if (organizacao.organizacao_abrangencia_socio && organizacao.organizacao_abrangencia_socio.length > 0) {
+                if (doc.y > 600) {
+                    doc.addPage();
+                }
+                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+                    .text('ABRANGÊNCIA GEOGRÁFICA DOS SÓCIOS', 50, doc.y);
+                doc.moveDown(0.5);
+                doc.font('Helvetica').fontSize(9).fillColor('#000');
+                organizacao.organizacao_abrangencia_socio.forEach((abrangencia, index) => {
+                    doc.text(`${index + 1}. ${abrangencia.municipio?.descricao || 'Município não informado'} - ${abrangencia.num_socios} sócios`, 50, doc.y);
+                    doc.moveDown(0.3);
+                });
+            }
+            if (organizacao.organizacao_abrangencia_pj && organizacao.organizacao_abrangencia_pj.length > 0) {
+                if (doc.y > 600) {
+                    doc.addPage();
+                }
+                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+                    .text('ASSOCIADOS PESSOA JURÍDICA', 50, doc.y);
+                doc.moveDown(0.5);
+                doc.font('Helvetica').fontSize(9).fillColor('#000');
+                organizacao.organizacao_abrangencia_pj.forEach((pj, index) => {
+                    doc.font('Helvetica-Bold')
+                        .text(`${index + 1}. ${pj.razao_social || pj.cnpj_pj}`, 50, doc.y);
+                    doc.font('Helvetica')
+                        .text(`   CNPJ: ${pj.cnpj_pj} | Sócios: ${pj.num_socios_total} (${pj.num_socios_caf} CAF)`, 70, doc.y + 12);
+                    doc.moveDown(0.8);
+                });
+            }
+            if (organizacao.descricao) {
+                if (doc.y > 600) {
+                    doc.addPage();
+                }
+                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+                    .text('DESCRIÇÃO GERAL DO EMPREENDIMENTO', 50, doc.y);
+                doc.moveDown(0.5);
+                doc.font('Helvetica').fontSize(10).fillColor('#000')
+                    .text(organizacao.descricao, 50, doc.y, {
+                    width: doc.page.width - 100,
+                    align: 'justify'
+                });
+                doc.moveDown(1);
+            }
+            if (organizacao.eixos_trabalhados || organizacao.metodologia || organizacao.orientacoes) {
+                if (doc.y > 550) {
+                    doc.addPage();
+                }
+                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+                    .text('ORIENTAÇÕES TÉCNICAS DA ATIVIDADE', 50, doc.y);
+                doc.moveDown(0.5);
+                const tabelaOrientacoes = [];
+                if (organizacao.eixos_trabalhados) {
+                    tabelaOrientacoes.push(['Eixos Trabalhados:', organizacao.eixos_trabalhados]);
+                }
+                const enfaseMap = {
+                    1: 'PNAE',
+                    2: 'PAA Leite',
+                    3: 'Crédito do INCRA',
+                    4: 'Governos',
+                    5: 'Redes de Cooperação e/ou Comercialização'
+                };
+                if (organizacao.enfase) {
+                    const enfaseTexto = enfaseMap[organizacao.enfase] ||
+                        (organizacao.enfase === 99 && organizacao.enfase_outros ? organizacao.enfase_outros : 'Outro');
+                    tabelaOrientacoes.push(['Ênfase:', enfaseTexto]);
+                }
+                criarTabela2Colunas(tabelaOrientacoes);
+                if (organizacao.metodologia) {
+                    doc.moveDown(0.5);
+                    doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
+                        .text('Metodologia Utilizada:', 50, doc.y);
+                    doc.moveDown(0.3);
+                    doc.font('Helvetica').fontSize(9).fillColor('#000')
+                        .text(organizacao.metodologia, 70, doc.y, {
+                        width: doc.page.width - 140,
+                        align: 'justify'
+                    });
+                }
+                if (organizacao.orientacoes) {
+                    doc.moveDown(0.5);
+                    doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
+                        .text('Orientações e Soluções Técnicas:', 50, doc.y);
+                    doc.moveDown(0.3);
+                    doc.font('Helvetica').fontSize(9).fillColor('#000')
+                        .text(organizacao.orientacoes, 70, doc.y, {
+                        width: doc.page.width - 140,
+                        align: 'justify'
+                    });
+                }
+            }
+            if (organizacao.organizacao_indicador && organizacao.organizacao_indicador.length > 0) {
+                if (doc.y > 600) {
+                    doc.addPage();
+                }
+                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+                    .text('INDICADORES DA ATIVIDADE', 50, doc.y);
+                doc.moveDown(0.5);
+                const indicadoresMap = {
+                    1: 'Conformidade documental e regularidade do empreendimento',
+                    2: 'Práticas de tomada de decisão',
+                    3: 'Políticas públicas de apoio à produção e comercialização',
+                    4: 'Associados com acesso às políticas públicas',
+                    5: 'Participação dos associados no empreendimento',
+                    6: 'Participação de mulheres na gestão',
+                    7: 'Capacitação de gestores',
+                    8: 'Capacitação de associados',
+                    9: 'Geração de Empregos Diretos',
+                    10: 'Controles econômicos',
+                    11: 'Negócios institucionais',
+                    12: 'Inovação no empreendimento',
+                    13: 'Adoção de tecnologias referenciais',
+                    14: 'Práticas sustentáveis no empreendimento',
+                    15: 'Programa ou ações ambientais comunitárias',
+                    16: 'Prática de proteção de nascentes e/ou uso racional de recursos hídricos'
+                };
+                doc.font('Helvetica').fontSize(9).fillColor('#000');
+                organizacao.organizacao_indicador.forEach((indicador, index) => {
+                    const descricao = indicadoresMap[indicador.valor] || `Indicador ${indicador.valor}`;
+                    doc.text(`${index + 1}. ${descricao}`, 50, doc.y);
+                    doc.moveDown(0.3);
+                });
+            }
+            if (organizacao.participantes_menos_10 === 1 && organizacao.organizacao_participante && organizacao.organizacao_participante.length > 0) {
+                if (doc.y > 600) {
+                    doc.addPage();
+                }
+                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+                    .text('PARTICIPANTES DA ATIVIDADE', 50, doc.y);
+                doc.moveDown(0.5);
+                doc.font('Helvetica').fontSize(9).fillColor('#000');
+                organizacao.organizacao_participante.forEach((participante, index) => {
+                    doc.font('Helvetica-Bold')
+                        .text(`${index + 1}. ${participante.nome}`, 50, doc.y);
+                    doc.font('Helvetica')
+                        .text(`   CPF: ${participante.cpf} | Telefone: ${participante.telefone}`, 70, doc.y + 12);
+                    const relacaoMap = {
+                        1: 'Diretor',
+                        2: 'Conselheiro Fiscal',
+                        3: 'Associado',
+                        4: 'Colaborador'
+                    };
+                    const relacaoTexto = relacaoMap[participante.relacao] ||
+                        (participante.relacao === 99 && participante.relacao_outros ? participante.relacao_outros : 'Outro');
+                    doc.text(`   Relação: ${relacaoTexto}`, 70, doc.y + 24);
+                    doc.moveDown(1.5);
+                });
+            }
+            if (organizacao.obs) {
+                if (doc.y > 600) {
+                    doc.addPage();
+                }
+                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+                    .text('OBSERVAÇÕES FINAIS', 50, doc.y);
+                doc.moveDown(0.5);
+                doc.font('Helvetica').fontSize(10).fillColor('#000')
+                    .text(organizacao.obs, 50, doc.y, {
+                    width: doc.page.width - 100,
+                    align: 'justify'
                 });
                 doc.moveDown(1);
             }
