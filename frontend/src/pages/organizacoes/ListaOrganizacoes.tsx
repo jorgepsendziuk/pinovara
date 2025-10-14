@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PDFService, OrganizacaoData } from '../../services/pdfService';
 import { DataGrid, DataGridColumn } from '../../components/DataGrid';
+import { StatusValidacaoBadge } from '../../utils/validacaoHelpers';
 import {
   Edit,
   Trash,
@@ -31,6 +32,7 @@ interface Organizacao {
   meta_instance_id?: string | null;
   tecnico_nome?: string | null;
   tecnico_email?: string | null;
+  validacao_status?: number | null;
 }
 
 
@@ -39,7 +41,7 @@ interface ListaOrganizacoesProps {
 }
 
 function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
-  const { } = useAuth();
+  const { isCoordinator } = useAuth();
   const [organizacoes, setOrganizacoes] = useState<Organizacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [gerandoPDF, setGerandoPDF] = useState<number | null>(null);
@@ -345,6 +347,16 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       ),
     },
     {
+      key: 'validacao',
+      title: 'Validação',
+      dataIndex: 'validacao_status',
+      width: '10%',
+      align: 'center',
+      render: (validacao_status: number | null) => (
+        <StatusValidacaoBadge status={validacao_status} showLabel={false} />
+      ),
+    },
+    {
       key: 'contato',
       title: 'Contato',
       dataIndex: 'telefone',
@@ -404,31 +416,33 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       align: 'center',
       render: (_, record: Organizacao) => (
         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => onNavigate('edicao', record.id)}
-            title="Editar organização"
-            style={{ 
-              padding: '6px 8px', 
-              border: '1px solid #007bff', 
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer', 
-              color: '#007bff',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#007bff';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#007bff';
-            }}
-          >
-            <Edit size={14} />
-          </button>
+          {!isCoordinator() && (
+            <button
+              onClick={() => onNavigate('edicao', record.id)}
+              title="Editar organização"
+              style={{ 
+                padding: '6px 8px', 
+                border: '1px solid #007bff', 
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer', 
+                color: '#007bff',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#007bff';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#007bff';
+              }}
+            >
+              <Edit size={14} />
+            </button>
+          )}
           <button
             onClick={() => gerarRelatorio(record.id, record.nome)}
             title="Gerar Relatório Completo"
@@ -490,31 +504,33 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           >
             <Printer size={14} />
           </button>
-          <button
-            onClick={() => handleExcluir(record.id)}
-            title="Excluir organização"
-            style={{ 
-              padding: '6px 8px', 
-              border: '1px solid #dc3545', 
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer', 
-              color: '#dc3545',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#dc3545';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#dc3545';
-            }}
-          >
-            <Trash size={14} />
-          </button>
+          {!isCoordinator() && (
+            <button
+              onClick={() => handleExcluir(record.id)}
+              title="Excluir organização"
+              style={{ 
+                padding: '6px 8px', 
+                border: '1px solid #dc3545', 
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer', 
+                color: '#dc3545',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#dc3545';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#dc3545';
+              }}
+            >
+              <Trash size={14} />
+            </button>
+          )}
         </div>
       ),
     },
@@ -543,12 +559,14 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           <h2>Lista de Organizações</h2>
         </div>
         <div className="header-actions">
-          <button
-            onClick={() => onNavigate('cadastro')}
-            className="btn btn-primary"
-          >
-            + Nova Organização
-          </button>
+          {!isCoordinator() && (
+            <button
+              onClick={() => onNavigate('cadastro')}
+              className="btn btn-primary"
+            >
+              + Nova Organização
+            </button>
+          )}
         </div>
       </div>
 

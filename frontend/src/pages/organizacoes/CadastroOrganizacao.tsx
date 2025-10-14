@@ -47,7 +47,58 @@ interface CadastroOrganizacaoProps {
 type AbaAtiva = 'basicos' | 'endereco' | 'representante' | 'caracteristicas' | 'questionarios';
 
 function CadastroOrganizacao({ onNavigate }: CadastroOrganizacaoProps) {
-  const { user } = useAuth();
+  const { user, isCoordinator } = useAuth();
+  
+  // Mensagem para coordenadores
+  if (isCoordinator()) {
+    return (
+      <div style={{
+        maxWidth: '800px',
+        margin: '4rem auto',
+        padding: '3rem',
+        background: 'white',
+        borderRadius: '12px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          width: '80px',
+          height: '80px',
+          background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 2rem'
+        }}>
+          <Plus size={40} color="white" style={{ opacity: 0.7 }} />
+        </div>
+        <h2 style={{ color: '#374151', marginBottom: '1rem', fontSize: '1.5rem' }}>
+          Acesso Restrito
+        </h2>
+        <p style={{ color: '#6b7280', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.6' }}>
+          Como <strong>coordenador</strong>, você pode visualizar e gerar relatórios de todas as organizações, 
+          mas não tem permissão para criar novos cadastros.
+        </p>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => onNavigate('lista')} 
+            className="btn btn-primary"
+            style={{ padding: '0.75rem 2rem' }}
+          >
+            Ver Lista de Organizações
+          </button>
+          <button 
+            onClick={() => onNavigate('dashboard')} 
+            className="btn"
+            style={{ padding: '0.75rem 2rem', background: '#6b7280', color: 'white', border: 'none' }}
+          >
+            Ver Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
   const [loading, setLoading] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('basicos');
   const [erros, setErros] = useState<Record<string, string>>({});

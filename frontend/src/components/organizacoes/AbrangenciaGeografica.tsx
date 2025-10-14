@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Loader2, MapPin, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
-import axios from 'axios';
+import api from '../../services/api';
 import './AbrangenciaGeografica.css';
 
 interface Estado {
@@ -27,8 +27,6 @@ interface AbrangenciaGeograficaProps {
   organizacaoId: number;
   nTotalSocios?: number | null;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
   organizacaoId,
@@ -68,8 +66,8 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
 
   const carregarEstados = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/estados`);
-      setEstados(response.data);
+      const response = await api.get('/organizacoes/estados');
+      setEstados(response.data.data || response.data);
     } catch (error) {
       console.error('Erro ao carregar estados:', error);
       setErro('Erro ao carregar estados');
@@ -81,10 +79,8 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
     
     setLoadingMunicipios(prev => ({ ...prev, [estadoId]: true }));
     try {
-      const response = await axios.get(`${API_BASE_URL}/municipios`, {
-        params: { estadoId }
-      });
-      setMunicipiosPorEstado(prev => ({ ...prev, [estadoId]: response.data }));
+      const response = await api.get(`/organizacoes/municipios/${estadoId}`);
+      setMunicipiosPorEstado(prev => ({ ...prev, [estadoId]: response.data.data || response.data }));
     } catch (error) {
       console.error('Erro ao carregar municípios:', error);
     } finally {
@@ -96,11 +92,11 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
     setLoading(true);
     setErro(null);
     try {
-      const response = await axios.get(`${API_BASE_URL}/organizacoes/${organizacaoId}/abrangencia-socios`);
-      setItems(response.data);
+      const response = await api.get(`/organizacoes/${organizacaoId}/abrangencia-socios`);
+      setItems(response.data.data || response.data || []);
     } catch (error: any) {
       console.error('Erro ao carregar abrangência geográfica:', error);
-      setErro(error.response?.data?.error || 'Erro ao carregar dados');
+      setErro(error.response?.data?.error?.message || 'Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
@@ -178,15 +174,15 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
     try {
       if (editando) {
         // Atualizar
-        await axios.put(
-          `${API_BASE_URL}/organizacoes/${organizacaoId}/abrangencia-socios/${editando}`,
+        await api.put(
+          `/organizacoes/${organizacaoId}/abrangencia-socios/${editando}`,
           formData
         );
         setSucesso('Município atualizado com sucesso!');
       } else {
         // Adicionar
-        await axios.post(
-          `${API_BASE_URL}/organizacoes/${organizacaoId}/abrangencia-socios`,
+        await api.post(
+          `/organizacoes/${organizacaoId}/abrangencia-socios`,
           formData
         );
         setSucesso('Município adicionado com sucesso!');
@@ -198,7 +194,7 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
       setTimeout(() => setSucesso(null), 3000);
     } catch (error: any) {
       console.error('Erro ao salvar:', error);
-      setErro(error.response?.data?.error || 'Erro ao salvar dados');
+      setErro(error.response?.data?.error?.message || 'Erro ao salvar dados');
     } finally {
       setSalvando(false);
     }
@@ -213,13 +209,13 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
     setErro(null);
 
     try {
-      await axios.delete(`${API_BASE_URL}/organizacoes/${organizacaoId}/abrangencia-socios/${id}`);
+      await api.delete(`/organizacoes/${organizacaoId}/abrangencia-socios/${id}`);
       setSucesso('Município excluído com sucesso!');
       await carregarDados();
       setTimeout(() => setSucesso(null), 3000);
     } catch (error: any) {
       console.error('Erro ao excluir:', error);
-      setErro(error.response?.data?.error || 'Erro ao excluir');
+      setErro(error.response?.data?.error?.message || 'Erro ao excluir');
     } finally {
       setSalvando(false);
     }
@@ -262,14 +258,6 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
               {totalMunicipios} {totalMunicipios === 1 ? 'município' : 'municípios'}
             </div>
           )}
-          {nTotalSocios && totalSociosCadastrados > 0 && (
-            <div className={`status-badge badge-${statusTotal}`}>
-              {totalSociosCadastrados} / {nTotalSocios} sócios
-              {statusTotal === 'success' && <CheckCircle size={16} style={{ marginLeft: '0.25rem' }} />}
-              {statusTotal === 'warning' && <AlertTriangle size={16} style={{ marginLeft: '0.25rem' }} />}
-              {statusTotal === 'error' && <AlertCircle size={16} style={{ marginLeft: '0.25rem' }} />}
-            </div>
-          )}
         </div>
       </div>
 
@@ -290,24 +278,6 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
             <div className="alert alert-success">
               <CheckCircle size={18} />
               <span>{sucesso}</span>
-            </div>
-          )}
-
-          {statusTotal === 'error' && nTotalSocios && (
-            <div className="alert alert-error">
-              <AlertCircle size={18} />
-              <span>
-                A soma de sócios nos municípios ({totalSociosCadastrados}) excede o total de sócios da organização ({nTotalSocios})
-              </span>
-            </div>
-          )}
-
-          {statusTotal === 'warning' && nTotalSocios && (
-            <div className="alert alert-warning">
-              <AlertTriangle size={18} />
-              <span>
-                A soma de sócios nos municípios ({totalSociosCadastrados}) é menor que o total de sócios ({nTotalSocios}). Verifique se todos os municípios foram cadastrados.
-              </span>
             </div>
           )}
 

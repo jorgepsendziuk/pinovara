@@ -73,7 +73,7 @@ function Login() {
 
     try {
       await login(formData);
-      navigate('/pinovara');
+      navigate('/organizacoes/dashboard');
     } catch (error: any) {
       setError(error.message || 'Erro desconhecido no login');
     } finally {

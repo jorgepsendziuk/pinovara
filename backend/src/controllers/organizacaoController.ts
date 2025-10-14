@@ -121,6 +121,19 @@ class OrganizacaoController {
     try {
       const userPermissions = (req as any).userPermissions;
       
+      // Verificar se usuário pode editar (coordenador não pode criar)
+      if (!userPermissions?.canEdit) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Sem permissão para criar organizações',
+            statusCode: HttpStatus.FORBIDDEN
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      
       // Automaticamente definir id_tecnico com o usuário que está criando
       // (seja técnico, admin ou qualquer outro)
       const data = {
@@ -158,6 +171,19 @@ class OrganizacaoController {
           error: {
             message: 'ID inválido',
             statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Verificar se usuário pode editar (coordenador não pode editar)
+      if (!userPermissions?.canEdit) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Sem permissão para editar organizações',
+            statusCode: HttpStatus.FORBIDDEN
           },
           timestamp: new Date().toISOString()
         });
@@ -226,6 +252,7 @@ class OrganizacaoController {
   async delete(req: AuthRequest, res: Response): Promise<void> {
     try {
       const id = parseInt(req.params.id);
+      const userPermissions = (req as any).userPermissions;
 
       if (isNaN(id)) {
         res.status(HttpStatus.BAD_REQUEST).json({
@@ -233,6 +260,19 @@ class OrganizacaoController {
           error: {
             message: 'ID inválido',
             statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Verificar se usuário pode editar (coordenador não pode deletar)
+      if (!userPermissions?.canEdit) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Sem permissão para excluir organizações',
+            statusCode: HttpStatus.FORBIDDEN
           },
           timestamp: new Date().toISOString()
         });

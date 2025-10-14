@@ -24,6 +24,28 @@ model audit_logs {
   @@schema("pinovara")
 }
 
+model db_connections {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique @db.VarChar(50)
+  host        String    @db.VarChar(255)
+  port        Int?      @default(5432)
+  database    String    @db.VarChar(100)
+  username    String    @db.VarChar(100)
+  password    String    @db.VarChar(255)
+  description String?
+  active      Boolean?  @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("pinovara")
+}
+
+/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+// model log_sincronizacao_fotos {
+// @@schema("pinovara")
+// }
+
 model modules {
   id          Int      @id @default(autoincrement())
   name        String   @unique
@@ -36,6 +58,7 @@ model modules {
   @@schema("pinovara")
 }
 
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model organizacao {
   id                                                                 Int                             @id @default(autoincrement())
   inicio                                                             DateTime?                       @db.Timestamp(6)
@@ -688,6 +711,11 @@ model organizacao {
   submission_date                                                    DateTime?                       @map("_submission_date") @db.Timestamp(6)
   marked_as_complete_date                                            DateTime?                       @map("_marked_as_complete_date") @db.Timestamp(6)
   complementado                                                      Boolean?                        @default(false)
+  validacao_status                                                   Int?                            @default(1)
+  validacao_usuario                                                  Int?
+  validacao_data                                                     DateTime?                       @db.Timestamp(6)
+  validacao_obs                                                      String?
+  users                                                              users?                          @relation(fields: [validacao_usuario], references: [id], onUpdate: NoAction, map: "fk_validacao_usuario")
   enfase_organizacao_enfaseToenfase                                  enfase?                         @relation("organizacao_enfaseToenfase", fields: [enfase], references: [id], onDelete: NoAction, onUpdate: NoAction)
   estado_organizacao_estadoToestado                                  estado?                         @relation("organizacao_estadoToestado", fields: [estado], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gc_comercial_15_respostaToresposta            resposta?                       @relation("organizacao_gc_comercial_15_respostaToresposta", fields: [gc_comercial_15_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -884,15 +912,16 @@ model organizacao {
   sim_nao_organizacao_sim_nao_pjTosim_nao                            sim_nao?                        @relation("organizacao_sim_nao_pjTosim_nao", fields: [sim_nao_pj], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sim_nao_organizacao_sim_nao_producaoTosim_nao                      sim_nao?                        @relation("organizacao_sim_nao_producaoTosim_nao", fields: [sim_nao_producao], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sim_nao_organizacao_sim_nao_socioTosim_nao                         sim_nao?                        @relation("organizacao_sim_nao_socioTosim_nao", fields: [sim_nao_socio], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users_tecnico                                                      users?                          @relation("organizacao_tecnico", fields: [id_tecnico], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organizacao_abrangencia_pj                                         organizacao_abrangencia_pj[]
   organizacao_abrangencia_socio                                      organizacao_abrangencia_socio[]
   organizacao_arquivo                                                organizacao_arquivo[]
+  organizacao_documento                                              organizacao_documento[]
   organizacao_foto                                                   organizacao_foto[]
   organizacao_indicador                                              organizacao_indicador[]
   organizacao_participante                                           organizacao_participante[]
   organizacao_producao                                               organizacao_producao[]
 
+  @@index([validacao_status], map: "idx_organizacao_validacao_status")
   @@schema("pinovara")
 }
 
@@ -960,6 +989,21 @@ model organizacao_arquivo {
   @@schema("pinovara")
 }
 
+model organizacao_documento {
+  id             Int         @id @default(autoincrement())
+  id_organizacao Int
+  tipo_documento String      @db.VarChar(50)
+  arquivo        String      @db.VarChar(255)
+  data_envio     DateTime    @default(now()) @db.Timestamp(6)
+  usuario_envio  String      @db.VarChar(255)
+  obs            String?
+  organizacao    organizacao @relation(fields: [id_organizacao], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_organizacao_documento_organizacao")
+
+  @@index([id_organizacao], map: "idx_organizacao_documento_organizacao")
+  @@index([tipo_documento], map: "idx_organizacao_documento_tipo")
+  @@schema("pinovara")
+}
+
 model organizacao_foto {
   id                                  Int          @id @default(autoincrement())
   uri                                 String       @unique @map("_uri") @db.VarChar(80)
@@ -976,6 +1020,52 @@ model organizacao_foto {
   id_organizacao                      Int?
   grupo_organizacao_foto_grupoTogrupo grupo?       @relation("organizacao_foto_grupoTogrupo", fields: [grupo], references: [id], onDelete: NoAction, onUpdate: NoAction)
   organizacao                         organizacao? @relation(fields: [id_organizacao], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "organizacao_foto_id_amaris_fkey")
+
+  @@schema("pinovara")
+}
+
+model organizacao_indicador {
+  id                   Int          @id @default(autoincrement())
+  uri                  String       @unique @map("_uri") @db.VarChar(80)
+  creator_uri_user     String       @map("_creator_uri_user") @db.VarChar(80)
+  creation_date        DateTime     @map("_creation_date") @db.Timestamp(6)
+  last_update_uri_user String?      @map("_last_update_uri_user") @db.VarChar(80)
+  last_update_date     DateTime     @map("_last_update_date") @db.Timestamp(6)
+  parent_auri          String?      @map("_parent_auri") @db.VarChar(80)
+  ordinal_number       Int          @map("_ordinal_number")
+  top_level_auri       String?      @map("_top_level_auri") @db.VarChar(80)
+  valor                Int?
+  id_organizacao       Int?
+  organizacao          organizacao? @relation(fields: [id_organizacao], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  indicador            indicador?   @relation(fields: [valor], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@schema("pinovara")
+}
+
+/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
+// model organizacao_paa {
+// @@schema("pinovara")
+// }
+
+model organizacao_participante {
+  id                                                Int          @id @default(autoincrement())
+  uri                                               String       @unique @map("_uri") @db.VarChar(80)
+  creator_uri_user                                  String       @map("_creator_uri_user") @db.VarChar(80)
+  creation_date                                     DateTime     @map("_creation_date") @db.Timestamp(6)
+  last_update_uri_user                              String?      @map("_last_update_uri_user") @db.VarChar(80)
+  last_update_date                                  DateTime     @map("_last_update_date") @db.Timestamp(6)
+  parent_auri                                       String?      @map("_parent_auri") @db.VarChar(80)
+  ordinal_number                                    Int          @map("_ordinal_number")
+  top_level_auri                                    String?      @map("_top_level_auri") @db.VarChar(80)
+  nome                                              String?      @db.VarChar
+  cpf                                               String?      @db.VarChar(11)
+  telefone                                          String?      @db.VarChar
+  relacao                                           Int?
+  relacao_outros                                    String?      @db.VarChar
+  assinatura                                        String?      @db.VarChar
+  id_organizacao                                    Int?
+  organizacao                                       organizacao? @relation(fields: [id_organizacao], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  relacao_organizacao_participante_relacaoTorelacao relacao?     @relation("organizacao_participante_relacaoTorelacao", fields: [relacao], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("pinovara")
 }
@@ -1042,18 +1132,26 @@ model user_roles {
 }
 
 model users {
-  id                      Int             @id @default(autoincrement())
-  email                   String          @unique
-  password                String
-  name                    String
-  active                  Boolean         @default(true)
-  createdAt               DateTime        @default(now())
-  updatedAt               DateTime
-  audit_logs              audit_logs[]
-  user_roles              user_roles[]
-  organizacoes_criadas    organizacao[]   @relation("organizacao_tecnico")
+  id          Int           @id @default(autoincrement())
+  email       String        @unique
+  password    String
+  name        String
+  active      Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime
+  audit_logs  audit_logs[]
+  organizacao organizacao[]
+  user_roles  user_roles[]
 
   @@schema("pinovara")
+}
+
+model enfase {
+  id                                     Int           @id
+  descricao                              String?       @db.VarChar
+  organizacao_organizacao_enfaseToenfase organizacao[] @relation("organizacao_enfaseToenfase")
+
+  @@schema("pinovara_aux")
 }
 
 model estado {
@@ -1083,6 +1181,14 @@ model grupo {
   @@schema("pinovara_aux")
 }
 
+model indicador {
+  id                    Int                     @id
+  descricao             String?                 @db.VarChar
+  organizacao_indicador organizacao_indicador[]
+
+  @@schema("pinovara_aux")
+}
+
 model municipio_ibge {
   id                            Int                             @id
   descricao                     String?                         @db.VarChar
@@ -1098,6 +1204,14 @@ model municipio_ibge {
 model paa {
   id        Int     @id
   descricao String? @db.VarChar
+
+  @@schema("pinovara_aux")
+}
+
+model relacao {
+  id                                                                 Int                        @id
+  descricao                                                          String?                    @db.VarChar
+  organizacao_participante_organizacao_participante_relacaoTorelacao organizacao_participante[] @relation("organizacao_participante_relacaoTorelacao")
 
   @@schema("pinovara_aux")
 }
@@ -1304,76 +1418,6 @@ model sim_nao {
   organizacao_organizacao_sim_nao_pjTosim_nao             organizacao[] @relation("organizacao_sim_nao_pjTosim_nao")
   organizacao_organizacao_sim_nao_producaoTosim_nao       organizacao[] @relation("organizacao_sim_nao_producaoTosim_nao")
   organizacao_organizacao_sim_nao_socioTosim_nao          organizacao[] @relation("organizacao_sim_nao_socioTosim_nao")
-
-  @@schema("pinovara_aux")
-}
-
-model organizacao_indicador {
-  id                   Int          @id @default(autoincrement())
-  uri                  String       @unique @map("_uri") @db.VarChar(80)
-  creator_uri_user     String       @map("_creator_uri_user") @db.VarChar(80)
-  creation_date        DateTime     @map("_creation_date") @db.Timestamp(6)
-  last_update_uri_user String?      @map("_last_update_uri_user") @db.VarChar(80)
-  last_update_date     DateTime     @map("_last_update_date") @db.Timestamp(6)
-  parent_auri          String?      @map("_parent_auri") @db.VarChar(80)
-  ordinal_number       Int          @map("_ordinal_number")
-  top_level_auri       String?      @map("_top_level_auri") @db.VarChar(80)
-  valor                Int?
-  id_organizacao       Int?
-  organizacao          organizacao? @relation(fields: [id_organizacao], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  indicador            indicador?   @relation(fields: [valor], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@schema("pinovara")
-}
-
-/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
-// model organizacao_paa {
-// @@schema("pinovara")
-// }
-
-model organizacao_participante {
-  id                                                Int          @id @default(autoincrement())
-  uri                                               String       @unique @map("_uri") @db.VarChar(80)
-  creator_uri_user                                  String       @map("_creator_uri_user") @db.VarChar(80)
-  creation_date                                     DateTime     @map("_creation_date") @db.Timestamp(6)
-  last_update_uri_user                              String?      @map("_last_update_uri_user") @db.VarChar(80)
-  last_update_date                                  DateTime     @map("_last_update_date") @db.Timestamp(6)
-  parent_auri                                       String?      @map("_parent_auri") @db.VarChar(80)
-  ordinal_number                                    Int          @map("_ordinal_number")
-  top_level_auri                                    String?      @map("_top_level_auri") @db.VarChar(80)
-  nome                                              String?      @db.VarChar
-  cpf                                               String?      @db.VarChar(11)
-  telefone                                          String?      @db.VarChar
-  relacao                                           Int?
-  relacao_outros                                    String?      @db.VarChar
-  assinatura                                        String?      @db.VarChar
-  id_organizacao                                    Int?
-  organizacao                                       organizacao? @relation(fields: [id_organizacao], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  relacao_organizacao_participante_relacaoTorelacao relacao?     @relation("organizacao_participante_relacaoTorelacao", fields: [relacao], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@schema("pinovara")
-}
-
-model enfase {
-  id                                     Int           @id
-  descricao                              String?       @db.VarChar
-  organizacao_organizacao_enfaseToenfase organizacao[] @relation("organizacao_enfaseToenfase")
-
-  @@schema("pinovara_aux")
-}
-
-model indicador {
-  id                    Int                     @id
-  descricao             String?                 @db.VarChar
-  organizacao_indicador organizacao_indicador[]
-
-  @@schema("pinovara_aux")
-}
-
-model relacao {
-  id                                                                 Int                        @id
-  descricao                                                          String?                    @db.VarChar
-  organizacao_participante_organizacao_participante_relacaoTorelacao organizacao_participante[] @relation("organizacao_participante_relacaoTorelacao")
 
   @@schema("pinovara_aux")
 }

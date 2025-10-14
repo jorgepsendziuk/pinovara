@@ -96,6 +96,17 @@ class OrganizacaoController {
     async create(req, res) {
         try {
             const userPermissions = req.userPermissions;
+            if (!userPermissions?.canEdit) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Sem permissão para criar organizações',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
             const data = {
                 ...req.body,
                 ...(userPermissions?.userId && {
@@ -125,6 +136,17 @@ class OrganizacaoController {
                     error: {
                         message: 'ID inválido',
                         statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (!userPermissions?.canEdit) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Sem permissão para editar organizações',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
                     },
                     timestamp: new Date().toISOString()
                 });
@@ -180,12 +202,24 @@ class OrganizacaoController {
     async delete(req, res) {
         try {
             const id = parseInt(req.params.id);
+            const userPermissions = req.userPermissions;
             if (isNaN(id)) {
                 res.status(api_1.HttpStatus.BAD_REQUEST).json({
                     success: false,
                     error: {
                         message: 'ID inválido',
                         statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (!userPermissions?.canEdit) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Sem permissão para excluir organizações',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
                     },
                     timestamp: new Date().toISOString()
                 });

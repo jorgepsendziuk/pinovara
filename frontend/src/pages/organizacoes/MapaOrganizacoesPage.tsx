@@ -5,8 +5,10 @@ import {
   Trash,
   Eye,
   Edit,
-  XCircle
+  XCircle,
+  FileText
 } from 'lucide-react';
+import { renderToString } from 'react-dom/server';
 
 interface OrganizacaoComGps {
   id: number;
@@ -37,6 +39,36 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
   const [municipiosDisponiveis, setMunicipiosDisponiveis] = useState<string[]>([]);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
+
+  // Função para gerar relatório
+  const gerarRelatorio = async (organizacaoId: number, nomeOrganizacao: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/organizacoes/${organizacaoId}/relatorio/pdf`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('@pinovara:token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao gerar relatório');
+      }
+
+      // Baixar PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `relatorio_${nomeOrganizacao?.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      alert('✅ Relatório gerado com sucesso!');
+    } catch (error: any) {
+      alert(`❌ Erro ao gerar relatório: ${error.message}`);
+    }
+  };
 
   useEffect(() => {
     fetchOrganizacoes();
@@ -224,6 +256,7 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
             organizacoes={filteredOrganizacoes}
             onOrganizacaoClick={(id) => onNavigate('detalhes', id)}
             onNavigate={onNavigate}
+            onGerarRelatorio={gerarRelatorio}
           />
         </div>
 
@@ -273,9 +306,10 @@ interface MapaGrandeProps {
   organizacoes: OrganizacaoComGps[];
   onOrganizacaoClick: (id: number) => void;
   onNavigate: (view: 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa' | 'detalhes', organizacaoId?: number) => void;
+  onGerarRelatorio?: (organizacaoId: number, nomeOrganizacao: string) => void;
 }
 
-function MapaGrande({ organizacoes, onOrganizacaoClick, onNavigate }: MapaGrandeProps) {
+function MapaGrande({ organizacoes, onOrganizacaoClick, onNavigate, onGerarRelatorio }: MapaGrandeProps) {
   useEffect(() => {
     if (organizacoes.length === 0) return;
 
@@ -291,34 +325,63 @@ function MapaGrande({ organizacoes, onOrganizacaoClick, onNavigate }: MapaGrande
 
     // Adicionar marcadores para cada organização
     organizacoes.forEach((org) => {
+      // Criar popup HTML com botões
+      const popupContent = document.createElement('div');
+      popupContent.style.maxWidth = '250px';
+      popupContent.style.fontFamily = 'system-ui, sans-serif';
+      const estadoSigla = (org.estado || '').toString().trim().substring(0, 2);
+      const municipioNome = org.municipio || '';
+      const localizacao = estadoSigla && municipioNome ? `${estadoSigla} - ${municipioNome}` : (estadoSigla || municipioNome || 'Não informado');
+      
+      popupContent.innerHTML = `
+        <h4 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 16px;">#${org.id} ${org.nome}</h4>
+        <div style="margin-bottom: 8px;">
+          <p style="margin: 4px 0; color: #34495e; font-size: 14px;">${localizacao}</p>
+          ${org.telefone ? `<p style="margin: 4px 0; color: #34495e; font-size: 14px;"><strong>Telefone:</strong> ${org.telefone}</p>` : ''}
+          ${org.cnpj ? `<p style="margin: 4px 0; color: #34495e; font-size: 13px;"><strong>CNPJ:</strong> ${org.cnpj}</p>` : ''}
+        </div>
+      `;
+      
+      // Container para botões
+      if (onGerarRelatorio) {
+        const btnContainer = document.createElement('div');
+        btnContainer.style.cssText = 'margin-top: 8px;';
+        
+        const btnRelatorio = document.createElement('button');
+        const iconSvg = renderToString(<FileText size={14} />);
+        btnRelatorio.innerHTML = `<span style="display: inline-flex; align-items: center; gap: 4px;">${iconSvg} Ver Relatório</span>`;
+        btnRelatorio.style.cssText = `
+          width: 100%;
+          padding: 6px 12px;
+          background: #28a745;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 500;
+          transition: background 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        `;
+        btnRelatorio.onmouseover = () => btnRelatorio.style.background = '#218838';
+        btnRelatorio.onmouseout = () => btnRelatorio.style.background = '#28a745';
+        btnRelatorio.onclick = (e) => {
+          e.stopPropagation();
+          onGerarRelatorio(org.id, org.nome);
+        };
+        
+        btnContainer.appendChild(btnRelatorio);
+        popupContent.appendChild(btnContainer);
+      }
+
       const marker = L.marker([org.lat, org.lng])
         .addTo(map)
-        .bindPopup(`
-          <div style="max-width: 250px; font-family: system-ui, sans-serif;">
-            <h4 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 16px;">${org.nome}</h4>
-            <div style="margin-bottom: 8px;">
-              <p style="margin: 4px 0; color: #34495e; font-size: 14px;">
-                <strong>Estado:</strong> ${org.estado}
-              </p>
-              ${org.municipio ? `<p style="margin: 4px 0; color: #34495e; font-size: 14px;"><strong>Município:</strong> ${org.municipio}</p>` : ''}
-              ${org.telefone ? `<p style="margin: 4px 0; color: #34495e; font-size: 14px;"><strong>Telefone:</strong> ${org.telefone}</p>` : ''}
-              ${org.cnpj ? `<p style="margin: 4px 0; color: #34495e; font-size: 13px;"><strong>CNPJ:</strong> ${org.cnpj}</p>` : ''}
-            </div>
-            <div style="display: flex; gap: 4px; margin-top: 8px;">
-              <button onclick="window.mapNavigateToDetails(${org.id})"
-                      style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                <Eye size={14} style={{marginRight: '0.25rem'}} /> Ver Detalhes
-              </button>
-              <button onclick="window.mapNavigateToEdit(${org.id})"
-                      style="background: #27ae60; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                <Edit size={14} style={{marginRight: '0.25rem'}} /> Editar
-              </button>
-            </div>
-          </div>
-        `);
+        .bindPopup(popupContent);
 
-      // Adicionar evento de clique
-      marker.on('click', () => onOrganizacaoClick(org.id));
+      // Não adicionar evento de clique para não redirecionar
+      // O clique agora apenas abre o popup
     });
 
     // Ajustar zoom para mostrar todos os marcadores
@@ -329,15 +392,11 @@ function MapaGrande({ organizacoes, onOrganizacaoClick, onNavigate }: MapaGrande
       map.fitBounds(group.getBounds().pad(0.1));
     }
 
-    // Adicionar funções globais para os botões do popup
-    (window as any).mapNavigateToDetails = (id: number) => onNavigate('detalhes', id);
-    (window as any).mapNavigateToEdit = (id: number) => onNavigate('edicao', id);
-
     // Cleanup function
     return () => {
       map.remove();
     };
-  }, [organizacoes, onOrganizacaoClick, onNavigate]);
+  }, [organizacoes, onOrganizacaoClick, onNavigate, onGerarRelatorio]);
 
   return (
     <div

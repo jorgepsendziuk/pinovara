@@ -53,10 +53,13 @@ const checkOrganizacaoPermission = (req, res, next) => {
     }
     const isAdmin = req.user.roles?.some(role => role.name === 'admin' && role.module.name === 'sistema');
     const isTechnician = req.user.roles?.some(role => role.name === 'tecnico' && role.module.name === 'organizacoes');
+    const isCoordinator = req.user.roles?.some(role => role.name === 'coordenador' && role.module.name === 'organizacoes');
     req.userPermissions = {
         isAdmin,
         isTechnician,
-        canAccessAll: isAdmin,
+        isCoordinator,
+        canAccessAll: isAdmin || isCoordinator,
+        canEdit: isAdmin || isTechnician,
         userId: req.user.id
     };
     next();

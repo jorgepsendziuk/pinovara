@@ -5,6 +5,7 @@ import adminController from '../controllers/adminController';
 import { analyticsController } from '../controllers/analyticsController';
 import { odkSyncController } from '../controllers/odkSyncController';
 import { migrateIdTecnico } from '../scripts/migrate-id-tecnico';
+import { createCoordenadorRole } from '../scripts/create-coordenador-role';
 
 const router = Router();
 
@@ -245,6 +246,37 @@ router.post('/migrate-id-tecnico', async (req, res) => {
       success: false,
       error: {
         message: 'Erro ao executar migração',
+        details: error instanceof Error ? error.message : 'Erro desconhecido',
+        statusCode: 500
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * POST /admin/create-coordenador-role
+ * Criar role coordenador e usuário Mariana Costa
+ */
+router.post('/create-coordenador-role', async (req, res) => {
+  try {
+    console.log('🚀 Iniciando criação de role coordenador...');
+    
+    const result = await createCoordenadorRole();
+    
+    res.json({
+      success: true,
+      message: result.message,
+      data: result.details,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ [AdminRoutes] Erro ao criar coordenador:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Erro ao criar role coordenador',
         details: error instanceof Error ? error.message : 'Erro desconhecido',
         statusCode: 500
       },

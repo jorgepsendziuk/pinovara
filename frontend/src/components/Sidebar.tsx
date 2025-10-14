@@ -84,7 +84,7 @@ const Sidebar: React.FC = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
-  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['sistema']));
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['organizacoes']));
   const sidebarRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<HTMLDivElement>(null);
   const userExpandedRef = useRef<boolean>(false); // Track if user manually expanded
@@ -94,6 +94,11 @@ const Sidebar: React.FC = () => {
     if (isCollapsed && !isMobile) {
       setIsCollapsed(false);
       userExpandedRef.current = true; // Mark as user-expanded
+    }
+    
+    // Manter o menu "organizacoes" sempre aberto
+    if (menuId === 'organizacoes') {
+      return;
     }
     
     const newExpanded = new Set(expandedMenus);
@@ -199,20 +204,11 @@ const Sidebar: React.FC = () => {
 
   const menuItems: MenuItem[] = [
     {
-      id: 'dashboard',
-      label: 'Dashboard',
+      id: 'dashboard-usuario',
+      label: 'Dashboard do Usuário',
       icon: BarChart,
       path: '/pinovara',
-      module: 'dashboard',
-      children: [
-        {
-          id: 'dashboard-main',
-          label: 'Dashboard Principal',
-          icon: TrendingUp,
-          path: '/pinovara',
-          module: 'dashboard'
-        }
-      ]
+      module: 'dashboard'
     },
     {
       id: 'organizacoes',

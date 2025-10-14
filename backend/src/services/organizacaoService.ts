@@ -72,9 +72,11 @@ class OrganizacaoService {
     
     if (userId) {
       const isAdmin = await this.isUserAdmin(userId);
+      const isCoordinator = await this.isUserCoordinator(userId);
       
-      if (!isAdmin) {
-        // Usuário não é admin, aplicar filtro híbrido
+      if (!isAdmin && !isCoordinator) {
+        // Usuário não é admin nem coordenador, aplicar filtro híbrido
+        // (coordenador vê TODAS organizações, assim como admin)
         aplicarFiltroHibrido = true;
         
         // Buscar email do usuário logado
@@ -107,6 +109,7 @@ class OrganizacaoService {
         o.meta_instance_id,
         o.id_tecnico,
         o._creator_uri_user,
+        o.validacao_status,
         u.name as tecnico_nome,
         u.email as tecnico_email
       FROM pinovara.organizacao o
@@ -457,9 +460,11 @@ class OrganizacaoService {
     
     if (userId) {
       const isAdmin = await this.isUserAdmin(userId);
+      const isCoordinator = await this.isUserCoordinator(userId);
       
-      if (!isAdmin) {
-        // Usuário não é admin, aplicar filtro híbrido
+      if (!isAdmin && !isCoordinator) {
+        // Usuário não é admin nem coordenador, aplicar filtro híbrido
+        // (coordenador vê TODAS organizações, assim como admin)
         aplicarFiltroHibrido = true;
         
         // Buscar email do usuário logado
@@ -472,7 +477,7 @@ class OrganizacaoService {
       }
     }
 
-    // Buscar todas organizações com includes para estado e município
+    // Buscar todas organizações com includes para estado, município e técnico
     const todasOrganizacoes = await prisma.organizacao.findMany({
       where: { removido: false },
       select: {
@@ -485,6 +490,7 @@ class OrganizacaoService {
         gps_lng: true,
         id_tecnico: true,
         creator_uri_user: true,
+        validacao_status: true,
         estado_organizacao_estadoToestado: {
           select: {
             descricao: true
@@ -493,6 +499,12 @@ class OrganizacaoService {
         municipio_ibge: {
           select: {
             descricao: true
+          }
+        },
+        users_tecnico: {
+          select: {
+            name: true,
+            email: true
           }
         }
       },
@@ -552,14 +564,15 @@ class OrganizacaoService {
       total: item.count
     }));
 
-    // Organizações recentes (últimas 10)
+    // Organizações recentes - APENAS COM GPS (do ODK)
     const organizacoesRecentes = organizacoesFiltradas
+      .filter(org => org.gps_lat !== null && org.gps_lng !== null) // Filtrar apenas com GPS
       .sort((a, b) => {
         if (!a.data_visita) return 1;
         if (!b.data_visita) return -1;
         return new Date(b.data_visita).getTime() - new Date(a.data_visita).getTime();
       })
-      .slice(0, 10);
+      .slice(0, 50); // Aumentar limite para 50 organizações com GPS
 
     // Organizações com GPS para o mapa (limitar a 100)
     const organizacoesComGps = organizacoesFiltradas
@@ -594,12 +607,22 @@ class OrganizacaoService {
           estado_nome: estadoNome,
           municipio_nome: municipioNome,
           localizacao: estadoSigla && municipioNome ? `${estadoSigla} - ${municipioNome}` : (estadoSigla || municipioNome || 'Não informado'),
-          temGps: !!(org.gps_lat && org.gps_lng)
+          temGps: !!(org.gps_lat && org.gps_lng),
+          tecnico_nome: org.users_tecnico?.name || null,
+          tecnico_email: org.users_tecnico?.email || null,
+          validacao_status: org.validacao_status
         };
       }),
       organizacoesComGps: organizacoesComGps.map(org => {
         const estadoNome = org.estado_organizacao_estadoToestado?.descricao;
+        let municipioNome = org.municipio_ibge?.descricao;
         const estadoSigla = this.getEstadoSigla(estadoNome);
+        
+        // Remover nome do estado do município se estiver presente
+        if (municipioNome && municipioNome.includes(' - ')) {
+          const partes = municipioNome.split(' - ');
+          municipioNome = partes[partes.length - 1];
+        }
         
         return {
           id: org.id,
@@ -607,7 +630,9 @@ class OrganizacaoService {
           lat: org.gps_lat,
           lng: org.gps_lng,
           estado: org.estado,
-          estado_nome: estadoSigla || estadoNome || 'Não informado'
+          estado_nome: estadoSigla || estadoNome || 'Não informado',
+          municipio_nome: municipioNome || null,
+          validacao_status: org.validacao_status
         };
       })
     };
@@ -753,20 +778,27 @@ class OrganizacaoService {
    * Buscar roles do usuário
    * @private
    */
-  private async getUserRoles(userId: number): Promise<Array<{ name: string }>> {
+  private async getUserRoles(userId: number): Promise<Array<{ name: string; module?: { name: string } }>> {
     try {
       const user = await prisma.users.findUnique({
         where: { id: userId },
         include: {
           user_roles: {
             include: {
-              roles: true
+              roles: {
+                include: {
+                  modules: true
+                }
+              }
             }
           }
         }
       });
 
-      return user?.user_roles.map(ur => ({ name: ur.roles.name })) || [];
+      return user?.user_roles.map(ur => ({ 
+        name: ur.roles.name,
+        module: { name: ur.roles.modules.name }
+      })) || [];
     } catch (error) {
       console.error('Erro ao buscar roles do usuário:', error);
       return [];
@@ -780,6 +812,14 @@ class OrganizacaoService {
   private async isUserAdmin(userId: number): Promise<boolean> {
     const roles = await this.getUserRoles(userId);
     return roles.some(role => role.name === 'admin');
+  }
+
+  /**
+   * Verificar se usuário é coordenador
+   */
+  private async isUserCoordinator(userId: number): Promise<boolean> {
+    const roles = await this.getUserRoles(userId);
+    return roles.some(role => role.name === 'coordenador' && role.module?.name === 'organizacoes');
   }
 }
 
