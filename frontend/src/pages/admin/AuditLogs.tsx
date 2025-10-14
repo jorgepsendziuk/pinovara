@@ -47,6 +47,8 @@ function AuditLogs() {
     startDate: '',
     endDate: ''
   });
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
@@ -150,10 +152,91 @@ function AuditLogs() {
     fetchLogs(1);
   };
 
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      const token = localStorage.getItem('@pinovara:token');
+      
+      const params = new URLSearchParams({
+        ...Object.fromEntries(Object.entries(filters).filter(([_, value]) => value !== ''))
+      });
+
+      const response = await fetch(`${API_BASE}/admin/audit-logs/export?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao exportar logs');
+      }
+
+      const csvContent = await response.text();
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao exportar');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const renderDiff = (oldData?: string, newData?: string) => {
+    if (!oldData || !newData) return null;
+    
+    try {
+      const old = JSON.parse(oldData);
+      const new_ = JSON.parse(newData);
+      
+      const changes: string[] = [];
+      const allKeys = new Set([...Object.keys(old || {}), ...Object.keys(new_ || {})]);
+      
+      for (const key of allKeys) {
+        const oldValue = old?.[key];
+        const newValue = new_?.[key];
+        
+        if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+          changes.push(`${key}: "${oldValue}" → "${newValue}"`);
+        }
+      }
+      
+      return changes.length > 0 ? (
+        <div className="diff-container">
+          <div className="diff-title">Alterações:</div>
+          {changes.map((change, index) => (
+            <div key={index} className="diff-item">{change}</div>
+          ))}
+        </div>
+      ) : null;
+    } catch {
+      return <div className="diff-error">Erro ao processar diff</div>;
+    }
+  };
+
   useEffect(() => {
     fetchLogs();
     fetchStats();
   }, []);
+
+  // Auto-refresh quando habilitado
+  useEffect(() => {
+    if (!autoRefresh) return;
+    
+    const interval = setInterval(() => {
+      fetchLogs(currentPage);
+      fetchStats();
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, currentPage]);
 
   return (
     <div className="admin-page">
@@ -257,6 +340,21 @@ function AuditLogs() {
           <button onClick={clearFilters} className="btn btn-secondary">
             Limpar Filtros
           </button>
+          <button 
+            onClick={handleExport} 
+            className="btn btn-success"
+            disabled={exporting}
+          >
+            {exporting ? 'Exportando...' : '📊 Exportar CSV'}
+          </button>
+          <label className="auto-refresh-toggle">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+            />
+            <span>🔄 Auto-refresh (30s)</span>
+          </label>
         </div>
       </div>
 
@@ -427,6 +525,13 @@ function AuditLogs() {
                   </div>
                 )}
                 
+                {selectedLog.oldData && selectedLog.newData && (
+                  <div className="detail-group full-width">
+                    <label>Comparação de Dados:</label>
+                    {renderDiff(selectedLog.oldData, selectedLog.newData)}
+                  </div>
+                )}
+                
                 {selectedLog.oldData && (
                   <div className="detail-group full-width">
                     <label>Dados Anteriores:</label>
@@ -459,3 +564,88 @@ function AuditLogs() {
 }
 
 export default AuditLogs;
+
+// Estilos CSS para as novas funcionalidades
+const styles = `
+  .auto-refresh-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #666;
+    cursor: pointer;
+  }
+
+  .auto-refresh-toggle input[type="checkbox"] {
+    margin: 0;
+  }
+
+  .filter-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-success {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .btn-success:hover:not(:disabled) {
+    background-color: #218838;
+  }
+
+  .btn-success:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+  }
+
+  .diff-container {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+
+  .diff-title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #495057;
+  }
+
+  .diff-item {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 3px;
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    font-family: monospace;
+    font-size: 0.85rem;
+  }
+
+  .diff-error {
+    color: #dc3545;
+    font-style: italic;
+    padding: 0.5rem;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 3px;
+  }
+
+  .json-data {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 3px;
+    padding: 0.75rem;
+    font-size: 0.8rem;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+`;

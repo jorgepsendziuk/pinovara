@@ -17,6 +17,11 @@ import { UploadDocumentos } from '../../components/organizacoes/UploadDocumentos
 import { UploadFotos } from '../../components/organizacoes/UploadFotos';
 import { DadosColeta } from '../../components/organizacoes/DadosColeta';
 import Validacao from '../../components/organizacoes/Validacao';
+import { DescricaoOrganizacao } from '../../components/organizacoes/DescricaoOrganizacao';
+import { OrientacoesTecnicas } from '../../components/organizacoes/OrientacoesTecnicas';
+import { IndicadoresAtividade } from '../../components/organizacoes/IndicadoresAtividade';
+import { ParticipantesAtividade } from '../../components/organizacoes/ParticipantesAtividade';
+import { ObservacoesFinais } from '../../components/organizacoes/ObservacoesFinais';
 import api from '../../services/api';
 import {
   Edit,
@@ -36,7 +41,12 @@ import {
   Wheat,
   IdCard,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  ShoppingCart,
+  Factory,
+  Lightbulb,
+  Leaf,
+  Building
 } from 'lucide-react';
 import '../../styles/tabs.css';
 
@@ -77,10 +87,20 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     governancaOrganizacional,
     gestaoPessoas,
     gestaoFinanceira,
+    gestaoComercial,
+    gestaoProcessos,
+    gestaoInovacao,
+    gestaoSocioambiental,
+    infraestruturaSustentavel,
     diagnosticoAberto,
     updateGovernanca,
     updateGestaoPessoas,
     updateGestaoFinanceira,
+    updateGestaoComercial,
+    updateGestaoProcessos,
+    updateGestaoInovacao,
+    updateGestaoSocioambiental,
+    updateInfraestruturaSustentavel,
     toggleDiagnostico,
     loadFromOrganizacao: loadDiagnosticoFromOrganizacao
   } = useDiagnosticoData();
@@ -195,6 +215,11 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       Object.assign(dadosBrutos, processarDiagnostico(governancaOrganizacional));
       Object.assign(dadosBrutos, processarDiagnostico(gestaoPessoas));
       Object.assign(dadosBrutos, processarDiagnostico(gestaoFinanceira));
+      Object.assign(dadosBrutos, processarDiagnostico(gestaoComercial));
+      Object.assign(dadosBrutos, processarDiagnostico(gestaoProcessos));
+      Object.assign(dadosBrutos, processarDiagnostico(gestaoInovacao));
+      Object.assign(dadosBrutos, processarDiagnostico(gestaoSocioambiental));
+      Object.assign(dadosBrutos, processarDiagnostico(infraestruturaSustentavel));
 
       // Converter todos os campos de resposta para inteiro
       const dadosCompletos = Object.fromEntries(
@@ -267,39 +292,263 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       { numero: 21, texto: "Existem mecanismos internos claros para mediar e resolver disputas entre os associados e entre os órgãos do empreendimento?" }
     ],
     controle: [
-      { numero: 20, texto: "O conselho fiscal é atuante no empreendimento?" },
-      { numero: 21, texto: "A direção se reúne periodicamente com o conselho fiscal?" },
-      { numero: 22, texto: "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?" },
-      { numero: 23, texto: "Realiza assembleias anuais para prestação de contas?" },
-      { numero: 24, texto: "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?" },
-      { numero: 25, texto: "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?" }
+      { numero: 22, texto: "O conselho fiscal é atuante no empreendimento?" },
+      { numero: 23, texto: "A direção se reúne periodicamente com o conselho fiscal?" },
+      { numero: 24, texto: "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?" },
+      { numero: 25, texto: "Realiza assembleias anuais para prestação de contas?" },
+      { numero: 26, texto: "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?" },
+      { numero: 27, texto: "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?" }
     ],
     educacao: [
-      { numero: 26, texto: "Os cooperados são capacitados em princípios do cooperativismo?" },
-      { numero: 27, texto: "Os cooperados são capacitados em gestão de cooperativas?" },
-      { numero: 28, texto: "Há planos para identificar, capacitar e preparar novos líderes?" }
+      { numero: 28, texto: "Os cooperados/associados são capacitados em cooperativismo/associativismo?" },
+      { numero: 29, texto: "Os cooperados/associados são capacitados em Gestão do Empreendimento?" },
+      { numero: 30, texto: "Há planos para identificar, capacitar e preparar novos líderes?" }
     ]
   };
 
-    const gruposGestaoPessoas = {
-    capacitacao: [
-      { numero: 1, texto: "Existe programa de capacitação dos associados?" },
-      { numero: 2, texto: "Os dirigentes participam de cursos de gestão?" }
+  const gruposGestaoPessoas = {
+    p_organizacao: [
+      { numero: 1, texto: "Possui descrição formalizada de cargos, funções e atividades?" },
+      { numero: 2, texto: "As relações de trabalho encontram-se formalizadas?" },
+      { numero: 3, texto: "Utiliza critérios padronizados de recrutamento e seleção?" },
+      { numero: 4, texto: "Possui critérios claramente definidos para demissão?" },
+      { numero: 5, texto: "Dispõe de horários de trabalho estabelecidos e respeitados?" },
+      { numero: 6, texto: "Possui controle de horas voluntárias dedicadas?" },
+      { numero: 7, texto: "Possui controle sobre ausências ou atrasos?" },
+      { numero: 8, texto: "Realiza avaliação de desempenho dos colaboradores?" },
+      { numero: 9, texto: "Utiliza práticas de reconhecimento e incentivo com base no desempenho?" }
     ],
-    comunicacao: [
-      { numero: 3, texto: "A comunicação interna é eficiente?" },
-      { numero: 4, texto: "Existe canal de comunicação com associados?" }
+    p_desenvolvimento: [
+      { numero: 10, texto: "Possui procedimento de identificação de necessidades de capacitação?" },
+      { numero: 11, texto: "Possui um planejamento de capacitação e desenvolvimento?" },
+      { numero: 12, texto: "Realiza capacitação relacionada às atividades operacionais?" },
+      { numero: 13, texto: "Realiza capacitação relacionada a novas ou futuras atividades?" }
+    ],
+    trabalho: [
+      { numero: 14, texto: "Possui PCMSO e PPRA?" },
+      { numero: 15, texto: "Monitora acidentes, taxas de frequência/gravidade e absenteísmo?" },
+      { numero: 16, texto: "Realiza pesquisa de satisfação ou de clima organizacional?" },
+      { numero: 17, texto: "Possui método para identificar necessidades e expectativas dos colaboradores?" }
+    ],
+    geracao: [
+      { numero: 18, texto: "Possui estratégia para favorecer participação de mulheres e jovens?" },
+      { numero: 19, texto: "Existe equilíbrio no número de homens, mulheres, jovens e idosos?" },
+      { numero: 20, texto: "Existe equilíbrio na repartição dos benefícios?" }
     ]
   };
 
-    const gruposGestaoFinanceira = {
-    controle: [
-      { numero: 1, texto: "Existe controle financeiro formalizado?" },
-      { numero: 2, texto: "São elaborados relatórios financeiros?" }
+  const gruposGestaoFinanceira = {
+    balanco: [
+      { numero: 1, texto: "Possui contabilidade realizada por um contador?" },
+      { numero: 2, texto: "Possui Balanço Patrimonial atualizado?" },
+      { numero: 3, texto: "Realiza Análise de Balanço?" },
+      { numero: 4, texto: "Utiliza Balancetes Mensais para orientação financeira?" }
+    ],
+    contas: [
+      { numero: 5, texto: "Possui sistema/programa informatizado para gestão?" },
+      { numero: 6, texto: "Possui algum tipo de Plano Orçamentário?" },
+      { numero: 7, texto: "Possui metas financeiras?" },
+      { numero: 8, texto: "Possui controle e registro dos valores a receber?" },
+      { numero: 9, texto: "Possui controle de obrigações perante fornecedores?" },
+      { numero: 10, texto: "Possui controle de obrigações perante colaboradores?" },
+      { numero: 11, texto: "Possui controle de obrigações perante o fisco?" },
+      { numero: 12, texto: "Possui controle de obrigações perante associados fornecedores?" },
+      { numero: 13, texto: "Possui controle de pagamento de empréstimos e financiamentos?" }
+    ],
+    caixa: [
+      { numero: 14, texto: "Possui controle de caixa (DFC)?" },
+      { numero: 15, texto: "Possui controle do dinheiro e caixa documental?" },
+      { numero: 16, texto: "Possui controle da conta no banco?" }
+    ],
+    estoque: [
+      { numero: 17, texto: "Possui controle periódico físico e financeiro dos estoques?" },
+      { numero: 18, texto: "Possui procedimentos de controle de compras?" },
+      { numero: 19, texto: "Possui procedimentos de pesquisa de mercado antes das compras?" }
+    ],
+    resultado: [
+      { numero: 20, texto: "Possui Demonstração de Resultado?" },
+      { numero: 21, texto: "Utiliza a Demonstração de Resultado para orientação financeira?" }
+    ],
+    analise: [
+      { numero: 22, texto: "Elaborou a Análise de Viabilidade Econômica (AVE)?" },
+      { numero: 23, texto: "Vem utilizando as orientações da AVE?" },
+      { numero: 24, texto: "A AVE vem sendo atualizada?" }
+    ],
+    fiscal: [
+      { numero: 25, texto: "Está cumprindo com todas as obrigações legais e fiscais?" },
+      { numero: 26, texto: "Atualiza frequentemente a relação de obrigações legais e fiscais?" }
+    ]
+  };
+
+  const gruposGestaoComercial = {
+    e_comercial: [
+      { numero: 1, texto: "Dispõe de um setor comercial?" },
+      { numero: 2, texto: "O setor comercial possui informações técnicas dos produtos?" },
+      { numero: 3, texto: "Dispõe de profissional/equipe responsável pelas vendas?" },
+      { numero: 4, texto: "Este profissional tem orientação/treinamento específico para vendas?" },
+      { numero: 5, texto: "O representante comercial tem treinamento sobre os produtos?" },
+      { numero: 6, texto: "Possui sistema de controle das vendas?" },
+      { numero: 7, texto: "O setor comercial conhece a capacidade de oferta?" },
+      { numero: 8, texto: "Possui banco de informações sobre clientes e fornecedores?" },
+      { numero: 9, texto: "Emite ou está apto a emitir nota fiscal eletrônica?" }
+    ],
+    mercado: [
+      { numero: 10, texto: "O negócio possui diferencial em termos de sustentabilidade?" },
+      { numero: 11, texto: "Atua em mercados verdes ou outros mercados específicos?" },
+      { numero: 12, texto: "Possui produtos diferenciados do ponto de vista ambiental?" },
+      { numero: 13, texto: "Possui relação comercial com mercado justo e solidário?" },
+      { numero: 14, texto: "Os preços de produtos diferenciados são favoráveis?" },
+      { numero: 15, texto: "Se atualiza sobre exigências dos mercados verdes?" }
+    ],
+    comercial: [
+      { numero: 16, texto: "Adota estratégias comerciais definidas?" },
+      { numero: 17, texto: "Os produtos/empreendimento possuem marca comercial?" },
+      { numero: 18, texto: "Realiza ou utiliza pesquisa/estudo de mercado?" },
+      { numero: 19, texto: "Conhece os concorrentes e acompanha preços?" },
+      { numero: 20, texto: "Possui plano de marketing?" },
+      { numero: 21, texto: "O marketing contribui para estratégias e aumento de vendas?" }
+    ],
+    modelo: [
+      { numero: 22, texto: "Existe regularidade nas vendas, com contratos permanentes?" },
+      { numero: 23, texto: "Possui Modelo de Negócio definido?" },
+      { numero: 24, texto: "Vem utilizando o Modelo de Negócio para inserção no mercado?" },
+      { numero: 25, texto: "A direção tem clareza da proposta de valor?" },
+      { numero: 26, texto: "O negócio contribui para aumento da renda dos associados?" },
+      { numero: 27, texto: "Possui Plano de Negócios elaborado?" },
+      { numero: 28, texto: "O Plano de Negócios vem sendo utilizado?" }
+    ]
+  };
+
+  const gruposGestaoProcessos = {
+    reg_sanitaria: [
+      { numero: 1, texto: "Possui registro sanitário competente?" },
+      { numero: 2, texto: "Os produtos possuem registro?" },
+      { numero: 3, texto: "Os rótulos possuem registro?" }
     ],
     planejamento: [
-      { numero: 3, texto: "Existe orçamento anual aprovado?" },
-      { numero: 4, texto: "O fluxo de caixa é controlado?" }
+      { numero: 4, texto: "Realiza planejamento da produção?" },
+      { numero: 5, texto: "Possui planilha de custos de produção?" },
+      { numero: 6, texto: "Há levantamento de demandas/exigências dos mercados?" }
+    ],
+    logistica: [
+      { numero: 7, texto: "Possui local específico para armazenamento de suprimentos?" },
+      { numero: 8, texto: "Essas instalações têm dimensões e condições adequadas?" },
+      { numero: 9, texto: "Dispõe de controle para recebimento e estocagem?" },
+      { numero: 10, texto: "Possui local específico para armazenamento de produtos finais?" },
+      { numero: 11, texto: "Este local tem dimensões e condições adequadas?" },
+      { numero: 12, texto: "Possui estrutura adequada para transporte e distribuição?" }
+    ],
+    valor: [
+      { numero: 13, texto: "Utiliza o mapeamento da cadeia de valor?" },
+      { numero: 14, texto: "O mapeamento contempla as relações sociais?" },
+      { numero: 15, texto: "Há avaliação de quanto o mapeamento contribui para o desempenho?" }
+    ],
+    fluxo: [
+      { numero: 16, texto: "Possui um leiaute dos processos produtivos?" },
+      { numero: 17, texto: "O leiaute é monitorado para melhorar a produção?" },
+      { numero: 18, texto: "O leiaute é monitorado para melhorar o beneficiamento?" },
+      { numero: 19, texto: "O leiaute é monitorado para melhorar a rotulagem?" },
+      { numero: 20, texto: "O leiaute é monitorado para melhorar a embalagem?" },
+      { numero: 21, texto: "Possui fluxos de produção, beneficiamento, rotulagem e embalagem?" },
+      { numero: 22, texto: "O fluxo de produção está integrado com o leiaute?" }
+    ],
+    qualidade: [
+      { numero: 23, texto: "Realiza controle de qualidade dos produtos?" },
+      { numero: 24, texto: "Este controle atende aos padrões pré-estabelecidos?" },
+      { numero: 25, texto: "Testa os produtos antes da comercialização?" },
+      { numero: 26, texto: "Rótulos e etiquetas atendem padrões da legislação?" },
+      { numero: 27, texto: "Rótulos são coerentes com estratégia de marketing?" },
+      { numero: 28, texto: "Rótulos estão de acordo com mercados a serem atingidos?" }
+    ],
+    producao: [
+      { numero: 29, texto: "Os bens de produção estão atendendo as necessidades?" }
+    ]
+  };
+
+  const gruposGestaoInovacao = {
+    iic: [
+      { numero: 1, texto: "O empreendimento adota algum esforço para inovar?" },
+      { numero: 2, texto: "As informações são obtidas externamente e compartilhadas?" },
+      { numero: 3, texto: "É promovido ambiente favorável ao surgimento de ideias criativas?" },
+      { numero: 4, texto: "São analisadas e selecionadas as ideias de inovação?" },
+      { numero: 5, texto: "Os dirigentes apoiam a experimentação de novas ideias?" }
+    ],
+    mar: [
+      { numero: 6, texto: "A implementação da inovação é acompanhada?" },
+      { numero: 7, texto: "É promovida a aprendizagem sobre o processo inovativo?" },
+      { numero: 8, texto: "São reconhecidos pelas contribuições à inovação?" },
+      { numero: 9, texto: "São capacitados para a inovação e Gestão da Inovação?" }
+    ],
+    time: [
+      { numero: 10, texto: "O trabalho em equipe é estimulado para inovação?" },
+      { numero: 11, texto: "As inovações são divulgadas para as partes interessadas?" },
+      { numero: 12, texto: "São avaliados os benefícios da implementação da inovação?" },
+      { numero: 13, texto: "Existe iniciativa voltada para inovação sustentável/verde?" },
+      { numero: 14, texto: "Existe iniciativa voltada para inovação social ou frugal?" }
+    ]
+  };
+
+  const gruposGestaoSocioambiental = {
+    socioambiental: [
+      { numero: 1, texto: "Adota alguma prática voltada às questões ambientais?" },
+      { numero: 2, texto: "Faz utilização de materiais sustentáveis?" },
+      { numero: 3, texto: "Possui incentivo para mobilidade sustentável?" },
+      { numero: 4, texto: "Adota estratégia para garantir sustentabilidade ambiental da produção?" },
+      { numero: 5, texto: "Possui estratégia para justa repartição de benefícios da biodiversidade?" }
+    ],
+    ambiental: [
+      { numero: 6, texto: "Faz valoração dos recursos naturais utilizados?" },
+      { numero: 7, texto: "Possui integração promovendo bem-estar e biodiversidade?" },
+      { numero: 8, texto: "Considera reconfiguração de espaços para prolongar vida útil?" },
+      { numero: 9, texto: "Esta valoração é utilizada nas estratégias?" }
+    ],
+    reg_ambiental: [
+      { numero: 10, texto: "Possui licença ou autorização ambiental?" },
+      { numero: 11, texto: "As áreas possuem Plano de Manejo aprovado?" },
+      { numero: 12, texto: "Há planos de Manejo autorizando extração de espécies?" },
+      { numero: 13, texto: "Existe área de preservação no entorno que possa ser afetada?" },
+      { numero: 14, texto: "As áreas possuem CAR?" }
+    ],
+    impactos_ambiental: [
+      { numero: 15, texto: "A direção identifica com clareza os impactos negativos?" },
+      { numero: 16, texto: "Adota política para minimizar esses impactos?" },
+      { numero: 17, texto: "A direção identifica com clareza os impactos positivos?" },
+      { numero: 18, texto: "Faz correta destinação dos resíduos e efluentes?" },
+      { numero: 19, texto: "Realiza práticas para reduzir, reutilizar e reciclar?" },
+      { numero: 20, texto: "Possui plano de redução no consumo de energia?" },
+      { numero: 21, texto: "As edificações têm planejamento de ciclo de vida?" },
+      { numero: 22, texto: "As instalações físicas estão em área adequada?" }
+    ]
+  };
+
+  const gruposInfraestruturaSustentavel = {
+    eficiencia_energetica: [
+      { numero: 1, texto: "Possui/planeja painéis solares fotovoltaicos?" },
+      { numero: 2, texto: "A orientação do edifício foi planejada para aproveitar luz natural?" },
+      { numero: 3, texto: "Utiliza/planeja sensores de presença e automação?" },
+      { numero: 4, texto: "As fachadas incorporam elementos de sombreamento?" }
+    ],
+    recursos_naturais: [
+      { numero: 5, texto: "Há aproveitamento de ventilação cruzada natural?" },
+      { numero: 6, texto: "Há valorização dos sombreamentos vegetais?" },
+      { numero: 7, texto: "A topografia é utilizada para conforto térmico?" },
+      { numero: 8, texto: "Há aberturas estratégicas para luz natural?" }
+    ],
+    agua: [
+      { numero: 9, texto: "Há sistemas de captação de água da chuva?" },
+      { numero: 10, texto: "Há reutilização de águas cinzas?" }
+    ],
+    conforto_ambiental: [
+      { numero: 11, texto: "Há utilização de materiais com bom isolamento térmico?" },
+      { numero: 12, texto: "Há utilização de materiais com bom isolamento acústico?" },
+      { numero: 13, texto: "Há exploração da ventilação cruzada e exaustão natural?" },
+      { numero: 14, texto: "Há uso de iluminação natural e/ou vidros de controle solar?" }
+    ],
+    residuos: [
+      { numero: 15, texto: "Há espaços adequados para separação de resíduos orgânicos?" },
+      { numero: 16, texto: "Há espaços adequados para separação de recicláveis?" },
+      { numero: 17, texto: "A compostagem é utilizada como adubo orgânico?" },
+      { numero: 18, texto: "Há práticas que minimizem geração de resíduos?" }
     ]
   };
 
@@ -505,6 +754,61 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
           onToggle={toggleDiagnostico}
           onUpdate={updateGestaoFinanceira}
         />
+
+        <DiagnosticoArea
+          titulo="ÁREA GERENCIAL: GESTÃO COMERCIAL"
+          icone={<ShoppingCart size={20} />}
+          area="comercial-main"
+          dados={gestaoComercial}
+          perguntas={gruposGestaoComercial}
+          diagnosticoAberto={diagnosticoAberto}
+          onToggle={toggleDiagnostico}
+          onUpdate={updateGestaoComercial}
+        />
+
+        <DiagnosticoArea
+          titulo="ÁREA GERENCIAL: GESTÃO DE PROCESSOS PRODUTIVOS"
+          icone={<Factory size={20} />}
+          area="processos-main"
+          dados={gestaoProcessos}
+          perguntas={gruposGestaoProcessos}
+          diagnosticoAberto={diagnosticoAberto}
+          onToggle={toggleDiagnostico}
+          onUpdate={updateGestaoProcessos}
+        />
+
+        <DiagnosticoArea
+          titulo="ÁREA GERENCIAL: GESTÃO DA INOVAÇÃO"
+          icone={<Lightbulb size={20} />}
+          area="inovacao-main"
+          dados={gestaoInovacao}
+          perguntas={gruposGestaoInovacao}
+          diagnosticoAberto={diagnosticoAberto}
+          onToggle={toggleDiagnostico}
+          onUpdate={updateGestaoInovacao}
+        />
+
+        <DiagnosticoArea
+          titulo="ÁREA GERENCIAL: GESTÃO SOCIOAMBIENTAL"
+          icone={<Leaf size={20} />}
+          area="socioambiental-main"
+          dados={gestaoSocioambiental}
+          perguntas={gruposGestaoSocioambiental}
+          diagnosticoAberto={diagnosticoAberto}
+          onToggle={toggleDiagnostico}
+          onUpdate={updateGestaoSocioambiental}
+        />
+
+        <DiagnosticoArea
+          titulo="ÁREA GERENCIAL: INFRAESTRUTURA SUSTENTÁVEL"
+          icone={<Building size={20} />}
+          area="infraestrutura-main"
+          dados={infraestruturaSustentavel}
+          perguntas={gruposInfraestruturaSustentavel}
+          diagnosticoAberto={diagnosticoAberto}
+          onToggle={toggleDiagnostico}
+          onUpdate={updateInfraestruturaSustentavel}
+        />
       </div>
     </div>
   );
@@ -530,6 +834,51 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         validacaoObs={organizacao?.validacao_obs || null}
         onUpdate={updateOrganizacao}
       />
+    </div>
+  );
+
+  const renderAbaComplementos = () => (
+    <div className="aba-content">
+      <div className="accordions-container">
+        {organizacao && (
+          <>
+            <DescricaoOrganizacao
+              organizacao={organizacao}
+              onUpdate={updateOrganizacao}
+              accordionAberto={accordionsAbertos.includes('descricao') ? 'descricao' : null}
+              onToggleAccordion={toggleAccordion}
+            />
+            
+            <OrientacoesTecnicas
+              organizacao={organizacao}
+              onUpdate={updateOrganizacao}
+              accordionAberto={accordionsAbertos.includes('orientacoes-tecnicas') ? 'orientacoes-tecnicas' : null}
+              onToggleAccordion={toggleAccordion}
+            />
+            
+            <IndicadoresAtividade
+              organizacaoId={organizacaoId}
+              accordionAberto={accordionsAbertos.includes('indicadores') ? 'indicadores' : null}
+              onToggleAccordion={toggleAccordion}
+            />
+            
+            <ParticipantesAtividade
+              organizacaoId={organizacaoId}
+              organizacao={organizacao}
+              onUpdate={updateOrganizacao}
+              accordionAberto={accordionsAbertos.includes('participantes') ? 'participantes' : null}
+              onToggleAccordion={toggleAccordion}
+            />
+            
+            <ObservacoesFinais
+              organizacao={organizacao}
+              onUpdate={updateOrganizacao}
+              accordionAberto={accordionsAbertos.includes('observacoes') ? 'observacoes' : null}
+              onToggleAccordion={toggleAccordion}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 
@@ -705,6 +1054,13 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
           >
             <CheckCircle size={16} /> <span>Validação</span>
           </button>
+          <button
+            className={`tab-button ${abaAtiva === 'complementos' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('complementos')}
+            title="Dados Complementares"
+          >
+            <FileText size={16} /> <span>Complementos</span>
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -717,6 +1073,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
           {abaAtiva === 'diagnostico' && renderAbaDiagnostico()}
           {abaAtiva === 'planoGestao' && renderAbaPlanoGestao()}
           {abaAtiva === 'validacao' && renderAbaValidacao()}
+          {abaAtiva === 'complementos' && renderAbaComplementos()}
 
           {/* Form Actions - Botão Flutuante */}
           <div style={{

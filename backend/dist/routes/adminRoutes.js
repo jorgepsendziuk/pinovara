@@ -42,6 +42,7 @@ const adminAuth_1 = require("../middleware/adminAuth");
 const adminController_1 = __importDefault(require("../controllers/adminController"));
 const analyticsController_1 = require("../controllers/analyticsController");
 const odkSyncController_1 = require("../controllers/odkSyncController");
+const auditController_1 = __importDefault(require("../controllers/auditController"));
 const migrate_id_tecnico_1 = require("../scripts/migrate-id-tecnico");
 const create_coordenador_role_1 = require("../scripts/create-coordenador-role");
 const router = (0, express_1.Router)();
@@ -142,6 +143,9 @@ router.get('/system-info', async (req, res) => {
     }
 });
 router.get('/analytics/metrics', analyticsController_1.analyticsController.getMetrics.bind(analyticsController_1.analyticsController));
+router.get('/audit-logs', auditController_1.default.getAuditLogs);
+router.get('/audit-logs/stats', auditController_1.default.getAuditStats);
+router.get('/audit-logs/export', auditController_1.default.exportAuditLogs);
 router.get('/odk/stats', odkSyncController_1.odkSyncController.getStats);
 router.post('/odk/sync-all', odkSyncController_1.odkSyncController.syncAll);
 router.post('/migrate-id-tecnico', async (req, res) => {

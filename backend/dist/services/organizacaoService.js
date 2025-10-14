@@ -72,6 +72,7 @@ class OrganizacaoService {
         o.meta_instance_id,
         o.id_tecnico,
         o._creator_uri_user,
+        o.validacao_status,
         u.name as tecnico_nome,
         u.email as tecnico_email
       FROM pinovara.organizacao o
@@ -364,6 +365,7 @@ class OrganizacaoService {
                 gps_lng: true,
                 id_tecnico: true,
                 creator_uri_user: true,
+                validacao_status: true,
                 estado_organizacao_estadoToestado: {
                     select: {
                         descricao: true
@@ -458,7 +460,8 @@ class OrganizacaoService {
                     localizacao: estadoSigla && municipioNome ? `${estadoSigla} - ${municipioNome}` : (estadoSigla || municipioNome || 'Não informado'),
                     temGps: !!(org.gps_lat && org.gps_lng),
                     tecnico_nome: org.users_tecnico?.name || null,
-                    tecnico_email: org.users_tecnico?.email || null
+                    tecnico_email: org.users_tecnico?.email || null,
+                    validacao_status: org.validacao_status
                 };
             }),
             organizacoesComGps: organizacoesComGps.map(org => {
@@ -476,7 +479,8 @@ class OrganizacaoService {
                     lng: org.gps_lng,
                     estado: org.estado,
                     estado_nome: estadoSigla || estadoNome || 'Não informado',
-                    municipio_nome: municipioNome || null
+                    municipio_nome: municipioNome || null,
+                    validacao_status: org.validacao_status
                 };
             })
         };

@@ -253,7 +253,7 @@ function AdminDashboard() {
                     <span>{stat.icon}</span>
                   </div>
                   <div className="stat-content">
-                    <div className="stat-value">{stat.value.toLocaleString()}</div>
+                    <div className="stat-value">{stat.value?.toLocaleString() || '0'}</div>
                     <div className="stat-title">{stat.title}</div>
                     <div className={`stat-change ${stat.changeType}`}>
                       {stat.change > 0 ? '+' : ''}{stat.change}%

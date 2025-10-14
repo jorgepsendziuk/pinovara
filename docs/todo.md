@@ -1,11 +1,4 @@
-## ✅ Validação de Organizações - IMPLEMENTADO
-- Campos adicionados no banco: `validacao_status`, `validacao_usuario`, `validacao_data`, `validacao_obs`
-- Aba "Validação" criada na página de edição
-- Status exibido com badges coloridos nas listas, dashboards e mapas
-- Permissões: Admin e Coordenador podem validar, Técnico apenas visualiza
-- 4 status disponíveis: NÃO VALIDADO (1), VALIDADO (2), PENDÊNCIA (3), REPROVADO (4)
-- **🔧 CORREÇÃO**: Campos de resposta de diagnóstico convertidos adequadamente para inteiro no frontend
-- **🔧 CORREÇÃO**: Estrutura de objetos de diagnóstico processada corretamente (extrair valores corretos)
+
 
 continuar a implementação de gestao de roles e papeis
 
@@ -26,7 +19,6 @@ usuario sincronizar com odk
 
 usuario manter aceite dos termos, data do aceite
 
-quero rastreabilidade das acoes, principalmente de edicao dos cadastros, login e logout, o que mais sugere? quais estruturas preciso criar?
 
 No Rodapé tem um botão de contato que leva com o link para um e-mail, ao invés de mandar o e-mail vamos fazer uma página de acessar seus direitos, seus dados com um formulário para as pessoas requisitarem, requerirem seus dados como explícito na política de privacidade.
 
@@ -45,3 +37,5 @@ vamos criar um design system desse sistema, um padrao onde todas as novas pagina
 
 app.css esta gigantesco
 
+
+melhorar mensagens de erro nginx
