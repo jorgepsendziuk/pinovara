@@ -22,12 +22,13 @@ declare class OrganizacaoService {
             data_visita: Date | null;
             estado: number | null;
             municipio: number | null;
-            estado_nome: string | null | undefined;
-            municipio_nome: string | null | undefined;
-            localizacao: string;
+            estado_nome: any;
+            municipio_nome: any;
+            localizacao: any;
             temGps: boolean;
-            tecnico_nome: string | null;
-            tecnico_email: string | null;
+            tecnico_nome: any;
+            tecnico_email: any;
+            validacao_status: number | null;
         }[];
         organizacoesComGps: {
             id: number;
@@ -35,8 +36,9 @@ declare class OrganizacaoService {
             lat: number | null;
             lng: number | null;
             estado: number | null;
-            estado_nome: string;
-            municipio_nome: string | null;
+            estado_nome: any;
+            municipio_nome: any;
+            validacao_status: number | null;
         }[];
     }>;
     getMunicipios(estadoId?: number): Promise<unknown>;

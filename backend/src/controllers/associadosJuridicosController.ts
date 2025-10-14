@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { HttpStatus } from '../types/api';
+import auditService from '../services/auditService';
+import { AuditAction } from '../types/audit';
 
 const prisma = new PrismaClient();
 
@@ -56,6 +58,16 @@ export const associadosJuridicosController = {
         },
       });
 
+      // Registrar log de auditoria
+      await auditService.createLog({
+        action: AuditAction.CREATE,
+        entity: 'associado_juridico',
+        entityId: item.id?.toString(),
+        newData: item,
+        userId: (req as any).user?.id,
+        req
+      });
+
       res.status(HttpStatus.CREATED).json({ success: true, data: item });
     } catch (error: any) {
       console.error('Erro ao criar associado jurídico:', error);
@@ -74,6 +86,11 @@ export const associadosJuridicosController = {
       const itemId = parseInt(req.params.itemId);
       const { nomeOrganizacao, cnpj } = req.body;
 
+      // Capturar dados antes da atualização para auditoria
+      const itemAntes = await prisma.organizacao_abrangencia_pj.findUnique({
+        where: { id: itemId }
+      });
+
       const item = await prisma.organizacao_abrangencia_pj.update({
         where: { id: itemId },
         data: {
@@ -81,6 +98,17 @@ export const associadosJuridicosController = {
           cnpj_pj: cnpj,
           last_update_date: new Date(),
         },
+      });
+
+      // Registrar log de auditoria
+      await auditService.createLog({
+        action: AuditAction.UPDATE,
+        entity: 'associado_juridico',
+        entityId: itemId.toString(),
+        oldData: itemAntes,
+        newData: item,
+        userId: (req as any).user?.id,
+        req
       });
 
       res.json({ success: true, data: item });
@@ -100,8 +128,23 @@ export const associadosJuridicosController = {
     try {
       const itemId = parseInt(req.params.itemId);
 
+      // Capturar dados antes da exclusão para auditoria
+      const itemAntes = await prisma.organizacao_abrangencia_pj.findUnique({
+        where: { id: itemId }
+      });
+
       await prisma.organizacao_abrangencia_pj.delete({
         where: { id: itemId },
+      });
+
+      // Registrar log de auditoria
+      await auditService.createLog({
+        action: AuditAction.DELETE,
+        entity: 'associado_juridico',
+        entityId: itemId.toString(),
+        oldData: itemAntes,
+        userId: (req as any).user?.id,
+        req
       });
 
       res.json({ success: true, message: 'Organização excluída com sucesso' });

@@ -8,6 +8,8 @@ const organizacaoService_1 = __importDefault(require("../services/organizacaoSer
 const authService_1 = require("../services/authService");
 const api_1 = require("../types/api");
 const odkHelper_1 = require("../utils/odkHelper");
+const auditService_1 = __importDefault(require("../services/auditService"));
+const audit_1 = require("../types/audit");
 class OrganizacaoController {
     async list(req, res) {
         try {
@@ -114,6 +116,14 @@ class OrganizacaoController {
                 })
             };
             const organizacao = await organizacaoService_1.default.create(data);
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.CREATE,
+                entity: 'organizacao',
+                entityId: organizacao.id?.toString(),
+                newData: organizacao,
+                userId: req.user?.id,
+                req
+            });
             res.status(api_1.HttpStatus.CREATED).json({
                 success: true,
                 message: 'Organização criada com sucesso',
@@ -187,7 +197,17 @@ class OrganizacaoController {
                     return;
                 }
             }
+            const organizacaoAntes = await organizacaoService_1.default.getById(id);
             const organizacao = await organizacaoService_1.default.update(id, data);
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.UPDATE,
+                entity: 'organizacao',
+                entityId: id.toString(),
+                oldData: organizacaoAntes,
+                newData: organizacao,
+                userId: req.user?.id,
+                req
+            });
             res.status(api_1.HttpStatus.OK).json({
                 success: true,
                 message: 'Organização atualizada com sucesso',
@@ -225,7 +245,16 @@ class OrganizacaoController {
                 });
                 return;
             }
+            const organizacaoAntes = await organizacaoService_1.default.getById(id);
             await organizacaoService_1.default.delete(id);
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.DELETE,
+                entity: 'organizacao',
+                entityId: id.toString(),
+                oldData: organizacaoAntes,
+                userId: req.user?.id,
+                req
+            });
             res.status(api_1.HttpStatus.OK).json({
                 success: true,
                 message: 'Organização removida com sucesso',

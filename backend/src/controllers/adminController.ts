@@ -3,6 +3,8 @@ import { AuthRequest } from '../middleware/auth';
 import adminService from '../services/adminService';
 import { ErrorCode, HttpStatus } from '../types/api';
 import { ApiError } from '../utils/ApiError';
+import auditService from '../services/auditService';
+import { AuditAction } from '../types/audit';
 
 class AdminController {
   /**
@@ -114,6 +116,16 @@ class AdminController {
         active
       });
 
+      // Registrar log de auditoria
+      await auditService.createLog({
+        action: AuditAction.CREATE,
+        entity: 'users',
+        entityId: user.id?.toString(),
+        newData: user,
+        userId: req.user?.id,
+        req
+      });
+
       res.status(HttpStatus.CREATED).json({
         success: true,
         message: 'Usuário criado com sucesso',
@@ -148,11 +160,24 @@ class AdminController {
 
       const { email, name, active, password } = req.body;
 
+      // Capturar dados antes da atualização para auditoria
+      const userAntes = await adminService.getUserById(userId);
       const user = await adminService.updateUser(userId, {
         email,
         name,
         active,
         password
+      });
+
+      // Registrar log de auditoria
+      await auditService.createLog({
+        action: AuditAction.UPDATE,
+        entity: 'users',
+        entityId: userId.toString(),
+        oldData: userAntes,
+        newData: user,
+        userId: req.user?.id,
+        req
       });
 
       res.json({
@@ -202,7 +227,19 @@ class AdminController {
         return;
       }
 
+      // Capturar dados antes da exclusão para auditoria
+      const userAntes = await adminService.getUserById(userId);
       await adminService.deleteUser(userId);
+
+      // Registrar log de auditoria
+      await auditService.createLog({
+        action: AuditAction.DELETE,
+        entity: 'users',
+        entityId: userId.toString(),
+        oldData: userAntes,
+        userId: req.user?.id,
+        req
+      });
 
       res.json({
         success: true,

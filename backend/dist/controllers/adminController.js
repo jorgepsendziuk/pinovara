@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const adminService_1 = __importDefault(require("../services/adminService"));
 const api_1 = require("../types/api");
 const ApiError_1 = require("../utils/ApiError");
+const auditService_1 = __importDefault(require("../services/auditService"));
+const audit_1 = require("../types/audit");
 class AdminController {
     async getUsers(req, res) {
         try {
@@ -97,6 +99,14 @@ class AdminController {
                 name,
                 active
             });
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.CREATE,
+                entity: 'users',
+                entityId: user.id?.toString(),
+                newData: user,
+                userId: req.user?.id,
+                req
+            });
             res.status(api_1.HttpStatus.CREATED).json({
                 success: true,
                 message: 'Usuário criado com sucesso',
@@ -124,11 +134,21 @@ class AdminController {
                 return;
             }
             const { email, name, active, password } = req.body;
+            const userAntes = await adminService_1.default.getUserById(userId);
             const user = await adminService_1.default.updateUser(userId, {
                 email,
                 name,
                 active,
                 password
+            });
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.UPDATE,
+                entity: 'users',
+                entityId: userId.toString(),
+                oldData: userAntes,
+                newData: user,
+                userId: req.user?.id,
+                req
             });
             res.json({
                 success: true,
@@ -169,7 +189,16 @@ class AdminController {
                 });
                 return;
             }
+            const userAntes = await adminService_1.default.getUserById(userId);
             await adminService_1.default.deleteUser(userId);
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.DELETE,
+                entity: 'users',
+                entityId: userId.toString(),
+                oldData: userAntes,
+                userId: req.user?.id,
+                req
+            });
             res.json({
                 success: true,
                 message: 'Usuário deletado com sucesso',

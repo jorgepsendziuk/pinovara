@@ -1,13 +1,24 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authController = void 0;
 const authService_1 = require("../services/authService");
 const api_1 = require("../types/api");
+const auditService_1 = __importDefault(require("../services/auditService"));
+const audit_1 = require("../types/audit");
 class AuthController {
     async login(req, res) {
         try {
             const loginData = req.body;
             const result = await authService_1.authService.login(loginData);
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.LOGIN,
+                entity: 'auth',
+                userId: result.user.id,
+                req
+            });
             res.status(api_1.HttpStatus.OK).json({
                 success: true,
                 message: 'Login realizado com sucesso',
@@ -16,6 +27,11 @@ class AuthController {
             });
         }
         catch (error) {
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.LOGIN_FAILED,
+                entity: 'auth',
+                req
+            });
             this.handleError(error, res);
         }
     }
@@ -99,6 +115,13 @@ class AuthController {
     }
     async logout(req, res) {
         try {
+            const userId = req.user?.id;
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.LOGOUT,
+                entity: 'auth',
+                userId,
+                req
+            });
             res.status(api_1.HttpStatus.OK).json({
                 success: true,
                 message: 'Logout realizado com sucesso',

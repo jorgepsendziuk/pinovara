@@ -3,6 +3,8 @@ import { organizacaoController } from '../controllers/organizacaoController';
 import { abrangenciaController } from '../controllers/abrangenciaController';
 import { associadosJuridicosController } from '../controllers/associadosJuridicosController';
 import { producaoController } from '../controllers/producaoController';
+import { indicadoresController } from '../controllers/indicadoresController';
+import { participantesController } from '../controllers/participantesController';
 import { authenticateToken, requirePermission } from '../middleware/auth';
 import { checkOrganizacaoPermission } from '../middleware/roleAuth';
 
@@ -44,5 +46,16 @@ router.get('/:id/producao', producaoController.list);
 router.post('/:id/producao', producaoController.create);
 router.put('/:id/producao/:itemId', producaoController.update);
 router.delete('/:id/producao/:itemId', producaoController.delete);
+
+// Indicadores
+router.get('/:id/indicadores', indicadoresController.list);
+router.post('/:id/indicadores', indicadoresController.create);
+router.delete('/:id/indicadores/:indicadorId', indicadoresController.delete);
+
+// Participantes
+router.get('/:id/participantes', participantesController.list);
+router.post('/:id/participantes', participantesController.create);
+router.put('/:id/participantes/:participanteId', participantesController.update);
+router.delete('/:id/participantes/:participanteId', participantesController.delete);
 
 export default router;

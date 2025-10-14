@@ -5,6 +5,8 @@ import { OrganizacaoFilters } from '../types/organizacao';
 import { HttpStatus } from '../types/api';
 import { AuthRequest } from '../middleware/auth';
 import { extractEmailFromCreatorUri } from '../utils/odkHelper';
+import auditService from '../services/auditService';
+import { AuditAction } from '../types/audit';
 
 class OrganizacaoController {
   /**
@@ -145,6 +147,16 @@ class OrganizacaoController {
 
       const organizacao = await organizacaoService.create(data);
 
+      // Registrar log de auditoria
+      await auditService.createLog({
+        action: AuditAction.CREATE,
+        entity: 'organizacao',
+        entityId: organizacao.id?.toString(),
+        newData: organizacao,
+        userId: req.user?.id,
+        req
+      });
+
       res.status(HttpStatus.CREATED).json({
         success: true,
         message: 'Organização criada com sucesso',
@@ -233,7 +245,20 @@ class OrganizacaoController {
         }
       }
 
+      // Capturar dados antes da atualização para auditoria
+      const organizacaoAntes = await organizacaoService.getById(id);
       const organizacao = await organizacaoService.update(id, data);
+
+      // Registrar log de auditoria
+      await auditService.createLog({
+        action: AuditAction.UPDATE,
+        entity: 'organizacao',
+        entityId: id.toString(),
+        oldData: organizacaoAntes,
+        newData: organizacao,
+        userId: req.user?.id,
+        req
+      });
 
       res.status(HttpStatus.OK).json({
         success: true,
@@ -279,7 +304,19 @@ class OrganizacaoController {
         return;
       }
 
+      // Capturar dados antes da exclusão para auditoria
+      const organizacaoAntes = await organizacaoService.getById(id);
       await organizacaoService.delete(id);
+
+      // Registrar log de auditoria
+      await auditService.createLog({
+        action: AuditAction.DELETE,
+        entity: 'organizacao',
+        entityId: id.toString(),
+        oldData: organizacaoAntes,
+        userId: req.user?.id,
+        req
+      });
 
       res.status(HttpStatus.OK).json({
         success: true,

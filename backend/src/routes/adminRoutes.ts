@@ -4,6 +4,7 @@ import { requireAdmin } from '../middleware/adminAuth';
 import adminController from '../controllers/adminController';
 import { analyticsController } from '../controllers/analyticsController';
 import { odkSyncController } from '../controllers/odkSyncController';
+import auditController from '../controllers/auditController';
 import { migrateIdTecnico } from '../scripts/migrate-id-tecnico';
 import { createCoordenadorRole } from '../scripts/create-coordenador-role';
 
@@ -203,6 +204,26 @@ router.get('/system-info', async (req, res) => {
  * Buscar métricas do sistema para o painel de analytics
  */
 router.get('/analytics/metrics', analyticsController.getMetrics.bind(analyticsController));
+
+// ========== AUDIT LOGS ROUTES ==========
+
+/**
+ * GET /admin/audit-logs
+ * Listar logs de auditoria com filtros
+ */
+router.get('/audit-logs', auditController.getAuditLogs);
+
+/**
+ * GET /admin/audit-logs/stats
+ * Estatísticas de auditoria
+ */
+router.get('/audit-logs/stats', auditController.getAuditStats);
+
+/**
+ * GET /admin/audit-logs/export
+ * Exportar logs de auditoria para CSV
+ */
+router.get('/audit-logs/export', auditController.exportAuditLogs);
 
 // ========== ODK SYNC ROUTES ==========
 

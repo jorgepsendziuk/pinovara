@@ -3,6 +3,8 @@ import { authService, ApiError } from '../services/authService';
 import { LoginData, RegisterData } from '../types/auth';
 import { HttpStatus } from '../types/api';
 import { AuthRequest } from '../middleware/auth';
+import auditService from '../services/auditService';
+import { AuditAction } from '../types/audit';
 
 class AuthController {
   /**
@@ -13,6 +15,14 @@ class AuthController {
       const loginData: LoginData = req.body;
       const result = await authService.login(loginData);
 
+      // Registrar log de login bem-sucedido
+      await auditService.createLog({
+        action: AuditAction.LOGIN,
+        entity: 'auth',
+        userId: result.user.id,
+        req
+      });
+
       res.status(HttpStatus.OK).json({
         success: true,
         message: 'Login realizado com sucesso',
@@ -20,6 +30,13 @@ class AuthController {
         timestamp: new Date().toISOString()
       });
     } catch (error) {
+      // Registrar log de tentativa de login falhada
+      await auditService.createLog({
+        action: AuditAction.LOGIN_FAILED,
+        entity: 'auth',
+        req
+      });
+
       this.handleError(error, res);
     }
   }
@@ -124,8 +141,14 @@ class AuthController {
    */
   async logout(req: Request, res: Response): Promise<void> {
     try {
-      // Em uma implementação completa, aqui seria adicionado o token a uma blacklist
-      // Por enquanto, apenas retorna sucesso
+      // Registrar log de logout
+      const userId = (req as any).user?.id;
+      await auditService.createLog({
+        action: AuditAction.LOGOUT,
+        entity: 'auth',
+        userId,
+        req
+      });
       
       res.status(HttpStatus.OK).json({
         success: true,

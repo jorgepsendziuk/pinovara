@@ -128,5 +128,6 @@ export type AbaAtiva =
   | 'producao'
   | 'diagnostico' 
   | 'planoGestao'
-  | 'validacao';
+  | 'validacao'
+  | 'complementos';
 export type AccordionAberto = string | null;

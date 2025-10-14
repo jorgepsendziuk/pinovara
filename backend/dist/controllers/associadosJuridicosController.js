@@ -1,8 +1,13 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.associadosJuridicosController = void 0;
 const client_1 = require("@prisma/client");
 const api_1 = require("../types/api");
+const auditService_1 = __importDefault(require("../services/auditService"));
+const audit_1 = require("../types/audit");
 const prisma = new client_1.PrismaClient();
 exports.associadosJuridicosController = {
     async list(req, res) {
@@ -45,6 +50,14 @@ exports.associadosJuridicosController = {
                     ordinal_number: 1,
                 },
             });
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.CREATE,
+                entity: 'associado_juridico',
+                entityId: item.id?.toString(),
+                newData: item,
+                userId: req.user?.id,
+                req
+            });
             res.status(api_1.HttpStatus.CREATED).json({ success: true, data: item });
         }
         catch (error) {
@@ -59,6 +72,9 @@ exports.associadosJuridicosController = {
         try {
             const itemId = parseInt(req.params.itemId);
             const { nomeOrganizacao, cnpj } = req.body;
+            const itemAntes = await prisma.organizacao_abrangencia_pj.findUnique({
+                where: { id: itemId }
+            });
             const item = await prisma.organizacao_abrangencia_pj.update({
                 where: { id: itemId },
                 data: {
@@ -66,6 +82,15 @@ exports.associadosJuridicosController = {
                     cnpj_pj: cnpj,
                     last_update_date: new Date(),
                 },
+            });
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.UPDATE,
+                entity: 'associado_juridico',
+                entityId: itemId.toString(),
+                oldData: itemAntes,
+                newData: item,
+                userId: req.user?.id,
+                req
             });
             res.json({ success: true, data: item });
         }
@@ -80,8 +105,19 @@ exports.associadosJuridicosController = {
     async delete(req, res) {
         try {
             const itemId = parseInt(req.params.itemId);
+            const itemAntes = await prisma.organizacao_abrangencia_pj.findUnique({
+                where: { id: itemId }
+            });
             await prisma.organizacao_abrangencia_pj.delete({
                 where: { id: itemId },
+            });
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.DELETE,
+                entity: 'associado_juridico',
+                entityId: itemId.toString(),
+                oldData: itemAntes,
+                userId: req.user?.id,
+                req
             });
             res.json({ success: true, message: 'Organização excluída com sucesso' });
         }
