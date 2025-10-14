@@ -37,5 +37,6 @@ vamos criar um design system desse sistema, um padrao onde todas as novas pagina
 
 app.css esta gigantesco
 
+por algum motivo os arquivos baixados no remoto saem todos com um underscore no final do arquivo. porque? e retire isso
 
 melhorar mensagens de erro nginx

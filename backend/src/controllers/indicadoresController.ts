@@ -39,7 +39,7 @@ export const indicadoresController = {
       const existe = await prisma.organizacao_indicador.findFirst({
         where: {
           id_organizacao: organizacaoId,
-          id_indicador: id_indicador
+          valor: id_indicador
         }
       });
 
@@ -54,8 +54,15 @@ export const indicadoresController = {
 
       const indicador = await prisma.organizacao_indicador.create({
         data: {
+          uri: `indicador_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          creator_uri_user: 'user_admin',
+          creation_date: new Date(),
+          last_update_date: new Date(),
+          parent_auri: `organizacao_${organizacaoId}`,
+          ordinal_number: 1,
+          top_level_auri: `organizacao_${organizacaoId}`,
           id_organizacao: organizacaoId,
-          id_indicador: id_indicador
+          valor: id_indicador
         }
       });
 
@@ -84,7 +91,7 @@ export const indicadoresController = {
       await prisma.organizacao_indicador.deleteMany({
         where: {
           id_organizacao: organizacaoId,
-          id_indicador: indicadorId
+          valor: indicadorId
         }
       });
 
