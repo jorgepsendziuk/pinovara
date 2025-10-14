@@ -38,6 +38,13 @@ export const participantesController = {
 
       const participante = await prisma.organizacao_participante.create({
         data: {
+          uri: `participante_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          creator_uri_user: 'user_admin',
+          creation_date: new Date(),
+          last_update_date: new Date(),
+          parent_auri: `organizacao_${organizacaoId}`,
+          ordinal_number: 1,
+          top_level_auri: `organizacao_${organizacaoId}`,
           id_organizacao: organizacaoId,
           nome,
           cpf: cpf.replace(/\D/g, ''), // Remove formatação
@@ -73,6 +80,8 @@ export const participantesController = {
       const participante = await prisma.organizacao_participante.update({
         where: { id: participanteId },
         data: {
+          last_update_uri_user: 'user_admin',
+          last_update_date: new Date(),
           nome,
           cpf: cpf.replace(/\D/g, ''), // Remove formatação
           telefone,
