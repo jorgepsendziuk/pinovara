@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { PDFService, OrganizacaoData } from '../../services/pdfService';
 import { DataGrid, DataGridColumn } from '../../components/DataGrid';
 import { StatusValidacaoBadge } from '../../utils/validacaoHelpers';
+import { ModalArquivos } from '../../components/organizacoes/ModalArquivos';
 import {
   Edit,
   Trash,
@@ -14,7 +15,8 @@ import {
   Monitor,
   X,
   FileText,
-  User
+  User,
+  FolderOpen
 } from 'lucide-react';
 
 interface Organizacao {
@@ -46,6 +48,8 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const [loading, setLoading] = useState(true);
   const [gerandoPDF, setGerandoPDF] = useState<number | null>(null);
   const [gerandoRelatorio, setGerandoRelatorio] = useState<number | null>(null);
+  const [modalArquivosAberto, setModalArquivosAberto] = useState(false);
+  const [organizacaoSelecionada, setOrganizacaoSelecionada] = useState<{ id: number; nome: string } | null>(null);
 
   // Estados para DataGrid
   const [currentPage, setCurrentPage] = useState(1);
@@ -156,6 +160,16 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     } finally {
       setGerandoPDF(null);
     }
+  };
+
+  const abrirModalArquivos = (organizacaoId: number, nomeOrganizacao: string) => {
+    setOrganizacaoSelecionada({ id: organizacaoId, nome: nomeOrganizacao });
+    setModalArquivosAberto(true);
+  };
+
+  const fecharModalArquivos = () => {
+    setModalArquivosAberto(false);
+    setOrganizacaoSelecionada(null);
   };
 
   const fetchOrganizacoes = async () => {
@@ -474,6 +488,31 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
             <FileText size={14} />
           </button>
           <button
+            onClick={() => abrirModalArquivos(record.id, record.nome)}
+            title="Ver Arquivos Anexados"
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #f59e0b',
+              background: 'white',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              color: '#f59e0b',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#f59e0b';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.color = '#f59e0b';
+            }}
+          >
+            <FolderOpen size={14} />
+          </button>
+          <button
             onClick={() => gerarTermoAdesao(record.id)}
             title="Imprimir Termo de Adesão"
             disabled={gerandoPDF === record.id}
@@ -725,6 +764,15 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           />
         </div>
       </div>
+
+      {/* Modal de Arquivos */}
+      {modalArquivosAberto && organizacaoSelecionada && (
+        <ModalArquivos
+          organizacaoId={organizacaoSelecionada.id}
+          organizacaoNome={organizacaoSelecionada.nome}
+          onClose={fecharModalArquivos}
+        />
+      )}
     </div>
   );
 }
