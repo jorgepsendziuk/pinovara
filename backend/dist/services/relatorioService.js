@@ -9,6 +9,7 @@ const client_1 = require("@prisma/client");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const stream_1 = require("stream");
+const definicoes_1 = require("./relatorio/definicoes");
 const prisma = new client_1.PrismaClient();
 const UPLOAD_DIR = '/var/pinovara/shared/uploads/fotos';
 const DOCUMENTS_DIR = '/var/pinovara/shared/uploads/arquivos';
@@ -21,32 +22,7 @@ exports.relatorioService = {
         try {
             const organizacao = await prisma.organizacao.findUnique({
                 where: { id: organizacaoId },
-                select: {
-                    id: true,
-                    nome: true,
-                    cnpj: true,
-                    telefone: true,
-                    email: true,
-                    data_fundacao: true,
-                    organizacao_end_logradouro: true,
-                    organizacao_end_bairro: true,
-                    organizacao_end_complemento: true,
-                    organizacao_end_numero: true,
-                    organizacao_end_cep: true,
-                    gps_lat: true,
-                    gps_lng: true,
-                    gps_alt: true,
-                    representante_nome: true,
-                    representante_cpf: true,
-                    representante_rg: true,
-                    representante_telefone: true,
-                    representante_email: true,
-                    representante_end_logradouro: true,
-                    representante_end_bairro: true,
-                    representante_end_complemento: true,
-                    representante_end_numero: true,
-                    representante_end_cep: true,
-                    representante_funcao: true,
+                include: {
                     estado_organizacao_estadoToestado: true,
                     municipio_ibge: true,
                     organizacao_foto: {
@@ -58,52 +34,12 @@ exports.relatorioService = {
                     organizacao_participante: true,
                     organizacao_indicador: true,
                     organizacao_producao: true,
-                    organizacao_abrangencia_socio: true,
-                    organizacao_abrangencia_pj: true,
-                    descricao: true,
-                    eixos_trabalhados: true,
-                    enfase: true,
-                    enfase_outros: true,
-                    metodologia: true,
-                    orientacoes: true,
-                    obs: true,
-                    assinatura_rep_legal: true,
-                    participantes_menos_10: true,
-                    caracteristicas_n_total_socios: true,
-                    caracteristicas_n_total_socios_caf: true,
-                    caracteristicas_n_distintos_caf: true,
-                    caracteristicas_n_ativos_total: true,
-                    caracteristicas_n_ativos_caf: true,
-                    caracteristicas_n_naosocio_op_total: true,
-                    caracteristicas_n_naosocio_op_caf: true,
-                    caracteristicas_n_ingressaram_total_12_meses: true,
-                    caracteristicas_n_ingressaram_caf_12_meses: true,
-                    caracteristicas_n_socios_paa: true,
-                    caracteristicas_n_naosocios_paa: true,
-                    caracteristicas_n_socios_pnae: true,
-                    caracteristicas_n_naosocios_pnae: true,
-                    caracteristicas_ta_af_homem: true,
-                    caracteristicas_ta_af_mulher: true,
-                    caracteristicas_ta_a_homem: true,
-                    caracteristicas_ta_a_mulher: true,
-                    caracteristicas_ta_p_homem: true,
-                    caracteristicas_ta_p_mulher: true,
-                    caracteristicas_ta_i_homem: true,
-                    caracteristicas_ta_i_mulher: true,
-                    caracteristicas_ta_q_homem: true,
-                    caracteristicas_ta_q_mulher: true,
-                    caracteristicas_ta_e_homem: true,
-                    caracteristicas_ta_e_mulher: true,
-                    caracteristicas_ta_o_homem: true,
-                    caracteristicas_ta_o_mulher: true,
-                    caracteristicas_ta_caf_organico: true,
-                    caracteristicas_ta_caf_agroecologico: true,
-                    caracteristicas_ta_caf_transicao: true,
-                    caracteristicas_ta_caf_convencional: true,
-                    sim_nao_file: true,
-                    sim_nao_producao: true,
-                    sim_nao_socio: true,
-                    sim_nao_pj: true
+                    organizacao_abrangencia_socio: {
+                        include: {
+                            municipio_ibge: true
+                        }
+                    },
+                    organizacao_abrangencia_pj: true
                 }
             });
             if (!organizacao) {
@@ -171,10 +107,20 @@ exports.relatorioService = {
                         colunaDireita.push(item);
                     }
                 });
-                const maxLinhas = Math.max(colunaEsquerda.length, colunaDireita.length);
-                const alturaLinha = 20;
-                const alturaTotalTabela = maxLinhas * alturaLinha;
                 const larguraColuna = (doc.page.width - 100) / 2 - 10;
+                const larguraTexto = larguraColuna - 120;
+                const alturaLinha = 28;
+                let alturaTotalEsquerda = 0;
+                let alturaTotalDireita = 0;
+                colunaEsquerda.forEach(([label, value]) => {
+                    const alturaEspecial = label.includes('Nome:') ? 35 : alturaLinha;
+                    alturaTotalEsquerda += alturaEspecial;
+                });
+                colunaDireita.forEach(([label, value]) => {
+                    const alturaEspecial = label.includes('Logradouro:') ? 35 : alturaLinha;
+                    alturaTotalDireita += alturaEspecial;
+                });
+                const alturaTotalTabela = Math.max(alturaTotalEsquerda, alturaTotalDireita);
                 doc.strokeColor('#000')
                     .lineWidth(1)
                     .rect(50, doc.y, larguraColuna, alturaTotalTabela)
@@ -183,13 +129,14 @@ exports.relatorioService = {
                     .stroke();
                 const startY = doc.y;
                 let currentY = startY + 5;
-                colunaEsquerda.forEach(([label, value]) => {
+                colunaEsquerda.forEach(([label, value], index) => {
+                    const alturaEspecial = label.includes('Nome:') ? 35 : alturaLinha;
                     doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
-                        .text(label, 55, currentY, { width: 100, continued: false });
+                        .text(label, 55, currentY, { width: 110, continued: false });
                     doc.font('Helvetica').fontSize(9)
-                        .text(value, 160, currentY, { width: larguraColuna - 110 });
-                    currentY += alturaLinha;
-                    if (currentY < startY + alturaTotalTabela) {
+                        .text(value, 170, currentY, { width: larguraTexto });
+                    currentY += alturaEspecial;
+                    if (index < colunaEsquerda.length - 1) {
                         doc.strokeColor('#ddd').lineWidth(0.5)
                             .moveTo(50, currentY - 5)
                             .lineTo(50 + larguraColuna, currentY - 5)
@@ -197,29 +144,28 @@ exports.relatorioService = {
                     }
                 });
                 currentY = startY + 5;
-                colunaDireita.forEach(([label, value]) => {
+                colunaDireita.forEach(([label, value], index) => {
                     const xOffset = 50 + larguraColuna + 10;
+                    const alturaEspecial = label.includes('Logradouro:') ? 35 : alturaLinha;
                     doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
-                        .text(label, xOffset + 5, currentY, { width: 100, continued: false });
+                        .text(label, xOffset + 5, currentY, { width: 110, continued: false });
                     doc.font('Helvetica').fontSize(9)
-                        .text(value, xOffset + 110, currentY, { width: larguraColuna - 115 });
-                    currentY += alturaLinha;
-                    if (currentY < startY + alturaTotalTabela) {
+                        .text(value, xOffset + 120, currentY, { width: larguraTexto });
+                    currentY += alturaEspecial;
+                    if (index < colunaDireita.length - 1) {
                         doc.strokeColor('#ddd').lineWidth(0.5)
                             .moveTo(xOffset, currentY - 5)
                             .lineTo(xOffset + larguraColuna, currentY - 5)
                             .stroke();
                     }
                 });
-                doc.y = startY + alturaTotalTabela + 20;
+                doc.y = startY + alturaTotalTabela + 10;
             };
             const org = organizacao;
             doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                 .text('DADOS BÁSICOS DA ORGANIZAÇÃO', 50, doc.y);
             doc.moveDown(0.5);
             const tabelaDados = [];
-            if (org.nome)
-                tabelaDados.push(['Nome:', org.nome]);
             if (org.cnpj)
                 tabelaDados.push(['CNPJ:', org.cnpj]);
             if (org.data_fundacao)
@@ -228,12 +174,22 @@ exports.relatorioService = {
                 tabelaDados.push(['Telefone:', org.telefone]);
             if (org.email)
                 tabelaDados.push(['E-mail:', org.email]);
-            if (org.estado_organizacao_estadoToestado?.descricao)
-                tabelaDados.push(['Estado:', org.estado_organizacao_estadoToestado.descricao]);
-            if (org.municipio_ibge?.descricao)
-                tabelaDados.push(['Município:', org.municipio_ibge.descricao]);
+            if (org.estado_organizacao_estadoToestado?.descricao || org.municipio_ibge?.descricao) {
+                const estadoDesc = org.estado_organizacao_estadoToestado?.descricao || '';
+                const municipioDesc = org.municipio_ibge?.descricao || '';
+                if (estadoDesc && municipioDesc) {
+                    const uf = estadoDesc.trim().substring(0, 2).toUpperCase();
+                    tabelaDados.push(['Localização:', `${uf} - ${municipioDesc}`]);
+                }
+                else if (estadoDesc) {
+                    tabelaDados.push(['Localização:', estadoDesc]);
+                }
+                else {
+                    tabelaDados.push(['Localização:', municipioDesc]);
+                }
+            }
             criarTabela2Colunas(tabelaDados);
-            if (doc.y > 650) {
+            if (doc.y > 680) {
                 doc.addPage();
             }
             doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
@@ -258,7 +214,7 @@ exports.relatorioService = {
             }
             criarTabela2Colunas(tabelaEndereco);
             if (org.representante_nome || org.organizacao_participante?.length > 0) {
-                if (doc.y > 650) {
+                if (doc.y > 680) {
                     doc.addPage();
                 }
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
@@ -351,7 +307,7 @@ exports.relatorioService = {
                     doc.addPage();
                 }
                 doc.moveDown(0.5);
-                doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
+                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                     .text('DISTRIBUIÇÃO POR CATEGORIA E GÊNERO', 50, doc.y);
                 doc.moveDown(0.3);
                 const categorias = [
@@ -363,18 +319,20 @@ exports.relatorioService = {
                     { nome: 'Extrativista', campo: 'caracteristicas_ta_e' },
                     { nome: 'Outro', campo: 'caracteristicas_ta_o' }
                 ];
+                const dadosDistribuicao = [];
                 categorias.forEach(cat => {
                     const homem = organizacao[`${cat.campo}_homem`] || 0;
                     const mulher = organizacao[`${cat.campo}_mulher`] || 0;
                     const total = homem + mulher;
                     if (total > 0) {
-                        doc.font('Helvetica').fontSize(9).fillColor('#000')
-                            .text(`${cat.nome}: ${total} (${homem}H / ${mulher}M)`, 70, doc.y);
-                        doc.moveDown(0.3);
+                        dadosDistribuicao.push([`${cat.nome}:`, `${total} (${homem}H / ${mulher}M)`]);
                     }
                 });
-                doc.moveDown(0.3);
-                doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
+                if (dadosDistribuicao.length > 0) {
+                    criarTabela2Colunas(dadosDistribuicao);
+                }
+                doc.moveDown(0.5);
+                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                     .text('TIPOS DE PRODUÇÃO', 50, doc.y);
                 doc.moveDown(0.3);
                 const tiposProducao = [
@@ -383,14 +341,16 @@ exports.relatorioService = {
                     { nome: 'Transição', campo: 'caracteristicas_ta_caf_transicao' },
                     { nome: 'Convencional', campo: 'caracteristicas_ta_caf_convencional' }
                 ];
+                const dadosProducao = [];
                 tiposProducao.forEach(tipo => {
                     const valor = organizacao[tipo.campo] || 0;
                     if (valor > 0) {
-                        doc.font('Helvetica').fontSize(9).fillColor('#000')
-                            .text(`${tipo.nome}: ${valor}`, 70, doc.y);
-                        doc.moveDown(0.3);
+                        dadosProducao.push([`${tipo.nome}:`, valor.toString()]);
                     }
                 });
+                if (dadosProducao.length > 0) {
+                    criarTabela2Colunas(dadosProducao);
+                }
             }
             if (organizacao.organizacao_producao && organizacao.organizacao_producao.length > 0) {
                 if (doc.y > 600) {
@@ -444,7 +404,7 @@ exports.relatorioService = {
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                     .text('DESCRIÇÃO GERAL DO EMPREENDIMENTO', 50, doc.y);
                 doc.moveDown(0.5);
-                doc.font('Helvetica').fontSize(10).fillColor('#000')
+                doc.font('Helvetica').fontSize(9).fillColor('#000')
                     .text(organizacao.descricao, 50, doc.y, {
                     width: doc.page.width - 100,
                     align: 'justify'
@@ -458,44 +418,53 @@ exports.relatorioService = {
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                     .text('ORIENTAÇÕES TÉCNICAS DA ATIVIDADE', 50, doc.y);
                 doc.moveDown(0.5);
-                const tabelaOrientacoes = [];
                 if (organizacao.eixos_trabalhados) {
-                    tabelaOrientacoes.push(['Eixos Trabalhados:', organizacao.eixos_trabalhados]);
-                }
-                const enfaseMap = {
-                    1: 'PNAE',
-                    2: 'PAA Leite',
-                    3: 'Crédito do INCRA',
-                    4: 'Governos',
-                    5: 'Redes de Cooperação e/ou Comercialização'
-                };
-                if (organizacao.enfase) {
-                    const enfaseTexto = enfaseMap[organizacao.enfase] ||
-                        (organizacao.enfase === 99 && organizacao.enfase_outros ? organizacao.enfase_outros : 'Outro');
-                    tabelaOrientacoes.push(['Ênfase:', enfaseTexto]);
-                }
-                criarTabela2Colunas(tabelaOrientacoes);
-                if (organizacao.metodologia) {
-                    doc.moveDown(0.5);
                     doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
-                        .text('Metodologia Utilizada:', 50, doc.y);
+                        .text('Eixos Trabalhados:', 50, doc.y);
                     doc.moveDown(0.3);
                     doc.font('Helvetica').fontSize(9).fillColor('#000')
-                        .text(organizacao.metodologia, 70, doc.y, {
-                        width: doc.page.width - 140,
+                        .text(organizacao.eixos_trabalhados, 50, doc.y, {
+                        width: doc.page.width - 100,
                         align: 'justify'
                     });
+                    doc.moveDown(0.7);
+                }
+                if (organizacao.enfase) {
+                    const enfaseMap = {
+                        1: 'PNAE',
+                        2: 'PAA Leite',
+                        3: 'Crédito do INCRA',
+                        4: 'Governos',
+                        5: 'Redes de Cooperação e/ou Comercialização'
+                    };
+                    const enfaseTexto = enfaseMap[organizacao.enfase] ||
+                        (organizacao.enfase === 99 && organizacao.enfase_outros ? organizacao.enfase_outros : 'Outro');
+                    const tabelaEnfase = [['Ênfase:', enfaseTexto]];
+                    criarTabela2Colunas(tabelaEnfase);
+                }
+                if (organizacao.metodologia) {
+                    doc.moveDown(0.5);
+                    doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+                        .text('METODOLOGIA UTILIZADA', 50, doc.y);
+                    doc.moveDown(0.5);
+                    doc.font('Helvetica').fontSize(9).fillColor('#000')
+                        .text(organizacao.metodologia, 50, doc.y, {
+                        width: doc.page.width - 100,
+                        align: 'justify'
+                    });
+                    doc.moveDown(1);
                 }
                 if (organizacao.orientacoes) {
                     doc.moveDown(0.5);
-                    doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
-                        .text('Orientações e Soluções Técnicas:', 50, doc.y);
-                    doc.moveDown(0.3);
+                    doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+                        .text('ORIENTAÇÕES E SOLUÇÕES TÉCNICAS', 50, doc.y);
+                    doc.moveDown(0.5);
                     doc.font('Helvetica').fontSize(9).fillColor('#000')
-                        .text(organizacao.orientacoes, 70, doc.y, {
-                        width: doc.page.width - 140,
+                        .text(organizacao.orientacoes, 50, doc.y, {
+                        width: doc.page.width - 100,
                         align: 'justify'
                     });
+                    doc.moveDown(1);
                 }
             }
             if (organizacao.organizacao_indicador && organizacao.organizacao_indicador.length > 0) {
@@ -523,12 +492,14 @@ exports.relatorioService = {
                     15: 'Programa ou ações ambientais comunitárias',
                     16: 'Prática de proteção de nascentes e/ou uso racional de recursos hídricos'
                 };
-                doc.font('Helvetica').fontSize(9).fillColor('#000');
+                const dadosIndicadores = [];
                 organizacao.organizacao_indicador.forEach((indicador, index) => {
                     const descricao = indicadoresMap[indicador.valor] || `Indicador ${indicador.valor}`;
-                    doc.text(`${index + 1}. ${descricao}`, 50, doc.y);
-                    doc.moveDown(0.3);
+                    dadosIndicadores.push([`${index + 1}.`, descricao]);
                 });
+                if (dadosIndicadores.length > 0) {
+                    criarTabela2Colunas(dadosIndicadores);
+                }
             }
             if (organizacao.participantes_menos_10 === 1 && organizacao.organizacao_participante && organizacao.organizacao_participante.length > 0) {
                 if (doc.y > 600) {
@@ -555,6 +526,91 @@ exports.relatorioService = {
                     doc.moveDown(1.5);
                 });
             }
+            const respostaMap = {
+                1: 'Sim',
+                2: 'Não',
+                3: 'Parcial',
+                4: 'Não se Aplica'
+            };
+            const corRespostaMap = {
+                1: '#056839',
+                2: '#d32f2f',
+                3: '#f57c00',
+                4: '#666'
+            };
+            const renderizarSubarea = (titulo) => {
+                doc.moveDown(1.5);
+                if (doc.y > 680) {
+                    doc.addPage();
+                }
+                const larguraBarra = doc.page.width - 100;
+                doc.rect(50, doc.y - 5, larguraBarra, 20)
+                    .fill('#f0f0f0');
+                doc.font('Helvetica-Bold').fontSize(10).fillColor('#3b2313')
+                    .text(titulo, 55, doc.y, { width: larguraBarra - 10 });
+                doc.moveDown(0.8);
+            };
+            const renderizarTabelaPraticas = (praticas) => {
+                praticas.forEach(pratica => {
+                    if (doc.y > 720) {
+                        doc.addPage();
+                    }
+                    const respostaTexto = pratica.resposta ? respostaMap[pratica.resposta] || '-' : '-';
+                    const corResposta = pratica.resposta ? corRespostaMap[pratica.resposta] || '#666' : '#666';
+                    const startY = doc.y;
+                    const margemEsquerda = 55;
+                    const larguraID = 25;
+                    const larguraPergunta = 280;
+                    const larguraResposta = 70;
+                    const larguraComentario = doc.page.width - margemEsquerda - larguraID - larguraPergunta - larguraResposta - 50;
+                    if (pratica.numero % 2 === 0) {
+                        doc.rect(margemEsquerda, startY - 2, doc.page.width - 100, 0)
+                            .fillOpacity(0.05)
+                            .fill('#056839')
+                            .fillOpacity(1);
+                    }
+                    doc.font('Helvetica-Bold').fontSize(8).fillColor('#3b2313')
+                        .text(pratica.numero.toString(), margemEsquerda, startY, { width: larguraID, align: 'center' });
+                    doc.font('Helvetica').fontSize(8).fillColor('#000')
+                        .text(pratica.titulo, margemEsquerda + larguraID + 5, startY, { width: larguraPergunta, align: 'left' });
+                    doc.font('Helvetica-Bold').fontSize(8).fillColor(corResposta)
+                        .text(respostaTexto, margemEsquerda + larguraID + larguraPergunta + 10, startY, {
+                        width: larguraResposta,
+                        align: 'center'
+                    });
+                    let alturaLinha = 0;
+                    const linhasPergunta = Math.ceil(doc.heightOfString(pratica.titulo, { width: larguraPergunta }));
+                    alturaLinha = Math.max(alturaLinha, linhasPergunta);
+                    let textoExtra = '';
+                    if (pratica.comentario || pratica.proposta) {
+                        if (pratica.comentario && pratica.proposta) {
+                            textoExtra = `💬 ${pratica.comentario}\n\n💡 Proposta: ${pratica.proposta}`;
+                        }
+                        else if (pratica.comentario) {
+                            textoExtra = `💬 ${pratica.comentario}`;
+                        }
+                        else if (pratica.proposta) {
+                            textoExtra = `💡 ${pratica.proposta}`;
+                        }
+                        const xComentario = margemEsquerda + larguraID + larguraPergunta + larguraResposta + 15;
+                        doc.font('Helvetica').fontSize(7).fillColor('#333')
+                            .text(textoExtra, xComentario, startY, {
+                            width: larguraComentario,
+                            align: 'left'
+                        });
+                        const linhasComentario = Math.ceil(doc.heightOfString(textoExtra, { width: larguraComentario }));
+                        alturaLinha = Math.max(alturaLinha, linhasComentario);
+                    }
+                    doc.strokeColor('#ddd')
+                        .lineWidth(0.5)
+                        .moveTo(margemEsquerda, startY + alturaLinha + 5)
+                        .lineTo(doc.page.width - 50, startY + alturaLinha + 5)
+                        .stroke();
+                    doc.y = startY + alturaLinha + 8;
+                });
+                doc.moveDown(0.5);
+            };
+            (0, definicoes_1.renderizarTodasAreasGerenciais)(doc, org);
             if (organizacao.obs) {
                 if (doc.y > 600) {
                     doc.addPage();
@@ -562,7 +618,7 @@ exports.relatorioService = {
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                     .text('OBSERVAÇÕES FINAIS', 50, doc.y);
                 doc.moveDown(0.5);
-                doc.font('Helvetica').fontSize(10).fillColor('#000')
+                doc.font('Helvetica').fontSize(9).fillColor('#000')
                     .text(organizacao.obs, 50, doc.y, {
                     width: doc.page.width - 100,
                     align: 'justify'
