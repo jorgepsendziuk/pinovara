@@ -125,7 +125,10 @@ class DocumentoController {
                 });
                 return;
             }
-            res.download(filePath, documento.arquivo);
+            const nomeDownload = documento.arquivo;
+            res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(nomeDownload)}"`);
+            res.setHeader('Content-Type', 'application/octet-stream');
+            res.sendFile(filePath);
         }
         catch (error) {
             console.error('Erro ao fazer download de documento:', error);

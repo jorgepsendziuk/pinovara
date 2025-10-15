@@ -174,9 +174,15 @@ export const fotoController = {
         });
       }
 
-      // Garantir que arquivo tenha extensão no download
+      // Usar o nome original do arquivo armazenado no banco
       const nomeDownload = foto.foto.includes('.') ? foto.foto : `${foto.foto}.jpg`;
-      res.download(filePath, nomeDownload);
+      
+      // Configurar headers manualmente para garantir que o nome seja enviado corretamente
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(nomeDownload)}"`);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      
+      // Enviar arquivo
+      res.sendFile(filePath);
     } catch (error: any) {
       console.error('Erro ao fazer download de foto:', error);
       res.status(500).json({

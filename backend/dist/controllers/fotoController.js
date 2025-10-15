@@ -152,7 +152,9 @@ exports.fotoController = {
                 });
             }
             const nomeDownload = foto.foto.includes('.') ? foto.foto : `${foto.foto}.jpg`;
-            res.download(filePath, nomeDownload);
+            res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(nomeDownload)}"`);
+            res.setHeader('Content-Type', 'application/octet-stream');
+            res.sendFile(filePath);
         }
         catch (error) {
             console.error('Erro ao fazer download de foto:', error);

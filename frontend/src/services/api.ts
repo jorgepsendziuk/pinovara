@@ -503,13 +503,19 @@ export const documentoAPI = {
     const link = document.createElement('a');
     link.href = url;
     
-    // Extrair nome do arquivo do header ou usar padrão
+    // Extrair nome do arquivo do header Content-Disposition
     const contentDisposition = response.headers['content-disposition'];
-    let filename = 'documento.pdf';
+    let filename = 'documento.pdf'; // fallback
+    
     if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
-      if (filenameMatch) {
-        filename = filenameMatch[1];
+      // Tentar extrair o nome do arquivo do header (suporta diferentes formatos)
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+        // Decodificar se estiver em UTF-8
+        if (filename.startsWith('UTF-8\'\'')) {
+          filename = decodeURIComponent(filename.substring(7));
+        }
       }
     }
     
@@ -627,10 +633,26 @@ export const fotoAPI = {
       { responseType: 'blob' }
     );
 
+    // Extrair nome do arquivo do header Content-Disposition
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = `foto_${fotoId}.jpg`; // fallback
+    
+    if (contentDisposition) {
+      // Tentar extrair o nome do arquivo do header
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+        // Decodificar se estiver em UTF-8
+        if (filename.startsWith('UTF-8\'\'')) {
+          filename = decodeURIComponent(filename.substring(7));
+        }
+      }
+    }
+
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `foto_${fotoId}.jpg`);
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     link.remove();

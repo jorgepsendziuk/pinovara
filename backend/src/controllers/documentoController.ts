@@ -151,8 +151,15 @@ class DocumentoController {
         return;
       }
 
-      // Fazer download
-      res.download(filePath, documento.arquivo!);
+      // Usar o nome original do arquivo armazenado no banco
+      const nomeDownload = documento.arquivo!;
+      
+      // Configurar headers manualmente para garantir que o nome seja enviado corretamente
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(nomeDownload)}"`);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      
+      // Enviar arquivo
+      res.sendFile(filePath);
     } catch (error) {
       console.error('Erro ao fazer download de documento:', error);
       res.status(500).json({
