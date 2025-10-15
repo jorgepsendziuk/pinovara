@@ -1,0 +1,1222 @@
+import PDFDocument from 'pdfkit';
+import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+import path from 'path';
+import { PassThrough } from 'stream';
+import { renderizarTodasAreasGerenciais } from './relatorio/definicoes';
+import { renderizarSubarea, renderizarTabelaPraticas } from './relatorio/renderizacaoPDF';
+
+const prisma = new PrismaClient();
+const UPLOAD_DIR = '/var/pinovara/shared/uploads/fotos';
+const DOCUMENTS_DIR = '/var/pinovara/shared/uploads/arquivos';
+
+export const relatorioService = {
+  /**
+   * Gera PDF com dados da organização e fotos
+   */
+  async gerarRelatorioPDF(organizacaoId: number): Promise<PassThrough> {
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    const stream = new PassThrough();
+    doc.pipe(stream);
+    
+    // Definir fonte padrão
+    doc.font('Helvetica');
+
+    try {
+      // Buscar dados completos da organização
+      const organizacao = await prisma.organizacao.findUnique({
+        where: { id: organizacaoId },
+        include: {
+          estado_organizacao_estadoToestado: true,
+          municipio_ibge: true,
+          organizacao_foto: {
+            orderBy: { ordinal_number: 'asc' }
+          },
+          organizacao_arquivo: {
+            orderBy: { ordinal_number: 'asc' }
+          },
+          organizacao_participante: true,
+          organizacao_indicador: true,
+          organizacao_producao: true,
+          organizacao_abrangencia_socio: {
+            include: {
+              municipio_ibge: true
+            }
+          },
+          organizacao_abrangencia_pj: true
+        }
+      });
+
+      if (!organizacao) {
+        throw new Error('Organização não encontrada');
+      }
+
+      // === CABEÇALHO BONITO (APENAS PRIMEIRA PÁGINA) ===
+      // Fundo claro para o cabeçalho
+      doc.rect(0, 0, doc.page.width, 100)
+        .fill('#f8f9fa');
+      
+      // Borda inferior verde
+      doc.strokeColor('#056839')
+        .lineWidth(3)
+        .moveTo(0, 100)
+        .lineTo(doc.page.width, 100)
+        .stroke();
+      
+      // Logo PINOVARA
+      let logoAdded = false;
+      const logoPaths = [
+        path.join(__dirname, '../../public/pinovara.png'),
+        path.join(__dirname, '../../../frontend/public/pinovara.png'),
+        path.join(__dirname, '../../../deploy-package/pinovara.png')
+      ];
+      
+      for (const logoPath of logoPaths) {
+        if (fs.existsSync(logoPath)) {
+          try {
+            doc.image(logoPath, 50, 25, { width: 60 });
+            logoAdded = true;
+            break;
+          } catch (e) {
+            // Continua tentando outros caminhos
+          }
+        }
+      }
+      
+      // Texto do cabeçalho com cores
+      const textX = logoAdded ? 120 : 50;
+      doc.fillColor('#056839')
+        .font('Helvetica-Bold')
+        .fontSize(16)
+        .text('SISTEMA PINOVARA', textX, 30);
+      
+      doc.fillColor('#3b2313')
+        .font('Helvetica')
+        .fontSize(10)
+        .text('Plataforma de Inovação Agroecológica - UFBA', textX, 50);
+      
+      doc.fillColor('#666')
+        .fontSize(8)
+        .text(`Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, textX, 65);
+      
+      doc.y = 120;
+
+      // Título do relatório
+      doc.fillColor('#3b2313')
+        .font('Helvetica-Bold')
+        .fontSize(16)
+        .text('RELATÓRIO DE ORGANIZAÇÃO', 50, doc.y, { align: 'center' });
+      
+      doc.fillColor('#056839')
+        .fontSize(14)
+        .text(organizacao.nome || 'Sem nome', 50, doc.y + 22, { align: 'center' });
+      
+      doc.y += 55;
+
+      // Linha divisória
+      doc.strokeColor('#056839')
+        .lineWidth(1)
+        .moveTo(50, doc.y)
+        .lineTo(doc.page.width - 50, doc.y)
+        .stroke();
+      
+      doc.moveDown(1.5);
+
+      // Função auxiliar para criar tabela de 2 colunas
+      const criarTabela2Colunas = (dados: [string, string][]) => {
+        const colunaEsquerda: [string, string][] = [];
+        const colunaDireita: [string, string][] = [];
+        
+        // Dividir dados em 2 colunas
+        dados.forEach((item, index) => {
+          if (index % 2 === 0) {
+            colunaEsquerda.push(item);
+          } else {
+            colunaDireita.push(item);
+          }
+        });
+
+        // Calcular altura da tabela
+        const maxLinhas = Math.max(colunaEsquerda.length, colunaDireita.length);
+        const alturaLinha = 20;
+        const alturaTotalTabela = maxLinhas * alturaLinha;
+        const larguraColuna = (doc.page.width - 100) / 2 - 10;
+
+        // Desenhar bordas da tabela
+        doc.strokeColor('#000')
+          .lineWidth(1)
+          .rect(50, doc.y, larguraColuna, alturaTotalTabela)
+          .stroke();
+        
+        doc.rect(50 + larguraColuna + 10, doc.y, larguraColuna, alturaTotalTabela)
+          .stroke();
+
+        const startY = doc.y;
+
+        // Coluna Esquerda
+        let currentY = startY + 5;
+        colunaEsquerda.forEach(([label, value]) => {
+          doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
+            .text(label, 55, currentY, { width: 100, continued: false });
+          doc.font('Helvetica').fontSize(9)
+            .text(value, 160, currentY, { width: larguraColuna - 110 });
+          
+          // Linha divisória horizontal
+          currentY += alturaLinha;
+          if (currentY < startY + alturaTotalTabela) {
+            doc.strokeColor('#ddd').lineWidth(0.5)
+              .moveTo(50, currentY - 5)
+              .lineTo(50 + larguraColuna, currentY - 5)
+              .stroke();
+          }
+        });
+
+        // Coluna Direita
+        currentY = startY + 5;
+        colunaDireita.forEach(([label, value]) => {
+          const xOffset = 50 + larguraColuna + 10;
+          doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
+            .text(label, xOffset + 5, currentY, { width: 100, continued: false });
+          doc.font('Helvetica').fontSize(9)
+            .text(value, xOffset + 110, currentY, { width: larguraColuna - 115 });
+          
+          // Linha divisória horizontal
+          currentY += alturaLinha;
+          if (currentY < startY + alturaTotalTabela) {
+            doc.strokeColor('#ddd').lineWidth(0.5)
+              .moveTo(xOffset, currentY - 5)
+              .lineTo(xOffset + larguraColuna, currentY - 5)
+              .stroke();
+          }
+        });
+
+        doc.y = startY + alturaTotalTabela + 20;
+      };
+
+      // === TABELA DE DADOS BÁSICOS ===
+      const org: any = organizacao;
+      
+      doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+        .text('DADOS BÁSICOS DA ORGANIZAÇÃO', 50, doc.y);
+      doc.moveDown(0.5);
+
+      const tabelaDados: [string, string][] = [];
+      if (org.nome) tabelaDados.push(['Nome:', org.nome]);
+      if (org.cnpj) tabelaDados.push(['CNPJ:', org.cnpj]);
+      if (org.data_fundacao) tabelaDados.push(['Data de Fundação:', new Date(org.data_fundacao).toLocaleDateString('pt-BR')]);
+      if (org.telefone) tabelaDados.push(['Telefone:', org.telefone]);
+      if (org.email) tabelaDados.push(['E-mail:', org.email]);
+      if (org.estado_organizacao_estadoToestado?.descricao) tabelaDados.push(['Estado:', org.estado_organizacao_estadoToestado.descricao]);
+      if (org.municipio_ibge?.descricao) tabelaDados.push(['Município:', org.municipio_ibge.descricao]);
+
+      criarTabela2Colunas(tabelaDados);
+
+      // === TABELA DE ENDEREÇO ===
+      if (doc.y > 650) {
+        doc.addPage();
+      }
+
+      doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+        .text('ENDEREÇO E LOCALIZAÇÃO', 50, doc.y);
+      doc.moveDown(0.5);
+
+      const tabelaEndereco: [string, string][] = [];
+      if (organizacao.organizacao_end_logradouro) tabelaEndereco.push(['Logradouro:', organizacao.organizacao_end_logradouro]);
+      if (organizacao.organizacao_end_numero) tabelaEndereco.push(['Número:', organizacao.organizacao_end_numero]);
+      if (organizacao.organizacao_end_bairro) tabelaEndereco.push(['Bairro:', organizacao.organizacao_end_bairro]);
+      if (organizacao.organizacao_end_complemento) tabelaEndereco.push(['Complemento:', organizacao.organizacao_end_complemento]);
+      if (organizacao.organizacao_end_cep) tabelaEndereco.push(['CEP:', organizacao.organizacao_end_cep]);
+      if (organizacao.gps_lat && organizacao.gps_lng) {
+        tabelaEndereco.push(['Latitude:', String(organizacao.gps_lat)]);
+        tabelaEndereco.push(['Longitude:', String(organizacao.gps_lng)]);
+        if (organizacao.gps_alt) tabelaEndereco.push(['Altitude:', `${organizacao.gps_alt}m`]);
+      }
+
+      criarTabela2Colunas(tabelaEndereco);
+
+      // === TABELA DO REPRESENTANTE ===
+      if (org.representante_nome || org.organizacao_participante?.length > 0) {
+        if (doc.y > 650) {
+          doc.addPage();
+        }
+
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+          .text('DADOS DO REPRESENTANTE', 50, doc.y);
+        doc.moveDown(0.5);
+
+        const tabelaRepresentante: [string, string][] = [];
+        if (org.representante_nome) tabelaRepresentante.push(['Nome:', org.representante_nome]);
+        if (org.representante_cpf) tabelaRepresentante.push(['CPF:', org.representante_cpf]);
+        if (org.representante_rg) tabelaRepresentante.push(['RG:', org.representante_rg]);
+        if (org.representante_telefone) tabelaRepresentante.push(['Telefone:', org.representante_telefone]);
+        if (org.representante_email) tabelaRepresentante.push(['E-mail:', org.representante_email]);
+        if (org.representante_funcao) tabelaRepresentante.push(['Função:', org.representante_funcao]);
+        if (org.representante_end_logradouro) tabelaRepresentante.push(['Endereço:', org.representante_end_logradouro]);
+        if (org.representante_end_numero) tabelaRepresentante.push(['Número:', org.representante_end_numero]);
+        if (org.representante_end_bairro) tabelaRepresentante.push(['Bairro:', org.representante_end_bairro]);
+        if (org.representante_end_cep) tabelaRepresentante.push(['CEP:', org.representante_end_cep]);
+
+        criarTabela2Colunas(tabelaRepresentante);
+      }
+
+      // === LISTA DE DOCUMENTOS ===
+      if (organizacao.organizacao_arquivo && organizacao.organizacao_arquivo.length > 0) {
+        if (doc.y > 650) {
+          doc.addPage();
+        }
+
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+          .text('DOCUMENTOS ANEXADOS', 50, doc.y);
+        doc.moveDown(0.5);
+
+        doc.font('Helvetica').fontSize(9).fillColor('#000');
+        organizacao.organizacao_arquivo.forEach((arquivo: any, index: number) => {
+          doc.font('Helvetica-Bold')
+            .text(`${index + 1}. `, 50, doc.y, { continued: true });
+          doc.font('Helvetica')
+            .text(arquivo.arquivo || 'Sem nome', { width: 480 });
+          
+          if (arquivo.obs) {
+            doc.fontSize(8).fillColor('#666')
+              .text(`   ${arquivo.obs}`, 50, doc.y, { width: 480 });
+            doc.fontSize(9).fillColor('#000');
+          }
+          doc.moveDown(0.5);
+        });
+
+        doc.moveDown(1);
+      }
+
+      // === CARACTERÍSTICAS DOS ASSOCIADOS ===
+      if (organizacao.caracteristicas_n_total_socios ||
+          organizacao.caracteristicas_n_total_socios_caf ||
+          organizacao.caracteristicas_n_distintos_caf) {
+        if (doc.y > 600) {
+          doc.addPage();
+        }
+
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+          .text('CARACTERÍSTICAS DOS ASSOCIADOS', 50, doc.y);
+        doc.moveDown(0.5);
+
+        const tabelaCaracteristicas: [string, string][] = [];
+
+        if (organizacao.caracteristicas_n_total_socios) {
+          tabelaCaracteristicas.push(['Total de Sócios:', String(organizacao.caracteristicas_n_total_socios)]);
+        }
+        if (organizacao.caracteristicas_n_total_socios_caf) {
+          tabelaCaracteristicas.push(['Sócios com CAF:', String(organizacao.caracteristicas_n_total_socios_caf)]);
+        }
+        if (organizacao.caracteristicas_n_distintos_caf) {
+          tabelaCaracteristicas.push(['CAF Distintos:', String(organizacao.caracteristicas_n_distintos_caf)]);
+        }
+        if (organizacao.caracteristicas_n_ativos_total) {
+          tabelaCaracteristicas.push(['Sócios Ativos (Total):', String(organizacao.caracteristicas_n_ativos_total)]);
+        }
+        if (organizacao.caracteristicas_n_ativos_caf) {
+          tabelaCaracteristicas.push(['Sócios Ativos (CAF):', String(organizacao.caracteristicas_n_ativos_caf)]);
+        }
+        if (organizacao.caracteristicas_n_ingressaram_total_12_meses) {
+          tabelaCaracteristicas.push(['Novos Sócios (12 meses):', String(organizacao.caracteristicas_n_ingressaram_total_12_meses)]);
+        }
+        if (organizacao.caracteristicas_n_ingressaram_caf_12_meses) {
+          tabelaCaracteristicas.push(['Novos Sócios CAF (12 meses):', String(organizacao.caracteristicas_n_ingressaram_caf_12_meses)]);
+        }
+        if (organizacao.caracteristicas_n_socios_paa) {
+          tabelaCaracteristicas.push(['Sócios PAA:', String(organizacao.caracteristicas_n_socios_paa)]);
+        }
+        if (organizacao.caracteristicas_n_socios_pnae) {
+          tabelaCaracteristicas.push(['Sócios PNAE:', String(organizacao.caracteristicas_n_socios_pnae)]);
+        }
+
+        criarTabela2Colunas(tabelaCaracteristicas);
+
+        // Distribuição por categoria e gênero
+        if (doc.y > 650) {
+          doc.addPage();
+        }
+
+        doc.moveDown(0.5);
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
+          .text('DISTRIBUIÇÃO POR CATEGORIA E GÊNERO', 50, doc.y);
+        doc.moveDown(0.3);
+
+        const categorias = [
+          { nome: 'Agricultura Familiar', campo: 'caracteristicas_ta_af' },
+          { nome: 'Assentado', campo: 'caracteristicas_ta_a' },
+          { nome: 'Pescador', campo: 'caracteristicas_ta_p' },
+          { nome: 'Indígena', campo: 'caracteristicas_ta_i' },
+          { nome: 'Quilombola', campo: 'caracteristicas_ta_q' },
+          { nome: 'Extrativista', campo: 'caracteristicas_ta_e' },
+          { nome: 'Outro', campo: 'caracteristicas_ta_o' }
+        ];
+
+        categorias.forEach(cat => {
+          const homem = (organizacao as any)[`${cat.campo}_homem`] || 0;
+          const mulher = (organizacao as any)[`${cat.campo}_mulher`] || 0;
+          const total = homem + mulher;
+
+          if (total > 0) {
+            doc.font('Helvetica').fontSize(9).fillColor('#000')
+              .text(`${cat.nome}: ${total} (${homem}H / ${mulher}M)`, 70, doc.y);
+            doc.moveDown(0.3);
+          }
+        });
+
+        // Tipos de produção
+        doc.moveDown(0.3);
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
+          .text('TIPOS DE PRODUÇÃO', 50, doc.y);
+        doc.moveDown(0.3);
+
+        const tiposProducao = [
+          { nome: 'Orgânico', campo: 'caracteristicas_ta_caf_organico' },
+          { nome: 'Agroecológico', campo: 'caracteristicas_ta_caf_agroecologico' },
+          { nome: 'Transição', campo: 'caracteristicas_ta_caf_transicao' },
+          { nome: 'Convencional', campo: 'caracteristicas_ta_caf_convencional' }
+        ];
+
+        tiposProducao.forEach(tipo => {
+          const valor = (organizacao as any)[tipo.campo] || 0;
+          if (valor > 0) {
+            doc.font('Helvetica').fontSize(9).fillColor('#000')
+              .text(`${tipo.nome}: ${valor}`, 70, doc.y);
+            doc.moveDown(0.3);
+          }
+        });
+      }
+
+      // === PRODUÇÃO ===
+      if (organizacao.organizacao_producao && organizacao.organizacao_producao.length > 0) {
+        if (doc.y > 600) {
+          doc.addPage();
+        }
+
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+          .text('DADOS DE PRODUÇÃO', 50, doc.y);
+        doc.moveDown(0.5);
+
+        doc.font('Helvetica').fontSize(9).fillColor('#000');
+        organizacao.organizacao_producao.forEach((producao: any, index: number) => {
+          doc.font('Helvetica-Bold')
+            .text(`${index + 1}. ${producao.cultura}`, 50, doc.y);
+          doc.font('Helvetica')
+            .text(`   Mensal: ${producao.mensal}kg | Anual: ${producao.anual}kg`, 70, doc.y + 12);
+          doc.moveDown(1);
+        });
+      }
+
+      // === ABRANGÊNCIA GEOGRÁFICA ===
+      if (organizacao.organizacao_abrangencia_socio && organizacao.organizacao_abrangencia_socio.length > 0) {
+        if (doc.y > 600) {
+          doc.addPage();
+        }
+
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+          .text('ABRANGÊNCIA GEOGRÁFICA DOS SÓCIOS', 50, doc.y);
+        doc.moveDown(0.5);
+
+        doc.font('Helvetica').fontSize(9).fillColor('#000');
+        organizacao.organizacao_abrangencia_socio.forEach((abrangencia: any, index: number) => {
+          doc.text(`${index + 1}. ${abrangencia.municipio?.descricao || 'Município não informado'} - ${abrangencia.num_socios} sócios`, 50, doc.y);
+          doc.moveDown(0.3);
+        });
+      }
+
+      // === ASSOCIADOS PESSOA JURÍDICA ===
+      if (organizacao.organizacao_abrangencia_pj && organizacao.organizacao_abrangencia_pj.length > 0) {
+        if (doc.y > 600) {
+          doc.addPage();
+        }
+
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+          .text('ASSOCIADOS PESSOA JURÍDICA', 50, doc.y);
+        doc.moveDown(0.5);
+
+        doc.font('Helvetica').fontSize(9).fillColor('#000');
+        organizacao.organizacao_abrangencia_pj.forEach((pj: any, index: number) => {
+          doc.font('Helvetica-Bold')
+            .text(`${index + 1}. ${pj.razao_social || pj.cnpj_pj}`, 50, doc.y);
+          doc.font('Helvetica')
+            .text(`   CNPJ: ${pj.cnpj_pj} | Sócios: ${pj.num_socios_total} (${pj.num_socios_caf} CAF)`, 70, doc.y + 12);
+          doc.moveDown(0.8);
+        });
+      }
+
+      // === DESCRIÇÃO GERAL ===
+      if (organizacao.descricao) {
+        if (doc.y > 600) {
+          doc.addPage();
+        }
+
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+          .text('DESCRIÇÃO GERAL DO EMPREENDIMENTO', 50, doc.y);
+        doc.moveDown(0.5);
+
+        doc.font('Helvetica').fontSize(10).fillColor('#000')
+          .text(organizacao.descricao, 50, doc.y, {
+            width: doc.page.width - 100,
+            align: 'justify'
+          });
+        doc.moveDown(1);
+      }
+
+      // === ORIENTAÇÕES TÉCNICAS ===
+      if (organizacao.eixos_trabalhados || organizacao.metodologia || organizacao.orientacoes) {
+        if (doc.y > 550) {
+          doc.addPage();
+        }
+
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+          .text('ORIENTAÇÕES TÉCNICAS DA ATIVIDADE', 50, doc.y);
+        doc.moveDown(0.5);
+
+        const tabelaOrientacoes: [string, string][] = [];
+
+        if (organizacao.eixos_trabalhados) {
+          tabelaOrientacoes.push(['Eixos Trabalhados:', organizacao.eixos_trabalhados]);
+        }
+
+        const enfaseMap = {
+          1: 'PNAE',
+          2: 'PAA Leite',
+          3: 'Crédito do INCRA',
+          4: 'Governos',
+          5: 'Redes de Cooperação e/ou Comercialização'
+        };
+
+        if (organizacao.enfase) {
+          const enfaseTexto = enfaseMap[organizacao.enfase as keyof typeof enfaseMap] ||
+                            (organizacao.enfase === 99 && organizacao.enfase_outros ? organizacao.enfase_outros : 'Outro');
+          tabelaOrientacoes.push(['Ênfase:', enfaseTexto]);
+        }
+
+        criarTabela2Colunas(tabelaOrientacoes);
+
+        if (organizacao.metodologia) {
+          doc.moveDown(0.5);
+          doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
+            .text('Metodologia Utilizada:', 50, doc.y);
+          doc.moveDown(0.3);
+          doc.font('Helvetica').fontSize(9).fillColor('#000')
+            .text(organizacao.metodologia, 70, doc.y, {
+              width: doc.page.width - 140,
+              align: 'justify'
+            });
+        }
+
+        if (organizacao.orientacoes) {
+          doc.moveDown(0.5);
+          doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
+            .text('Orientações e Soluções Técnicas:', 50, doc.y);
+          doc.moveDown(0.3);
+          doc.font('Helvetica').fontSize(9).fillColor('#000')
+            .text(organizacao.orientacoes, 70, doc.y, {
+              width: doc.page.width - 140,
+              align: 'justify'
+            });
+        }
+      }
+
+      // === INDICADORES ===
+      if (organizacao.organizacao_indicador && organizacao.organizacao_indicador.length > 0) {
+        if (doc.y > 600) {
+          doc.addPage();
+        }
+
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+          .text('INDICADORES DA ATIVIDADE', 50, doc.y);
+        doc.moveDown(0.5);
+
+        const indicadoresMap = {
+          1: 'Conformidade documental e regularidade do empreendimento',
+          2: 'Práticas de tomada de decisão',
+          3: 'Políticas públicas de apoio à produção e comercialização',
+          4: 'Associados com acesso às políticas públicas',
+          5: 'Participação dos associados no empreendimento',
+          6: 'Participação de mulheres na gestão',
+          7: 'Capacitação de gestores',
+          8: 'Capacitação de associados',
+          9: 'Geração de Empregos Diretos',
+          10: 'Controles econômicos',
+          11: 'Negócios institucionais',
+          12: 'Inovação no empreendimento',
+          13: 'Adoção de tecnologias referenciais',
+          14: 'Práticas sustentáveis no empreendimento',
+          15: 'Programa ou ações ambientais comunitárias',
+          16: 'Prática de proteção de nascentes e/ou uso racional de recursos hídricos'
+        };
+
+        doc.font('Helvetica').fontSize(9).fillColor('#000');
+        organizacao.organizacao_indicador.forEach((indicador: any, index: number) => {
+          const descricao = indicadoresMap[indicador.valor as keyof typeof indicadoresMap] || `Indicador ${indicador.valor}`;
+          doc.text(`${index + 1}. ${descricao}`, 50, doc.y);
+          doc.moveDown(0.3);
+        });
+      }
+
+      // === PARTICIPANTES ===
+      if (organizacao.participantes_menos_10 === 1 && organizacao.organizacao_participante && organizacao.organizacao_participante.length > 0) {
+        if (doc.y > 600) {
+          doc.addPage();
+        }
+
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+          .text('PARTICIPANTES DA ATIVIDADE', 50, doc.y);
+        doc.moveDown(0.5);
+
+        doc.font('Helvetica').fontSize(9).fillColor('#000');
+        organizacao.organizacao_participante.forEach((participante: any, index: number) => {
+          doc.font('Helvetica-Bold')
+            .text(`${index + 1}. ${participante.nome}`, 50, doc.y);
+          doc.font('Helvetica')
+            .text(`   CPF: ${participante.cpf} | Telefone: ${participante.telefone}`, 70, doc.y + 12);
+
+          const relacaoMap = {
+            1: 'Diretor',
+            2: 'Conselheiro Fiscal',
+            3: 'Associado',
+            4: 'Colaborador'
+          };
+          const relacaoTexto = relacaoMap[participante.relacao as keyof typeof relacaoMap] ||
+                             (participante.relacao === 99 && participante.relacao_outros ? participante.relacao_outros : 'Outro');
+
+          doc.text(`   Relação: ${relacaoTexto}`, 70, doc.y + 24);
+          doc.moveDown(1.5);
+        });
+      }
+
+      // Mapeamento de respostas
+      const respostaMap: { [key: number]: string } = {
+        1: 'Sim',
+        2: 'Não',
+        3: 'Parcial',
+        4: 'Não se Aplica'
+      };
+
+      const corRespostaMap: { [key: number]: string } = {
+        1: '#056839',  // Verde
+        2: '#d32f2f',  // Vermelho
+        3: '#f57c00',  // Laranja
+        4: '#666'      // Cinza
+      };
+
+      // Função para renderizar subárea com destaque
+      const renderizarSubarea = (titulo: string) => {
+        // Espaçamento maior entre subáreas
+        doc.moveDown(1.5);
+        
+        // Verificar quebra de página
+        if (doc.y > 680) {
+          doc.addPage();
+        }
+
+        // Fundo colorido para a subárea
+        const larguraBarra = doc.page.width - 100;
+        doc.rect(50, doc.y - 5, larguraBarra, 20)
+          .fill('#f0f0f0');
+        
+        // Texto da subárea
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#3b2313')
+          .text(titulo, 55, doc.y, { width: larguraBarra - 10 });
+        
+        doc.moveDown(0.8);
+      };
+
+      // Função para renderizar tabela de práticas
+      const renderizarTabelaPraticas = (praticas: Array<{
+        numero: number;
+        titulo: string;
+        resposta: number | null;
+        comentario: string | null;
+        proposta: string | null;
+      }>) => {
+        praticas.forEach(pratica => {
+          // Verificar se precisa de nova página (deixar espaço para pelo menos 3 linhas)
+          if (doc.y > 720) {
+            doc.addPage();
+          }
+
+          const respostaTexto = pratica.resposta ? respostaMap[pratica.resposta] || '-' : '-';
+          const corResposta = pratica.resposta ? corRespostaMap[pratica.resposta] || '#666' : '#666';
+
+          const startY = doc.y;
+          const margemEsquerda = 55;
+          const larguraID = 25;
+          const larguraPergunta = 280;
+          const larguraResposta = 70;
+          const larguraComentario = doc.page.width - margemEsquerda - larguraID - larguraPergunta - larguraResposta - 50;
+
+          // Fundo zebrado para melhor leitura
+          if (pratica.numero % 2 === 0) {
+            doc.rect(margemEsquerda, startY - 2, doc.page.width - 100, 0)
+              .fillOpacity(0.05)
+              .fill('#056839')
+              .fillOpacity(1);
+          }
+
+          // ID
+          doc.font('Helvetica-Bold').fontSize(8).fillColor('#3b2313')
+            .text(pratica.numero.toString(), margemEsquerda, startY, { width: larguraID, align: 'center' });
+
+          // Pergunta
+          doc.font('Helvetica').fontSize(8).fillColor('#000')
+            .text(pratica.titulo, margemEsquerda + larguraID + 5, startY, { width: larguraPergunta, align: 'left' });
+
+          // Resposta (colorida)
+          doc.font('Helvetica-Bold').fontSize(8).fillColor(corResposta)
+            .text(respostaTexto, margemEsquerda + larguraID + larguraPergunta + 10, startY, { 
+              width: larguraResposta, 
+              align: 'center' 
+            });
+
+          // Calcular altura da célula baseada no conteúdo
+          let alturaLinha = 0;
+          const linhasPergunta = Math.ceil(doc.heightOfString(pratica.titulo, { width: larguraPergunta }));
+          alturaLinha = Math.max(alturaLinha, linhasPergunta);
+
+          // Comentário + Proposta na última coluna
+          let textoExtra = '';
+          if (pratica.comentario || pratica.proposta) {
+            if (pratica.comentario && pratica.proposta) {
+              textoExtra = `💬 ${pratica.comentario}\n\n💡 Proposta: ${pratica.proposta}`;
+            } else if (pratica.comentario) {
+              textoExtra = `💬 ${pratica.comentario}`;
+            } else if (pratica.proposta) {
+              textoExtra = `💡 ${pratica.proposta}`;
+            }
+            
+            const xComentario = margemEsquerda + larguraID + larguraPergunta + larguraResposta + 15;
+            doc.font('Helvetica').fontSize(7).fillColor('#333')
+              .text(textoExtra, xComentario, startY, { 
+                width: larguraComentario, 
+                align: 'left'
+              });
+            
+            const linhasComentario = Math.ceil(doc.heightOfString(textoExtra, { width: larguraComentario }));
+            alturaLinha = Math.max(alturaLinha, linhasComentario);
+          }
+
+          // Linha divisória
+          doc.strokeColor('#ddd')
+            .lineWidth(0.5)
+            .moveTo(margemEsquerda, startY + alturaLinha + 5)
+            .lineTo(doc.page.width - 50, startY + alturaLinha + 5)
+            .stroke();
+
+          doc.y = startY + alturaLinha + 8;
+        });
+
+        doc.moveDown(0.5);
+      };
+
+      // === ÁREAS GERENCIAIS (GO, GP, GF, GC, GPP, GI, GS, IS) ===
+      // Renderizar todas as 8 áreas gerenciais com 187 práticas
+      renderizarTodasAreasGerenciais(doc, org);
+
+      // === OBSERVAÇÕES FINAIS ===
+        { numero: 3, titulo: 'Dispõe de documentos com a descrição das atribuições, funções, responsabilidades?', resposta: org.go_estrutura_3_resposta, comentario: org.go_estrutura_3_comentario, proposta: org.go_estrutura_3_proposta },
+        { numero: 4, titulo: 'Essas descrições correspondem à realidade da vida organizacional?', resposta: org.go_estrutura_4_resposta, comentario: org.go_estrutura_4_comentario, proposta: org.go_estrutura_4_proposta }
+      ]);
+
+      // Estratégia Organizacional
+      renderizarSubarea('Estratégia Organizacional');
+      renderizarTabelaPraticas([
+        { numero: 5, titulo: 'Possui um Planejamento Estratégico, com missão, visão, valores e objetivos?', resposta: org.go_estrategia_5_resposta, comentario: org.go_estrategia_5_comentario, proposta: org.go_estrategia_5_proposta },
+        { numero: 6, titulo: 'Este planejamento é implementado, monitorado e avaliado periodicamente?', resposta: org.go_estrategia_6_resposta, comentario: org.go_estrategia_6_comentario, proposta: org.go_estrategia_6_proposta }
+      ]);
+
+      // Organização dos Associados
+      renderizarSubarea('Organização dos Associados');
+      renderizarTabelaPraticas([
+        { numero: 7, titulo: 'Aplica as normas estatutárias para admissão e exclusão dos associados?', resposta: org.go_organizacao_7_resposta, comentario: org.go_organizacao_7_comentario, proposta: org.go_organizacao_7_proposta },
+        { numero: 8, titulo: 'Na visão da diretoria, os associados confiam na diretoria?', resposta: org.go_organizacao_8_resposta, comentario: org.go_organizacao_8_comentario, proposta: org.go_organizacao_8_proposta },
+        { numero: 9, titulo: 'A diretoria confia no quadro de associados?', resposta: org.go_organizacao_9_resposta, comentario: org.go_organizacao_9_comentario, proposta: org.go_organizacao_9_proposta },
+        { numero: 10, titulo: 'O empreendimento possui uma estratégia para lidar com os conflitos?', resposta: org.go_organizacao_10_resposta, comentario: org.go_organizacao_10_comentario, proposta: org.go_organizacao_10_proposta },
+        { numero: 11, titulo: 'Os associados se organizam para discutir os problemas?', resposta: org.go_organizacao_11_resposta, comentario: org.go_organizacao_11_comentario, proposta: org.go_organizacao_11_proposta },
+        { numero: 12, titulo: 'Se utiliza de práticas formalizadas de integração de novos associados?', resposta: org.go_organizacao_12_resposta, comentario: org.go_organizacao_12_comentario, proposta: org.go_organizacao_12_proposta },
+        { numero: 13, titulo: 'Possui livro de matrícula dos associados atualizado?', resposta: org.go_organizacao_13_resposta, comentario: org.go_organizacao_13_comentario, proposta: org.go_organizacao_13_proposta }
+      ]);
+
+      // Direção e Participação
+      renderizarSubarea('Direção e Participação');
+      renderizarTabelaPraticas([
+        { numero: 14, titulo: 'Remunera financeiramente os dirigentes?', resposta: org.go_direcao_14_resposta, comentario: org.go_direcao_14_comentario, proposta: org.go_direcao_14_proposta },
+        { numero: 15, titulo: 'A direção mantém periodicidade em suas reuniões?', resposta: org.go_direcao_15_resposta, comentario: org.go_direcao_15_comentario, proposta: org.go_direcao_15_proposta },
+        { numero: 16, titulo: 'Dispõe de outros espaços de participação além das assembleias?', resposta: org.go_direcao_16_resposta, comentario: org.go_direcao_16_comentario, proposta: org.go_direcao_16_proposta },
+        { numero: 17, titulo: 'Dispõe de estratégias para fortalecimento da participação das mulheres?', resposta: org.go_direcao_17_resposta, comentario: org.go_direcao_17_comentario, proposta: org.go_direcao_17_proposta },
+        { numero: 18, titulo: 'Dispõe de estratégias para fortalecimento de jovens e idosos?', resposta: org.go_direcao_18_resposta, comentario: org.go_direcao_18_comentario, proposta: org.go_direcao_18_proposta },
+        { numero: 19, titulo: 'Possui instrumentos formais de estímulo da participação?', resposta: org.go_direcao_19_resposta, comentario: org.go_direcao_19_comentario, proposta: org.go_direcao_19_proposta },
+        { numero: 20, titulo: 'Existem comitês consultivos ou setoriais?', resposta: org.go_direcao_20_resposta, comentario: org.go_direcao_20_comentario, proposta: org.go_direcao_20_proposta },
+        { numero: 21, titulo: 'Existem mecanismos para mediar e resolver disputas?', resposta: org.go_direcao_21_resposta, comentario: org.go_direcao_21_comentario, proposta: org.go_direcao_21_proposta }
+      ]);
+
+      // Controles Internos
+      renderizarSubarea('Controles Internos e Avaliação');
+      renderizarTabelaPraticas([
+        { numero: 22, titulo: 'O conselho fiscal é atuante no empreendimento?', resposta: org.go_controle_20_resposta, comentario: org.go_controle_20_comentario, proposta: org.go_controle_20_proposta },
+        { numero: 23, titulo: 'A direção se reúne periodicamente com o conselho fiscal?', resposta: org.go_controle_21_resposta, comentario: org.go_controle_21_comentario, proposta: org.go_controle_21_proposta },
+        { numero: 24, titulo: 'A direção apresenta periodicamente relatórios contábeis/financeiros?', resposta: org.go_controle_22_resposta, comentario: org.go_controle_22_comentario, proposta: org.go_controle_22_proposta },
+        { numero: 25, titulo: 'Realiza assembleias anuais para prestação de contas?', resposta: org.go_controle_23_resposta, comentario: org.go_controle_23_comentario, proposta: org.go_controle_23_proposta },
+        { numero: 26, titulo: 'Possui mecanismos de controle, monitoramento e avaliação?', resposta: org.go_controle_24_resposta, comentario: org.go_controle_24_comentario, proposta: org.go_controle_24_proposta },
+        { numero: 27, titulo: 'Há canais para dúvidas e sugestões sobre relatórios?', resposta: org.go_controle_25_resposta, comentario: org.go_controle_25_comentario, proposta: org.go_controle_25_proposta }
+      ]);
+
+      // Educação e Formação
+      renderizarSubarea('Educação e Formação');
+      renderizarTabelaPraticas([
+        { numero: 28, titulo: 'Os cooperados/associados são capacitados em cooperativismo/associativismo?', resposta: org.go_educacao_26_resposta, comentario: org.go_educacao_26_comentario, proposta: org.go_educacao_26_proposta },
+        { numero: 29, titulo: 'Os cooperados/associados são capacitados em Gestão do Empreendimento?', resposta: org.go_educacao_27_resposta, comentario: org.go_educacao_27_comentario, proposta: org.go_educacao_27_proposta },
+        { numero: 30, titulo: 'Há planos para identificar, capacitar e preparar novos líderes?', resposta: org.go_educacao_28_resposta, comentario: org.go_educacao_28_comentario, proposta: org.go_educacao_28_proposta }
+      ]);
+
+      // === GESTÃO DE PESSOAS ===
+      doc.addPage();
+      doc.font('Helvetica-Bold').fontSize(14).fillColor('#056839')
+        .text('ÁREA GERENCIAL: GESTÃO DE PESSOAS', 50, 50);
+      
+      doc.strokeColor('#056839')
+        .lineWidth(2)
+        .moveTo(50, doc.y + 15)
+        .lineTo(doc.page.width - 50, doc.y + 15)
+        .stroke();
+      doc.moveDown(1.5);
+
+      // Organização das Pessoas no Trabalho
+      renderizarSubarea('Organização das Pessoas no Trabalho');
+      renderizarTabelaPraticas([
+        { numero: 1, titulo: 'Possui descrição formalizada de cargos, funções e atividades?', resposta: org.gp_p_organizacao_1_resposta, comentario: org.gp_p_organizacao_1_comentario, proposta: org.gp_p_organizacao_1_proposta },
+        { numero: 2, titulo: 'As relações de trabalho encontram-se formalizadas?', resposta: org.gp_p_organizacao_2_resposta, comentario: org.gp_p_organizacao_2_comentario, proposta: org.gp_p_organizacao_2_proposta },
+        { numero: 3, titulo: 'Utiliza critérios padronizados de recrutamento e seleção?', resposta: org.gp_p_organizacao_3_resposta, comentario: org.gp_p_organizacao_3_comentario, proposta: org.gp_p_organizacao_3_proposta },
+        { numero: 4, titulo: 'Possui critérios claramente definidos para demissão?', resposta: org.gp_p_organizacao_4_resposta, comentario: org.gp_p_organizacao_4_comentario, proposta: org.gp_p_organizacao_4_proposta },
+        { numero: 5, titulo: 'Dispõe de horários de trabalho estabelecidos e respeitados?', resposta: org.gp_p_organizacao_5_resposta, comentario: org.gp_p_organizacao_5_comentario, proposta: org.gp_p_organizacao_5_proposta },
+        { numero: 6, titulo: 'Possui controle de horas voluntárias dedicadas?', resposta: org.gp_p_organizacao_6_resposta, comentario: org.gp_p_organizacao_6_comentario, proposta: org.gp_p_organizacao_6_proposta },
+        { numero: 7, titulo: 'Possui controle sobre ausências ou atrasos?', resposta: org.gp_p_organizacao_7_resposta, comentario: org.gp_p_organizacao_7_comentario, proposta: org.gp_p_organizacao_7_proposta },
+        { numero: 8, titulo: 'Realiza avaliação de desempenho dos colaboradores?', resposta: org.gp_p_organizacao_8_resposta, comentario: org.gp_p_organizacao_8_comentario, proposta: org.gp_p_organizacao_8_proposta },
+        { numero: 9, titulo: 'Utiliza práticas de reconhecimento e incentivo com base no desempenho?', resposta: org.gp_p_organizacao_9_resposta, comentario: org.gp_p_organizacao_9_comentario, proposta: org.gp_p_organizacao_9_proposta }
+      ]);
+
+      // Desenvolvimento das Pessoas
+      renderizarSubarea('Desenvolvimento das Pessoas no Trabalho');
+      renderizarTabelaPraticas([
+        { numero: 10, titulo: 'Possui procedimento de identificação de necessidades de capacitação?', resposta: org.gp_p_desenvolvimento_10_resposta, comentario: org.gp_p_desenvolvimento_10_comentario, proposta: org.gp_p_desenvolvimento_10_proposta },
+        { numero: 11, titulo: 'Possui um planejamento de capacitação e desenvolvimento?', resposta: org.gp_p_desenvolvimento_11_resposta, comentario: org.gp_p_desenvolvimento_11_comentario, proposta: org.gp_p_desenvolvimento_11_proposta },
+        { numero: 12, titulo: 'Realiza capacitação relacionada às atividades operacionais?', resposta: org.gp_p_desenvolvimento_12_resposta, comentario: org.gp_p_desenvolvimento_12_comentario, proposta: org.gp_p_desenvolvimento_12_proposta },
+        { numero: 13, titulo: 'Realiza capacitação relacionada a novas ou futuras atividades?', resposta: org.gp_p_desenvolvimento_13_resposta, comentario: org.gp_p_desenvolvimento_13_comentario, proposta: org.gp_p_desenvolvimento_13_proposta }
+      ]);
+
+      // Qualidade de Vida no Trabalho
+      renderizarSubarea('Qualidade de Vida no Trabalho');
+      renderizarTabelaPraticas([
+        { numero: 14, titulo: 'Possui PCMSO e PPRA?', resposta: org.gp_trabalho_14_resposta, comentario: org.gp_trabalho_14_comentario, proposta: org.gp_trabalho_14_proposta },
+        { numero: 15, titulo: 'Monitora acidentes, taxas de frequência/gravidade e absenteísmo?', resposta: org.gp_trabalho_15_resposta, comentario: org.gp_trabalho_15_comentario, proposta: org.gp_trabalho_15_proposta },
+        { numero: 16, titulo: 'Realiza pesquisa de satisfação ou de clima organizacional?', resposta: org.gp_trabalho_16_resposta, comentario: org.gp_trabalho_16_comentario, proposta: org.gp_trabalho_16_proposta },
+        { numero: 17, titulo: 'Possui método para identificar necessidades dos colaboradores?', resposta: org.gp_trabalho_17_resposta, comentario: org.gp_trabalho_17_comentario, proposta: org.gp_trabalho_17_proposta }
+      ]);
+
+      // Gênero e Geração
+      renderizarSubarea('Gênero e Geração');
+      renderizarTabelaPraticas([
+        { numero: 18, titulo: 'Possui estratégia para favorecer participação de mulheres e jovens?', resposta: org.gp_geracao_18_resposta, comentario: org.gp_geracao_18_comentario, proposta: org.gp_geracao_18_proposta },
+        { numero: 19, titulo: 'Existe equilíbrio no número de homens, mulheres, jovens e idosos?', resposta: org.gp_geracao_19_resposta, comentario: org.gp_geracao_19_comentario, proposta: org.gp_geracao_19_proposta },
+        { numero: 20, titulo: 'Existe equilíbrio na repartição dos benefícios?', resposta: org.gp_geracao_20_resposta, comentario: org.gp_geracao_20_comentario, proposta: org.gp_geracao_20_proposta }
+      ]);
+
+      // === GESTÃO FINANCEIRA ===
+      doc.addPage();
+      doc.font('Helvetica-Bold').fontSize(14).fillColor('#056839')
+        .text('ÁREA GERENCIAL: GESTÃO FINANCEIRA', 50, 50);
+      
+      doc.strokeColor('#056839')
+        .lineWidth(2)
+        .moveTo(50, doc.y + 15)
+        .lineTo(doc.page.width - 50, doc.y + 15)
+        .stroke();
+      doc.moveDown(1.5);
+
+      // Balanço Patrimonial
+      renderizarSubarea('Balanço Patrimonial');
+      renderizarTabelaPraticas([
+        { numero: 1, titulo: 'Possui contabilidade realizada por um contador?', resposta: org.gf_balanco_1_resposta, comentario: org.gf_balanco_1_comentario, proposta: org.gf_balanco_1_proposta },
+        { numero: 2, titulo: 'Possui Balanço Patrimonial atualizado?', resposta: org.gf_balanco_2_resposta, comentario: org.gf_balanco_2_comentario, proposta: org.gf_balanco_2_proposta },
+        { numero: 3, titulo: 'Realiza Análise de Balanço?', resposta: org.gf_balanco_3_resposta, comentario: org.gf_balanco_3_comentario, proposta: org.gf_balanco_3_proposta },
+        { numero: 4, titulo: 'Utiliza Balancetes Mensais para orientação financeira?', resposta: org.gf_balanco_4_resposta, comentario: org.gf_balanco_4_comentario, proposta: org.gf_balanco_4_proposta }
+      ]);
+
+      // Controle de Contas
+      renderizarSubarea('Controle de Contas a Receber e a Pagar');
+      renderizarTabelaPraticas([
+        { numero: 5, titulo: 'Possui sistema/programa informatizado para gestão?', resposta: org.gf_contas_5_resposta, comentario: org.gf_contas_5_comentario, proposta: org.gf_contas_5_proposta },
+        { numero: 6, titulo: 'Possui algum tipo de Plano Orçamentário?', resposta: org.gf_contas_6_resposta, comentario: org.gf_contas_6_comentario, proposta: org.gf_contas_6_proposta },
+        { numero: 7, titulo: 'Possui metas financeiras?', resposta: org.gf_contas_7_resposta, comentario: org.gf_contas_7_comentario, proposta: org.gf_contas_7_proposta },
+        { numero: 8, titulo: 'Possui controle e registro dos valores a receber?', resposta: org.gf_contas_8_resposta, comentario: org.gf_contas_8_comentario, proposta: org.gf_contas_8_proposta },
+        { numero: 9, titulo: 'Possui controle de obrigações perante fornecedores?', resposta: org.gf_contas_9_resposta, comentario: org.gf_contas_9_comentario, proposta: org.gf_contas_9_proposta },
+        { numero: 10, titulo: 'Possui controle de obrigações perante colaboradores?', resposta: org.gf_contas_10_resposta, comentario: org.gf_contas_10_comentario, proposta: org.gf_contas_10_proposta },
+        { numero: 11, titulo: 'Possui controle de obrigações perante o fisco?', resposta: org.gf_contas_11_resposta, comentario: org.gf_contas_11_comentario, proposta: org.gf_contas_11_proposta },
+        { numero: 12, titulo: 'Possui controle de obrigações perante associados fornecedores?', resposta: org.gf_contas_12_resposta, comentario: org.gf_contas_12_comentario, proposta: org.gf_contas_12_proposta },
+        { numero: 13, titulo: 'Possui controle de pagamento de empréstimos e financiamentos?', resposta: org.gf_contas_13_resposta, comentario: org.gf_contas_13_comentario, proposta: org.gf_contas_13_proposta }
+      ]);
+
+      // Fluxo de Caixa
+      renderizarSubarea('Fluxo de Caixa');
+      renderizarTabelaPraticas([
+        { numero: 14, titulo: 'Possui controle de caixa (DFC)?', resposta: org.gf_caixa_14_resposta, comentario: org.gf_caixa_14_comentario, proposta: org.gf_caixa_14_proposta },
+        { numero: 15, titulo: 'Possui controle do dinheiro e caixa documental?', resposta: org.gf_caixa_15_resposta, comentario: org.gf_caixa_15_comentario, proposta: org.gf_caixa_15_proposta },
+        { numero: 16, titulo: 'Possui controle da conta no banco?', resposta: org.gf_caixa_16_resposta, comentario: org.gf_caixa_16_comentario, proposta: org.gf_caixa_16_proposta }
+      ]);
+
+      // Controle de Estoques
+      renderizarSubarea('Controle de Estoques');
+      renderizarTabelaPraticas([
+        { numero: 17, titulo: 'Possui controle periódico físico e financeiro dos estoques?', resposta: org.gf_estoque_17_resposta, comentario: org.gf_estoque_17_comentario, proposta: org.gf_estoque_17_proposta },
+        { numero: 18, titulo: 'Possui procedimentos de controle de compras?', resposta: org.gf_estoque_18_resposta, comentario: org.gf_estoque_18_comentario, proposta: org.gf_estoque_18_proposta },
+        { numero: 19, titulo: 'Possui procedimentos de pesquisa de mercado antes das compras?', resposta: org.gf_estoque_19_resposta, comentario: org.gf_estoque_19_comentario, proposta: org.gf_estoque_19_proposta }
+      ]);
+
+      // Demonstração de Resultados
+      renderizarSubarea('Demonstração de Resultados');
+      renderizarTabelaPraticas([
+        { numero: 20, titulo: 'Possui Demonstração de Resultado?', resposta: org.gf_resultado_20_resposta, comentario: org.gf_resultado_20_comentario, proposta: org.gf_resultado_20_proposta },
+        { numero: 21, titulo: 'Utiliza a Demonstração de Resultado para orientação financeira?', resposta: org.gf_resultado_21_resposta, comentario: org.gf_resultado_21_comentario, proposta: org.gf_resultado_21_proposta }
+      ]);
+
+      // Análise de Viabilidade Econômica
+      renderizarSubarea('Análise de Viabilidade Econômica');
+      renderizarTabelaPraticas([
+        { numero: 22, titulo: 'Elaborou a Análise de Viabilidade Econômica (AVE)?', resposta: org.gf_analise_22_resposta, comentario: org.gf_analise_22_comentario, proposta: org.gf_analise_22_proposta },
+        { numero: 23, titulo: 'Vem utilizando as orientações da AVE?', resposta: org.gf_analise_23_resposta, comentario: org.gf_analise_23_comentario, proposta: org.gf_analise_23_proposta },
+        { numero: 24, titulo: 'A AVE vem sendo atualizada?', resposta: org.gf_analise_24_resposta, comentario: org.gf_analise_24_comentario, proposta: org.gf_analise_24_proposta }
+      ]);
+
+      // Obrigações Fiscais
+      renderizarSubarea('Obrigações Fiscais Legais');
+      renderizarTabelaPraticas([
+        { numero: 25, titulo: 'Está cumprindo com todas as obrigações legais e fiscais?', resposta: org.gf_fiscal_25_resposta, comentario: org.gf_fiscal_25_comentario, proposta: org.gf_fiscal_25_proposta },
+        { numero: 26, titulo: 'Atualiza frequentemente a relação de obrigações legais e fiscais?', resposta: org.gf_fiscal_26_resposta, comentario: org.gf_fiscal_26_comentario, proposta: org.gf_fiscal_26_proposta }
+      ]);
+
+      // === GESTÃO COMERCIAL ===
+      doc.addPage();
+      doc.font('Helvetica-Bold').fontSize(14).fillColor('#056839')
+        .text('ÁREA GERENCIAL: GESTÃO COMERCIAL', 50, 50);
+      
+      doc.strokeColor('#056839')
+        .lineWidth(2)
+        .moveTo(50, doc.y + 15)
+        .lineTo(doc.page.width - 50, doc.y + 15)
+        .stroke();
+      doc.moveDown(1.5);
+
+      // Estrutura Comercial
+      renderizarSubarea('Estrutura Comercial');
+      renderizarTabelaPraticas([
+        { numero: 1, titulo: 'Dispõe de um setor comercial?', resposta: org.gc_e_comercial_1_resposta, comentario: org.gc_e_comercial_1_comentario, proposta: org.gc_e_comercial_1_proposta },
+        { numero: 2, titulo: 'O setor comercial possui informações técnicas dos produtos?', resposta: org.gc_e_comercial_2_resposta, comentario: org.gc_e_comercial_2_comentario, proposta: org.gc_e_comercial_2_proposta },
+        { numero: 3, titulo: 'Dispõe de profissional/equipe responsável pelas vendas?', resposta: org.gc_e_comercial_3_resposta, comentario: org.gc_e_comercial_3_comentario, proposta: org.gc_e_comercial_3_proposta },
+        { numero: 4, titulo: 'Este profissional tem orientação/treinamento específico para vendas?', resposta: org.gc_e_comercial_4_resposta, comentario: org.gc_e_comercial_4_comentario, proposta: org.gc_e_comercial_4_proposta },
+        { numero: 5, titulo: 'O representante comercial tem treinamento sobre os produtos?', resposta: org.gc_e_comercial_5_resposta, comentario: org.gc_e_comercial_5_comentario, proposta: org.gc_e_comercial_5_proposta },
+        { numero: 6, titulo: 'Possui sistema de controle das vendas?', resposta: org.gc_e_comercial_6_resposta, comentario: org.gc_e_comercial_6_comentario, proposta: org.gc_e_comercial_6_proposta },
+        { numero: 7, titulo: 'O setor comercial conhece a capacidade de oferta?', resposta: org.gc_e_comercial_7_resposta, comentario: org.gc_e_comercial_7_comentario, proposta: org.gc_e_comercial_7_proposta },
+        { numero: 8, titulo: 'Possui banco de informações sobre clientes e fornecedores?', resposta: org.gc_e_comercial_8_resposta, comentario: org.gc_e_comercial_8_comentario, proposta: org.gc_e_comercial_8_proposta },
+        { numero: 9, titulo: 'Emite ou está apto a emitir nota fiscal eletrônica?', resposta: org.gc_e_comercial_9_resposta, comentario: org.gc_e_comercial_9_comentario, proposta: org.gc_e_comercial_9_proposta }
+      ]);
+
+      // Mercados Verdes, Sociais e Diferenciados
+      renderizarSubarea('Mercados Verdes, Sociais e Diferenciados');
+      renderizarTabelaPraticas([
+        { numero: 10, titulo: 'O negócio possui diferencial em termos de sustentabilidade?', resposta: org.gc_mercado_10_resposta, comentario: org.gc_mercado_10_comentario, proposta: org.gc_mercado_10_proposta },
+        { numero: 11, titulo: 'Atua em mercados verdes ou outros mercados específicos?', resposta: org.gc_mercado_11_resposta, comentario: org.gc_mercado_11_comentario, proposta: org.gc_mercado_11_proposta },
+        { numero: 12, titulo: 'Possui produtos diferenciados do ponto de vista ambiental?', resposta: org.gc_mercado_12_resposta, comentario: org.gc_mercado_12_comentario, proposta: org.gc_mercado_12_proposta },
+        { numero: 13, titulo: 'Possui relação comercial com mercado justo e solidário?', resposta: org.gc_mercado_13_resposta, comentario: org.gc_mercado_13_comentario, proposta: org.gc_mercado_13_proposta },
+        { numero: 14, titulo: 'Os preços de produtos diferenciados são favoráveis?', resposta: org.gc_mercado_14_resposta, comentario: org.gc_mercado_14_comentario, proposta: org.gc_mercado_14_proposta },
+        { numero: 15, titulo: 'Se atualiza sobre exigências dos mercados verdes?', resposta: org.gc_mercado_15_resposta, comentario: org.gc_mercado_15_comentario, proposta: org.gc_mercado_15_proposta }
+      ]);
+
+      // Estratégia Comercial e Marketing
+      renderizarSubarea('Estratégia Comercial e Marketing');
+      renderizarTabelaPraticas([
+        { numero: 16, titulo: 'Adota estratégias comerciais definidas?', resposta: org.gc_comercial_15_resposta, comentario: org.gc_comercial_15_comentario, proposta: org.gc_comercial_15_proposta },
+        { numero: 17, titulo: 'Os produtos/empreendimento possuem marca comercial?', resposta: org.gc_comercial_16_resposta, comentario: org.gc_comercial_16_comentario, proposta: org.gc_comercial_16_proposta },
+        { numero: 18, titulo: 'Realiza ou utiliza pesquisa/estudo de mercado?', resposta: org.gc_comercial_17_resposta, comentario: org.gc_comercial_17_comentario, proposta: org.gc_comercial_17_proposta },
+        { numero: 19, titulo: 'Conhece os concorrentes e acompanha preços?', resposta: org.gc_comercial_18_resposta, comentario: org.gc_comercial_18_comentario, proposta: org.gc_comercial_18_proposta },
+        { numero: 20, titulo: 'Possui plano de marketing?', resposta: org.gc_comercial_19_resposta, comentario: org.gc_comercial_19_comentario, proposta: org.gc_comercial_19_proposta },
+        { numero: 21, titulo: 'O marketing contribui para estratégias e aumento de vendas?', resposta: org.gc_comercial_20_resposta, comentario: org.gc_comercial_20_comentario, proposta: org.gc_comercial_20_proposta }
+      ]);
+
+      // Sustentabilidade e Modelo do Negócio
+      renderizarSubarea('Sustentabilidade e Modelo do Negócio');
+      renderizarTabelaPraticas([
+        { numero: 22, titulo: 'Existe regularidade nas vendas, com contratos permanentes?', resposta: org.gc_modelo_21_resposta, comentario: org.gc_modelo_21_comentario, proposta: org.gc_modelo_21_proposta },
+        { numero: 23, titulo: 'Possui Modelo de Negócio definido?', resposta: org.gc_modelo_22_resposta, comentario: org.gc_modelo_22_comentario, proposta: org.gc_modelo_22_proposta },
+        { numero: 24, titulo: 'Vem utilizando o Modelo de Negócio para inserção no mercado?', resposta: org.gc_modelo_23_resposta, comentario: org.gc_modelo_23_comentario, proposta: org.gc_modelo_23_proposta },
+        { numero: 25, titulo: 'A direção tem clareza da proposta de valor?', resposta: org.gc_modelo_24_resposta, comentario: org.gc_modelo_24_comentario, proposta: org.gc_modelo_24_proposta },
+        { numero: 26, titulo: 'O negócio contribui para aumento da renda dos associados?', resposta: org.gc_modelo_25_resposta, comentario: org.gc_modelo_25_comentario, proposta: org.gc_modelo_25_proposta },
+        { numero: 27, titulo: 'Possui Plano de Negócios elaborado?', resposta: org.gc_modelo_26_resposta, comentario: org.gc_modelo_26_comentario, proposta: org.gc_modelo_26_proposta },
+        { numero: 28, titulo: 'O Plano de Negócios vem sendo utilizado?', resposta: org.gc_modelo_27_resposta, comentario: org.gc_modelo_27_comentario, proposta: org.gc_modelo_27_proposta }
+      ]);
+
+      // === GESTÃO DE PROCESSOS PRODUTIVOS ===
+      doc.addPage();
+      doc.font('Helvetica-Bold').fontSize(14).fillColor('#056839')
+        .text('ÁREA GERENCIAL: GESTÃO DE PROCESSOS PRODUTIVOS', 50, 50);
+      doc.moveDown(1);
+
+      // Regularidade Sanitária
+      renderizarSubarea('Regularidade Sanitária');
+      renderizarPratica(1, 'Possui registro sanitário competente?', org.gpp_reg_sanitaria_1_resposta, org.gpp_reg_sanitaria_1_comentario, org.gpp_reg_sanitaria_1_proposta);
+      renderizarPratica(2, 'Os produtos possuem registro?', org.gpp_reg_sanitaria_2_resposta, org.gpp_reg_sanitaria_2_comentario, org.gpp_reg_sanitaria_2_proposta);
+      renderizarPratica(3, 'Os rótulos possuem registro?', org.gpp_reg_sanitaria_3_resposta, org.gpp_reg_sanitaria_3_comentario, org.gpp_reg_sanitaria_3_proposta);
+
+      // Planejamento Produtivo
+      renderizarSubarea('Planejamento Produtivo');
+      renderizarPratica(4, 'Realiza planejamento da produção?', org.gpp_planejamento_4_resposta, org.gpp_planejamento_4_comentario, org.gpp_planejamento_4_proposta);
+      renderizarPratica(5, 'Possui planilha de custos de produção?', org.gpp_planejamento_5_resposta, org.gpp_planejamento_5_comentario, org.gpp_planejamento_5_proposta);
+      renderizarPratica(6, 'Há levantamento de demandas/exigências dos mercados?', org.gpp_planejamento_6_resposta, org.gpp_planejamento_6_comentario, org.gpp_planejamento_6_proposta);
+
+      // Logística da Produção
+      renderizarSubarea('Logística da Produção e Beneficiamento');
+      renderizarPratica(7, 'Possui local específico para armazenamento de suprimentos?', org.gpp_logistica_7_resposta, org.gpp_logistica_7_comentario, org.gpp_logistica_7_proposta);
+      renderizarPratica(8, 'Essas instalações têm dimensões e condições adequadas?', org.gpp_logistica_8_resposta, org.gpp_logistica_8_comentario, org.gpp_logistica_8_proposta);
+      renderizarPratica(9, 'Dispõe de controle para recebimento e estocagem?', org.gpp_logistica_9_resposta, org.gpp_logistica_9_comentario, org.gpp_logistica_9_proposta);
+      renderizarPratica(10, 'Possui local específico para armazenamento de produtos finais?', org.gpp_logistica_10_resposta, org.gpp_logistica_10_comentario, org.gpp_logistica_10_proposta);
+      renderizarPratica(11, 'Este local tem dimensões e condições adequadas?', org.gpp_logistica_11_resposta, org.gpp_logistica_11_comentario, org.gpp_logistica_11_proposta);
+      renderizarPratica(12, 'Possui estrutura adequada para transporte e distribuição?', org.gpp_logistica_12_resposta, org.gpp_logistica_12_comentario, org.gpp_logistica_12_proposta);
+
+      // Cadeia de Valor
+      renderizarSubarea('Cadeia de Valor');
+      renderizarPratica(13, 'Utiliza o mapeamento da cadeia de valor?', org.gpp_valor_13_resposta, org.gpp_valor_13_comentario, org.gpp_valor_13_proposta);
+      renderizarPratica(14, 'O mapeamento contempla as relações sociais?', org.gpp_valor_14_resposta, org.gpp_valor_14_comentario, org.gpp_valor_14_proposta);
+      renderizarPratica(15, 'Há avaliação de quanto o mapeamento contribui para o desempenho?', org.gpp_valor_15_resposta, org.gpp_valor_15_comentario, org.gpp_valor_15_proposta);
+
+      // Leiaute e Fluxos
+      renderizarSubarea('Leiaute e Fluxos');
+      renderizarPratica(16, 'Possui um leiaute dos processos produtivos?', org.gpp_fluxo_16_resposta, org.gpp_fluxo_16_comentario, org.gpp_fluxo_16_proposta);
+      renderizarPratica(17, 'O leiaute é monitorado para melhorar a produção?', org.gpp_fluxo_17_resposta, org.gpp_fluxo_17_comentario, org.gpp_fluxo_17_proposta);
+      renderizarPratica(18, 'O leiaute é monitorado para melhorar o beneficiamento?', org.gpp_fluxo_18_resposta, org.gpp_fluxo_18_comentario, org.gpp_fluxo_18_proposta);
+      renderizarPratica(19, 'O leiaute é monitorado para melhorar a rotulagem?', org.gpp_fluxo_19_resposta, org.gpp_fluxo_19_comentario, org.gpp_fluxo_19_proposta);
+      renderizarPratica(20, 'O leiaute é monitorado para melhorar a embalagem?', org.gpp_fluxo_20_resposta, org.gpp_fluxo_20_comentario, org.gpp_fluxo_20_proposta);
+      renderizarPratica(21, 'Possui fluxos de produção, beneficiamento, rotulagem e embalagem?', org.gpp_fluxo_21_resposta, org.gpp_fluxo_21_comentario, org.gpp_fluxo_21_proposta);
+      renderizarPratica(22, 'O fluxo de produção está integrado com o leiaute?', org.gpp_fluxo_22_resposta, org.gpp_fluxo_22_comentario, org.gpp_fluxo_22_proposta);
+
+      // Controle de Qualidade
+      renderizarSubarea('Controle de Qualidade, Padronização e Rotulagem');
+      renderizarPratica(23, 'Realiza controle de qualidade dos produtos?', org.gpp_qualidade_23_resposta, org.gpp_qualidade_23_comentario, org.gpp_qualidade_23_proposta);
+      renderizarPratica(24, 'Este controle atende aos padrões pré-estabelecidos?', org.gpp_qualidade_24_resposta, org.gpp_qualidade_24_comentario, org.gpp_qualidade_24_proposta);
+      renderizarPratica(25, 'Testa os produtos antes da comercialização?', org.gpp_qualidade_25_resposta, org.gpp_qualidade_25_comentario, org.gpp_qualidade_25_proposta);
+      renderizarPratica(26, 'Rótulos e etiquetas atendem padrões da legislação?', org.gpp_qualidade_26_resposta, org.gpp_qualidade_26_comentario, org.gpp_qualidade_26_proposta);
+      renderizarPratica(27, 'Rótulos são coerentes com estratégia de marketing?', org.gpp_qualidade_27_resposta, org.gpp_qualidade_27_comentario, org.gpp_qualidade_27_proposta);
+      renderizarPratica(28, 'Rótulos estão de acordo com mercados a serem atingidos?', org.gpp_qualidade_28_resposta, org.gpp_qualidade_28_comentario, org.gpp_qualidade_28_proposta);
+
+      // Bens de Produção
+      renderizarSubarea('Bens de Produção');
+      renderizarPratica(29, 'Os bens de produção estão atendendo as necessidades?', org.gpp_producao_29_resposta, org.gpp_producao_29_comentario, org.gpp_producao_29_proposta);
+
+      // === GESTÃO DA INOVAÇÃO ===
+      doc.addPage();
+      doc.font('Helvetica-Bold').fontSize(14).fillColor('#056839')
+        .text('ÁREA GERENCIAL: GESTÃO DA INOVAÇÃO', 50, 50);
+      doc.moveDown(1);
+
+      // Adoção da Inovação
+      renderizarSubarea('Adoção da Inovação, Informações e Conhecimento');
+      renderizarPratica(1, 'O empreendimento adota algum esforço para inovar?', org.gi_iic_1_resposta, org.gi_iic_1_comentario, org.gi_iic_1_proposta);
+      renderizarPratica(2, 'As informações são obtidas externamente e compartilhadas?', org.gi_iic_2_resposta, org.gi_iic_2_comentario, org.gi_iic_2_proposta);
+      renderizarPratica(3, 'É promovido ambiente favorável ao surgimento de ideias criativas?', org.gi_iic_3_resposta, org.gi_iic_3_comentario, org.gi_iic_3_proposta);
+      renderizarPratica(4, 'São analisadas e selecionadas as ideias de inovação?', org.gi_iic_4_resposta, org.gi_iic_4_comentario, org.gi_iic_4_proposta);
+      renderizarPratica(5, 'Os dirigentes apoiam a experimentação de novas ideias?', org.gi_iic_5_resposta, org.gi_iic_5_comentario, org.gi_iic_5_proposta);
+
+      // Monitoramento, Aprendizagem e Reconhecimento
+      renderizarSubarea('Monitoramento, Aprendizagem e Reconhecimento');
+      renderizarPratica(6, 'A implementação da inovação é acompanhada?', org.gi_mar_6_resposta, org.gi_mar_6_comentario, org.gi_mar_6_proposta);
+      renderizarPratica(7, 'É promovida a aprendizagem sobre o processo inovativo?', org.gi_mar_7_resposta, org.gi_mar_7_comentario, org.gi_mar_7_proposta);
+      renderizarPratica(8, 'São reconhecidos pelas contribuições à inovação?', org.gi_mar_8_resposta, org.gi_mar_8_comentario, org.gi_mar_8_proposta);
+      renderizarPratica(9, 'São capacitados para a inovação e Gestão da Inovação?', org.gi_mar_9_resposta, org.gi_mar_9_comentario, org.gi_mar_9_proposta);
+
+      // Equipes, Atores e Tipos de Inovação
+      renderizarSubarea('Equipes, Atores Relacionados e Tipos de Inovação');
+      renderizarPratica(10, 'O trabalho em equipe é estimulado para inovação?', org.gi_time_10_resposta, org.gi_time_10_comentario, org.gi_time_10_proposta);
+      renderizarPratica(11, 'As inovações são divulgadas para as partes interessadas?', org.gi_time_11_resposta, org.gi_time_11_comentario, org.gi_time_11_proposta);
+      renderizarPratica(12, 'São avaliados os benefícios da implementação da inovação?', org.gi_time_12_resposta, org.gi_time_12_comentario, org.gi_time_12_proposta);
+      renderizarPratica(13, 'Existe iniciativa voltada para inovação sustentável/verde?', org.gi_time_13_resposta, org.gi_time_13_comentario, org.gi_time_13_proposta);
+      renderizarPratica(14, 'Existe iniciativa voltada para inovação social ou frugal?', org.gi_time_14_resposta, org.gi_time_14_comentario, org.gi_time_14_proposta);
+
+      // === GESTÃO SOCIOAMBIENTAL ===
+      doc.addPage();
+      doc.font('Helvetica-Bold').fontSize(14).fillColor('#056839')
+        .text('ÁREA GERENCIAL: GESTÃO SOCIOAMBIENTAL', 50, 50);
+      doc.moveDown(1);
+
+      // Política Socioambiental
+      renderizarSubarea('Política Socioambiental');
+      renderizarPratica(1, 'Adota alguma prática voltada às questões ambientais?', org.gs_socioambiental_1_resposta, org.gs_socioambiental_1_comentario, org.gs_socioambiental_1_proposta);
+      renderizarPratica(2, 'Faz utilização de materiais sustentáveis?', org.gs_socioambiental_2_resposta, org.gs_socioambiental_2_comentario, org.gs_socioambiental_2_proposta);
+      renderizarPratica(3, 'Possui incentivo para mobilidade sustentável?', org.gs_socioambiental_3_resposta, org.gs_socioambiental_3_comentario, org.gs_socioambiental_3_proposta);
+      renderizarPratica(4, 'Adota estratégia para garantir sustentabilidade ambiental da produção?', org.gs_socioambiental_4_resposta, org.gs_socioambiental_4_comentario, org.gs_socioambiental_4_proposta);
+      renderizarPratica(5, 'Possui estratégia para justa repartição de benefícios da biodiversidade?', org.gs_socioambiental_5_resposta, org.gs_socioambiental_5_comentario, org.gs_socioambiental_5_proposta);
+
+      // Valoração Ambiental
+      renderizarSubarea('Valoração Ambiental');
+      renderizarPratica(6, 'Faz valoração dos recursos naturais utilizados?', org.gs_ambiental_6_resposta, org.gs_ambiental_6_comentario, org.gs_ambiental_6_proposta);
+      renderizarPratica(7, 'Possui integração promovendo bem-estar e biodiversidade?', org.gs_ambiental_7_resposta, org.gs_ambiental_7_comentario, org.gs_ambiental_7_proposta);
+      renderizarPratica(8, 'Considera reconfiguração de espaços para prolongar vida útil?', org.gs_ambiental_8_resposta, org.gs_ambiental_8_comentario, org.gs_ambiental_8_proposta);
+      renderizarPratica(9, 'Esta valoração é utilizada nas estratégias?', org.gs_ambiental_9_resposta, org.gs_ambiental_9_comentario, org.gs_ambiental_9_proposta);
+
+      // Regularidade Ambiental
+      renderizarSubarea('Regularidade Ambiental');
+      renderizarPratica(10, 'Possui licença ou autorização ambiental?', org.gs_reg_ambiental_10_resposta, org.gs_reg_ambiental_10_comentario, org.gs_reg_ambiental_10_proposta);
+      renderizarPratica(11, 'As áreas possuem Plano de Manejo aprovado?', org.gs_reg_ambiental_11_resposta, org.gs_reg_ambiental_11_comentario, org.gs_reg_ambiental_11_proposta);
+      renderizarPratica(12, 'Há planos de Manejo autorizando extração de espécies?', org.gs_reg_ambiental_12_resposta, org.gs_reg_ambiental_12_comentario, org.gs_reg_ambiental_12_proposta);
+      renderizarPratica(13, 'Existe área de preservação no entorno que possa ser afetada?', org.gs_reg_ambiental_13_resposta, org.gs_reg_ambiental_13_comentario, org.gs_reg_ambiental_13_proposta);
+      renderizarPratica(14, 'As áreas possuem CAR?', org.gs_reg_ambiental_14_resposta, org.gs_reg_ambiental_14_comentario, org.gs_reg_ambiental_14_proposta);
+
+      // Impactos Ambientais
+      renderizarSubarea('Impactos Ambientais');
+      renderizarPratica(15, 'A direção identifica com clareza os impactos negativos?', org.gs_impactos_ambiental_15_resposta, org.gs_impactos_ambiental_15_comentario, org.gs_impactos_ambiental_15_proposta);
+      renderizarPratica(16, 'Adota política para minimizar esses impactos?', org.gs_impactos_ambiental_16_resposta, org.gs_impactos_ambiental_16_comentario, org.gs_impactos_ambiental_16_proposta);
+      renderizarPratica(17, 'A direção identifica com clareza os impactos positivos?', org.gs_impactos_ambiental_17_resposta, org.gs_impactos_ambiental_17_comentario, org.gs_impactos_ambiental_17_proposta);
+      renderizarPratica(18, 'Faz correta destinação dos resíduos e efluentes?', org.gs_impactos_ambiental_18_resposta, org.gs_impactos_ambiental_18_comentario, org.gs_impactos_ambiental_18_proposta);
+      renderizarPratica(19, 'Realiza práticas para reduzir, reutilizar e reciclar?', org.gs_impactos_ambiental_19_resposta, org.gs_impactos_ambiental_19_comentario, org.gs_impactos_ambiental_19_proposta);
+      renderizarPratica(20, 'Possui plano de redução no consumo de energia?', org.gs_impactos_ambiental_20_resposta, org.gs_impactos_ambiental_20_comentario, org.gs_impactos_ambiental_20_proposta);
+      renderizarPratica(21, 'As edificações têm planejamento de ciclo de vida?', org.gs_impactos_ambiental_21_resposta, org.gs_impactos_ambiental_21_comentario, org.gs_impactos_ambiental_21_proposta);
+      renderizarPratica(22, 'As instalações físicas estão em área adequada?', org.gs_impactos_ambiental_22_resposta, org.gs_impactos_ambiental_22_comentario, org.gs_impactos_ambiental_22_proposta);
+
+      // === INFRAESTRUTURA SUSTENTÁVEL ===
+      doc.addPage();
+      doc.font('Helvetica-Bold').fontSize(14).fillColor('#056839')
+        .text('ÁREA GERENCIAL: INFRAESTRUTURA SUSTENTÁVEL', 50, 50);
+      doc.moveDown(1);
+
+      // Eficiência Energética
+      renderizarSubarea('Eficiência Energética');
+      renderizarPratica(1, 'Possui/planeja painéis solares fotovoltaicos?', org.is_eficiencia_energetica_1_resposta, org.is_eficiencia_energetica_1_comentario, org.is_eficiencia_energetica_1_proposta);
+      renderizarPratica(2, 'A orientação do edifício foi planejada para aproveitar luz natural?', org.is_eficiencia_energetica_2_resposta, org.is_eficiencia_energetica_2_comentario, org.is_eficiencia_energetica_2_proposta);
+      renderizarPratica(3, 'Utiliza/planeja sensores de presença e automação?', org.is_eficiencia_energetica_3_resposta, org.is_eficiencia_energetica_3_comentario, org.is_eficiencia_energetica_3_proposta);
+      renderizarPratica(4, 'As fachadas incorporam elementos de sombreamento?', org.is_eficiencia_energetica_4_resposta, org.is_eficiencia_energetica_4_comentario, org.is_eficiencia_energetica_4_proposta);
+
+      // Uso de Recursos Naturais
+      renderizarSubarea('Uso de Recursos Naturais');
+      renderizarPratica(5, 'Há aproveitamento de ventilação cruzada natural?', org.is_recursos_naturais_5_resposta, org.is_recursos_naturais_5_comentario, org.is_recursos_naturais_5_proposta);
+      renderizarPratica(6, 'Há valorização dos sombreamentos vegetais?', org.is_recursos_naturais_6_resposta, org.is_recursos_naturais_6_comentario, org.is_recursos_naturais_6_proposta);
+      renderizarPratica(7, 'A topografia é utilizada para conforto térmico?', org.is_recursos_naturais_7_resposta, org.is_recursos_naturais_7_comentario, org.is_recursos_naturais_7_proposta);
+      renderizarPratica(8, 'Há aberturas estratégicas para luz natural?', org.is_recursos_naturais_8_resposta, org.is_recursos_naturais_8_comentario, org.is_recursos_naturais_8_proposta);
+
+      // Consumo de Água
+      renderizarSubarea('Consumo de Água');
+      renderizarPratica(9, 'Há sistemas de captação de água da chuva?', org.is_agua_9_resposta, org.is_agua_9_comentario, org.is_agua_9_proposta);
+      renderizarPratica(10, 'Há reutilização de águas cinzas?', org.is_agua_10_resposta, org.is_agua_10_comentario, org.is_agua_10_proposta);
+
+      // Conforto Ambiental
+      renderizarSubarea('Conforto Ambiental');
+      renderizarPratica(11, 'Há utilização de materiais com bom isolamento térmico?', org.is_conforto_ambiental_11_resposta, org.is_conforto_ambiental_11_comentario, org.is_conforto_ambiental_11_proposta);
+      renderizarPratica(12, 'Há utilização de materiais com bom isolamento acústico?', org.is_conforto_ambiental_12_resposta, org.is_conforto_ambiental_12_comentario, org.is_conforto_ambiental_12_proposta);
+      renderizarPratica(13, 'Há exploração da ventilação cruzada e exaustão natural?', org.is_conforto_ambiental_13_resposta, org.is_conforto_ambiental_13_comentario, org.is_conforto_ambiental_13_proposta);
+      renderizarPratica(14, 'Há uso de iluminação natural e/ou vidros de controle solar?', org.is_conforto_ambiental_14_resposta, org.is_conforto_ambiental_14_comentario, org.is_conforto_ambiental_14_proposta);
+
+      // Gestão de Resíduos
+      renderizarSubarea('Gestão de Resíduos');
+      renderizarPratica(15, 'Há espaços adequados para separação de resíduos orgânicos?', org.is_residuos_15_resposta, org.is_residuos_15_comentario, org.is_residuos_15_proposta);
+      renderizarPratica(16, 'Há espaços adequados para separação de recicláveis?', org.is_residuos_16_resposta, org.is_residuos_16_comentario, org.is_residuos_16_proposta);
+      renderizarPratica(17, 'A compostagem é utilizada como adubo orgânico?', org.is_residuos_17_resposta, org.is_residuos_17_comentario, org.is_residuos_17_proposta);
+      renderizarPratica(18, 'Há práticas que minimizem geração de resíduos?', org.is_residuos_18_resposta, org.is_residuos_18_comentario, org.is_residuos_18_proposta);
+
+      // === OBSERVAÇÕES FINAIS ===
+      if (organizacao.obs) {
+        if (doc.y > 600) {
+          doc.addPage();
+        }
+
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+          .text('OBSERVAÇÕES FINAIS', 50, doc.y);
+        doc.moveDown(0.5);
+
+        doc.font('Helvetica').fontSize(10).fillColor('#000')
+          .text(organizacao.obs, 50, doc.y, {
+            width: doc.page.width - 100,
+            align: 'justify'
+          });
+        doc.moveDown(1);
+      }
+
+      // === FOTOS (UMA POR PÁGINA) ===
+      if (organizacao.organizacao_foto && organizacao.organizacao_foto.length > 0) {
+        for (const foto of organizacao.organizacao_foto) {
+          if (!foto.foto) continue;
+
+          // Nova página para cada foto
+          doc.addPage();
+
+          const fotoPath = path.join(UPLOAD_DIR, foto.foto);
+
+          // Verificar se arquivo existe
+          if (!fs.existsSync(fotoPath)) {
+            doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+              .text('FOTO NÃO ENCONTRADA', 50, 50);
+            doc.moveDown(0.5);
+            
+            doc.strokeColor('#056839')
+              .lineWidth(1)
+              .moveTo(50, doc.y)
+              .lineTo(doc.page.width - 50, doc.y)
+              .stroke();
+            doc.moveDown(1);
+
+            doc.font('Helvetica').fontSize(9).fillColor('#666')
+              .text(`Arquivo: ${foto.foto}`, 50, doc.y);
+            if (foto.obs) {
+              doc.text(`Descrição: ${foto.obs}`, 50, doc.y + 12);
+            }
+            continue;
+          }
+
+          // Cabeçalho da página de foto
+          doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+            .text('FOTO DA ORGANIZAÇÃO', 50, 50);
+          doc.moveDown(0.5);
+          
+          doc.strokeColor('#056839')
+            .lineWidth(1)
+            .moveTo(50, doc.y)
+            .lineTo(doc.page.width - 50, doc.y)
+            .stroke();
+          doc.moveDown(1);
+
+          // Título/Descrição da foto
+          doc.font('Helvetica-Bold').fontSize(11).fillColor('#3b2313')
+            .text(foto.obs || 'Sem descrição', 50, doc.y);
+          doc.moveDown(0.5);
+
+          // Informações
+          doc.font('Helvetica').fontSize(9).fillColor('#666')
+            .text(`Arquivo: ${foto.foto}`, 50, doc.y);
+          doc.text(`Data: ${new Date(foto.creation_date).toLocaleDateString('pt-BR')} às ${new Date(foto.creation_date).toLocaleTimeString('pt-BR')}`, 50, doc.y + 12);
+          doc.moveDown(2);
+
+          // Inserir imagem (centralizada e maximizada)
+          try {
+            const maxWidth = doc.page.width - 100;
+            const maxHeight = 550; // Altura maior para aproveitar a página
+
+            doc.image(fotoPath, 50, doc.y, {
+              fit: [maxWidth, maxHeight],
+              align: 'center'
+            });
+
+          } catch (error) {
+            doc.fillColor('#666')
+              .fontSize(10)
+              .text('Erro ao carregar imagem', 50, doc.y, { align: 'center' });
+            doc.text(`Detalhes: ${error}`, 50, doc.y + 20, { align: 'center' });
+          }
+        }
+      }
+      
+      // Finalizar o documento
+      doc.end();
+      return stream;
+
+    } catch (error: any) {
+      doc.end();
+      throw new Error(`Erro ao gerar relatório: ${error.message}`);
+    }
+  }
+};

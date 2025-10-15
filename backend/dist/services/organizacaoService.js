@@ -375,18 +375,26 @@ class OrganizacaoService {
                     select: {
                         descricao: true
                     }
-                },
-                users: {
-                    select: {
-                        name: true,
-                        email: true
-                    }
                 }
             },
             orderBy: {
                 data_visita: 'desc'
             }
         });
+        const tecnicoIds = todasOrganizacoes
+            .map(org => org.id_tecnico)
+            .filter((id) => id !== null && id !== undefined);
+        const tecnicos = await prisma.users.findMany({
+            where: {
+                id: { in: tecnicoIds }
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true
+            }
+        });
+        const tecnicoMap = new Map(tecnicos.map(t => [t.id, t]));
         let organizacoesFiltradas = todasOrganizacoes;
         if (aplicarFiltroHibrido && userId) {
             organizacoesFiltradas = todasOrganizacoes.filter(org => {
@@ -448,6 +456,7 @@ class OrganizacaoService {
                     const partes = municipioNome.split(' - ');
                     municipioNome = partes[partes.length - 1];
                 }
+                const tecnico = org.id_tecnico ? tecnicoMap.get(org.id_tecnico) : null;
                 return {
                     id: org.id,
                     nome: org.nome || 'Nome não informado',
@@ -459,8 +468,8 @@ class OrganizacaoService {
                     municipio_nome: municipioNome,
                     localizacao: estadoSigla && municipioNome ? `${estadoSigla} - ${municipioNome}` : (estadoSigla || municipioNome || 'Não informado'),
                     temGps: !!(org.gps_lat && org.gps_lng),
-                    tecnico_nome: org.users?.name || null,
-                    tecnico_email: org.users?.email || null,
+                    tecnico_nome: tecnico?.name || null,
+                    tecnico_email: tecnico?.email || null,
                     validacao_status: org.validacao_status
                 };
             }),
