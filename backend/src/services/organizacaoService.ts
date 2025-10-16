@@ -757,8 +757,8 @@ class OrganizacaoService {
         municipios = await prisma.$queryRaw`
           SELECT
             id,
-            descricao as nome,
-            id_estado as "estadoId"
+            descricao,
+            id_estado
           FROM pinovara_aux.municipio_ibge
           WHERE id_estado = ${estadoId}
           ORDER BY descricao
@@ -768,8 +768,8 @@ class OrganizacaoService {
         municipios = await prisma.$queryRaw`
           SELECT
             id,
-            descricao as nome,
-            id_estado as "estadoId"
+            descricao,
+            id_estado
           FROM pinovara_aux.municipio_ibge
           ORDER BY descricao
         `;
@@ -794,7 +794,7 @@ class OrganizacaoService {
       const estados = await prisma.$queryRaw`
         SELECT
           id,
-          descricao as nome
+          descricao
         FROM pinovara_aux.estado
         ORDER BY descricao
       `;

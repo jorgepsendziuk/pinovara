@@ -44,12 +44,61 @@ export const DiagnosticoArea: React.FC<DiagnosticoAreaProps> = ({
     
     // Títulos personalizados para cada categoria
     const titulos: { [key: string]: React.ReactElement } = {
+      // Governança
       'estrutura': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Estrutura Organizacional</>,
       'estrategia': <><Target size={16} style={{marginRight: '0.5rem'}} /> Estratégia e Planejamento</>,
       'organizacao': <><Users size={16} style={{marginRight: '0.5rem'}} /> Organização dos Associados</>,
       'direcao': <><Handshake size={16} style={{marginRight: '0.5rem'}} /> Direção e Participação</>,
       'controle': <><BarChart size={16} style={{marginRight: '0.5rem'}} /> Controle e Transparência</>,
-      'educacao': <><GraduationCap size={16} style={{marginRight: '0.5rem'}} /> Educação Cooperativista</>
+      'educacao': <><GraduationCap size={16} style={{marginRight: '0.5rem'}} /> Educação Cooperativista</>,
+      
+      // Gestão de Pessoas
+      'p_organizacao': <><Users size={16} style={{marginRight: '0.5rem'}} /> Organização do Trabalho</>,
+      'p_desenvolvimento': <><GraduationCap size={16} style={{marginRight: '0.5rem'}} /> Desenvolvimento de Pessoas</>,
+      'trabalho': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Saúde e Segurança do Trabalho</>,
+      'geracao': <><Users size={16} style={{marginRight: '0.5rem'}} /> Gênero e Geração</>,
+      
+      // Gestão Financeira
+      'balanco': <><BarChart size={16} style={{marginRight: '0.5rem'}} /> Balanço Patrimonial</>,
+      'contas': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Contas a Pagar e Receber</>,
+      'caixa': <><BarChart size={16} style={{marginRight: '0.5rem'}} /> Fluxo de Caixa</>,
+      'estoque': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Controle de Estoque</>,
+      'resultado': <><BarChart size={16} style={{marginRight: '0.5rem'}} /> Demonstração de Resultado</>,
+      'analise': <><Target size={16} style={{marginRight: '0.5rem'}} /> Análise de Viabilidade</>,
+      'fiscal': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Obrigações Fiscais</>,
+      
+      // Gestão Comercial
+      'e_comercial': <><Handshake size={16} style={{marginRight: '0.5rem'}} /> Estrutura Comercial</>,
+      'mercado': <><Target size={16} style={{marginRight: '0.5rem'}} /> Mercados Diferenciados</>,
+      'comercial': <><Handshake size={16} style={{marginRight: '0.5rem'}} /> Estratégia Comercial</>,
+      'modelo': <><Target size={16} style={{marginRight: '0.5rem'}} /> Modelo de Negócios</>,
+      
+      // Gestão de Processos
+      'reg_sanitaria': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Regularização Sanitária</>,
+      'planejamento': <><Target size={16} style={{marginRight: '0.5rem'}} /> Planejamento da Produção</>,
+      'logistica': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Logística</>,
+      'valor': <><Target size={16} style={{marginRight: '0.5rem'}} /> Cadeia de Valor</>,
+      'fluxo': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Fluxos de Processos</>,
+      'qualidade': <><Target size={16} style={{marginRight: '0.5rem'}} /> Qualidade e Certificação</>,
+      'producao': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Bens de Produção</>,
+      
+      // Gestão de Inovação
+      'iic': <><Target size={16} style={{marginRight: '0.5rem'}} /> Ideias e Iniciativas Criativas</>,
+      'mar': <><GraduationCap size={16} style={{marginRight: '0.5rem'}} /> Monitoramento e Aprendizagem</>,
+      'time': <><Users size={16} style={{marginRight: '0.5rem'}} /> Trabalho em Equipe</>,
+      
+      // Gestão Socioambiental
+      'socioambiental': <><Target size={16} style={{marginRight: '0.5rem'}} /> Práticas Socioambientais</>,
+      'ambiental': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Valoração Ambiental</>,
+      'reg_ambiental': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Regularização Ambiental</>,
+      'impactos_ambiental': <><Target size={16} style={{marginRight: '0.5rem'}} /> Impactos Ambientais</>,
+      
+      // Infraestrutura Sustentável
+      'eficiencia_energetica': <><Target size={16} style={{marginRight: '0.5rem'}} /> Eficiência Energética</>,
+      'recursos_naturais': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Recursos Naturais</>,
+      'agua': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Gestão da Água</>,
+      'conforto_ambiental': <><Target size={16} style={{marginRight: '0.5rem'}} /> Conforto Ambiental</>,
+      'residuos': <><Clipboard size={16} style={{marginRight: '0.5rem'}} /> Gestão de Resíduos</>
     };
 
     return (
@@ -120,7 +169,20 @@ export const DiagnosticoArea: React.FC<DiagnosticoAreaProps> = ({
             </thead>
             <tbody>
               {perguntasCategoria.map((pergunta: any, index: number) => {
-                const chave = `${area.substring(0, 2)}_${categoria}_${pergunta.numero}`;
+                // Mapear área para prefixo correto do banco de dados
+                const prefixoMap: { [key: string]: string } = {
+                  'governanca-main': 'go',
+                  'pessoas-main': 'gp',
+                  'financeira-main': 'gf',
+                  'comercial-main': 'gc',
+                  'processos-main': 'gpp',
+                  'inovacao-main': 'gi',
+                  'socioambiental-main': 'gs',
+                  'infraestrutura-main': 'is'
+                };
+                
+                const prefixo = prefixoMap[area] || area.substring(0, 2);
+                const chave = `${prefixo}_${categoria}_${pergunta.numero}`;
                 const dadosResposta = dados[`${chave}_resposta`] || { resposta: 0 };
                 const dadosComentario = dados[`${chave}_comentario`] || { comentario: '' };
                 const dadosProposta = dados[`${chave}_proposta`] || { proposta: '' };

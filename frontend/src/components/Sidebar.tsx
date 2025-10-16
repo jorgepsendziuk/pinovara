@@ -174,22 +174,6 @@ const Sidebar: React.FC = () => {
       setIsMobileOpen(false);
     }
     
-    // Auto-collapse em tablets e telas menores para economizar espaço
-    // Mas só se o usuário não expandiu manualmente
-    if ((isTablet || isMobile) && !isCollapsed && !userExpandedRef.current) {
-      setIsCollapsed(true);
-    }
-    
-    // Auto-expand em desktop se estiver colapsado (e não foi expansão manual)
-    if (!isTablet && !isMobile && isCollapsed && !userExpandedRef.current) {
-      setIsCollapsed(false);
-    }
-    
-    // Reset user expansion flag when screen size changes
-    if (isTablet || isMobile) {
-      userExpandedRef.current = false;
-    }
-    
     // Ajustar largura baseada no tipo de dispositivo
     if (screenSize === 'mobile-sm') {
       setSidebarWidth(100); // Sidebar full-screen em mobile muito pequeno
@@ -613,18 +597,37 @@ const Sidebar: React.FC = () => {
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
-    // Fechar menu apenas se clicar no overlay ou no fundo do sidebar
-    if (isMobile && e.target === e.currentTarget) {
-      // Verifica se o clique foi em um elemento que deveria fechar o menu
+    // Fechar menu mobile apenas se clicar no overlay (::before)
+    if (isMobile && isMobileOpen) {
       const target = e.target as HTMLElement;
-      const isClickableElement = target.closest('.nav-button, .nav-link, .sidebar-toggle, .sidebar-logo, .user-compact-link');
-
-      // Só fecha se não foi em um elemento clicável
-      if (!isClickableElement) {
+      // Verifica se o clique foi diretamente no sidebar (não em seus filhos)
+      if (target === e.currentTarget) {
         setIsMobileOpen(false);
       }
     }
   };
+
+  // Handler para fechar menu ao clicar fora
+  useEffect(() => {
+    if (!isMobile || !isMobileOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const sidebar = sidebarRef.current;
+      const hamburger = document.querySelector('.mobile-hamburger');
+      
+      if (
+        sidebar && 
+        !sidebar.contains(e.target as Node) &&
+        hamburger &&
+        !hamburger.contains(e.target as Node)
+      ) {
+        setIsMobileOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMobile, isMobileOpen]);
 
   const handleNavLinkClick = () => {
     // Em mobile, fechar o menu após clicar em um link

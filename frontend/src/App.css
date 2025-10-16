@@ -2948,7 +2948,7 @@ main, section, article, aside, header, footer {
   align-items: center;
   gap: 0.5rem;
   flex: 1;
-  justify-content: center;
+  justify-content: flex-start;
   min-width: 0;
 }
 
@@ -3318,16 +3318,20 @@ main, section, article, aside, header, footer {
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
     transform: translateX(-100%);
-    z-index: 1001;
+    z-index: 1002;
     width: 280px !important;
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     box-shadow: none;
+    background: var(--bg-primary);
   }
 
   .sidebar.open {
     transform: translateX(0);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
   }
 
   .main-content {
@@ -3343,7 +3347,7 @@ main, section, article, aside, header, footer {
     width: 100%;
   }
 
-  /* Mobile overlay aprimorado - movido para fora da estrutura sidebar */
+  /* Mobile overlay - backdrop para fechar o menu */
   .sidebar::before {
     content: '';
     position: fixed;
@@ -3351,26 +3355,66 @@ main, section, article, aside, header, footer {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.5);
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
-    z-index: 998; /* Menor que o sidebar para ficar atrás */
-    backdrop-filter: blur(2px);
-    pointer-events: auto; /* Permitir cliques no overlay para fechar o menu */
+    z-index: -1;
+    pointer-events: none;
   }
 
   .sidebar.open::before {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
   }
 
-  /* Garantir que o conteúdo do sidebar tenha z-index maior que o overlay */
+  /* Garantir que o conteúdo do sidebar seja visível */
   .sidebar-header,
   .sidebar-nav,
   .sidebar-footer {
     position: relative;
-    z-index: 1002; /* Maior que o overlay blur */
+    z-index: 1;
+    background: var(--bg-primary);
+  }
+
+  /* Garantir cores corretas no mobile */
+  .sidebar .nav-button,
+  .sidebar .nav-link {
+    color: #374151 !important;
+  }
+
+  .sidebar .nav-button:hover,
+  .sidebar .nav-link:hover {
+    color: var(--text-primary) !important;
+  }
+
+  .sidebar .nav-button.active,
+  .sidebar .nav-link.active {
+    background: var(--primary-color) !important;
+    color: #ffffff !important;
+  }
+
+  .sidebar .logo-text {
+    color: #374151 !important;
+  }
+
+  .sidebar .user-name-mini,
+  .sidebar .user-role-mini {
+    color: #374151 !important;
+  }
+
+  /* Alinhar tudo à esquerda no mobile */
+  .sidebar .sidebar-logo,
+  .sidebar .sidebar-logo-section,
+  .sidebar .user-compact,
+  .sidebar .user-compact-link {
+    justify-content: flex-start !important;
+    text-align: left !important;
+  }
+
+  .sidebar .logo-link {
+    justify-content: flex-start !important;
   }
 
   /* Mobile hamburger button aprimorado */
