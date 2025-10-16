@@ -2794,14 +2794,16 @@ main, section, article, aside, header, footer {
 
 .sidebar.collapsed .sidebar-header {
   flex-direction: row;
+  gap: 0;
   align-items: center;
   justify-content: center;
-  gap: 0;
 }
 
 .sidebar.collapsed .sidebar-logo-section {
   flex-direction: row;
   gap: 0;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar.collapsed .sidebar-header .sidebar-toggle {
@@ -2825,10 +2827,22 @@ main, section, article, aside, header, footer {
 .sidebar.collapsed .sidebar-header {
   padding: 1rem 0.5rem;
   justify-content: center;
+  align-items: center;
 }
 
 .sidebar.collapsed .sidebar-logo-section {
   display: none;
+}
+
+/* Garantir alinhamento correto dos ícones no modo collapsed */
+.sidebar.collapsed .nav-button,
+.sidebar.collapsed .nav-link {
+  justify-content: center !important;
+  padding: 0.875rem 0 !important;
+}
+
+.sidebar.collapsed .nav-icon {
+  margin: 0 auto !important;
 }
 
 /* Sidebar Header */
@@ -3097,6 +3111,26 @@ main, section, article, aside, header, footer {
     font-size: 16px;
     border-radius: 6px;
   }
+
+  /* Forçar alinhamento à esquerda em telas muito pequenas também */
+  .sidebar .nav-item,
+  .sidebar .nav-list,
+  .sidebar .nav-submenu {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+  }
+
+  .sidebar .nav-button,
+  .sidebar .nav-link {
+    justify-content: flex-start !important;
+    text-align: left !important;
+    align-items: center !important;
+  }
+
+  .sidebar .nav-submenu .nav-link {
+    padding-left: 2rem !important;
+  }
 }
 
 /* Sidebar Navigation */
@@ -3297,6 +3331,40 @@ main, section, article, aside, header, footer {
 }
 
 /* Responsive adjustments */
+@media (max-width: 1200px) and (min-width: 1025px) {
+  /* Garantir alinhamento à esquerda em telas médias (1025px-1200px) */
+  .sidebar .nav-item,
+  .sidebar .nav-list,
+  .sidebar .nav-submenu {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+  }
+
+  .sidebar .nav-button,
+  .sidebar .nav-link {
+    justify-content: flex-start !important;
+    text-align: left !important;
+    align-items: center !important;
+    padding: 0.875rem 1.5rem !important;
+  }
+
+  .sidebar .nav-submenu .nav-link {
+    padding: 0.75rem 1.5rem 0.75rem 3rem !important;
+  }
+
+  .sidebar .nav-icon {
+    flex-shrink: 0 !important;
+    min-width: 20px !important;
+    justify-content: center !important;
+  }
+
+  .sidebar .nav-label {
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
+}
+
 @media (max-width: 1024px) {
   .sidebar {
     width: 250px;
@@ -3312,6 +3380,38 @@ main, section, article, aside, header, footer {
 
   .dashboard-layout .sidebar.collapsed + .main-content {
     margin-left: 60px;
+  }
+
+  /* Garantir alinhamento à esquerda em tablets e telas médias */
+  .sidebar .nav-item,
+  .sidebar .nav-list,
+  .sidebar .nav-submenu {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+  }
+
+  .sidebar .nav-button,
+  .sidebar .nav-link {
+    justify-content: flex-start !important;
+    text-align: left !important;
+    align-items: center !important;
+    padding: 0.875rem 1.5rem !important;
+  }
+
+  .sidebar .nav-submenu .nav-link {
+    padding: 0.75rem 1.5rem 0.75rem 3rem !important;
+  }
+
+  .sidebar .nav-icon {
+    flex-shrink: 0 !important;
+    min-width: 20px !important;
+    justify-content: center !important;
+  }
+
+  .sidebar .nav-label {
+    text-align: left !important;
+    justify-content: flex-start !important;
   }
 }
 
@@ -3469,6 +3569,33 @@ main, section, article, aside, header, footer {
   .nav-submenu .nav-link {
     min-height: 44px;
     padding: 0.6rem 1rem 0.6rem 2.5rem;
+  }
+
+  /* Forçar alinhamento à esquerda em todos os itens do menu */
+  .sidebar .nav-item,
+  .sidebar .nav-list,
+  .sidebar .nav-submenu {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+  }
+
+  .sidebar .nav-button,
+  .sidebar .nav-link {
+    justify-content: flex-start !important;
+    text-align: left !important;
+    align-items: center !important;
+  }
+
+  .sidebar .nav-icon {
+    flex-shrink: 0 !important;
+    min-width: 20px !important;
+    justify-content: center !important;
+  }
+
+  .sidebar .nav-label {
+    text-align: left !important;
+    justify-content: flex-start !important;
   }
 
   /* Show hamburger button only on mobile */

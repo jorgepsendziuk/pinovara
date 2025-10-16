@@ -292,6 +292,156 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   // Definição das colunas da DataGrid
   const columns: DataGridColumn<Organizacao>[] = [
     {
+      key: 'actions',
+      title: 'Ações',
+      width: '20%',
+      align: 'center',
+      render: (_, record: Organizacao) => (
+        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          {!isCoordinator() && (
+            <button
+              onClick={() => onNavigate('edicao', record.id)}
+              title="Editar organização"
+              style={{ 
+                padding: '6px 8px', 
+                border: '1px solid #007bff', 
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer', 
+                color: '#007bff',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#007bff';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#007bff';
+              }}
+            >
+              <Edit size={14} />
+            </button>
+          )}
+          <button
+            onClick={() => gerarRelatorio(record.id, record.nome)}
+            title="Gerar Relatório Completo"
+            disabled={gerandoRelatorio === record.id}
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #056839',
+              background: 'white',
+              borderRadius: '4px',
+              cursor: gerandoRelatorio === record.id ? 'not-allowed' : 'pointer',
+              color: gerandoRelatorio === record.id ? '#ccc' : '#056839',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              if (gerandoRelatorio !== record.id) {
+                e.currentTarget.style.background = '#056839';
+                e.currentTarget.style.color = 'white';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (gerandoRelatorio !== record.id) {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#056839';
+              }
+            }}
+          >
+            <FileText size={14} />
+          </button>
+          <button
+            onClick={() => abrirModalArquivos(record.id, record.nome)}
+            title="Ver Arquivos Anexados"
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #f59e0b',
+              background: 'white',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              color: '#f59e0b',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#f59e0b';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.color = '#f59e0b';
+            }}
+          >
+            <FolderOpen size={14} />
+          </button>
+          <button
+            onClick={() => gerarTermoAdesao(record.id)}
+            title="Imprimir Termo de Adesão"
+            disabled={gerandoPDF === record.id}
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #28a745',
+              background: 'white',
+              borderRadius: '4px',
+              cursor: gerandoPDF === record.id ? 'not-allowed' : 'pointer',
+              color: gerandoPDF === record.id ? '#ccc' : '#28a745',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s',
+              opacity: gerandoPDF === record.id ? 0.5 : 1
+            }}
+            onMouseOver={(e) => {
+              if (gerandoPDF !== record.id) {
+                e.currentTarget.style.background = '#28a745';
+                e.currentTarget.style.color = 'white';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (gerandoPDF !== record.id) {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#28a745';
+              }
+            }}
+          >
+            <Printer size={14} />
+          </button>
+          {!isCoordinator() && (
+            <button
+              onClick={() => handleExcluir(record.id)}
+              title="Excluir organização"
+              style={{ 
+                padding: '6px 8px', 
+                border: '1px solid #dc3545', 
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer', 
+                color: '#dc3545',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#dc3545';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#dc3545';
+              }}
+            >
+              <Trash size={14} />
+            </button>
+          )}
+        </div>
+      ),
+    },
+    {
       key: 'id',
       title: 'ID',
       dataIndex: 'id',
@@ -460,156 +610,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
             </div>
           )}
           {!telefone && !record.email && <span style={{ color: '#999' }}>-</span>}
-        </div>
-      ),
-    },
-    {
-      key: 'actions',
-      title: 'Ações',
-      width: '20%',
-      align: 'center',
-      render: (_, record: Organizacao) => (
-        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          {!isCoordinator() && (
-            <button
-              onClick={() => onNavigate('edicao', record.id)}
-              title="Editar organização"
-              style={{ 
-                padding: '6px 8px', 
-                border: '1px solid #007bff', 
-                background: 'white',
-                borderRadius: '4px',
-                cursor: 'pointer', 
-                color: '#007bff',
-                display: 'flex',
-                alignItems: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#007bff';
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#007bff';
-              }}
-            >
-              <Edit size={14} />
-            </button>
-          )}
-          <button
-            onClick={() => gerarRelatorio(record.id, record.nome)}
-            title="Gerar Relatório Completo"
-            disabled={gerandoRelatorio === record.id}
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #056839',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: gerandoRelatorio === record.id ? 'not-allowed' : 'pointer',
-              color: gerandoRelatorio === record.id ? '#ccc' : '#056839',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              if (gerandoRelatorio !== record.id) {
-                e.currentTarget.style.background = '#056839';
-                e.currentTarget.style.color = 'white';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (gerandoRelatorio !== record.id) {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#056839';
-              }
-            }}
-          >
-            <FileText size={14} />
-          </button>
-          <button
-            onClick={() => abrirModalArquivos(record.id, record.nome)}
-            title="Ver Arquivos Anexados"
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #f59e0b',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: '#f59e0b',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#f59e0b';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#f59e0b';
-            }}
-          >
-            <FolderOpen size={14} />
-          </button>
-          <button
-            onClick={() => gerarTermoAdesao(record.id)}
-            title="Imprimir Termo de Adesão"
-            disabled={gerandoPDF === record.id}
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #28a745',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: gerandoPDF === record.id ? 'not-allowed' : 'pointer',
-              color: gerandoPDF === record.id ? '#ccc' : '#28a745',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.2s',
-              opacity: gerandoPDF === record.id ? 0.5 : 1
-            }}
-            onMouseOver={(e) => {
-              if (gerandoPDF !== record.id) {
-                e.currentTarget.style.background = '#28a745';
-                e.currentTarget.style.color = 'white';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (gerandoPDF !== record.id) {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#28a745';
-              }
-            }}
-          >
-            <Printer size={14} />
-          </button>
-          {!isCoordinator() && (
-            <button
-              onClick={() => handleExcluir(record.id)}
-              title="Excluir organização"
-              style={{ 
-                padding: '6px 8px', 
-                border: '1px solid #dc3545', 
-                background: 'white',
-                borderRadius: '4px',
-                cursor: 'pointer', 
-                color: '#dc3545',
-                display: 'flex',
-                alignItems: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#dc3545';
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#dc3545';
-              }}
-            >
-              <Trash size={14} />
-            </button>
-          )}
         </div>
       ),
     },
