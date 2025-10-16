@@ -1,175 +1,179 @@
 "use strict";
-var _a;
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuthMiddleware = void 0;
-const authService_1 = require("../services/authService");
-class AuthMiddleware {
-}
-exports.AuthMiddleware = AuthMiddleware;
-_a = AuthMiddleware;
-/**
- * Middleware para verificar JWT token
- */
-AuthMiddleware.authenticate = async (req, res, next) => {
+exports.optionalAuth = exports.requirePermission = exports.authenticateToken = void 0;
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
+const authenticateToken = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        if (!authHeader) {
-            return res.status(401).json({
-                error: {
-                    message: 'Token de autenticação não fornecido',
-                    statusCode: 401,
-                    timestamp: new Date()
-                }
-            });
-        }
-        // Extrair token do header "Bearer <token>"
-        const token = authHeader.startsWith('Bearer ')
-            ? authHeader.substring(7)
-            : authHeader;
+        const token = authHeader?.split(' ')[1];
         if (!token) {
-            return res.status(401).json({
+            res.status(401).json({
+                success: false,
                 error: {
-                    message: 'Token de autenticação inválido',
-                    statusCode: 401,
-                    timestamp: new Date()
+                    message: 'Token de acesso necessário',
+                    statusCode: 401
                 }
             });
+            return;
         }
-        // Verificar token
-        const decoded = authService_1.AuthService.verifyToken(token);
-        // Verificar se usuário ainda existe e está ativo
-        const user = await authService_1.AuthService.getUserByToken(token);
-        if (!user.isActive) {
-            return res.status(401).json({
+        if (!process.env.JWT_SECRET) {
+            console.error('JWT_SECRET não configurado');
+            res.status(500).json({
+                success: false,
                 error: {
-                    message: 'Conta desativada',
-                    statusCode: 401,
-                    timestamp: new Date()
+                    message: 'Erro de configuração do servidor',
+                    statusCode: 500
                 }
             });
+            return;
         }
-        // Adicionar usuário ao request
+        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+        const user = await prisma.users.findUnique({
+            where: { id: decoded.userId },
+            include: {
+                user_roles: {
+                    include: {
+                        roles: {
+                            include: {
+                                modules: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        if (!user || !user.active) {
+            res.status(401).json({
+                success: false,
+                error: {
+                    message: 'Token inválido ou usuário inativo',
+                    statusCode: 401
+                }
+            });
+            return;
+        }
+        const roles = user.user_roles?.map((ur) => ({
+            id: ur.roles.id,
+            name: ur.roles.name,
+            module: {
+                id: ur.roles.modules.id,
+                name: ur.roles.modules.name
+            }
+        })) || [];
         req.user = {
-            id: decoded.id,
-            email: decoded.email,
-            role: decoded.role
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            roles: roles
         };
         next();
     }
     catch (error) {
         console.error('Erro na autenticação:', error);
-        return res.status(401).json({
+        if (error instanceof jsonwebtoken_1.default.JsonWebTokenError) {
+            res.status(401).json({
+                success: false,
+                error: {
+                    message: 'Token inválido',
+                    statusCode: 401
+                }
+            });
+            return;
+        }
+        res.status(500).json({
+            success: false,
             error: {
-                message: error instanceof Error ? error.message : 'Erro na autenticação',
-                statusCode: 401,
-                timestamp: new Date()
+                message: 'Erro interno do servidor',
+                statusCode: 500
             }
         });
     }
 };
-/**
- * Middleware para verificar se usuário é administrador
- */
-AuthMiddleware.requireAdmin = (req, res, next) => {
-    if (!req.user) {
-        return res.status(401).json({
-            error: {
-                message: 'Autenticação requerida',
-                statusCode: 401,
-                timestamp: new Date()
-            }
+exports.authenticateToken = authenticateToken;
+const requirePermission = (moduleName, roleName) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            res.status(401).json({
+                success: false,
+                error: {
+                    message: 'Usuário não autenticado',
+                    statusCode: 401
+                }
+            });
+            return;
+        }
+        const hasPermission = req.user.roles.some(role => {
+            const moduleMatch = role.module.name === moduleName;
+            const roleMatch = !roleName || role.name === roleName;
+            return moduleMatch && roleMatch;
         });
-    }
-    if (req.user.role !== 'ADMIN') {
-        return res.status(403).json({
-            error: {
-                message: 'Acesso negado. Requer privilégios de administrador',
-                statusCode: 403,
-                timestamp: new Date()
-            }
-        });
-    }
-    next();
+        if (!hasPermission) {
+            res.status(403).json({
+                success: false,
+                error: {
+                    message: 'Permissão insuficiente',
+                    statusCode: 403
+                }
+            });
+            return;
+        }
+        next();
+    };
 };
-/**
- * Middleware para verificar se usuário é moderador ou admin
- */
-AuthMiddleware.requireModerator = (req, res, next) => {
-    if (!req.user) {
-        return res.status(401).json({
-            error: {
-                message: 'Autenticação requerida',
-                statusCode: 401,
-                timestamp: new Date()
-            }
-        });
-    }
-    if (!['ADMIN', 'MODERATOR'].includes(req.user.role)) {
-        return res.status(403).json({
-            error: {
-                message: 'Acesso negado. Requer privilégios de moderador ou administrador',
-                statusCode: 403,
-                timestamp: new Date()
-            }
-        });
-    }
-    next();
-};
-/**
- * Middleware opcional - adiciona usuário se token for válido, mas não bloqueia se não houver
- */
-AuthMiddleware.optionalAuth = async (req, res, next) => {
+exports.requirePermission = requirePermission;
+const optionalAuth = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        if (authHeader) {
-            const token = authHeader.startsWith('Bearer ')
-                ? authHeader.substring(7)
-                : authHeader;
-            if (token) {
-                const decoded = authService_1.AuthService.verifyToken(token);
-                const user = await authService_1.AuthService.getUserByToken(token);
-                if (user.isActive) {
-                    req.user = {
-                        id: decoded.id,
-                        email: decoded.email,
-                        role: decoded.role
-                    };
+        const token = authHeader?.split(' ')[1];
+        if (!token) {
+            next();
+            return;
+        }
+        if (!process.env.JWT_SECRET) {
+            next();
+            return;
+        }
+        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+        const user = await prisma.users.findUnique({
+            where: { id: decoded.userId },
+            include: {
+                user_roles: {
+                    include: {
+                        roles: {
+                            include: {
+                                modules: true
+                            }
+                        }
+                    }
                 }
             }
+        });
+        if (user && user.active) {
+            const roles = user.user_roles?.map((ur) => ({
+                id: ur.roles.id,
+                name: ur.roles.name,
+                module: {
+                    id: ur.roles.modules.id,
+                    name: ur.roles.modules.name
+                }
+            })) || [];
+            req.user = {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                roles: roles
+            };
         }
         next();
     }
     catch (error) {
-        // Ignorar erros e continuar sem usuário
         next();
     }
 };
-/**
- * Middleware para verificar propriedade do recurso
- */
-AuthMiddleware.requireOwnership = (resourceUserIdField = 'userId') => (req, res, next) => {
-    if (!req.user) {
-        return res.status(401).json({
-            error: {
-                message: 'Autenticação requerida',
-                statusCode: 401,
-                timestamp: new Date()
-            }
-        });
-    }
-    // Verificar se o usuário é dono do recurso ou é admin
-    const resourceUserId = req.body[resourceUserIdField] ||
-        req.params[resourceUserIdField] ||
-        req.query[resourceUserIdField];
-    if (req.user.role !== 'ADMIN' && req.user.id !== resourceUserId) {
-        return res.status(403).json({
-            error: {
-                message: 'Acesso negado. Você não tem permissão para este recurso',
-                statusCode: 403,
-                timestamp: new Date()
-            }
-        });
-    }
-    next();
-};
+exports.optionalAuth = optionalAuth;
 //# sourceMappingURL=auth.js.map

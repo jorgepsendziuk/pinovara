@@ -1,8 +1,17 @@
-import { Request, Response } from 'express';
-export declare const getDashboard: (req: Request, res: Response) => Promise<void>;
-export declare const getOrganizacoes: (req: Request, res: Response) => Promise<void>;
-export declare const getOrganizacaoById: (req: Request, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const createOrganizacao: (req: Request, res: Response) => Promise<void>;
-export declare const updateOrganizacao: (req: Request, res: Response) => Promise<void>;
-export declare const deleteOrganizacao: (req: Request, res: Response) => Promise<void>;
+import { Response } from 'express';
+import { AuthRequest } from '../middleware/auth';
+declare class OrganizacaoController {
+    list(req: AuthRequest, res: Response): Promise<void>;
+    getById(req: AuthRequest, res: Response): Promise<void>;
+    create(req: AuthRequest, res: Response): Promise<void>;
+    update(req: AuthRequest, res: Response): Promise<void>;
+    updateValidacao(req: AuthRequest, res: Response): Promise<void>;
+    delete(req: AuthRequest, res: Response): Promise<void>;
+    getDashboard(req: AuthRequest, res: Response): Promise<void>;
+    getEstados(req: AuthRequest, res: Response): Promise<void>;
+    getMunicipios(req: AuthRequest, res: Response): Promise<void>;
+    private handleError;
+}
+export declare const organizacaoController: OrganizacaoController;
+export {};
 //# sourceMappingURL=organizacaoController.d.ts.map

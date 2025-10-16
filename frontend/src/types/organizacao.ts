@@ -131,3 +131,84 @@ export type AbaAtiva =
   | 'validacao'
   | 'complementos';
 export type AccordionAberto = string | null;
+
+// ========== TIPOS AUXILIARES ==========
+
+export interface Estado {
+  id: number;
+  descricao: string;
+  nome?: string; // Opcional para compatibilidade
+  uf?: string;
+  codigo_ibge?: number;
+}
+
+export interface Municipio {
+  id: number;
+  descricao: string;
+  nome?: string; // Opcional para compatibilidade
+  id_estado?: number;
+  estadoId?: number;
+  codigo_ibge?: number;
+}
+
+export interface Funcao {
+  id: number;
+  nome: string;
+  descricao?: string;
+}
+
+export interface RespostaQuestionario {
+  id: number;
+  valor: string;
+  descricao?: string;
+  categoria?: string;
+}
+
+// ========== TIPOS DE RESPOSTA DA API ==========
+
+export interface OrganizacaoCompleta extends Organizacao {
+  estado_nome?: string;
+  municipio_nome?: string;
+  tecnico_nome?: string;
+  tecnico_email?: string;
+}
+
+export interface ListaOrganizacoesResponse {
+  organizacoes: OrganizacaoCompleta[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface FiltrosOrganizacao {
+  page?: number;
+  limit?: number;
+  pageSize?: number;
+  nome?: string;
+  cnpj?: string;
+  estado?: number;
+  municipio?: number;
+  id_tecnico?: number;
+}
+
+export interface CadastroOrganizacaoForm extends Partial<Organizacao> {
+  // Campos adicionais para o formulário se necessário
+}
+
+export interface DashboardStats {
+  total: number;
+  validadas: number;
+  pendentes: number;
+  recusadas: number;
+  porEstado?: Array<{
+    estado: string;
+    total: number;
+  }>;
+  porMunicipio?: Array<{
+    municipio: string;
+    total: number;
+  }>;
+}

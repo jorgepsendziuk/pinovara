@@ -88,3 +88,7 @@ historico validacao tabela externa
 
 melhorar mensagens de erro nginx
 
+assinaturas
+coisas que faltam no relatório:
+
+

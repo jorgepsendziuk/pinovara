@@ -14,6 +14,9 @@ const prisma = new PrismaClient();
 
 // ========== MIDDLEWARE ==========
 
+// Trust proxy - necessário para capturar IP real quando atrás de proxy/nginx
+app.set('trust proxy', true);
+
 // CORS configuration
 app.use(cors({
   origin: [

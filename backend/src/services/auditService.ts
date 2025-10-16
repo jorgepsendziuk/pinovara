@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { Request } from 'express';
 import { AuditLogData, AuditAction } from '../types/audit';
+import { AuthRequest } from '../middleware/auth';
 
 const prisma = new PrismaClient();
 
@@ -8,13 +9,33 @@ class AuditService {
   /**
    * Criar log de auditoria
    */
-  async createLog(data: AuditLogData & { req?: Request }): Promise<void> {
+  async createLog(data: AuditLogData & { req?: AuthRequest }): Promise<void> {
     try {
       const { action, entity, entityId, oldData, newData, userId, req } = data;
       
-      // Capturar IP e User-Agent do request se disponível
-      const ipAddress = req?.ip || req?.connection?.remoteAddress || 'unknown';
-      const userAgent = req?.get('User-Agent') || 'unknown';
+      // Capturar IP de forma mais robusta
+      // Ordem de prioridade: x-forwarded-for (proxy) > x-real-ip (nginx) > req.ip > connection
+      let ipAddress = 'unknown';
+      if (req) {
+        const forwardedFor = req.headers['x-forwarded-for'];
+        const realIp = req.headers['x-real-ip'];
+        
+        if (forwardedFor) {
+          // x-forwarded-for pode conter múltiplos IPs, pegar o primeiro
+          ipAddress = Array.isArray(forwardedFor) 
+            ? forwardedFor[0] 
+            : forwardedFor.split(',')[0].trim();
+        } else if (realIp) {
+          ipAddress = Array.isArray(realIp) ? realIp[0] : realIp as string;
+        } else if (req.ip) {
+          ipAddress = req.ip;
+        } else if (req.socket?.remoteAddress) {
+          ipAddress = req.socket.remoteAddress;
+        }
+      }
+      
+      // Capturar User-Agent
+      const userAgent = req?.headers['user-agent'] || req?.get('User-Agent') || 'unknown';
 
       // Criar diff apenas dos campos alterados para UPDATE
       let processedOldData = oldData;
@@ -24,7 +45,28 @@ class AuditService {
         const diff = this.createDiff(oldData, newData);
         processedOldData = diff.oldData;
         processedNewData = diff.newData;
+        
+        // Se não há mudanças reais, não criar log
+        if (Object.keys(processedOldData).length === 0 && Object.keys(processedNewData).length === 0) {
+          console.log(`ℹ️ [AuditService] No changes detected for UPDATE on ${entity}${entityId ? ` (ID: ${entityId})` : ''} - skipping log`);
+          return;
+        }
       }
+
+      // Garantir que userId seja numérico ou null
+      const finalUserId = userId ? Number(userId) : null;
+      
+      // Log de debug para verificar dados
+      console.log(`📝 [AuditService] Creating log:`, {
+        action,
+        entity,
+        entityId,
+        userId: finalUserId,
+        userName: req?.user?.name || 'unknown',
+        ipAddress,
+        hasOldData: !!processedOldData,
+        hasNewData: !!processedNewData
+      });
 
       await prisma.audit_logs.create({
         data: {
@@ -33,14 +75,14 @@ class AuditService {
           entityId: entityId?.toString(),
           oldData: processedOldData ? JSON.stringify(processedOldData) : null,
           newData: processedNewData ? JSON.stringify(processedNewData) : null,
-          userId,
+          userId: finalUserId,
           ipAddress,
           userAgent,
           createdAt: new Date()
         }
       });
 
-      console.log(`✅ [AuditService] Log created: ${action} on ${entity}${entityId ? ` (ID: ${entityId})` : ''}`);
+      console.log(`✅ [AuditService] Log created: ${action} on ${entity}${entityId ? ` (ID: ${entityId})` : ''} by user ${finalUserId || 'Sistema'}`);
     } catch (error) {
       console.error('❌ [AuditService] Error creating audit log:', error);
       // Não falhar a operação principal se o log falhar
@@ -53,17 +95,27 @@ class AuditService {
   private createDiff(oldData: any, newData: any): { oldData: any; newData: any } {
     const diff: any = { oldData: {}, newData: {} };
     
+    // Se algum dos dados for vazio/null/undefined, retornar diff vazio
+    if (!oldData || !newData || typeof oldData !== 'object' || typeof newData !== 'object') {
+      return diff;
+    }
+    
     // Comparar apenas campos que existem em ambos os objetos
-    const allKeys = new Set([...Object.keys(oldData || {}), ...Object.keys(newData || {})]);
+    const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)]);
     
     for (const key of allKeys) {
-      const oldValue = oldData?.[key];
-      const newValue = newData?.[key];
+      const oldValue = oldData[key];
+      const newValue = newData[key];
       
-      // Só incluir no diff se os valores forem diferentes
-      if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-        diff.oldData[key] = oldValue;
-        diff.newData[key] = newValue;
+      // Normalizar undefined e null para comparação consistente
+      const normalizedOld = oldValue === undefined ? null : oldValue;
+      const normalizedNew = newValue === undefined ? null : newValue;
+      
+      // Só incluir no diff se os valores forem realmente diferentes
+      // Usar comparação de string JSON para objetos complexos
+      if (JSON.stringify(normalizedOld) !== JSON.stringify(normalizedNew)) {
+        diff.oldData[key] = normalizedOld;
+        diff.newData[key] = normalizedNew;
       }
     }
     
