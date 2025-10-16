@@ -61,7 +61,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const [legendaVisivel, setLegendaVisivel] = useState(true);
   
   // Filtro de origem do cadastro
-  const [origemFiltro, setOrigemFiltro] = useState<'odk' | 'web' | 'todas'>('odk');
+  const [origemFiltro, setOrigemFiltro] = useState<'odk' | 'web' | 'todas'>('todas');
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
