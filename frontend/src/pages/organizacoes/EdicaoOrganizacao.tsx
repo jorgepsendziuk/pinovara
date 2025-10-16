@@ -22,6 +22,7 @@ import { OrientacoesTecnicas } from '../../components/organizacoes/OrientacoesTe
 import { IndicadoresAtividade } from '../../components/organizacoes/IndicadoresAtividade';
 import { ParticipantesAtividade } from '../../components/organizacoes/ParticipantesAtividade';
 import { ObservacoesFinais } from '../../components/organizacoes/ObservacoesFinais';
+import Toast from '../../components/Toast';
 import api from '../../services/api';
 import {
   Edit,
@@ -64,6 +65,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('identificacao');
   const [accordionsAbertos, setAccordionsAbertos] = useState<string[]>([]);
   const [success, setSuccess] = useState<string | null>(null);
+  const [toastError, setToastError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [gerandoPDF, setGerandoPDF] = useState(false);
 
@@ -259,14 +261,13 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       }
 
       setSuccess('Organização salva com sucesso!');
-      
-      setTimeout(() => {
-        setSuccess(null);
-      }, 3000);
-
+      setToastError(null); // Limpar erro anterior se houver
       
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || err.message || 'Erro desconhecido');
+      const errorMessage = err.response?.data?.error?.message || err.message || 'Erro desconhecido ao salvar organização';
+      setToastError(errorMessage);
+      setError(errorMessage);
+      setSuccess(null); // Limpar sucesso anterior se houver
     } finally {
       setSaving(false);
     }
@@ -844,6 +845,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         validacaoUsuario={organizacao?.validacao_usuario || null}
         validacaoData={organizacao?.validacao_data ? new Date(organizacao.validacao_data) : null}
         validacaoObs={organizacao?.validacao_obs || null}
+        validacaoUsuarioNome={(organizacao as any)?.users?.name || null}
         onUpdate={updateOrganizacao}
       />
     </div>
@@ -851,6 +853,60 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
 
   const renderAbaComplementos = () => (
     <div className="aba-content">
+      {/* Controles de Expandir/Colapsar */}
+      <div style={{ 
+        marginBottom: '1rem',
+        display: 'flex',
+        justifyContent: 'flex-end',
+        gap: '0.5rem'
+      }}>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={colapsarTodos}
+            className="btn-secondary"
+            style={{
+              padding: '8px 16px',
+              background: 'white',
+              border: '1px solid #d1d5db',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '14px',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <ChevronsUp size={16} />
+            Colapsar Todos
+          </button>
+          <button
+            onClick={expandirTodos}
+            className="btn-primary"
+            style={{
+              padding: '8px 16px',
+              background: 'linear-gradient(135deg, #056839 0%, #0a8f4d 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '14px',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <ChevronsDown size={16} />
+            Expandir Todos
+          </button>
+        </div>
+      </div>
+
       <div className="accordions-container">
         {organizacao && (
           <>
@@ -974,6 +1030,26 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       margin: 0,
       padding: '1rem'
     }}>
+      {/* Toast de Sucesso */}
+      {success && (
+        <Toast
+          message={success}
+          type="success"
+          onClose={() => setSuccess(null)}
+          persistent={true}
+        />
+      )}
+
+      {/* Toast de Erro */}
+      {toastError && (
+        <Toast
+          message={toastError}
+          type="error"
+          onClose={() => setToastError(null)}
+          persistent={true}
+        />
+      )}
+
       {/* Header */}
       <div className="edicao-header">
         <div className="header-content">
@@ -992,21 +1068,6 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         </div>
       </div>
 
-      {/* Alertas */}
-      {error && (
-        <div className="alert alert-error">
-          <p>{error}</p>
-          <button onClick={() => setError(null)} className="alert-close">×</button>
-        </div>
-      )}
-
-      {success && (
-        <div className="alert alert-success">
-          <p>{success}</p>
-          <button onClick={() => setSuccess(null)} className="alert-close">×</button>
-        </div>
-      )}
-
       <div className="edicao-body">
         {/* Tabs Navigation */}
         <div className="tabs-navigation">
@@ -1023,6 +1084,13 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             title="Características dos Associados"
           >
             <Users size={16} /> <span>Características dos Associados</span>
+          </button>
+          <button
+            className={`tab-button ${abaAtiva === 'complementos' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('complementos')}
+            title="Dados Complementares"
+          >
+            <FileText size={16} /> <span>Complementos</span>
           </button>
           <button
             className={`tab-button ${abaAtiva === 'abrangencia' ? 'active' : ''}`}
@@ -1049,6 +1117,12 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             className={`tab-button ${abaAtiva === 'diagnostico' ? 'active' : ''}`}
             onClick={() => setAbaAtiva('diagnostico')}
             title="Diagnóstico"
+            style={{
+              background: abaAtiva === 'diagnostico' 
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                : 'rgba(59, 35, 19, 0.1)', // Marrom do projeto (#3b2313) com 10% de opacidade
+              color: abaAtiva === 'diagnostico' ? 'white' : '#3b2313'
+            }}
           >
             <Search size={16} /> <span>Diagnóstico</span>
           </button>
@@ -1056,6 +1130,12 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             className={`tab-button ${abaAtiva === 'planoGestao' ? 'active' : ''}`}
             onClick={() => setAbaAtiva('planoGestao')}
             title="Plano de Gestão"
+            style={{
+              background: abaAtiva === 'planoGestao' 
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                : 'rgba(5, 104, 57, 0.1)', // Verde do projeto (#056839) com 10% de opacidade
+              color: abaAtiva === 'planoGestao' ? 'white' : '#056839'
+            }}
           >
             <Target size={16} /> <span>Plano de Gestão</span>
           </button>
@@ -1063,15 +1143,24 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             className={`tab-button ${abaAtiva === 'validacao' ? 'active' : ''}`}
             onClick={() => setAbaAtiva('validacao')}
             title="Validação do Cadastro"
+            style={{
+              background: abaAtiva === 'validacao' 
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                : organizacao?.validacao_status === 2
+                  ? 'linear-gradient(135deg, #f1f8f4 0%, #d4edda 100%)'  // Verde muito suave se aprovado
+                  : organizacao?.validacao_status === 3
+                    ? 'linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%)'  // Vermelho muito suave se rejeitado
+                    : 'linear-gradient(135deg, #fffef5 0%, #fff9e6 100%)',  // Amarelo muito suave se pendente
+              color: abaAtiva === 'validacao' 
+                ? 'white' 
+                : organizacao?.validacao_status === 2
+                  ? '#056839'  // Verde do projeto
+                  : organizacao?.validacao_status === 3
+                    ? '#dc3545'  // Vermelho suave
+                    : '#856404'  // Marrom/amarelo suave
+            }}
           >
             <CheckCircle size={16} /> <span>Validação</span>
-          </button>
-          <button
-            className={`tab-button ${abaAtiva === 'complementos' ? 'active' : ''}`}
-            onClick={() => setAbaAtiva('complementos')}
-            title="Dados Complementares"
-          >
-            <FileText size={16} /> <span>Complementos</span>
           </button>
         </div>
 

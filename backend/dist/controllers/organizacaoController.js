@@ -219,6 +219,59 @@ class OrganizacaoController {
             this.handleError(error, res);
         }
     }
+    async updateValidacao(req, res) {
+        try {
+            const id = parseInt(req.params.id);
+            const { validacao_status, validacao_obs, validacao_usuario } = req.body;
+            const userPermissions = req.userPermissions;
+            if (isNaN(id)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: {
+                        message: 'ID inválido',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (!userPermissions?.isCoordinator && !userPermissions?.isAdmin) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Apenas coordenadores podem validar organizações',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const dadosValidacao = {
+                validacao_status: validacao_status || null,
+                validacao_obs: validacao_obs || null,
+                validacao_usuario: validacao_usuario || req.user?.id || null,
+                validacao_data: new Date()
+            };
+            const organizacao = await organizacaoService_1.default.updateValidacao(id, dadosValidacao);
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.UPDATE,
+                entity: 'organizacao',
+                entityId: id.toString(),
+                userId: req.user.id,
+                newData: dadosValidacao,
+                req
+            });
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                message: 'Validação atualizada com sucesso',
+                data: organizacao,
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
     async delete(req, res) {
         try {
             const id = parseInt(req.params.id);

@@ -190,10 +190,9 @@ export function ParticipantesAtividade({
 
   return (
     <div className="accordion-item">
-      <div 
-        className="accordion-header" 
+      <button
+        className="accordion-header"
         onClick={() => onToggleAccordion('participantes')}
-        style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
         <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Users size={20} /> Participantes da Atividade
@@ -209,11 +208,17 @@ export function ParticipantesAtividade({
             </span>
           )}
         </h3>
-        {isAberto ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-      </div>
+        <ChevronDown
+          size={20}
+          style={{
+            transition: 'transform 0.2s ease',
+            transform: isAberto ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}
+        />
+      </button>
 
-      {isAberto && (
-        <div className="accordion-content" style={{ display: 'block' }}>
+      <div className={`accordion-content ${isAberto ? 'open' : ''}`}>
+        <div className="accordion-section">
           <div className="form-group" style={{ marginBottom: '20px' }}>
             <label>A atividade teve menos de 10 participantes?</label>
             <div style={{ display: 'flex', gap: '20px', marginTop: '8px' }}>
@@ -524,7 +529,7 @@ export function ParticipantesAtividade({
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

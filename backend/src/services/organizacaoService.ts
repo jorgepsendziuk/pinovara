@@ -213,6 +213,37 @@ class OrganizacaoService {
     try {
       const organizacao = await prisma.organizacao.findUnique({
         where: { id: organizacaoId },
+        include: {
+          // Incluir dados do usuário validador
+          users: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      if (!organizacao) {
+        throw new Error('Organização não encontrada');
+      }
+
+      return organizacao;
+    } catch (error) {
+      console.error('Erro ao buscar organização:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * VERSÃO ANTIGA - BACKUP DO getById com select
+   * (Caso precise voltar para select específico)
+   */
+  private async _getByIdOLD_BACKUP(organizacaoId: number): Promise<Organizacao | null> {
+    try {
+      const organizacao = await prisma.organizacao.findUnique({
+        where: { id: organizacaoId },
         select: {
           // Campos básicos
           id: true,
@@ -336,6 +367,23 @@ class OrganizacaoService {
           marked_as_complete_date: true,
           complementado: true,
           
+          // Campos de complementos
+          obs: true,
+          descricao: true,
+          eixos_trabalhados: true,
+          enfase: true,
+          enfase_outros: true,
+          metodologia: true,
+          orientacoes: true,
+          participantes_menos_10: true,
+          assinatura_rep_legal: true,
+          
+          // Campos de validação
+          validacao_status: true,
+          validacao_usuario: true,
+          validacao_data: true,
+          validacao_obs: true,
+          
           // TODO: Adicionar GP, GF, GC, GPP, GS, GI incrementalmente
           // Por enquanto, focando nos campos que já estavam funcionando
         }
@@ -414,11 +462,54 @@ class OrganizacaoService {
       });
     }
 
+    // Remover campos de relacionamento e campos computados que o Prisma não aceita
+    const dadosLimpos = { ...data };
+    delete (dadosLimpos as any).id;
+    delete (dadosLimpos as any).users; // Relacionamento com usuário validador
+    delete (dadosLimpos as any).enfase_organizacao_enfaseToenfase;
+    delete (dadosLimpos as any).estado_organizacao_estadoToestado;
+    delete (dadosLimpos as any).municipio_ibge;
+    delete (dadosLimpos as any).sim_nao_organizacao_participantes_menos_10Tosim_nao;
+    delete (dadosLimpos as any).resposta_organizacao_gc_comercial_15_respostaToresposta;
+
+    const organizacao = await prisma.organizacao.update({
+      where: { id },
+      data: dadosLimpos
+    });
+
+    return organizacao;
+  }
+
+  /**
+   * Atualizar apenas campos de validação (para coordenadores)
+   */
+  async updateValidacao(id: number, dadosValidacao: {
+    validacao_status: number | null;
+    validacao_obs: string | null;
+    validacao_usuario: number | null;
+    validacao_data: Date;
+  }): Promise<Organizacao> {
+    // Verificar se organização existe
+    const existingOrg = await prisma.organizacao.findUnique({
+      where: { id }
+    });
+
+    if (!existingOrg || existingOrg.removido) {
+      throw new ApiError({
+        message: 'Organização não encontrada',
+        statusCode: HttpStatus.NOT_FOUND,
+        code: ErrorCode.RESOURCE_NOT_FOUND
+      });
+    }
+
+    // Atualizar apenas campos de validação
     const organizacao = await prisma.organizacao.update({
       where: { id },
       data: {
-        ...data,
-        id: undefined // Remover ID dos dados de atualização
+        validacao_status: dadosValidacao.validacao_status,
+        validacao_obs: dadosValidacao.validacao_obs,
+        validacao_usuario: dadosValidacao.validacao_usuario,
+        validacao_data: dadosValidacao.validacao_data
       }
     });
 

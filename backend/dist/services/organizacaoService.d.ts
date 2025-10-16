@@ -2,8 +2,15 @@ import { Organizacao, OrganizacaoFilters, OrganizacaoListResponse } from '../typ
 declare class OrganizacaoService {
     list(filters?: OrganizacaoFilters): Promise<OrganizacaoListResponse>;
     getById(organizacaoId: number): Promise<Organizacao | null>;
+    private _getByIdOLD_BACKUP;
     create(data: Partial<Organizacao>): Promise<Organizacao>;
     update(id: number, data: Partial<Organizacao>): Promise<Organizacao>;
+    updateValidacao(id: number, dadosValidacao: {
+        validacao_status: number | null;
+        validacao_obs: string | null;
+        validacao_usuario: number | null;
+        validacao_data: Date;
+    }): Promise<Organizacao>;
     delete(id: number): Promise<void>;
     getDashboardStats(userId?: number): Promise<{
         total: number;

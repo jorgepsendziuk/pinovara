@@ -4,6 +4,7 @@ import { PDFService, OrganizacaoData } from '../../services/pdfService';
 import { DataGrid, DataGridColumn } from '../../components/DataGrid';
 import { StatusValidacaoBadge } from '../../utils/validacaoHelpers';
 import { ModalArquivos } from '../../components/organizacoes/ModalArquivos';
+import ModalValidacao from '../../components/organizacoes/ModalValidacao';
 import {
   Edit,
   Trash,
@@ -43,12 +44,13 @@ interface ListaOrganizacoesProps {
 }
 
 function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
-  const { isCoordinator } = useAuth();
+  const { isCoordinator, hasPermission } = useAuth();
   const [organizacoes, setOrganizacoes] = useState<Organizacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [gerandoPDF, setGerandoPDF] = useState<number | null>(null);
   const [gerandoRelatorio, setGerandoRelatorio] = useState<number | null>(null);
   const [modalArquivosAberto, setModalArquivosAberto] = useState(false);
+  const [modalValidacaoAberto, setModalValidacaoAberto] = useState(false);
   const [organizacaoSelecionada, setOrganizacaoSelecionada] = useState<{ id: number; nome: string } | null>(null);
 
   // Estados para DataGrid
@@ -170,6 +172,23 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const fecharModalArquivos = () => {
     setModalArquivosAberto(false);
     setOrganizacaoSelecionada(null);
+  };
+
+  const abrirModalValidacao = (organizacaoId: number, nomeOrganizacao: string) => {
+    // Verificar se é coordenador ou admin
+    const podeAcessar = isCoordinator() || hasPermission('sistema', 'admin');
+    if (!podeAcessar) {
+      return; // Apenas coordenadores e admins podem acessar
+    }
+    setOrganizacaoSelecionada({ id: organizacaoId, nome: nomeOrganizacao });
+    setModalValidacaoAberto(true);
+  };
+
+  const fecharModalValidacao = () => {
+    setModalValidacaoAberto(false);
+    setOrganizacaoSelecionada(null);
+    // Recarregar a lista para atualizar os badges de validação
+    fetchOrganizacoes();
   };
 
   const fetchOrganizacoes = async () => {
@@ -366,9 +385,30 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       dataIndex: 'validacao_status',
       width: '10%',
       align: 'center',
-      render: (validacao_status: number | null) => (
-        <StatusValidacaoBadge status={validacao_status} showLabel={false} />
-      ),
+      render: (validacao_status: number | null, record: Organizacao) => {
+        const podeAcessar = isCoordinator() || hasPermission('sistema', 'admin');
+        return (
+          <div
+            onClick={() => abrirModalValidacao(record.id, record.nome)}
+            style={{
+              cursor: podeAcessar ? 'pointer' : 'default',
+              display: 'inline-block',
+              transition: 'transform 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              if (podeAcessar) {
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            title={podeAcessar ? 'Clique para gerenciar validação' : 'Validação (apenas coordenadores e admins podem editar)'}
+          >
+            <StatusValidacaoBadge status={validacao_status} showLabel={false} />
+          </div>
+        );
+      },
     },
     {
       key: 'contato',
@@ -771,6 +811,15 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           organizacaoId={organizacaoSelecionada.id}
           organizacaoNome={organizacaoSelecionada.nome}
           onClose={fecharModalArquivos}
+        />
+      )}
+
+      {/* Modal de Validação */}
+      {modalValidacaoAberto && organizacaoSelecionada && (
+        <ModalValidacao
+          organizacaoId={organizacaoSelecionada.id}
+          organizacaoNome={organizacaoSelecionada.nome}
+          onClose={fecharModalValidacao}
         />
       )}
     </div>

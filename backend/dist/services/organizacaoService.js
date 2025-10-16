@@ -148,6 +148,30 @@ class OrganizacaoService {
         try {
             const organizacao = await prisma.organizacao.findUnique({
                 where: { id: organizacaoId },
+                include: {
+                    users: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true
+                        }
+                    }
+                }
+            });
+            if (!organizacao) {
+                throw new Error('Organização não encontrada');
+            }
+            return organizacao;
+        }
+        catch (error) {
+            console.error('Erro ao buscar organização:', error);
+            throw error;
+        }
+    }
+    async _getByIdOLD_BACKUP(organizacaoId) {
+        try {
+            const organizacao = await prisma.organizacao.findUnique({
+                where: { id: organizacaoId },
                 select: {
                     id: true,
                     inicio: true,
@@ -254,6 +278,19 @@ class OrganizacaoService {
                     submission_date: true,
                     marked_as_complete_date: true,
                     complementado: true,
+                    obs: true,
+                    descricao: true,
+                    eixos_trabalhados: true,
+                    enfase: true,
+                    enfase_outros: true,
+                    metodologia: true,
+                    orientacoes: true,
+                    participantes_menos_10: true,
+                    assinatura_rep_legal: true,
+                    validacao_status: true,
+                    validacao_usuario: true,
+                    validacao_data: true,
+                    validacao_obs: true,
                 }
             });
             if (!organizacao) {
@@ -311,11 +348,38 @@ class OrganizacaoService {
                 code: api_1.ErrorCode.RESOURCE_NOT_FOUND
             });
         }
+        const dadosLimpos = { ...data };
+        delete dadosLimpos.id;
+        delete dadosLimpos.users;
+        delete dadosLimpos.enfase_organizacao_enfaseToenfase;
+        delete dadosLimpos.estado_organizacao_estadoToestado;
+        delete dadosLimpos.municipio_ibge;
+        delete dadosLimpos.sim_nao_organizacao_participantes_menos_10Tosim_nao;
+        delete dadosLimpos.resposta_organizacao_gc_comercial_15_respostaToresposta;
+        const organizacao = await prisma.organizacao.update({
+            where: { id },
+            data: dadosLimpos
+        });
+        return organizacao;
+    }
+    async updateValidacao(id, dadosValidacao) {
+        const existingOrg = await prisma.organizacao.findUnique({
+            where: { id }
+        });
+        if (!existingOrg || existingOrg.removido) {
+            throw new ApiError({
+                message: 'Organização não encontrada',
+                statusCode: api_1.HttpStatus.NOT_FOUND,
+                code: api_1.ErrorCode.RESOURCE_NOT_FOUND
+            });
+        }
         const organizacao = await prisma.organizacao.update({
             where: { id },
             data: {
-                ...data,
-                id: undefined
+                validacao_status: dadosValidacao.validacao_status,
+                validacao_obs: dadosValidacao.validacao_obs,
+                validacao_usuario: dadosValidacao.validacao_usuario,
+                validacao_data: dadosValidacao.validacao_data
             }
         });
         return organizacao;

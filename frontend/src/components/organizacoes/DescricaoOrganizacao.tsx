@@ -33,19 +33,24 @@ export function DescricaoOrganizacao({
 
   return (
     <div className="accordion-item">
-      <div 
-        className="accordion-header" 
+      <button
+        className="accordion-header"
         onClick={() => onToggleAccordion('descricao')}
-        style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
         <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <FileText size={20} /> Descrição Geral do Empreendimento
         </h3>
-        {isAberto ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-      </div>
+        <ChevronDown
+          size={20}
+          style={{
+            transition: 'transform 0.2s ease',
+            transform: isAberto ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}
+        />
+      </button>
 
-      {isAberto && (
-        <div className="accordion-content" style={{ display: 'block' }}>
+      <div className={`accordion-content ${isAberto ? 'open' : ''}`}>
+        <div className="accordion-section">
           <div className="form-group">
             <label>
               Descrição Geral
@@ -85,7 +90,7 @@ export function DescricaoOrganizacao({
             )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
