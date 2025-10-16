@@ -1133,8 +1133,8 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             style={{
               background: abaAtiva === 'planoGestao' 
                 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                : 'rgba(5, 104, 57, 0.1)', // Verde do projeto (#056839) com 10% de opacidade
-              color: abaAtiva === 'planoGestao' ? 'white' : '#056839'
+                : 'rgba(59, 35, 19, 0.1)', // Marrom do projeto (#3b2313) com 10% de opacidade
+              color: abaAtiva === 'planoGestao' ? 'white' : '#3b2313'
             }}
           >
             <Target size={16} /> <span>Plano de Gestão</span>
