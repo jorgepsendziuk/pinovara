@@ -1,274 +1,390 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteOrganizacao = exports.updateOrganizacao = exports.createOrganizacao = exports.getOrganizacaoById = exports.getOrganizacoes = exports.getDashboard = void 0;
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
-// Dashboard de organizações
-const getDashboard = async (req, res) => {
-    try {
-        // Buscar estatísticas básicas
-        const totalOrganizacoes = await prisma.organizacao.count({
-            where: { removido: false }
-        });
-        // Simular dados de questionários (já que os campos ainda não estão preenchidos)
-        const comQuestionario = Math.floor(totalOrganizacoes * 0.3);
-        const semQuestionario = totalOrganizacoes - comQuestionario;
-        // Simular distribuição por estado
-        const porEstado = [
-            { estado: 'Bahia', total: Math.floor(totalOrganizacoes * 0.4) },
-            { estado: 'Minas Gerais', total: Math.floor(totalOrganizacoes * 0.3) },
-            { estado: 'Espírito Santo', total: Math.floor(totalOrganizacoes * 0.2) },
-            { estado: 'Outros', total: Math.floor(totalOrganizacoes * 0.1) }
-        ];
-        // Simular distribuição por tipo
-        const porTipo = [
-            { tipo: 'Cooperativa', total: Math.floor(totalOrganizacoes * 0.5) },
-            { tipo: 'Associação', total: Math.floor(totalOrganizacoes * 0.3) },
-            { tipo: 'Outros', total: Math.floor(totalOrganizacoes * 0.2) }
-        ];
-        // Buscar organizações recentes
-        const recentes = await prisma.organizacao.findMany({
-            where: { removido: false },
-            select: {
-                id: true,
-                nome: true,
-                dataVisita: true,
-                estado: true
-            },
-            orderBy: { dataVisita: 'desc' },
-            take: 5
-        });
-        const stats = {
-            total: totalOrganizacoes,
-            comQuestionario,
-            semQuestionario,
-            porEstado,
-            porTipo,
-            recentes: recentes.map(org => ({
-                id: org.id,
-                nome: org.nome || 'Sem nome',
-                dataVisita: org.dataVisita?.toISOString() || new Date().toISOString(),
-                estado: org.estado ? 'BA' : 'N/A'
-            }))
-        };
-        res.json(stats);
-    }
-    catch (error) {
-        console.error('Erro ao buscar dashboard:', error);
-        res.status(500).json({ message: 'Erro interno do servidor' });
-    }
-};
-exports.getDashboard = getDashboard;
-// Listar organizações com filtros
-const getOrganizacoes = async (req, res) => {
-    try {
-        const { pagina = '1', limite = '10', busca = '', estado = '', status = '', dataInicio = '', dataFim = '' } = req.query;
-        const page = parseInt(pagina);
-        const limit = parseInt(limite);
-        const skip = (page - 1) * limit;
-        // Construir filtros
-        const where = {
-            removido: false
-        };
-        if (busca) {
-            where.OR = [
-                { nome: { contains: busca, mode: 'insensitive' } },
-                { cnpj: { contains: busca, mode: 'insensitive' } }
-            ];
-        }
-        if (estado) {
-            where.estado = parseInt(estado);
-        }
-        if (dataInicio && dataFim) {
-            where.dataVisita = {
-                gte: new Date(dataInicio),
-                lte: new Date(dataFim)
+exports.organizacaoController = void 0;
+const organizacaoService_1 = __importDefault(require("../services/organizacaoService"));
+const authService_1 = require("../services/authService");
+const api_1 = require("../types/api");
+const odkHelper_1 = require("../utils/odkHelper");
+const auditService_1 = __importDefault(require("../services/auditService"));
+const audit_1 = require("../types/audit");
+class OrganizacaoController {
+    async list(req, res) {
+        try {
+            const userPermissions = req.userPermissions;
+            const filters = {
+                nome: req.query.nome,
+                cnpj: req.query.cnpj,
+                estado: req.query.estado ? parseInt(req.query.estado) : undefined,
+                municipio: req.query.municipio ? parseInt(req.query.municipio) : undefined,
+                page: req.query.page ? parseInt(req.query.page) : 1,
+                limit: req.query.limit ? parseInt(req.query.limit) :
+                    req.query.pageSize ? parseInt(req.query.pageSize) : 10,
+                userId: userPermissions?.userId
             };
+            const result = await organizacaoService_1.default.list(filters);
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                data: result,
+                timestamp: new Date().toISOString()
+            });
         }
-        // Buscar organizações
-        const [organizacoes, total] = await Promise.all([
-            prisma.organizacao.findMany({
-                where,
-                select: {
-                    id: true,
-                    nome: true,
-                    cnpj: true,
-                    estado: true,
-                    municipio: true,
-                    dataVisita: true,
-                    idTecnico: true
-                },
-                skip,
-                take: limit,
-                orderBy: { dataVisita: 'desc' }
-            }),
-            prisma.organizacao.count({ where })
-        ]);
-        // Simular dados de localização e status
-        const organizacoesComDados = organizacoes.map(org => ({
-            ...org,
-            estado: org.estado ? 'Bahia' : 'N/A',
-            municipio: org.municipio ? 'Salvador' : 'N/A',
-            status: 'pendente' // Simular status baseado em dados existentes
-        }));
-        const totalPaginas = Math.ceil(total / limit);
-        res.json({
-            organizacoes: organizacoesComDados,
-            totalPaginas,
-            paginaAtual: page,
-            total
-        });
-    }
-    catch (error) {
-        console.error('Erro ao buscar organizações:', error);
-        res.status(500).json({ message: 'Erro interno do servidor' });
-    }
-};
-exports.getOrganizacoes = getOrganizacoes;
-// Buscar organização por ID
-const getOrganizacaoById = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const organizacaoId = parseInt(id);
-        const organizacao = await prisma.organizacao.findUnique({
-            where: { id: organizacaoId }
-        });
-        if (!organizacao) {
-            return res.status(404).json({ message: 'Organização não encontrada' });
+        catch (error) {
+            this.handleError(error, res);
         }
-        // Simular dados de questionários
-        const questionarios = {
-            go: { completo: false, progresso: 25 },
-            gpp: { completo: false, progresso: 10 },
-            gc: { completo: false, progresso: 5 },
-            gf: { completo: false, progresso: 15 },
-            gp: { completo: false, progresso: 20 },
-            gs: { completo: false, progresso: 8 },
-            gi: { completo: false, progresso: 12 },
-            is: { completo: false, progresso: 18 }
-        };
-        // Simular dados de arquivos
-        const arquivos = [
-            { id: 1, nome: 'documento1.pdf', tipo: 'pdf', url: '/files/doc1.pdf' },
-            { id: 2, nome: 'foto1.jpg', tipo: 'image', url: '/files/photo1.jpg' }
-        ];
-        // Simular dados de produção
-        const producoes = [
-            { id: 1, cultura: 'Café', anual: 1000, mensal: 83.33 },
-            { id: 2, cultura: 'Milho', anual: 500, mensal: 41.67 }
-        ];
-        // Simular dados de abrangência
-        const abrangenciaPj = [
-            { id: 1, razaoSocial: 'Cooperativa ABC', cnpjPj: '12.345.678/0001-90', numSociosCaf: 50, numSociosTotal: 100 }
-        ];
-        const abrangenciaSocio = [
-            { id: 1, numSocios: 100, estado: 'Bahia', municipio: 'Salvador' }
-        ];
-        const organizacaoCompleta = {
-            ...organizacao,
-            estado: 'Bahia', // Simular estado
-            municipio: 'Salvador', // Simular município
-            status: 'pendente',
-            caracteristicas: {
-                totalSocios: organizacao.caracteristicasNTotalSocios || 0,
-                totalSociosCaf: organizacao.caracteristicasNTotalSociosCaf || 0,
-                distintosCaf: organizacao.caracteristicasNDistintosCaf || 0,
-                sociosPaa: organizacao.caracteristicasNSociosPaa || 0,
-                naosociosPaa: organizacao.caracteristicasNNaosociosPaa || 0,
-                sociosPnae: organizacao.caracteristicasNSociosPnae || 0,
-                naosociosPnae: organizacao.caracteristicasNNaosociosPnae || 0,
-                ativosTotal: organizacao.caracteristicasNAtivosTotal || 0,
-                ativosCaf: organizacao.caracteristicasNAtivosCaf || 0
-            },
-            questionarios,
-            arquivos,
-            producoes,
-            abrangenciaPj,
-            abrangenciaSocio
-        };
-        res.json(organizacaoCompleta);
     }
-    catch (error) {
-        console.error('Erro ao buscar organização:', error);
-        res.status(500).json({ message: 'Erro interno do servidor' });
-    }
-};
-exports.getOrganizacaoById = getOrganizacaoById;
-// Criar nova organização
-const createOrganizacao = async (req, res) => {
-    try {
-        const { nome, cnpj, dataFundacao, telefone, email, endereco, bairro, cep, estado, municipio, gpsLat, gpsLng, gpsAlt, gpsAcc, totalSocios, totalSociosCaf, distintosCaf, sociosPaa, naosociosPaa, sociosPnae, naosociosPnae, ativosTotal, ativosCaf, observacoes } = req.body;
-        const organizacao = await prisma.organizacao.create({
-            data: {
-                nome,
-                cnpj,
-                dataFundacao: dataFundacao ? new Date(dataFundacao) : null,
-                estado: estado ? parseInt(estado) : null,
-                municipio: municipio ? parseInt(municipio) : null,
-                gpsLat: gpsLat ? parseFloat(gpsLat) : null,
-                gpsLng: gpsLng ? parseFloat(gpsLng) : null,
-                gpsAlt: gpsAlt ? parseFloat(gpsAlt) : null,
-                gpsAcc: gpsAcc ? parseFloat(gpsAcc) : null,
-                dataVisita: new Date(),
-                caracteristicasNTotalSocios: totalSocios ? parseInt(totalSocios) : null,
-                caracteristicasNTotalSociosCaf: totalSociosCaf ? parseInt(totalSociosCaf) : null,
-                caracteristicasNDistintosCaf: distintosCaf ? parseInt(distintosCaf) : null,
-                caracteristicasNSociosPaa: sociosPaa ? parseInt(sociosPaa) : null,
-                caracteristicasNNaosociosPaa: naosociosPaa ? parseInt(naosociosPaa) : null,
-                caracteristicasNSociosPnae: sociosPnae ? parseInt(sociosPnae) : null,
-                caracteristicasNNaosociosPnae: naosociosPnae ? parseInt(naosociosPnae) : null,
-                caracteristicasNAtivosTotal: ativosTotal ? parseInt(ativosTotal) : null,
-                caracteristicasNAtivosCaf: ativosCaf ? parseInt(ativosCaf) : null,
-                idTecnico: 1 // Simular técnico responsável
+    async getById(req, res) {
+        try {
+            const id = parseInt(req.params.id);
+            const userPermissions = req.userPermissions;
+            if (isNaN(id)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: {
+                        message: 'ID inválido',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
             }
+            const organizacao = await organizacaoService_1.default.getById(id);
+            if (!organizacao) {
+                res.status(api_1.HttpStatus.NOT_FOUND).json({
+                    success: false,
+                    error: {
+                        message: 'Organização não encontrada',
+                        statusCode: api_1.HttpStatus.NOT_FOUND
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (userPermissions?.isTechnician && !userPermissions?.canAccessAll) {
+                let temAcesso = false;
+                if (organizacao.id_tecnico === userPermissions.userId) {
+                    temAcesso = true;
+                }
+                if (!temAcesso && organizacao.creator_uri_user) {
+                    const creatorEmail = (0, odkHelper_1.extractEmailFromCreatorUri)(organizacao.creator_uri_user);
+                    if (creatorEmail && creatorEmail === req.user?.email?.toLowerCase()) {
+                        temAcesso = true;
+                    }
+                }
+                if (!temAcesso) {
+                    res.status(api_1.HttpStatus.FORBIDDEN).json({
+                        success: false,
+                        error: {
+                            message: 'Acesso negado. Técnicos só podem acessar organizações criadas por eles.',
+                            statusCode: api_1.HttpStatus.FORBIDDEN
+                        },
+                        timestamp: new Date().toISOString()
+                    });
+                    return;
+                }
+            }
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                data: organizacao,
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
+    async create(req, res) {
+        try {
+            const userPermissions = req.userPermissions;
+            if (!userPermissions?.canEdit) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Sem permissão para criar organizações',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const data = {
+                ...req.body,
+                ...(userPermissions?.userId && {
+                    id_tecnico: userPermissions.userId
+                })
+            };
+            const organizacao = await organizacaoService_1.default.create(data);
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.CREATE,
+                entity: 'organizacao',
+                entityId: organizacao.id?.toString(),
+                newData: organizacao,
+                userId: req.user?.id,
+                req
+            });
+            res.status(api_1.HttpStatus.CREATED).json({
+                success: true,
+                message: 'Organização criada com sucesso',
+                data: organizacao,
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
+    async update(req, res) {
+        try {
+            const id = parseInt(req.params.id);
+            const data = req.body;
+            const userPermissions = req.userPermissions;
+            if (isNaN(id)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: {
+                        message: 'ID inválido',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (!userPermissions?.canEdit) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Sem permissão para editar organizações',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (userPermissions?.isTechnician && !userPermissions?.canAccessAll) {
+                const organizacaoExistente = await organizacaoService_1.default.getById(id);
+                if (!organizacaoExistente) {
+                    res.status(api_1.HttpStatus.NOT_FOUND).json({
+                        success: false,
+                        error: {
+                            message: 'Organização não encontrada',
+                            statusCode: api_1.HttpStatus.NOT_FOUND
+                        },
+                        timestamp: new Date().toISOString()
+                    });
+                    return;
+                }
+                let temAcesso = false;
+                if (organizacaoExistente.id_tecnico === userPermissions.userId) {
+                    temAcesso = true;
+                }
+                if (!temAcesso && organizacaoExistente.creator_uri_user) {
+                    const creatorEmail = (0, odkHelper_1.extractEmailFromCreatorUri)(organizacaoExistente.creator_uri_user);
+                    if (creatorEmail && creatorEmail === req.user?.email?.toLowerCase()) {
+                        temAcesso = true;
+                    }
+                }
+                if (!temAcesso) {
+                    res.status(api_1.HttpStatus.FORBIDDEN).json({
+                        success: false,
+                        error: {
+                            message: 'Acesso negado. Técnicos só podem editar organizações criadas por eles.',
+                            statusCode: api_1.HttpStatus.FORBIDDEN
+                        },
+                        timestamp: new Date().toISOString()
+                    });
+                    return;
+                }
+            }
+            const organizacaoAntes = await organizacaoService_1.default.getById(id);
+            const organizacao = await organizacaoService_1.default.update(id, data);
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.UPDATE,
+                entity: 'organizacao',
+                entityId: id.toString(),
+                oldData: organizacaoAntes,
+                newData: organizacao,
+                userId: req.user?.id,
+                req
+            });
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                message: 'Organização atualizada com sucesso',
+                data: organizacao,
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
+    async updateValidacao(req, res) {
+        try {
+            const id = parseInt(req.params.id);
+            const { validacao_status, validacao_obs, validacao_usuario } = req.body;
+            const userPermissions = req.userPermissions;
+            if (isNaN(id)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: {
+                        message: 'ID inválido',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (!userPermissions?.isCoordinator && !userPermissions?.isAdmin) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Apenas coordenadores podem validar organizações',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const dadosValidacao = {
+                validacao_status: validacao_status || null,
+                validacao_obs: validacao_obs || null,
+                validacao_usuario: validacao_usuario || req.user?.id || null,
+                validacao_data: new Date()
+            };
+            const organizacao = await organizacaoService_1.default.updateValidacao(id, dadosValidacao);
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.UPDATE,
+                entity: 'organizacao',
+                entityId: id.toString(),
+                userId: req.user.id,
+                newData: dadosValidacao,
+                req
+            });
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                message: 'Validação atualizada com sucesso',
+                data: organizacao,
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
+    async delete(req, res) {
+        try {
+            const id = parseInt(req.params.id);
+            const userPermissions = req.userPermissions;
+            if (isNaN(id)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: {
+                        message: 'ID inválido',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (!userPermissions?.canEdit) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Sem permissão para excluir organizações',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const organizacaoAntes = await organizacaoService_1.default.getById(id);
+            await organizacaoService_1.default.delete(id);
+            await auditService_1.default.createLog({
+                action: audit_1.AuditAction.DELETE,
+                entity: 'organizacao',
+                entityId: id.toString(),
+                oldData: organizacaoAntes,
+                userId: req.user?.id,
+                req
+            });
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                message: 'Organização removida com sucesso',
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
+    async getDashboard(req, res) {
+        try {
+            const userPermissions = req.userPermissions;
+            const stats = await organizacaoService_1.default.getDashboardStats(userPermissions?.userId);
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                data: stats,
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
+    async getEstados(req, res) {
+        try {
+            const estados = await organizacaoService_1.default.getEstados();
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                data: estados,
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            console.error('Organizacao Controller Error:', error);
+            this.handleError(error, res);
+        }
+    }
+    async getMunicipios(req, res) {
+        try {
+            const estadoId = req.params.estadoId ? parseInt(req.params.estadoId) : undefined;
+            const municipios = await organizacaoService_1.default.getMunicipios(estadoId);
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                data: municipios,
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            console.error('Organizacao Controller Error:', error);
+            this.handleError(error, res);
+        }
+    }
+    handleError(error, res) {
+        console.error('Organizacao Controller Error:', error);
+        if (error instanceof authService_1.ApiError) {
+            res.status(error.statusCode).json({
+                success: false,
+                error: {
+                    message: error.message,
+                    statusCode: error.statusCode,
+                    code: error.code,
+                    details: error.details
+                },
+                timestamp: new Date().toISOString()
+            });
+            return;
+        }
+        res.status(api_1.HttpStatus.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            error: {
+                message: 'Erro interno do servidor',
+                statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR
+            },
+            timestamp: new Date().toISOString()
         });
-        res.status(201).json({
-            id: organizacao.id,
-            message: 'Organização criada com sucesso'
-        });
     }
-    catch (error) {
-        console.error('Erro ao criar organização:', error);
-        res.status(500).json({ message: 'Erro interno do servidor' });
-    }
-};
-exports.createOrganizacao = createOrganizacao;
-// Atualizar organização
-const updateOrganizacao = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const organizacaoId = parseInt(id);
-        const updateData = req.body;
-        const organizacao = await prisma.organizacao.update({
-            where: { id: organizacaoId },
-            data: updateData
-        });
-        res.json({
-            id: organizacao.id,
-            message: 'Organização atualizada com sucesso'
-        });
-    }
-    catch (error) {
-        console.error('Erro ao atualizar organização:', error);
-        res.status(500).json({ message: 'Erro interno do servidor' });
-    }
-};
-exports.updateOrganizacao = updateOrganizacao;
-// Excluir organização (soft delete)
-const deleteOrganizacao = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const organizacaoId = parseInt(id);
-        await prisma.organizacao.update({
-            where: { id: organizacaoId },
-            data: { removido: true }
-        });
-        res.json({ message: 'Organização excluída com sucesso' });
-    }
-    catch (error) {
-        console.error('Erro ao excluir organização:', error);
-        res.status(500).json({ message: 'Erro interno do servidor' });
-    }
-};
-exports.deleteOrganizacao = deleteOrganizacao;
+}
+exports.organizacaoController = new OrganizacaoController();
 //# sourceMappingURL=organizacaoController.js.map

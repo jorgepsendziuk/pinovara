@@ -1,35 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
-declare global {
-    namespace Express {
-        interface Request {
-            user?: {
-                id: string;
-                email: string;
-                role: string;
+export interface AuthRequest extends Request {
+    user?: {
+        id: number;
+        email: string;
+        name: string;
+        roles: Array<{
+            id: number;
+            name: string;
+            module: {
+                id: number;
+                name: string;
             };
-        }
-    }
+        }>;
+    };
 }
-export declare class AuthMiddleware {
-    /**
-     * Middleware para verificar JWT token
-     */
-    static authenticate: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-    /**
-     * Middleware para verificar se usuário é administrador
-     */
-    static requireAdmin: (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>> | undefined;
-    /**
-     * Middleware para verificar se usuário é moderador ou admin
-     */
-    static requireModerator: (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>> | undefined;
-    /**
-     * Middleware opcional - adiciona usuário se token for válido, mas não bloqueia se não houver
-     */
-    static optionalAuth: (req: Request, res: Response, next: NextFunction) => Promise<void>;
-    /**
-     * Middleware para verificar propriedade do recurso
-     */
-    static requireOwnership: (resourceUserIdField?: string) => (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>> | undefined;
-}
+export declare const authenticateToken: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const requirePermission: (moduleName: string, roleName?: string) => (req: AuthRequest, res: Response, next: NextFunction) => void;
+export declare const optionalAuth: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
 //# sourceMappingURL=auth.d.ts.map

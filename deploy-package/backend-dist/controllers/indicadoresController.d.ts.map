@@ -1,0 +1,1 @@
+{"version":3,"file":"indicadoresController.d.ts","sourceRoot":"","sources":["../../src/controllers/indicadoresController.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,QAAQ,EAAE,MAAM,SAAS,CAAC;AAK5C,eAAO,MAAM,qBAAqB;cAEhB,OAAO,OAAO,QAAQ;gBAyBpB,OAAO,OAAO,QAAQ;gBAqDtB,OAAO,OAAO,QAAQ;CA2BzC,CAAC"}

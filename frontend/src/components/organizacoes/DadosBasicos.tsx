@@ -143,7 +143,7 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
                 <option value="">Selecione um estado</option>
                 {estados.map((estado) => (
                   <option key={estado.id} value={estado.id.toString()}>
-                    {estado.nome}
+                    {estado.descricao || estado.nome}
                   </option>
                 ))}
               </select>
@@ -162,7 +162,7 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
                 </option>
                 {municipios.map((municipio) => (
                   <option key={municipio.id} value={municipio.id.toString()}>
-                    {municipio.nome}
+                    {municipio.descricao || municipio.nome}
                   </option>
                 ))}
               </select>
