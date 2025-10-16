@@ -304,7 +304,7 @@ class OrganizacaoService {
         }
     }
     async create(data) {
-        const { nome, cnpj, telefone, email, estado, municipio, creator_uri_user } = data;
+        const { nome, cnpj, telefone, email, estado, municipio, creator_uri_user, id_tecnico: idTecnicoRecebido } = data;
         if (!nome || nome.trim().length === 0) {
             throw new ApiError({
                 message: 'Nome da organização é obrigatório',
@@ -312,8 +312,8 @@ class OrganizacaoService {
                 code: api_1.ErrorCode.MISSING_REQUIRED_FIELD
             });
         }
-        let id_tecnico = null;
-        if (creator_uri_user) {
+        let id_tecnico = idTecnicoRecebido || null;
+        if (!id_tecnico && creator_uri_user) {
             const emailExtraido = (0, odkHelper_1.extractEmailFromCreatorUri)(creator_uri_user);
             if (emailExtraido) {
                 id_tecnico = await this.findUserByEmail(emailExtraido);
@@ -321,6 +321,9 @@ class OrganizacaoService {
                     console.log(`✅ Organização vinculada ao técnico ID ${id_tecnico} através do email ${emailExtraido}`);
                 }
             }
+        }
+        if (id_tecnico) {
+            console.log(`✅ Criando organização com técnico ID: ${id_tecnico}`);
         }
         const organizacao = await prisma.organizacao.create({
             data: {
@@ -701,7 +704,8 @@ class OrganizacaoService {
     }
     async isUserCoordinator(userId) {
         const roles = await this.getUserRoles(userId);
-        return roles.some(role => role.name === 'coordenador' && role.module?.name === 'organizacoes');
+        return roles.some(role => (role.name === 'coordenador' || role.name === 'supervisao') &&
+            role.module?.name === 'organizacoes');
     }
 }
 exports.default = new OrganizacaoService();

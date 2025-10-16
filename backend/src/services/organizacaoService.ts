@@ -402,10 +402,10 @@ class OrganizacaoService {
 
   /**
    * Criar nova organização
-   * Agora preenche automaticamente id_tecnico se houver _creator_uri_user
+   * Preenche automaticamente id_tecnico com o usuário logado ou do _creator_uri_user
    */
   async create(data: Partial<Organizacao>): Promise<Organizacao> {
-    const { nome, cnpj, telefone, email, estado, municipio, creator_uri_user } = data;
+    const { nome, cnpj, telefone, email, estado, municipio, creator_uri_user, id_tecnico: idTecnicoRecebido } = data;
 
     // Validações básicas
     if (!nome || nome.trim().length === 0) {
@@ -416,9 +416,12 @@ class OrganizacaoService {
       });
     }
 
-    // Tentar vincular com técnico se houver _creator_uri_user
-    let id_tecnico: number | null = null;
-    if (creator_uri_user) {
+    // Determinar id_tecnico:
+    // 1. Se veio do controller (usuário logado criando), usar esse
+    // 2. Senão, tentar vincular com técnico se houver _creator_uri_user (ODK)
+    let id_tecnico: number | null = idTecnicoRecebido || null;
+    
+    if (!id_tecnico && creator_uri_user) {
       const emailExtraido = extractEmailFromCreatorUri(creator_uri_user);
       if (emailExtraido) {
         id_tecnico = await this.findUserByEmail(emailExtraido);
@@ -426,6 +429,10 @@ class OrganizacaoService {
           console.log(`✅ Organização vinculada ao técnico ID ${id_tecnico} através do email ${emailExtraido}`);
         }
       }
+    }
+
+    if (id_tecnico) {
+      console.log(`✅ Criando organização com técnico ID: ${id_tecnico}`);
     }
 
     const organizacao = await prisma.organizacao.create({
@@ -922,11 +929,15 @@ class OrganizacaoService {
   }
 
   /**
-   * Verificar se usuário é coordenador
+   * Verificar se usuário é coordenador ou supervisor
+   * Ambos podem ver todas as organizações mas não podem editar
    */
   private async isUserCoordinator(userId: number): Promise<boolean> {
     const roles = await this.getUserRoles(userId);
-    return roles.some(role => role.name === 'coordenador' && role.module?.name === 'organizacoes');
+    return roles.some(role => 
+      (role.name === 'coordenador' || role.name === 'supervisao') && 
+      role.module?.name === 'organizacoes'
+    );
   }
 }
 

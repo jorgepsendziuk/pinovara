@@ -293,12 +293,12 @@ class OrganizacaoController {
         return;
       }
 
-      // Verificar se usuário é coordenador ou admin
+      // Verificar se usuário é coordenador ou admin (supervisor NÃO pode validar)
       if (!userPermissions?.isCoordinator && !userPermissions?.isAdmin) {
         res.status(HttpStatus.FORBIDDEN).json({
           success: false,
           error: {
-            message: 'Apenas coordenadores podem validar organizações',
+            message: 'Apenas coordenadores e administradores podem validar organizações',
             statusCode: HttpStatus.FORBIDDEN
           },
           timestamp: new Date().toISOString()
