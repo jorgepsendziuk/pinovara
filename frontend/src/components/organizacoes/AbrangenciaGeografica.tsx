@@ -64,6 +64,18 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
     }
   }, [organizacaoId]);
 
+  // Carregar municípios de todos os estados que aparecem nos itens
+  useEffect(() => {
+    if (items.length > 0) {
+      const estadosUnicos = [...new Set(items.map(item => item.estado))];
+      estadosUnicos.forEach(estadoId => {
+        if (estadoId && !municipiosPorEstado[estadoId]) {
+          carregarMunicipios(estadoId);
+        }
+      });
+    }
+  }, [items]);
+
   const carregarEstados = async () => {
     try {
       const response = await api.get('/organizacoes/estados');
@@ -235,12 +247,20 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
   }
 
   const getEstadoNome = (estadoId: number) => {
-    return estados.find(e => e.id === estadoId)?.descricao || '';
+    const estado = estados.find(e => e.id === estadoId);
+    return estado?.descricao || `Estado ${estadoId}`;
   };
 
   const getMunicipioNome = (estadoId: number, municipioId: number) => {
     const municipios = municipiosPorEstado[estadoId] || [];
-    return municipios.find(m => m.id === municipioId)?.descricao || '';
+    const municipio = municipios.find(m => m.id === municipioId);
+    
+    // Se não encontrou, pode estar carregando
+    if (!municipio && loadingMunicipios[estadoId]) {
+      return 'Carregando...';
+    }
+    
+    return municipio?.descricao || `Município ${municipioId}`;
   };
 
   return (
@@ -405,9 +425,9 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
                   {items.map((item) => (
                     <tr key={item.id}>
                       <td>
-                        <strong>{getEstadoNome(item.estado)}</strong>
+                        <strong>{item.estadoNome || getEstadoNome(item.estado)}</strong>
                       </td>
-                      <td>{getMunicipioNome(item.estado, item.municipio)}</td>
+                      <td>{item.municipioNome || getMunicipioNome(item.estado, item.municipio)}</td>
                       <td style={{ textAlign: 'center', fontWeight: 600 }}>
                         {item.numSocios}
                       </td>
@@ -423,7 +443,7 @@ const AbrangenciaGeografica: React.FC<AbrangenciaGeograficaProps> = ({
                           </button>
                           <button
                             className="btn-icon btn-delete"
-                            onClick={() => excluir(item.id!, getMunicipioNome(item.estado, item.municipio))}
+                            onClick={() => excluir(item.id!, item.municipioNome || getMunicipioNome(item.estado, item.municipio))}
                             disabled={salvando || adicionando || editando !== null}
                             title="Excluir"
                           >

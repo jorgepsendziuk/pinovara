@@ -79,10 +79,9 @@ export function IndicadoresAtividade({
 
   return (
     <div className="accordion-item">
-      <div 
-        className="accordion-header" 
+      <button
+        className="accordion-header"
         onClick={() => onToggleAccordion('indicadores')}
-        style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
         <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Target size={20} /> Indicadores da Atividade
@@ -98,11 +97,17 @@ export function IndicadoresAtividade({
             </span>
           )}
         </h3>
-        {isAberto ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-      </div>
+        <ChevronDown
+          size={20}
+          style={{
+            transition: 'transform 0.2s ease',
+            transform: isAberto ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}
+        />
+      </button>
 
-      {isAberto && (
-        <div className="accordion-content" style={{ display: 'block' }}>
+      <div className={`accordion-content ${isAberto ? 'open' : ''}`}>
+        <div className="accordion-section">
           {loading ? (
             <p style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>Carregando...</p>
           ) : (
@@ -137,7 +142,7 @@ export function IndicadoresAtividade({
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

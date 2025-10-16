@@ -26,6 +26,7 @@ router.get('/', organizacaoController.list.bind(organizacaoController));
 router.post('/', organizacaoController.create.bind(organizacaoController));
 router.get('/:id', organizacaoController.getById.bind(organizacaoController));
 router.put('/:id', organizacaoController.update.bind(organizacaoController));
+router.patch('/:id/validacao', organizacaoController.updateValidacao.bind(organizacaoController));
 router.delete('/:id', organizacaoController.delete.bind(organizacaoController));
 
 // Rotas para tabelas auxiliares

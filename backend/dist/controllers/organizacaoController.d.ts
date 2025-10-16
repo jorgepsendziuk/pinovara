@@ -5,6 +5,7 @@ declare class OrganizacaoController {
     getById(req: AuthRequest, res: Response): Promise<void>;
     create(req: AuthRequest, res: Response): Promise<void>;
     update(req: AuthRequest, res: Response): Promise<void>;
+    updateValidacao(req: AuthRequest, res: Response): Promise<void>;
     delete(req: AuthRequest, res: Response): Promise<void>;
     getDashboard(req: AuthRequest, res: Response): Promise<void>;
     getEstados(req: AuthRequest, res: Response): Promise<void>;

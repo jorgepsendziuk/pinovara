@@ -55,15 +55,16 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem;
+  border-bottom: 2px solid #056839;
+  background: white;
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #111827;
+  color: #056839;
 }
 
 .modal-close-btn {
@@ -80,8 +81,8 @@
 }
 
 .modal-close-btn:hover {
-  background-color: #f3f4f6;
-  color: #111827;
+  background: rgba(5, 104, 57, 0.1);
+  color: #056839;
 }
 
 /* Modal Body */

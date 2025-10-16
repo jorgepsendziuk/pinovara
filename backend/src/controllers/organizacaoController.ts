@@ -272,6 +272,72 @@ class OrganizacaoController {
   }
 
   /**
+   * PATCH /organizacoes/:id/validacao
+   * Atualizar apenas campos de validação (permitido para coordenadores)
+   */
+  async updateValidacao(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const { validacao_status, validacao_obs, validacao_usuario } = req.body;
+      const userPermissions = (req as any).userPermissions;
+
+      if (isNaN(id)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: {
+            message: 'ID inválido',
+            statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Verificar se usuário é coordenador ou admin
+      if (!userPermissions?.isCoordinator && !userPermissions?.isAdmin) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Apenas coordenadores podem validar organizações',
+            statusCode: HttpStatus.FORBIDDEN
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Atualizar apenas campos de validação
+      const dadosValidacao = {
+        validacao_status: validacao_status || null,
+        validacao_obs: validacao_obs || null,
+        validacao_usuario: validacao_usuario || req.user?.id || null,
+        validacao_data: new Date()
+      };
+
+      const organizacao = await organizacaoService.updateValidacao(id, dadosValidacao);
+
+      // Registrar auditoria
+      await auditService.createLog({
+        action: AuditAction.UPDATE,
+        entity: 'organizacao',
+        entityId: id.toString(),
+        userId: req.user!.id,
+        newData: dadosValidacao,
+        req
+      });
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        message: 'Validação atualizada com sucesso',
+        data: organizacao,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
    * DELETE /organizacoes/:id
    */
   async delete(req: AuthRequest, res: Response): Promise<void> {

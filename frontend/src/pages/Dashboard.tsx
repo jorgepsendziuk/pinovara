@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import VersionIndicator from '../components/VersionIndicator';
 import TermosUso from '../components/TermosUso';
+import { User, Award, Layers, CheckCircle } from 'lucide-react';
 
 function Dashboard() {
   const { user, hasPermission, logout } = useAuth();
@@ -70,10 +71,7 @@ function Dashboard() {
             {/* Card de acesso rápido ao perfil */}
             <div className="quick-access-card">
               <div className="card-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
+                <User size={48} />
               </div>
               <div className="card-content">
                 <h3>Meu Perfil</h3>
@@ -142,11 +140,13 @@ function Dashboard() {
 
               <div className="stats-grid">
                 <div className="stat-card">
+                  <Award size={24} style={{ marginBottom: '8px', color: '#056839' }} />
                   <div className="stat-value">{user.roles ? user.roles.length : 0}</div>
                   <div className="stat-label">Papéis Atribuídos</div>
                 </div>
 
                 <div className="stat-card">
+                  <Layers size={24} style={{ marginBottom: '8px', color: '#056839' }} />
                   <div className="stat-value">
                     {user.roles ?
                       new Set(user.roles.map(role => role.module.id)).size : 0
@@ -156,6 +156,7 @@ function Dashboard() {
                 </div>
 
                 <div className="stat-card">
+                  <CheckCircle size={24} style={{ marginBottom: '8px', color: '#056839' }} />
                   <div className="stat-value">
                     {user.active ? 'Sim' : 'Não'}
                   </div>

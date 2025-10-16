@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, AlertCircle, Clock, Save, User as UserIcon, Calendar } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import './Validacao.css';
@@ -34,6 +34,12 @@ const Validacao: React.FC<ValidacaoProps> = ({
   const [salvando, setSalvando] = useState(false);
   const [novoStatus, setNovoStatus] = useState(validacaoStatus || 1);
   const [novaObs, setNovaObs] = useState(validacaoObs || '');
+
+  // Sincronizar estado local com props quando mudarem
+  useEffect(() => {
+    setNovoStatus(validacaoStatus || 1);
+    setNovaObs(validacaoObs || '');
+  }, [validacaoStatus, validacaoObs]);
 
   // Verificar se pode editar (admin ou coordenador)
   const podeEditar = hasPermission('sistema', 'admin') || isCoordinator();
@@ -71,161 +77,66 @@ const Validacao: React.FC<ValidacaoProps> = ({
 
   return (
     <div className="validacao-container">
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '1rem', padding: '1rem 0' }}>
         <div className="page-header-left">
-          <IconeStatus size={28} style={{ color: statusAtual?.cor }} />
+          <IconeStatus size={24} style={{ color: statusAtual?.cor }} />
           <div>
-            <h2>Validação do Cadastro</h2>
-            <p>Controle de qualidade e aprovação dos dados</p>
+            <h2 style={{ fontSize: '1.3rem', margin: 0 }}>Validação do Cadastro</h2>
+            <p style={{ fontSize: '0.85rem', margin: '0.25rem 0 0 0', color: '#6b7280' }}>Status da validação e aprovação</p>
           </div>
         </div>
       </div>
 
       <div className="content-section">
-        {/* Status Atual */}
-        <div className="status-card">
-          <h3>Status Atual</h3>
-          <div className="status-display">
+        {/* Status Compacto */}
+        <div className="status-card-compact">
+          <div className="status-row">
+            <div className="status-label">Status:</div>
             <div 
-              className="status-badge-large"
+              className="status-badge-compact"
               style={{ 
                 background: statusAtual?.cor,
                 color: 'white',
               }}
             >
-              <IconeStatus size={24} />
+              <IconeStatus size={16} />
               <span>{statusAtual?.label}</span>
             </div>
           </div>
 
-          {validacaoData && (
-            <div className="validacao-info">
-              <div className="info-item">
-                <Calendar size={16} />
-                <span>
-                  <strong>Data:</strong> {new Date(validacaoData).toLocaleString('pt-BR')}
-                </span>
-              </div>
-              {validacaoUsuarioNome && (
-                <div className="info-item">
-                  <UserIcon size={16} />
-                  <span>
-                    <strong>Validado por:</strong> {validacaoUsuarioNome}
-                  </span>
-                </div>
-              )}
+          <div className="status-row">
+            <div className="status-label">Data de Validação:</div>
+            <div className="status-value">
+              <Calendar size={16} style={{ marginRight: '8px' }} />
+              {validacaoData 
+                ? new Date(validacaoData).toLocaleString('pt-BR')
+                : 'Ainda não validado'
+              }
             </div>
-          )}
+          </div>
+
+          <div className="status-row">
+            <div className="status-label">Validado por:</div>
+            <div className="status-value">
+              <UserIcon size={16} style={{ marginRight: '8px' }} />
+              {validacaoUsuarioNome || 'N/A'}
+            </div>
+          </div>
 
           {validacaoObs && !editando && (
-            <div className="observacoes-display">
-              <strong>Observações:</strong>
-              <p>{validacaoObs}</p>
+            <div className="status-row observacoes-row">
+              <div className="status-label">Observações:</div>
+              <div className="status-value observacoes-text">
+                {validacaoObs}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Formulário de Edição */}
-        {podeEditar && (
-          <div className="validacao-form">
-            {!editando ? (
-              <button 
-                className="btn btn-primary"
-                onClick={() => setEditando(true)}
-              >
-                Alterar Validação
-              </button>
-            ) : (
-              <div className="form-card">
-                <div className="form-field">
-                  <label>Novo Status</label>
-                  <select 
-                    value={novoStatus}
-                    onChange={(e) => setNovoStatus(parseInt(e.target.value))}
-                    className="form-select"
-                  >
-                    {STATUS_VALIDACAO.map(status => (
-                      <option key={status.valor} value={status.valor}>
-                        {status.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-field">
-                  <label>Observações</label>
-                  <textarea
-                    value={novaObs}
-                    onChange={(e) => setNovaObs(e.target.value)}
-                    placeholder="Adicione observações sobre a validação, pendências ou motivos de reprovação..."
-                    rows={5}
-                    className="form-textarea"
-                  />
-                </div>
-
-                <div className="form-actions">
-                  <button 
-                    className="btn btn-primary"
-                    onClick={handleSalvar}
-                    disabled={salvando}
-                  >
-                    {salvando ? (
-                      <>
-                        <Save className="spinning" size={16} />
-                        Salvando...
-                      </>
-                    ) : (
-                      <>
-                        <Save size={16} />
-                        Salvar Validação
-                      </>
-                    )}
-                  </button>
-                  <button 
-                    className="btn btn-secondary"
-                    onClick={handleCancelar}
-                    disabled={salvando}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Mensagem para Técnicos */}
-        {!podeEditar && (
-          <div className="alert alert-info">
-            <AlertCircle size={18} />
-            <span>Como técnico, você pode visualizar o status de validação mas não pode alterá-lo.</span>
-          </div>
-        )}
-
-        {/* Legenda dos Status */}
-        <div className="legenda-status">
-          <h4>Legenda dos Status:</h4>
-          <div className="status-grid">
-            {STATUS_VALIDACAO.map(status => {
-              const Icon = status.icon;
-              return (
-                <div key={status.valor} className="status-item">
-                  <div className="status-badge-small" style={{ background: status.cor }}>
-                    <Icon size={16} />
-                  </div>
-                  <div>
-                    <strong>{status.label}</strong>
-                    <small>
-                      {status.valor === 1 && 'Cadastro aguardando validação'}
-                      {status.valor === 2 && 'Cadastro aprovado e validado'}
-                      {status.valor === 3 && 'Cadastro com pendências a corrigir'}
-                      {status.valor === 4 && 'Cadastro reprovado'}
-                    </small>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        {/* Mensagem Informativa */}
+        <div className="alert alert-info">
+          <AlertCircle size={18} />
+          <span>A validação do cadastro é realizada por um coordenador através da lista de organizações.</span>
         </div>
       </div>
     </div>
