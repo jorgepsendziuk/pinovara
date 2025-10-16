@@ -82,13 +82,18 @@ export const checkOrganizacaoPermission = (req: AuthRequest, res: Response, next
     role.name === 'coordenador' && role.module.name === 'organizacoes'
   );
 
+  const isSupervisor = req.user.roles?.some(role => 
+    role.name === 'supervisao' && role.module.name === 'organizacoes'
+  );
+
   // Adicionar informações sobre permissões à requisição
   (req as any).userPermissions = {
     isAdmin,
     isTechnician,
     isCoordinator,
-    canAccessAll: isAdmin || isCoordinator, // Coordenador vê todas organizações
-    canEdit: isAdmin || isTechnician, // Coordenador NÃO pode editar
+    isSupervisor,
+    canAccessAll: isAdmin || isCoordinator || isSupervisor, // Coordenador e Supervisor veem todas organizações
+    canEdit: isAdmin || isTechnician, // Coordenador e Supervisor NÃO podem editar
     userId: req.user.id
   };
 

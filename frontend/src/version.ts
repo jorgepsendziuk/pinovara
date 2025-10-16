@@ -1,11 +1,11 @@
 // 🤖 Arquivo gerado automaticamente - NÃO EDITAR
-// Generated at: 2025-10-16T14:22:37.786Z
+// Generated at: 2025-10-16T17:43:48.982Z
 
 export const VERSION_INFO = {
-  commitHash: '15d80fddb73bd76a625d4dfa5f2af735f714d9b4',
-  shortCommitHash: '15d80fd',
-  buildTimestamp: '2025-10-16T14:22:37.786Z',
-  buildDate: '16/10/2025, 11:22',
+  commitHash: 'd8e01b016ef6aff1f05d13afe1a9d2332d3dd51f',
+  shortCommitHash: 'd8e01b0',
+  buildTimestamp: '2025-10-16T17:43:48.982Z',
+  buildDate: '16/10/2025, 14:43',
   branchName: 'main',
   generated: true
 } as const;

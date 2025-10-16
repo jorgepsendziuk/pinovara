@@ -47,19 +47,58 @@ import {
   Factory,
   Lightbulb,
   Leaf,
-  Building
+  Building,
+  Plus
 } from 'lucide-react';
 import '../../styles/tabs.css';
 
 interface EdicaoOrganizacaoProps {
-  organizacaoId: number;
+  organizacaoId?: number; // Opcional - se não fornecido, modo criação
   onNavigate: (pagina: string, dados?: any) => void;
 }
 
 function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps) {
   
   // Verificação de permissão
-  const { isCoordinator } = useAuth();
+  const { isCoordinator, isSupervisor } = useAuth();
+  
+  // Bloquear acesso para supervisores
+  if (isSupervisor()) {
+    return (
+      <div style={{ 
+        padding: '40px', 
+        textAlign: 'center',
+        maxWidth: '600px',
+        margin: '60px auto',
+        background: '#fff3cd',
+        border: '1px solid #ffc107',
+        borderRadius: '8px'
+      }}>
+        <AlertCircle size={64} color="#856404" style={{ marginBottom: '20px' }} />
+        <h2 style={{ color: '#856404', marginBottom: '16px' }}>Acesso Não Permitido</h2>
+        <p style={{ color: '#856404', marginBottom: '24px', fontSize: '16px' }}>
+          Usuários com perfil de <strong>Supervisão</strong> podem visualizar organizações mas não podem editá-las.
+        </p>
+        <button 
+          onClick={() => onNavigate('lista')}
+          style={{
+            padding: '10px 20px',
+            background: '#056839',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          Voltar para Lista
+        </button>
+      </div>
+    );
+  }
+  
+  // Detectar modo: criação ou edição
+  const isModoCriacao = !organizacaoId;
   
   // Estados principais
   const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('identificacao');
@@ -107,20 +146,74 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     loadFromOrganizacao: loadDiagnosticoFromOrganizacao
   } = useDiagnosticoData();
 
-  // Carregar dados inicial
+  // Proteção: coordenador não pode criar organizações
+  if (isModoCriacao && isCoordinator()) {
+    return (
+      <div style={{
+        maxWidth: '800px',
+        margin: '4rem auto',
+        padding: '3rem',
+        background: 'white',
+        borderRadius: '12px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          width: '80px',
+          height: '80px',
+          background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 2rem'
+        }}>
+          <AlertCircle size={40} color="white" style={{ opacity: 0.7 }} />
+        </div>
+        <h2 style={{ color: '#374151', marginBottom: '1rem', fontSize: '1.5rem' }}>
+          Acesso Restrito
+        </h2>
+        <p style={{ color: '#6b7280', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.6' }}>
+          Como <strong>{isSupervisor() ? 'supervisor' : 'coordenador'}</strong>, você pode visualizar organizações, 
+          mas não tem permissão para criar novos cadastros.
+        </p>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => onNavigate('lista')} 
+            className="btn btn-primary"
+            style={{ padding: '0.75rem 2rem' }}
+          >
+            Ver Lista de Organizações
+          </button>
+          <button 
+            onClick={() => onNavigate('dashboard')} 
+            className="btn"
+            style={{ padding: '0.75rem 2rem', background: '#6b7280', color: 'white', border: 'none' }}
+          >
+            Ver Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Carregar dados inicial (apenas em modo edição)
   useEffect(() => {
     if (organizacaoId) {
       loadOrganizacao(organizacaoId);
+    } else if (isModoCriacao) {
+      // Em modo criação, inicializar com objeto vazio
+      updateOrganizacao('nome', '');
     }
-  }, [organizacaoId, loadOrganizacao]);
+  }, [organizacaoId, loadOrganizacao, isModoCriacao, updateOrganizacao]);
 
   // Sincronizar dados quando organização carrega
   useEffect(() => {
-    if (organizacao) {
+    if (organizacao && !isModoCriacao) {
       loadRepresentanteFromOrganizacao(organizacao);
       loadDiagnosticoFromOrganizacao(organizacao);
     }
-  }, [organizacao, loadRepresentanteFromOrganizacao, loadDiagnosticoFromOrganizacao]);
+  }, [organizacao, loadRepresentanteFromOrganizacao, loadDiagnosticoFromOrganizacao, isModoCriacao]);
 
   // Handlers
   const toggleAccordion = (accordion: string) => {
@@ -161,7 +254,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   };
 
   const handleGerarRelatorio = async () => {
-    if (!organizacao) return;
+    if (!organizacao || !organizacaoId) return;
 
     setGerandoPDF(true);
     try {
@@ -191,15 +284,20 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   };
 
   const handleSubmit = async () => {
-    if (!organizacao) return;
-
     try {
       setSaving(true);
       setError(null);
       
+      // Em modo criação, validar se tem nome
+      if (isModoCriacao && (!organizacao?.nome || organizacao.nome.trim() === '')) {
+        setToastError('Por favor, preencha o nome da organização');
+        setSaving(false);
+        return;
+      }
+      
       // Preparar dados completos
       const dadosBrutos = {
-        ...organizacao,
+        ...(organizacao || {}),
         // Dados do representante
         representante_nome: dadosRepresentante.nome || null,
         representante_cpf: dadosRepresentante.cpf || null,
@@ -247,20 +345,38 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       );
 
       console.log('Dados sendo enviados:', dadosCompletos);
-      console.log('Campos de validação:', {
-        validacao_status: dadosCompletos.validacao_status,
-        validacao_usuario: dadosCompletos.validacao_usuario,
-        validacao_data: dadosCompletos.validacao_data,
-        validacao_obs: dadosCompletos.validacao_obs
-      });
+      console.log('Modo:', isModoCriacao ? 'CRIAÇÃO' : 'EDIÇÃO');
 
-      const response = await api.put(`/organizacoes/${organizacao.id}`, dadosCompletos);
+      let response;
+      
+      if (isModoCriacao) {
+        // CRIAR nova organização
+        response = await api.post('/organizacoes', dadosCompletos);
+        
+        if (!response.data.success) {
+          throw new Error(response.data.error?.message || 'Erro ao criar organização');
+        }
 
-      if (!response.data.success) {
-        throw new Error(response.data.error?.message || 'Erro ao salvar organização');
+        setSuccess('Organização criada com sucesso!');
+        
+        // Redirecionar para edição da organização recém-criada
+        const novaOrganizacaoId = response.data.data?.id;
+        if (novaOrganizacaoId) {
+          setTimeout(() => {
+            onNavigate('edicao', novaOrganizacaoId);
+          }, 1500);
+        }
+      } else {
+        // ATUALIZAR organização existente
+        response = await api.put(`/organizacoes/${organizacao?.id}`, dadosCompletos);
+
+        if (!response.data.success) {
+          throw new Error(response.data.error?.message || 'Erro ao atualizar organização');
+        }
+
+        setSuccess('Organização atualizada com sucesso!');
       }
 
-      setSuccess('Organização salva com sucesso!');
       setToastError(null); // Limpar erro anterior se houver
       
     } catch (err: any) {
@@ -665,17 +781,22 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
               onToggleAccordion={toggleAccordion}
             />
             
-            <UploadDocumentos
-              organizacaoId={organizacaoId}
-              accordionAberto={accordionsAbertos.includes('arquivos') ? 'arquivos' : null}
-              onToggleAccordion={toggleAccordion}
-            />
-            
-            <UploadFotos
-              organizacaoId={organizacaoId}
-              accordionAberto={accordionsAbertos.includes('fotos') ? 'fotos' : null}
-              onToggleAccordion={toggleAccordion}
-            />
+            {/* Upload de documentos e fotos apenas em modo edição */}
+            {!isModoCriacao && organizacaoId && (
+              <>
+                <UploadDocumentos
+                  organizacaoId={organizacaoId}
+                  accordionAberto={accordionsAbertos.includes('arquivos') ? 'arquivos' : null}
+                  onToggleAccordion={toggleAccordion}
+                />
+                
+                <UploadFotos
+                  organizacaoId={organizacaoId}
+                  accordionAberto={accordionsAbertos.includes('fotos') ? 'fotos' : null}
+                  onToggleAccordion={toggleAccordion}
+                />
+              </>
+            )}
             
             <DadosRepresentanteComponent
               dados={dadosRepresentante}
@@ -708,24 +829,39 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
 
   const renderAbaAbrangencia = () => (
     <div className="aba-content" style={{ width: '100%' }}>
-      {organizacao && (
+      {organizacao && organizacaoId && (
         <AbrangenciaGeografica
           organizacaoId={organizacaoId}
           nTotalSocios={organizacao.caracteristicas_n_total_socios}
         />
+      )}
+      {isModoCriacao && (
+        <div className="info-message">
+          <p>✏️ Abrangência geográfica estará disponível após criar a organização.</p>
+        </div>
       )}
     </div>
   );
 
   const renderAbaAssociadosJuridicos = () => (
     <div className="aba-content" style={{ width: '100%' }}>
-      <AssociadosJuridicos organizacaoId={organizacaoId} />
+      {organizacaoId && <AssociadosJuridicos organizacaoId={organizacaoId} />}
+      {isModoCriacao && (
+        <div className="info-message">
+          <p>✏️ Associados jurídicos estarão disponíveis após criar a organização.</p>
+        </div>
+      )}
     </div>
   );
 
   const renderAbaProducao = () => (
     <div className="aba-content" style={{ width: '100%' }}>
-      <DadosProducao organizacaoId={organizacaoId} />
+      {organizacaoId && <DadosProducao organizacaoId={organizacaoId} />}
+      {isModoCriacao && (
+        <div className="info-message">
+          <p>✏️ Dados de produção estarão disponíveis após criar a organização.</p>
+        </div>
+      )}
     </div>
   );
 
@@ -839,15 +975,22 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
 
   const renderAbaValidacao = () => (
     <div className="aba-content">
-      <Validacao
-        organizacaoId={organizacaoId}
-        validacaoStatus={organizacao?.validacao_status || null}
-        validacaoUsuario={organizacao?.validacao_usuario || null}
-        validacaoData={organizacao?.validacao_data ? new Date(organizacao.validacao_data) : null}
-        validacaoObs={organizacao?.validacao_obs || null}
-        validacaoUsuarioNome={(organizacao as any)?.users?.name || null}
-        onUpdate={updateOrganizacao}
-      />
+      {organizacaoId && (
+        <Validacao
+          organizacaoId={organizacaoId}
+          validacaoStatus={organizacao?.validacao_status || null}
+          validacaoUsuario={organizacao?.validacao_usuario || null}
+          validacaoData={organizacao?.validacao_data ? new Date(organizacao.validacao_data) : null}
+          validacaoObs={organizacao?.validacao_obs || null}
+          validacaoUsuarioNome={(organizacao as any)?.users?.name || null}
+          onUpdate={updateOrganizacao}
+        />
+      )}
+      {isModoCriacao && (
+        <div className="info-message">
+          <p>✏️ Validação estará disponível após criar a organização.</p>
+        </div>
+      )}
     </div>
   );
 
@@ -924,19 +1067,23 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
               onToggleAccordion={toggleAccordion}
             />
             
-            <IndicadoresAtividade
-              organizacaoId={organizacaoId}
-              accordionAberto={accordionsAbertos.includes('indicadores') ? 'indicadores' : null}
-              onToggleAccordion={toggleAccordion}
-            />
-            
-            <ParticipantesAtividade
-              organizacaoId={organizacaoId}
-              organizacao={organizacao}
-              onUpdate={updateOrganizacao}
-              accordionAberto={accordionsAbertos.includes('participantes') ? 'participantes' : null}
-              onToggleAccordion={toggleAccordion}
-            />
+            {organizacaoId && (
+              <>
+                <IndicadoresAtividade
+                  organizacaoId={organizacaoId}
+                  accordionAberto={accordionsAbertos.includes('indicadores') ? 'indicadores' : null}
+                  onToggleAccordion={toggleAccordion}
+                />
+                
+                <ParticipantesAtividade
+                  organizacaoId={organizacaoId}
+                  organizacao={organizacao}
+                  onUpdate={updateOrganizacao}
+                  accordionAberto={accordionsAbertos.includes('participantes') ? 'participantes' : null}
+                  onToggleAccordion={toggleAccordion}
+                />
+              </>
+            )}
             
             <ObservacoesFinais
               organizacao={organizacao}
@@ -1012,7 +1159,8 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     );
   }
 
-  if (!organizacao) {
+  // Em modo edição, verificar se organização foi carregada
+  if (!isModoCriacao && !organizacao && !loading) {
     return (
       <div className="error-container">
         <div className="error-message"><XCircle size={16} style={{marginRight: '0.5rem'}} /> Organização não encontrada</div>
@@ -1061,8 +1209,17 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
           </button>
         <div className="header-info">
             <h1 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center' }}>
-              <Edit size={20} style={{marginRight: '0.5rem'}} /> 
-              {organizacao.nome || 'Nome não informado'}
+              {isModoCriacao ? (
+                <>
+                  <Plus size={20} style={{marginRight: '0.5rem'}} /> 
+                  Nova Organização
+                </>
+              ) : (
+                <>
+                  <Edit size={20} style={{marginRight: '0.5rem'}} /> 
+                  {organizacao?.nome || 'Nome não informado'}
+                </>
+              )}
             </h1>
           </div>
         </div>
@@ -1223,7 +1380,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
                 ) : (
                   <>
                     <Save size={18} />
-                    Salvar Alterações
+                    {isModoCriacao ? 'Criar Organização' : 'Salvar Alterações'}
                   </>
                 )}
             </button>

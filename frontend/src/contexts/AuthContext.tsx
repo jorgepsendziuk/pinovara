@@ -34,6 +34,7 @@ interface AuthContextData {
   hasPermission: (moduleName: string, roleName?: string) => boolean;
   hasAnyPermission: (permissions: { module: string; role?: string }[]) => boolean;
   isCoordinator: () => boolean;
+  isSupervisor: () => boolean;
   refreshUser: () => Promise<void>;
   stopImpersonation: () => void;
 }
@@ -210,6 +211,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     ) || false;
   };
 
+  /**
+   * Verificar se usuário é supervisor (mesmas permissões que coordenador)
+   */
+  const isSupervisor = (): boolean => {
+    return user?.roles?.some(role => 
+      role.module.name === 'organizacoes' && role.name === 'supervisao'
+    ) || false;
+  };
+
   // ========== CICLO DE VIDA ==========
 
   /**
@@ -296,6 +306,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     hasPermission: checkPermission,
     hasAnyPermission: checkAnyPermission,
     isCoordinator,
+    isSupervisor,
     refreshUser,
     stopImpersonation,
   };

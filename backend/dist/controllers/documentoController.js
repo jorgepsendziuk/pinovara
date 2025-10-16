@@ -49,7 +49,7 @@ exports.upload = (0, multer_1.default)({
     storage,
     fileFilter,
     limits: {
-        fileSize: 10 * 1024 * 1024,
+        fileSize: 100 * 1024 * 1024,
     },
 });
 class DocumentoController {

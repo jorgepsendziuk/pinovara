@@ -4,11 +4,18 @@ import api from '../services/api';
 
 export const useOrganizacaoData = () => {
   const [organizacao, setOrganizacao] = useState<Organizacao | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Começa false - só fica true durante carregamento
   const [error, setError] = useState<string | null>(null);
 
   const updateOrganizacao = useCallback(async (field: keyof Organizacao, value: any) => {
-    setOrganizacao(prev => prev ? { ...prev, [field]: value } : null);
+    setOrganizacao(prev => {
+      if (prev) {
+        return { ...prev, [field]: value };
+      } else {
+        // Se não tem organização ainda, criar uma nova com apenas esse campo
+        return { [field]: value } as Organizacao;
+      }
+    });
   }, []);
 
   const loadOrganizacao = useCallback(async (id: number) => {

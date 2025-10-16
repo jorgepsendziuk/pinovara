@@ -72,11 +72,12 @@ interface MenuItem {
   path: string;
   module: string;
   permission?: string;
+  hideForRoles?: string[]; // Ocultar para roles específicos
   children?: MenuItem[];
 }
 
 const Sidebar: React.FC = () => {
-  const { user, hasPermission, logout } = useAuth();
+  const { user, hasPermission, isCoordinator, isSupervisor, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { screenSize, isMobile, isTablet } = useResponsive();
@@ -220,7 +221,8 @@ const Sidebar: React.FC = () => {
           label: 'Adicionar Organização',
           icon: Plus,
           path: '/organizacoes/cadastro',
-          module: 'organizacoes'
+          module: 'organizacoes',
+          hideForRoles: ['coordenador', 'supervisao']
         },
         {
           id: 'organizacoes-mapa',
@@ -580,6 +582,17 @@ const Sidebar: React.FC = () => {
   ];
 
   const hasAccess = (item: MenuItem): boolean => {
+    // Verificar se o item deve ser ocultado para roles específicos
+    if (item.hideForRoles) {
+      if (isCoordinator() && item.hideForRoles.includes('coordenador')) {
+        return false;
+      }
+      if (isSupervisor() && item.hideForRoles.includes('supervisao')) {
+        return false;
+      }
+    }
+    
+    // Verificação de permissão padrão
     if (!item.permission) return true;
     return hasPermission(item.module, item.permission);
   };

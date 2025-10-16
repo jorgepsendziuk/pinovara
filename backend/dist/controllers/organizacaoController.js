@@ -239,7 +239,7 @@ class OrganizacaoController {
                 res.status(api_1.HttpStatus.FORBIDDEN).json({
                     success: false,
                     error: {
-                        message: 'Apenas coordenadores podem validar organizações',
+                        message: 'Apenas coordenadores e administradores podem validar organizações',
                         statusCode: api_1.HttpStatus.FORBIDDEN
                     },
                     timestamp: new Date().toISOString()

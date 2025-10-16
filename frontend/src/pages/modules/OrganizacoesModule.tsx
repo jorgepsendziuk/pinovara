@@ -5,7 +5,7 @@ import Sidebar from '../../components/Sidebar';
 import VersionIndicator from '../../components/VersionIndicator';
 import DashboardOrganizacoes from '../organizacoes/DashboardOrganizacoes';
 import ListaOrganizacoes from '../organizacoes/ListaOrganizacoes';
-import CadastroOrganizacao from '../organizacoes/CadastroOrganizacao';
+// import CadastroOrganizacao from '../organizacoes/CadastroOrganizacao'; // Removido - usa EdicaoOrganizacao
 // import DetalhesOrganizacao from '../organizacoes/DetalhesOrganizacao'; // Removido
 import EdicaoOrganizacao from '../organizacoes/EdicaoOrganizacao';
 import MapaOrganizacoesPage from '../organizacoes/MapaOrganizacoesPage';
@@ -14,7 +14,7 @@ import '../organizacoes/OrganizacoesModule.css';
 type ViewType = 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa' | 'detalhes';
 
 function OrganizacoesModule() {
-  const { } = useAuth();
+  const { isSupervisor } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [viewAtiva, setViewAtiva] = useState<ViewType>('dashboard');
@@ -23,6 +23,14 @@ function OrganizacoesModule() {
   // Determinar view baseada na URL
   useEffect(() => {
     const path = location.pathname;
+    
+    // Bloquear supervisores de acessar rotas de edição e cadastro via URL
+    if (isSupervisor() && (path.includes('/cadastro') || path.includes('/edicao/'))) {
+      console.warn('⚠️ Supervisores não podem acessar páginas de edição/cadastro');
+      navigate('/organizacoes/lista', { replace: true });
+      return;
+    }
+    
     if (path.includes('/dashboard')) {
       setViewAtiva('dashboard');
     } else if (path.includes('/lista')) {
@@ -41,9 +49,16 @@ function OrganizacoesModule() {
       // Rota padrão /organizacoes vai para dashboard
       setViewAtiva('dashboard');
     }
-  }, [location.pathname]);
+  }, [location.pathname, isSupervisor, navigate]);
 
   const handleNavegacao = (view: ViewType, organizacaoId?: number) => {
+    // Bloquear acesso de supervisores a edição e cadastro
+    if (isSupervisor() && (view === 'edicao' || view === 'cadastro')) {
+      console.warn('⚠️ Supervisores não podem acessar páginas de edição/cadastro');
+      navigate('/organizacoes/lista');
+      return;
+    }
+    
     setViewAtiva(view);
     if (organizacaoId) {
       setOrganizacaoSelecionada(organizacaoId);
@@ -85,14 +100,15 @@ function OrganizacoesModule() {
       case 'lista':
         return <ListaOrganizacoes onNavigate={handleNavegacao} />;
       case 'cadastro':
-        return <CadastroOrganizacao onNavigate={handleNavegacao} />;
+        // Usar EdicaoOrganizacao sem ID = modo criação
+        return <EdicaoOrganizacao onNavigate={(pagina: string, dados?: any) => handleNavegacao(pagina as ViewType, dados)} />;
       case 'mapa':
         return <MapaOrganizacoesPage onNavigate={handleNavegacao} />;
       case 'edicao':
         return organizacaoSelecionada ? (
           <EdicaoOrganizacao 
             organizacaoId={organizacaoSelecionada} 
-            onNavigate={(pagina: string) => handleNavegacao(pagina as ViewType)} 
+            onNavigate={(pagina: string, dados?: any) => handleNavegacao(pagina as ViewType, dados)} 
           />
         ) : (
           <div className="error-message">
@@ -107,7 +123,7 @@ function OrganizacoesModule() {
         return organizacaoSelecionada ? (
           <EdicaoOrganizacao 
             organizacaoId={organizacaoSelecionada} 
-            onNavigate={(pagina: string) => handleNavegacao(pagina as ViewType)} 
+            onNavigate={(pagina: string, dados?: any) => handleNavegacao(pagina as ViewType, dados)} 
           />
         ) : (
           <div className="error-message">

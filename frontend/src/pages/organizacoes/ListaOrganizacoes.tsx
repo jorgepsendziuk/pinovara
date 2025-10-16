@@ -44,7 +44,7 @@ interface ListaOrganizacoesProps {
 }
 
 function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
-  const { isCoordinator, hasPermission } = useAuth();
+  const { isCoordinator, isSupervisor, hasPermission } = useAuth();
   const [organizacoes, setOrganizacoes] = useState<Organizacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [gerandoPDF, setGerandoPDF] = useState<number | null>(null);
@@ -298,7 +298,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       align: 'center',
       render: (_, record: Organizacao) => (
         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          {!isCoordinator() && (
+          {!isCoordinator() && !isSupervisor() && (
             <button
               onClick={() => onNavigate('edicao', record.id)}
               title="Editar organização"
