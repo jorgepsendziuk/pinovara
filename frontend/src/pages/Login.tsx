@@ -10,6 +10,8 @@ function Login() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errorDetails, setErrorDetails] = useState('');
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
   const [healthStatus, setHealthStatus] = useState<{
     api: 'checking' | 'connected' | 'error';
     database: 'checking' | 'connected' | 'error';
@@ -29,6 +31,11 @@ function Login() {
   useEffect(() => {
     checkSystemHealth();
   }, []);
+
+  // Debug: Monitorar mudanças no estado error
+  useEffect(() => {
+    console.log('🔍 Estado "error" mudou para:', error);
+  }, [error]);
 
   const checkSystemHealth = async () => {
     try {
@@ -73,20 +80,119 @@ function Login() {
 
     try {
       await login(formData);
+      console.log('✅ Login bem-sucedido, navegando...');
       navigate('/organizacoes/dashboard');
     } catch (error: any) {
-      setError(error.message || 'Erro desconhecido no login');
+      console.error('🔴 Erro capturado no Login:', error);
+      
+      // Determinar tipo de erro e mensagem amigável
+      let userFriendlyMessage = '';
+      let technicalDetails = '';
+      
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error') || error.message?.includes('conexão')) {
+        userFriendlyMessage = '🔌 Servidor Offline ou em Manutenção\n\nNão foi possível conectar ao servidor.\n\nPossíveis causas:\n• Sistema em manutenção\n• Servidor temporariamente desligado\n• Problemas de conexão com a internet\n\nTente novamente em alguns instantes.';
+        technicalDetails = `Erro de Rede:\n${error.message}\n\nURL: ${error.config?.url}\nCódigo: ${error.code}`;
+      } else if (error.message?.includes('Credenciais inválidas') || error.message?.includes('Email ou senha')) {
+        userFriendlyMessage = '🔐 Credenciais Incorretas\n\nEmail ou senha estão incorretos. Verifique e tente novamente.';
+        technicalDetails = `Erro HTTP 401:\n${error.message}\n\nResposta do servidor: ${JSON.stringify(error.response?.data, null, 2)}`;
+      } else if (error.message?.includes('inativo') || error.message?.includes('sem permissões')) {
+        userFriendlyMessage = '🚫 Acesso Negado\n\nSua conta está inativa ou sem permissões. Entre em contato com o administrador.';
+        technicalDetails = `Erro HTTP 403:\n${error.message}\n\nResposta: ${JSON.stringify(error.response?.data, null, 2)}`;
+      } else if (error.response?.status === 500) {
+        userFriendlyMessage = '⚠️ Erro no Servidor\n\nOcorreu um erro no servidor. Tente novamente em alguns instantes.';
+        technicalDetails = `Erro HTTP 500:\n${error.message}\n\nURL: ${error.config?.url}\nResposta: ${JSON.stringify(error.response?.data, null, 2)}`;
+      } else {
+        userFriendlyMessage = `❌ Erro Desconhecido\n\n${error.message || 'Ocorreu um erro inesperado. Tente novamente.'}`;
+        technicalDetails = `Erro:\n${error.message}\n\nStatus: ${error.response?.status}\nDetalhes: ${JSON.stringify(error.response?.data, null, 2) || error.toString()}`;
+      }
+      
+      // Salvar detalhes técnicos
+      setErrorDetails(technicalDetails);
+      setError(userFriendlyMessage);
+      
+      // Mostrar popup do navegador
+      const showDetails = confirm(`${userFriendlyMessage}\n\n⚙️ Clique OK para ver detalhes técnicos ou CANCELAR para fechar.`);
+      
+      if (showDetails) {
+        alert(`📋 DETALHES TÉCNICOS\n\n${technicalDetails}\n\n💡 Copie essas informações se precisar reportar o problema.`);
+      }
+      
+      console.log('⏸️ NÃO VAI NAVEGAR - ficando na página de login');
+      
+      // IMPORTANTE: NÃO navegar quando houver erro!
+      return; // Garante que não vai executar o navigate acima
     } finally {
+      console.log('🏁 Finally executado. Loading:', loading);
       setLoading(false);
     }
   };
 
+  // Debug: Log na renderização
+  console.log('🎨 Renderizando Login. Estado error:', error, 'length:', error?.length);
+
   return (
     <div className="auth-page">
+      {/* Mensagem de erro fixa no topo */}
+      {error && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 9999,
+          padding: '1rem 1.5rem',
+          backgroundColor: '#fee2e2',
+          border: '2px solid #dc2626',
+          borderRadius: '8px',
+          color: '#dc2626',
+          fontSize: '0.95rem',
+          fontWeight: 500,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          boxShadow: '0 4px 16px rgba(220, 38, 38, 0.25)',
+          minWidth: '400px',
+          maxWidth: '600px',
+          animation: 'slideDown 0.3s ease-out'
+        }}>
+          <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>⚠️</span>
+          <div style={{ flex: 1 }}>
+            <strong style={{ display: 'block', marginBottom: '0.25rem', fontSize: '1rem' }}>Erro no login:</strong>
+            <span style={{ fontSize: '0.9rem' }}>{error}</span>
+          </div>
+          <button
+            onClick={() => setError('')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#dc2626',
+              fontSize: '1.5rem',
+              cursor: 'pointer',
+              padding: '0',
+              lineHeight: 1
+            }}
+            title="Fechar"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <div className="auth-container">
         <div className="auth-header">
-          <Link to="/" className="back-link">
-            ← Voltar ao início
+          <Link 
+            to="/" 
+            className="btn btn-outline btn-sm"
+            style={{
+              position: 'absolute',
+              top: '-60px',
+              left: '0',
+              background: 'white',
+              border: '2px solid var(--primary-color)',
+              color: 'var(--primary-color)'
+            }}
+          >
+            ← Voltar ao Início
           </Link>
           
           <div className="logo">
@@ -96,11 +202,6 @@ function Login() {
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          {error && (
-            <div className="error-message">
-              {error}
-            </div>
-          )}
 
           <div className="form-group">
             <label htmlFor="email">Email</label>

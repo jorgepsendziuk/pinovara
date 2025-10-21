@@ -63,7 +63,7 @@ const getStatusColor = (status: string) => {
     case 'completo': return '#28a745';
     case 'pendente': return '#ffc107';
     case 'rascunho': return '#6c757d';
-    default: return '#007bff';
+    default: return '#3b2313';
   }
 };
 
@@ -524,7 +524,7 @@ function MapaOrganizacoes() {
 
               <div style="display: flex; gap: 0.5rem; flex-direction: column;">
                 <button onclick="window.location.href='/organizacoes/detalhes/${org.id}'" style="
-                  background: linear-gradient(135deg, #007bff, #0056b3); color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem;
+                  background: linear-gradient(135deg, #3b2313, #056839); color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem;
                   font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center;
                   box-shadow: 0 2px 4px rgba(0,123,255,0.3); transition: all 0.2s ease;
                 " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,123,255,0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,123,255,0.3)';">

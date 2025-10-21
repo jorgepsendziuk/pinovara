@@ -161,7 +161,42 @@ class OrganizacaoService {
             if (!organizacao) {
                 throw new Error('Organização não encontrada');
             }
-            return organizacao;
+            let estadoNome = null;
+            let municipioNome = null;
+            let tecnicoNome = null;
+            let tecnicoEmail = null;
+            if (organizacao.estado) {
+                const estado = await prisma.$queryRaw `
+          SELECT descricao FROM pinovara_aux.estado WHERE id = ${organizacao.estado} LIMIT 1
+        `;
+                estadoNome = estado.length > 0 ? estado[0].descricao : null;
+            }
+            if (organizacao.municipio) {
+                const municipio = await prisma.$queryRaw `
+          SELECT descricao FROM pinovara_aux.municipio_ibge WHERE id = ${organizacao.municipio} LIMIT 1
+        `;
+                municipioNome = municipio.length > 0 ? municipio[0].descricao : null;
+            }
+            if (organizacao.id_tecnico) {
+                const tecnico = await prisma.users.findUnique({
+                    where: { id: organizacao.id_tecnico },
+                    select: {
+                        name: true,
+                        email: true
+                    }
+                });
+                if (tecnico) {
+                    tecnicoNome = tecnico.name;
+                    tecnicoEmail = tecnico.email;
+                }
+            }
+            return {
+                ...organizacao,
+                estado_nome: estadoNome,
+                municipio_nome: municipioNome,
+                tecnico_nome: tecnicoNome,
+                tecnico_email: tecnicoEmail
+            };
         }
         catch (error) {
             console.error('Erro ao buscar organização:', error);
@@ -359,6 +394,16 @@ class OrganizacaoService {
         delete dadosLimpos.municipio_ibge;
         delete dadosLimpos.sim_nao_organizacao_participantes_menos_10Tosim_nao;
         delete dadosLimpos.resposta_organizacao_gc_comercial_15_respostaToresposta;
+        delete dadosLimpos.estado_nome;
+        delete dadosLimpos.municipio_nome;
+        delete dadosLimpos.tecnico_nome;
+        delete dadosLimpos.tecnico_email;
+        delete dadosLimpos.organizacao_producao;
+        delete dadosLimpos.organizacao_foto;
+        delete dadosLimpos.organizacao_documento;
+        delete dadosLimpos.organizacao_indicador;
+        delete dadosLimpos.organizacao_participante;
+        delete dadosLimpos.organizacao_abrangencia_pj;
         const organizacao = await prisma.organizacao.update({
             where: { id },
             data: dadosLimpos

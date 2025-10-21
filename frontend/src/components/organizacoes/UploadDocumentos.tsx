@@ -140,7 +140,7 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
     const ext = filename.split('.').pop()?.toLowerCase();
     if (ext === 'pdf') return <FileText size={16} color="#dc3545" />;
     if (['jpg', 'jpeg', 'png', 'gif'].includes(ext || '')) return <Image size={16} color="#2196f3" />;
-    if (['doc', 'docx'].includes(ext || '')) return <FileText size={16} color="#007bff" />;
+    if (['doc', 'docx'].includes(ext || '')) return <FileText size={16} color="#3b2313" />;
     return <FileText size={16} />;
   };
 
@@ -148,7 +148,7 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
     const ext = filename.split('.').pop()?.toLowerCase();
     if (ext === 'pdf') return '#dc3545';
     if (['jpg', 'jpeg', 'png', 'gif'].includes(ext || '')) return '#2196f3';
-    if (['doc', 'docx'].includes(ext || '')) return '#007bff';
+    if (['doc', 'docx'].includes(ext || '')) return '#3b2313';
     return '#6c757d';
   };
 
@@ -401,7 +401,7 @@ export const UploadDocumentos: React.FC<UploadDocumentosProps> = ({
                         onClick={() => handleDownload(doc.id)}
                         style={{
                           padding: '8px 12px',
-                          background: '#007bff',
+                          background: '#056839',
                           color: 'white',
                           border: 'none',
                           borderRadius: '4px',

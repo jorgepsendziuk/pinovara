@@ -172,7 +172,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Atualizar localStorage
       localStorage.setItem('@pinovara:user', JSON.stringify(userData));
 
-      console.log('🔄 Dados do usuário atualizados');
+      console.log('🔄 Dados do usuário atualizados:', userData.name);
     } catch (error) {
       console.error('❌ Erro ao atualizar dados do usuário:', error);
 
@@ -238,12 +238,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(parsedUser);
 
           // Verificar se está em modo de personificação
-          if (parsedUser.isImpersonation && storedOriginalUser) {
+          if (storedOriginalUser) {
             setIsImpersonating(true);
             setOriginalUser(JSON.parse(storedOriginalUser));
+            console.log('🎭 Modo de personificação ativo:', parsedUser.name);
           }
 
-          // Verificar se token ainda é válido
+          console.log('👤 Usuário carregado do localStorage:', parsedUser.name, '(ID:', parsedUser.id, ')');
+          
+          // Revalidar dados do usuário com o backend
           await refreshUser();
         }
       } catch (error) {

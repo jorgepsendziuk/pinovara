@@ -59,8 +59,19 @@ function Register() {
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-header">
-          <Link to="/" className="back-link">
-            ← Voltar ao início
+          <Link 
+            to="/" 
+            className="btn btn-outline btn-sm"
+            style={{
+              position: 'absolute',
+              top: '-60px',
+              left: '0',
+              background: 'white',
+              border: '2px solid var(--primary-color)',
+              color: 'var(--primary-color)'
+            }}
+          >
+            ← Voltar ao Início
           </Link>
           
           <div className="logo">

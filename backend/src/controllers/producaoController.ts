@@ -19,11 +19,8 @@ export const producaoController = {
       const formattedItems = items.map(item => ({
         id: item.id,
         cultura: item.cultura || '',
-        volumeAnual: parseFloat(item.anual?.toString() || '0'),
-        valorMedio: parseFloat(item.mensal?.toString() || '0'),
-        unidadeMedida: 'kg', // Ajustar conforme schema
-        tipoProducao: 'organica', // Ajustar conforme schema
-        destinacao: 'paa', // Ajustar conforme schema
+        mensal: parseFloat(item.mensal?.toString() || '0'),
+        anual: parseFloat(item.anual?.toString() || '0'),
       }));
 
       res.json({ success: true, data: formattedItems });
@@ -42,14 +39,14 @@ export const producaoController = {
   async create(req: Request, res: Response) {
     try {
       const organizacaoId = parseInt(req.params.id);
-      const { cultura, volumeAnual, valorMedio } = req.body;
+      const { cultura, mensal, anual } = req.body;
 
       const item = await prisma.organizacao_producao.create({
         data: {
           id_organizacao: organizacaoId,
           cultura,
-          anual: volumeAnual,
-          mensal: valorMedio,
+          mensal,
+          anual,
           uri: `uuid:producao-${Date.now()}`,
           creator_uri_user: 'sistema',
           creation_date: new Date(),
@@ -74,14 +71,14 @@ export const producaoController = {
   async update(req: Request, res: Response) {
     try {
       const itemId = parseInt(req.params.itemId);
-      const { cultura, volumeAnual, valorMedio } = req.body;
+      const { cultura, mensal, anual } = req.body;
 
       const item = await prisma.organizacao_producao.update({
         where: { id: itemId },
         data: {
           cultura,
-          anual: volumeAnual,
-          mensal: valorMedio,
+          mensal,
+          anual,
           last_update_date: new Date(),
         },
       });

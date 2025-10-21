@@ -282,11 +282,10 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
 
   if (loading) {
     return (
-      <div className="dashboard-content">
-        <div className="content-header">
-          <h2><Building size={20} style={{marginRight: '0.5rem'}} /> Dashboard - Organizações</h2>
-          <p>Carregando estatísticas...</p>
-        </div>
+      <div style={{ padding: '1.5rem' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1.5rem' }}>
+          <Building size={24} /> Dashboard - Organizações
+        </h2>
         <div className="loading-spinner"><Clock size={24} /></div>
       </div>
     );
@@ -294,11 +293,10 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
 
   if (error) {
     return (
-      <div className="dashboard-content">
-        <div className="content-header">
-          <h2><Building size={20} style={{marginRight: '0.5rem'}} /> Dashboard - Organizações</h2>
-          <p>Erro ao carregar dados</p>
-        </div>
+      <div style={{ padding: '1.5rem' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1.5rem' }}>
+          <Building size={24} /> Dashboard - Organizações
+        </h2>
         <div className="error-message">
           <p><XCircle size={16} style={{marginRight: '0.5rem'}} /> {error}</p>
           <button onClick={fetchStats} className="btn btn-primary">
@@ -310,32 +308,45 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
   }
 
   return (
-    <div className="dashboard-content">
-      <div className="content-header">
-        <div className="header-info">
-          <h2><Building size={20} style={{marginRight: '0.5rem'}} /> Dashboard - Organizações</h2>
-        </div>
+    <div style={{ padding: '1.5rem', maxWidth: '100%' }}>
+      {/* Header simples e compacto */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', fontSize: '1.5rem' }}>
+          <Building size={24} /> Dashboard - Organizações
+        </h2>
       </div>
 
-      <div className="dashboard-body">
-        {/* Organizações Recentes - DESTAQUE PRINCIPAL */}
-        <div className="dashboard-card recentes-destaque">
-          <div className="card-header-with-actions">
-            <h3>
-              <Clock3 size={18} style={{marginRight: '0.5rem'}} /> 
+      <div style={{ display: 'grid', gap: '1.5rem' }}>
+        {/* Organizações Recentes */}
+        <div style={{ 
+          background: 'white', 
+          borderRadius: '8px', 
+          padding: '1.25rem',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.1rem' }}>
+              <Clock3 size={18} /> 
               Organizações Recentemente Cadastradas
               {stats?.organizacoesRecentes && stats.organizacoesRecentes.length > 0 && (
-                <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: '#666', fontWeight: 'normal' }}>
-                  ({stats.organizacoesRecentes.length} {stats.organizacoesRecentes.length === 1 ? 'cadastro' : 'cadastros'})
+                <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem', color: '#666', fontWeight: 'normal' }}>
+                  ({stats.organizacoesRecentes.length})
                 </span>
               )}
             </h3>
             {stats?.organizacoesRecentes && stats.organizacoesRecentes.length > 3 && (
               <button
-                className="btn btn-secondary btn-sm"
+                className="btn btn-sm"
                 onClick={() => setExpandedView(!expandedView)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #ddd',
+                  color: '#666',
+                  padding: '0.4rem 0.8rem',
+                  fontSize: '0.85rem'
+                }}
               >
-                {expandedView ? 'Mostrar Menos' : 'Ver Todas'}
+                {expandedView ? 'Menos' : 'Ver Todas'}
                 <ChevronDown
                   size={14}
                   style={{
@@ -463,11 +474,18 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
 
         {/* Mapa das Localizações das Organizações */}
         {stats?.organizacoesComGps && stats.organizacoesComGps.length > 0 && (
-          <div className="dashboard-card">
-            <h3><Map size={18} style={{marginRight: '0.5rem'}} /> Mapa das Organizações</h3>
-            <p style={{ marginBottom: '0.5rem', color: '#666', fontSize: '0.85rem' }}>
-              {stats.organizacoesComGps.length} organizações com localização GPS
-            </p>
+          <div style={{ 
+            background: 'white', 
+            borderRadius: '8px', 
+            padding: '1.25rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>
+              <Map size={18} /> Mapa das Organizações
+              <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: 'normal' }}>
+                ({stats.organizacoesComGps.length})
+              </span>
+            </h3>
             <MapaOrganizacoes
               organizacoes={stats.organizacoesComGps}
               onGerarRelatorio={gerarRelatorio}

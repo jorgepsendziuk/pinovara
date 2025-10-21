@@ -280,7 +280,7 @@ function BackupManager() {
             <div className="backup-actions">
               <div className="action-card">
                 <div className="action-header">
-                  <div className="action-icon" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                  <div className="action-icon" style={{ background: 'linear-gradient(135deg, #3b2313 0%, #056839 100%)' }}>
                     <span>💾</span>
                   </div>
                   <div className="action-stats">{backups.length} backups</div>

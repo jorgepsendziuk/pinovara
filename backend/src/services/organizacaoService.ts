@@ -209,7 +209,7 @@ class OrganizacaoService {
   /**
    * Buscar organização por ID - TODOS OS CAMPOS PARA EDIÇÃO
    */
-  async getById(organizacaoId: number): Promise<Organizacao | null> {
+  async getById(organizacaoId: number): Promise<any> {
     try {
       const organizacao = await prisma.organizacao.findUnique({
         where: { id: organizacaoId },
@@ -229,7 +229,48 @@ class OrganizacaoService {
         throw new Error('Organização não encontrada');
       }
 
-      return organizacao;
+      // Buscar nomes do estado e município
+      let estadoNome = null;
+      let municipioNome = null;
+      let tecnicoNome = null;
+      let tecnicoEmail = null;
+
+      if (organizacao.estado) {
+        const estado = await prisma.$queryRaw<any[]>`
+          SELECT descricao FROM pinovara_aux.estado WHERE id = ${organizacao.estado} LIMIT 1
+        `;
+        estadoNome = estado.length > 0 ? estado[0].descricao : null;
+      }
+
+      if (organizacao.municipio) {
+        const municipio = await prisma.$queryRaw<any[]>`
+          SELECT descricao FROM pinovara_aux.municipio_ibge WHERE id = ${organizacao.municipio} LIMIT 1
+        `;
+        municipioNome = municipio.length > 0 ? municipio[0].descricao : null;
+      }
+
+      if (organizacao.id_tecnico) {
+        const tecnico = await prisma.users.findUnique({
+          where: { id: organizacao.id_tecnico },
+          select: {
+            name: true,
+            email: true
+          }
+        });
+        if (tecnico) {
+          tecnicoNome = tecnico.name;
+          tecnicoEmail = tecnico.email;
+        }
+      }
+
+      // Retornar organização com dados adicionais
+      return {
+        ...organizacao,
+        estado_nome: estadoNome,
+        municipio_nome: municipioNome,
+        tecnico_nome: tecnicoNome,
+        tecnico_email: tecnicoEmail
+      };
     } catch (error) {
       console.error('Erro ao buscar organização:', error);
       throw error;
@@ -478,6 +519,20 @@ class OrganizacaoService {
     delete (dadosLimpos as any).municipio_ibge;
     delete (dadosLimpos as any).sim_nao_organizacao_participantes_menos_10Tosim_nao;
     delete (dadosLimpos as any).resposta_organizacao_gc_comercial_15_respostaToresposta;
+    
+    // Remover campos adicionais que não fazem parte do schema
+    delete (dadosLimpos as any).estado_nome;
+    delete (dadosLimpos as any).municipio_nome;
+    delete (dadosLimpos as any).tecnico_nome;
+    delete (dadosLimpos as any).tecnico_email;
+    
+    // Remover arrays de relacionamentos que não podem ser atualizados diretamente
+    delete (dadosLimpos as any).organizacao_producao;
+    delete (dadosLimpos as any).organizacao_foto;
+    delete (dadosLimpos as any).organizacao_documento;
+    delete (dadosLimpos as any).organizacao_indicador;
+    delete (dadosLimpos as any).organizacao_participante;
+    delete (dadosLimpos as any).organizacao_abrangencia_pj;
 
     const organizacao = await prisma.organizacao.update({
       where: { id },

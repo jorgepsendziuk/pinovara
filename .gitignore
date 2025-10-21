@@ -43,3 +43,7 @@ coverage/
 
 # Prisma
 prisma/migrations/*/migration.sql
+
+# Google Analytics Service Account (NEVER COMMIT!)
+backend/service-account.json
+service-account.json

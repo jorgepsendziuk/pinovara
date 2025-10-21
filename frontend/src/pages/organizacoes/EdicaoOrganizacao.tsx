@@ -35,7 +35,6 @@ import {
   Save,
   Target,
   ChevronsDown,
-  ChevronsUp,
   FileText,
   MapPin,
   Network,
@@ -48,7 +47,10 @@ import {
   Lightbulb,
   Leaf,
   Building,
-  Plus
+  Plus,
+  Calendar,
+  User,
+  Clock
 } from 'lucide-react';
 import '../../styles/tabs.css';
 
@@ -112,7 +114,6 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   const {
     organizacao,
     loading,
-    error,
     updateOrganizacao,
     loadOrganizacao,
     setError
@@ -684,46 +685,21 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   // Renderização das abas
   const renderAbaIdentificacao = () => (
     <div className="aba-content">
-      {/* Botões de Ação */}
+      {/* Botões de Ação - Expandir/Recolher */}
       <div style={{ 
         display: 'flex', 
-        justifyContent: 'space-between', 
+        justifyContent: 'flex-end', 
         marginBottom: '15px',
         gap: '10px'
       }}>
-        {/* Botão Gerar Relatório */}
-        <button
-          onClick={handleGerarRelatorio}
-          disabled={gerandoPDF}
-          style={{
-            padding: '8px 16px',
-            background: gerandoPDF ? '#6c757d' : '#056839',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: gerandoPDF ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '14px',
-            fontWeight: '500',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseOver={(e) => !gerandoPDF && (e.currentTarget.style.background = '#045028')}
-          onMouseOut={(e) => !gerandoPDF && (e.currentTarget.style.background = '#056839')}
-        >
-          <FileText size={16} />
-          {gerandoPDF ? 'Gerando PDF...' : 'Gerar Relatório'}
-        </button>
-
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
             onClick={colapsarTodos}
             style={{
               padding: '8px 16px',
-              background: '#6c757d',
-              color: 'white',
-              border: 'none',
+              background: 'white',
+              color: '#3b2313',
+              border: '1px solid #d1d5db',
               borderRadius: '6px',
               cursor: 'pointer',
               display: 'flex',
@@ -736,14 +712,14 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             onMouseOver={(e) => e.currentTarget.style.background = '#5a6268'}
             onMouseOut={(e) => e.currentTarget.style.background = '#6c757d'}
           >
-            <ChevronsUp size={16} />
+            <ChevronsDown size={16} />
             Recolher Todos
           </button>
           <button
             onClick={expandirTodos}
             style={{
               padding: '8px 16px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: 'linear-gradient(135deg, #3b2313 0%, #056839 100%)',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -1010,6 +986,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             style={{
               padding: '8px 16px',
               background: 'white',
+              color: '#3b2313',
               border: '1px solid #d1d5db',
               borderRadius: '6px',
               cursor: 'pointer',
@@ -1022,15 +999,15 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
             onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           >
-            <ChevronsUp size={16} />
-            Colapsar Todos
+            <ChevronsDown size={16} />
+            Recolher Todos
           </button>
           <button
             onClick={expandirTodos}
             className="btn-primary"
             style={{
               padding: '8px 16px',
-              background: 'linear-gradient(135deg, #056839 0%, #0a8f4d 100%)',
+              background: 'linear-gradient(135deg, #3b2313 0%, #056839 100%)',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -1201,27 +1178,150 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       {/* Header */}
       <div className="edicao-header">
         <div className="header-content">
-          <button
-            onClick={() => onNavigate('lista')}
-            className="btn-back"
-          >
-            ← Voltar
-          </button>
-        <div className="header-info">
-            <h1 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center' }}>
-              {isModoCriacao ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <button
+                onClick={() => onNavigate('lista')}
+                className="btn-back"
+              >
+                ← Voltar
+              </button>
+              <div className="header-info">
+                <h1>
+                  {isModoCriacao ? (
+                    <>
+                      <Plus size={20} /> 
+                      Nova Organização
+                    </>
+                  ) : (
+                    <>
+                      <Edit size={20} /> 
+                      {organizacao?.nome || 'Nome não informado'}
+                    </>
+                  )}
+                </h1>
+              </div>
+            </div>
+            
+            {/* Linha Separadora */}
+            {!isModoCriacao && organizacao && (
+              <div style={{
+                height: '1px',
+                background: 'linear-gradient(90deg, transparent 0%, #e2e8f0 20%, #e2e8f0 80%, transparent 100%)',
+                margin: '0.5rem 0'
+              }} />
+            )}
+            
+            {/* Metadados da Organização */}
+            {!isModoCriacao && organizacao && (
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '2rem',
+                fontSize: '0.875rem',
+                color: '#64748b'
+              }}>
+                {/* Data e Hora de Criação */}
+                {organizacao.inicio && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} title="Data e hora do cadastro">
+                    <Calendar size={16} style={{ color: '#3b2313' }} />
+                    <span style={{ color: '#1e293b', fontWeight: 500 }}>
+                      {new Date(organizacao.inicio).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })}{' '}
+                      {new Date(organizacao.inicio).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Localização */}
+                {((organizacao as any).municipio_nome || (organizacao as any).estado_nome) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} title="Localização">
+                    <MapPin size={16} style={{ color: '#3b2313' }} />
+                    <span style={{ color: '#1e293b', fontWeight: 500 }}>
+                      {(organizacao as any).municipio_nome && (organizacao as any).estado_nome
+                        ? `${(organizacao as any).municipio_nome} - ${(organizacao as any).estado_nome}`
+                        : (organizacao as any).municipio_nome || (organizacao as any).estado_nome}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Técnico/Usuário */}
+                {(organizacao as any).tecnico_nome && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} title="Técnico responsável">
+                    <User size={16} style={{ color: '#3b2313' }} />
+                    <span style={{ color: '#1e293b', fontWeight: 500 }}>
+                      {(organizacao as any).tecnico_nome}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Status de Validação */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} title="Status de validação">
+                  {organizacao.validacao_status === 2 ? (
+                    <CheckCircle size={16} style={{ color: '#10b981' }} />
+                  ) : organizacao.validacao_status === 3 ? (
+                    <AlertCircle size={16} style={{ color: '#f59e0b' }} />
+                  ) : organizacao.validacao_status === 4 ? (
+                    <XCircle size={16} style={{ color: '#ef4444' }} />
+                  ) : (
+                    <Clock size={16} style={{ color: '#9ca3af' }} />
+                  )}
+                  <span style={{
+                    fontWeight: 600,
+                    color: organizacao.validacao_status === 2 
+                      ? '#10b981' 
+                      : organizacao.validacao_status === 3 
+                        ? '#f59e0b' 
+                        : organizacao.validacao_status === 4
+                          ? '#ef4444'
+                          : '#9ca3af'
+                  }}>
+                    {organizacao.validacao_status === 2 
+                      ? 'Validado' 
+                      : organizacao.validacao_status === 3 
+                        ? 'Pendência' 
+                        : organizacao.validacao_status === 4
+                          ? 'Reprovado'
+                          : 'Não Validado'}
+                  </span>
+                  {organizacao.validacao_data && organizacao.validacao_status !== 1 && (
+                    <span style={{ marginLeft: '0.5rem', fontSize: '0.8125rem', color: '#9ca3af' }}>
+                      ({new Date(organizacao.validacao_data).toLocaleDateString('pt-BR')})
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Botão Gerar Relatório - Sempre visível */}
+          {!isModoCriacao && organizacao && (
+            <button
+              onClick={handleGerarRelatorio}
+              disabled={gerandoPDF}
+              className="btn-gerar-relatorio"
+            >
+              {gerandoPDF ? (
                 <>
-                  <Plus size={20} style={{marginRight: '0.5rem'}} /> 
-                  Nova Organização
+                  <Loader2 size={16} className="spinning" />
+                  Gerando PDF...
                 </>
               ) : (
                 <>
-                  <Edit size={20} style={{marginRight: '0.5rem'}} /> 
-                  {organizacao?.nome || 'Nome não informado'}
+                  <FileText size={16} />
+                  Gerar Relatório
                 </>
               )}
-            </h1>
-          </div>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1276,7 +1376,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             title="Diagnóstico"
             style={{
               background: abaAtiva === 'diagnostico' 
-                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                ? 'linear-gradient(135deg, #3b2313 0%, #056839 100%)' 
                 : 'rgba(59, 35, 19, 0.1)', // Marrom do projeto (#3b2313) com 10% de opacidade
               color: abaAtiva === 'diagnostico' ? 'white' : '#3b2313'
             }}
@@ -1289,7 +1389,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             title="Plano de Gestão"
             style={{
               background: abaAtiva === 'planoGestao' 
-                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                ? 'linear-gradient(135deg, #3b2313 0%, #056839 100%)' 
                 : 'rgba(59, 35, 19, 0.1)', // Marrom do projeto (#3b2313) com 10% de opacidade
               color: abaAtiva === 'planoGestao' ? 'white' : '#3b2313'
             }}
@@ -1302,7 +1402,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             title="Validação do Cadastro"
             style={{
               background: abaAtiva === 'validacao' 
-                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                ? 'linear-gradient(135deg, #3b2313 0%, #056839 100%)' 
                 : organizacao?.validacao_status === 2
                   ? 'linear-gradient(135deg, #f1f8f4 0%, #d4edda 100%)'  // Verde muito suave se aprovado
                   : organizacao?.validacao_status === 3
@@ -1380,7 +1480,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
                 ) : (
                   <>
                     <Save size={18} />
-                    {isModoCriacao ? 'Criar Organização' : 'Salvar Alterações'}
+                    {isModoCriacao ? 'Criar Organização' : 'Salvar Cadastro'}
                   </>
                 )}
             </button>
