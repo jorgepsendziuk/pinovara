@@ -1,16 +1,3 @@
-## ✅ Concluídos em 16/10/2025
-- [x] Corrigido carregamento de UF e Município na Abrangência Geográfica (backend já retornava, frontend ignorava)
-- [x] Implementado Toast de notificações persistente com botão de fechar
-- [x] Corrigido funcionamento dos accordions na aba Complementos (com botões Expandir/Colapsar Todos)
-- [x] Reordenadas as abas (Complementos antes de Abrangência Geográfica)
-- [x] Aplicadas cores marrom clarinho rgba(59, 35, 19, 0.1) nas abas Diagnóstico e Plano de Gestão
-- [x] Refatorado painel de Validação (compacto, somente leitura para técnicos)
-- [x] Removido botão "Alterar Validação" na edição (validação será feita por coordenador em popup)
-- [x] Corrigidos TODOS os títulos dos subitens do Diagnóstico (ex: "P Organizacao" → "Organização do Trabalho")
-- [x] Corrigido carregamento de dados no Diagnóstico (mapeamento de prefixos de área estava incorreto)
-- [x] Movida coluna "Ações" para o início da lista de organizações (acesso mais rápido)
-
----
 
 transformar o sistema em um framework de dados georreferenciados, cadastro em campo, 
 gestao de formularios, 
@@ -92,3 +79,10 @@ assinaturas
 coisas que faltam no relatório:
 
 assinatura
+
+DADOS DE PRODUÇÃO
+1. Verduras de refoga e de salada (em geral)
+ Mensal: 4kg | Anual: 14678kg
+2. Frutas diversas
+ Mensal: 7kg | Anual: 9232kg
+ no relatorio colocar em tabelas

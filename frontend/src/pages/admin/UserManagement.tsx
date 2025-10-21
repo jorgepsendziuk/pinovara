@@ -5,7 +5,7 @@ import {
   Users,
   Edit,
   Trash,
-  UserCheck
+  Eye
 } from 'lucide-react';
 
 interface User {
@@ -49,155 +49,117 @@ function UserManagement() {
   
   // Estados para DataGrid
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(15);
   const [totalUsers, setTotalUsers] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+  const [roleFilter, setRoleFilter] = useState<string>('');
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
-  // Definição das colunas da DataGrid
+  // Definição das colunas da DataGrid - Versão Simplificada
   const columns: DataGridColumn<User>[] = [
     {
-      key: 'user',
-      title: 'Usuário',
+      key: 'name',
+      title: 'Nome',
       dataIndex: 'name',
-      width: '25%',
+      width: '20%',
       sortable: true,
-      render: (_, record: User) => (
-        <div className="user-info">
-          <div className="user-avatar-mini">
-            <span>{record.name?.charAt(0).toUpperCase()}</span>
-          </div>
-          <div className="user-details">
-            <div className="user-name">{record.name}</div>
-            <div className="user-email">{record.email}</div>
-            <div className="user-id">ID: {record.id}</div>
-          </div>
-        </div>
-      ),
+      render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
+    },
+    {
+      key: 'email',
+      title: 'Email',
+      dataIndex: 'email',
+      width: '20%',
+      sortable: true,
     },
     {
       key: 'status',
       title: 'Status',
       dataIndex: 'active',
-      width: '15%',
+      width: '10%',
       align: 'center',
-      render: (active: boolean, record: User) => (
-        <div className="status-info">
-          <span className={`status-badge ${active ? 'active' : 'inactive'}`}>
-            {active ? 'Ativo' : 'Inativo'}
-          </span>
-          {record.id !== currentUser?.id && (
-            <button
-              onClick={() => handleToggleUserStatus(record.id, active)}
-              className={`btn btn-small ${active ? 'btn-danger' : 'btn-success'}`}
-              style={{ marginTop: '0.5rem' }}
-            >
-              {active ? 'Desativar' : 'Ativar'}
-            </button>
-          )}
-        </div>
+      sortable: true,
+      render: (active: boolean) => (
+        <span className={`badge ${active ? 'badge-success' : 'badge-secondary'}`}>
+          {active ? 'Ativo' : 'Inativo'}
+        </span>
       ),
     },
     {
       key: 'roles',
       title: 'Papéis',
       dataIndex: 'roles',
-      width: '30%',
-      responsive: {
-        hideOn: 'mobile'
-      },
-      render: (roles: User['roles']) => (
-        <div className="roles-info">
-          <div className="roles-count">
-            {roles?.length || 0} papel(éis)
-          </div>
-          <div className="roles-list">
-            {roles?.slice(0, 2).map((role: any) => (
-              <span key={role.id} className="role-tag">
-                {role.name} ({role.module.name})
+      width: '25%',
+      sortable: true,
+      render: (roles: User['roles']) => {
+        if (!roles || roles.length === 0) {
+          return <span style={{ color: '#999', fontSize: '0.9em' }}>Nenhum</span>;
+        }
+        return (
+          <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+            {roles.map((role: any) => (
+              <span key={role.id} className="badge badge-primary" style={{ fontSize: '0.85em' }}>
+                {role.name}
               </span>
             ))}
-            {roles && roles.length > 2 && (
-              <span className="more-roles">+{roles.length - 2} mais</span>
-            )}
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'createdAt',
       title: 'Cadastro',
       dataIndex: 'createdAt',
-      width: '15%',
+      width: '12%',
       align: 'center',
       sortable: true,
-      responsive: {
-        hideOn: 'mobile'
-      },
       render: (date: string) => (
-        <div className="date-info">
-          <div className="date">
-            {new Date(date).toLocaleDateString('pt-BR')}
-          </div>
-          <div className="time">
-            {new Date(date).toLocaleTimeString('pt-BR', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}
-          </div>
-        </div>
+        <span style={{ fontSize: '0.9em' }}>
+          {new Date(date).toLocaleDateString('pt-BR')}
+        </span>
       ),
     },
     {
       key: 'actions',
       title: 'Ações',
-      width: '15%',
+      width: '13%',
       align: 'center',
       render: (_, record: User) => (
-        <div className="action-buttons" style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
           <button
             onClick={() => openRoleModal(record)}
             className="btn-icon"
             title="Gerenciar papéis"
-            style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6c757d' }}
+            style={{ padding: '0.4rem', border: '1px solid #ddd', borderRadius: '4px', background: '#fff', cursor: 'pointer', color: '#056839' }}
           >
-            <Users size={16} />
+            <Users size={14} />
           </button>
           <button
             onClick={() => openEditModal(record)}
             className="btn-icon"
-            title="Editar usuário"
-            style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#007bff' }}
+            title="Editar"
+            style={{ padding: '0.4rem', border: '1px solid #ddd', borderRadius: '4px', background: '#fff', cursor: 'pointer', color: '#3b2313' }}
           >
-            <Edit size={16} />
+            <Edit size={14} />
           </button>
           {record.id !== currentUser?.id && (
             <>
               <button
                 onClick={() => handleImpersonateUser(record)}
                 className="btn-icon"
-                title={`Personificar ${record.name}`}
-                disabled={isImpersonating}
-                style={{
-                  padding: '0.25rem',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: isImpersonating ? 'not-allowed' : 'pointer',
-                  color: isImpersonating ? '#ccc' : '#ffc107',
-                  opacity: isImpersonating ? 0.5 : 1
-                }}
+                title="Personificar usuário"
+                style={{ padding: '0.4rem', border: '1px solid #ddd', borderRadius: '4px', background: '#fff', cursor: 'pointer', color: '#3b82f6' }}
               >
-                <UserCheck size={16} />
+                <Eye size={14} />
               </button>
               <button
                 onClick={() => handleDeleteUser(record.id, record.name)}
                 className="btn-icon"
-                title="Excluir usuário"
-                style={{ padding: '0.25rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#dc3545' }}
+                title="Excluir"
+                style={{ padding: '0.4rem', border: '1px solid #ddd', borderRadius: '4px', background: '#fff', cursor: 'pointer', color: '#dc3545' }}
               >
-                <Trash size={16} />
+                <Trash size={14} />
               </button>
             </>
           )}
@@ -211,14 +173,8 @@ function UserManagement() {
       setLoading(true);
       const token = localStorage.getItem('@pinovara:token');
       
-      // Construir parâmetros de busca
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        pageSize: pageSize.toString(),
-        ...(searchTerm && { search: searchTerm })
-      });
-      
-      const response = await fetch(`${API_BASE}/admin/users?${params}`, {
+      // Buscar todos os usuários
+      const response = await fetch(`${API_BASE}/admin/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -230,8 +186,30 @@ function UserManagement() {
       }
 
       const data = await response.json();
-      setUsers(data.data.users);
-      setTotalUsers(data.data.total || data.data.users.length);
+      let allUsers = data.data.users || [];
+
+      // Aplicar filtro de busca (nome ou email)
+      if (searchTerm) {
+        allUsers = allUsers.filter((user: User) =>
+          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+
+      // Aplicar filtro de papel
+      if (roleFilter) {
+        allUsers = allUsers.filter((user: User) =>
+          user.roles.some(role => role.id === roleFilter)
+        );
+      }
+
+      // Aplicar paginação no frontend
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedUsers = allUsers.slice(startIndex, endIndex);
+
+      setUsers(paginatedUsers);
+      setTotalUsers(allUsers.length);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -261,29 +239,30 @@ function UserManagement() {
     }
   };
 
-  const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
-    try {
-      const token = localStorage.getItem('@pinovara:token');
-      
-      const response = await fetch(`${API_BASE}/admin/users/${userId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ active: !currentStatus }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao atualizar status do usuário');
-      }
-
-      await fetchUsers();
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar');
-    }
-  };
+  // Função desabilitada temporariamente - não está sendo usada no momento
+  // const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
+  //   try {
+  //     const token = localStorage.getItem('@pinovara:token');
+  //     
+  //     const response = await fetch(`${API_BASE}/admin/users/${userId}/status`, {
+  //       method: 'PUT',
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`,
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({ active: !currentStatus }),
+  //     });
+  //
+  //     if (!response.ok) {
+  //       throw new Error('Falha ao atualizar status do usuário');
+  //     }
+  //
+  //     await fetchUsers();
+  //     setError(null);
+  //   } catch (err) {
+  //     setError(err instanceof Error ? err.message : 'Erro ao atualizar');
+  //   }
+  // };
 
   const handleAssignRole = async (userId: string, roleId: string) => {
     try {
@@ -368,10 +347,6 @@ function UserManagement() {
   };
 
   const handleImpersonateUser = async (user: User) => {
-    if (!confirm(`Deseja personificar o usuário "${user.name}"?\n\nVocê verá o sistema como se estivesse logado com essa conta.\n\nPara voltar ao seu usuário original, faça logout e login novamente.`)) {
-      return;
-    }
-
     try {
       const token = localStorage.getItem('@pinovara:token');
 
@@ -390,12 +365,12 @@ function UserManagement() {
 
       const data = await response.json();
 
-      // Armazenar o token personificado
+      // Armazenar o token personificado e dados do usuário
       localStorage.setItem('@pinovara:token', data.data.token);
+      localStorage.setItem('@pinovara:user', JSON.stringify(data.data.user));
       localStorage.setItem('@pinovara:originalUser', JSON.stringify(currentUser));
 
-      // Redirecionar para a dashboard padrão do sistema
-      alert(`Agora você está personificando ${user.name}. Você será redirecionado para a dashboard.`);
+      // Redirecionar para recarregar o contexto
       window.location.href = '/pinovara';
 
     } catch (error) {
@@ -498,7 +473,7 @@ function UserManagement() {
     if (availableRoles.length === 0) {
       fetchAvailableRoles();
     }
-  }, [currentPage, pageSize, searchTerm]);
+  }, [currentPage, pageSize, searchTerm, roleFilter]);
 
   // Handlers para DataGrid
   const handlePaginationChange = (page: number, pageSize: number) => {
@@ -511,44 +486,50 @@ function UserManagement() {
     setCurrentPage(1); // Resetar para primeira página ao buscar
   };
 
-  const handleSelectionChange = (selectedRowKeys: string[], _: User[]) => {
-    setSelectedRowKeys(selectedRowKeys);
+  const handleRoleFilterChange = (value: string) => {
+    setRoleFilter(value);
+    setCurrentPage(1); // Resetar para primeira página ao filtrar
   };
 
-  const handleBulkAction = (action: string, selectedRows: User[]) => {
-    switch (action) {
-      case 'delete':
-        handleBulkDelete(selectedRows);
-        break;
-      case 'activate':
-        handleBulkActivate(selectedRows);
-        break;
-      case 'deactivate':
-        handleBulkDeactivate(selectedRows);
-        break;
-      default:
-        break;
-    }
-  };
+  // Funções desabilitadas temporariamente - não estão sendo usadas no momento
+  // const handleSelectionChange = (selectedRowKeys: string[], _: User[]) => {
+  //   setSelectedRowKeys(selectedRowKeys);
+  // };
 
-  const handleBulkDelete = async (users: User[]) => {
-    if (!confirm(`Tem certeza que deseja excluir ${users.length} usuários?`)) {
-      return;
-    }
-    
-    // Implementar exclusão em massa
-    console.log('Excluir usuários:', users);
-  };
+  // const handleBulkAction = (action: string, selectedRows: User[]) => {
+  //   switch (action) {
+  //     case 'delete':
+  //       handleBulkDelete(selectedRows);
+  //       break;
+  //     case 'activate':
+  //       handleBulkActivate(selectedRows);
+  //       break;
+  //     case 'deactivate':
+  //       handleBulkDeactivate(selectedRows);
+  //       break;
+  //     default:
+  //       break;
+  //   }
+  // };
 
-  const handleBulkActivate = async (users: User[]) => {
-    // Implementar ativação em massa
-    console.log('Ativar usuários:', users);
-  };
+  // const handleBulkDelete = async (users: User[]) => {
+  //   if (!confirm(`Tem certeza que deseja excluir ${users.length} usuários?`)) {
+  //     return;
+  //   }
+  //   
+  //   // Implementar exclusão em massa
+  //   console.log('Excluir usuários:', users);
+  // };
 
-  const handleBulkDeactivate = async (users: User[]) => {
-    // Implementar desativação em massa
-    console.log('Desativar usuários:', users);
-  };
+  // const handleBulkActivate = async (users: User[]) => {
+  //   // Implementar ativação em massa
+  //   console.log('Ativar usuários:', users);
+  // };
+
+  // const handleBulkDeactivate = async (users: User[]) => {
+  //   // Implementar desativação em massa
+  //   console.log('Desativar usuários:', users);
+  // };
 
 
   if (loading) {
@@ -607,34 +588,100 @@ function UserManagement() {
         </div>
       )}
 
-      {/* Users Stats */}
-      <div className="stats-section">
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-value">{users.length}</div>
-            <div className="stat-label">Total de Usuários</div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-value">{users.filter(u => u.active).length}</div>
-            <div className="stat-label">Usuários Ativos</div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-value">{users.filter(u => !u.active).length}</div>
-            <div className="stat-label">Usuários Inativos</div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-value">
-              {users.filter(u => u.roles && u.roles.length > 0).length}
-            </div>
-            <div className="stat-label">Com Papéis Atribuídos</div>
-          </div>
+      {/* Filtros */}
+      <div style={{ 
+        background: '#fff', 
+        padding: '1rem', 
+        marginBottom: '1rem', 
+        borderRadius: '8px', 
+        border: '1px solid #e5e5e5',
+        display: 'flex',
+        gap: '1rem',
+        alignItems: 'center',
+        flexWrap: 'wrap'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label style={{ fontWeight: 500 }}>Buscar:</label>
+          <input
+            type="text"
+            placeholder="Nome ou email..."
+            value={searchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            style={{
+              padding: '0.5rem 0.75rem',
+              borderRadius: '4px',
+              border: '1px solid #ddd',
+              minWidth: '200px',
+              fontSize: '0.9rem'
+            }}
+          />
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label style={{ fontWeight: 500 }}>Papel:</label>
+          <select 
+            value={roleFilter}
+            onChange={(e) => handleRoleFilterChange(e.target.value)}
+            style={{
+              padding: '0.5rem',
+              borderRadius: '4px',
+              border: '1px solid #ddd',
+              minWidth: '200px',
+              fontSize: '0.9rem'
+            }}
+          >
+            <option value="">Todos os papéis</option>
+            {availableRoles.map((role) => (
+              <option key={role.id} value={role.id}>
+                {role.name} ({role.module.name})
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        {(roleFilter || searchTerm) && (
+          <button 
+            onClick={() => {
+              handleRoleFilterChange('');
+              handleSearchChange('');
+            }}
+            className="btn btn-sm"
+            style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', background: '#f3f4f6', color: '#666', border: '1px solid #ddd' }}
+          >
+            Limpar Filtros
+          </button>
+        )}
+        
+        <div style={{ marginLeft: 'auto', color: '#666', fontSize: '0.85rem' }}>
+          Mostrando <strong>{totalUsers}</strong> {totalUsers === 1 ? 'usuário' : 'usuários'}
         </div>
       </div>
 
-      {/* Users DataGrid */}
+      {/* Users Stats - Compacto */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '1.5rem', 
+        padding: '0.75rem 1rem',
+        background: '#f8f9fa',
+        borderRadius: '6px',
+        marginBottom: '1rem',
+        fontSize: '0.9em'
+      }}>
+        <div>
+          <strong style={{ color: '#3b2313' }}>{totalUsers}</strong> <span style={{ color: '#666' }}>total</span>
+        </div>
+        <div style={{ borderLeft: '1px solid #ddd', paddingLeft: '1rem' }}>
+          <strong style={{ color: '#056839' }}>{users.filter(u => u.active).length}</strong> <span style={{ color: '#666' }}>ativos</span>
+        </div>
+        <div style={{ borderLeft: '1px solid #ddd', paddingLeft: '1rem' }}>
+          <strong style={{ color: '#999' }}>{users.filter(u => !u.active).length}</strong> <span style={{ color: '#666' }}>inativos</span>
+        </div>
+        <div style={{ borderLeft: '1px solid #ddd', paddingLeft: '1rem' }}>
+          <strong style={{ color: '#3b2313' }}>{users.filter(u => u.roles && u.roles.length > 0).length}</strong> <span style={{ color: '#666' }}>com papéis</span>
+        </div>
+      </div>
+
+      {/* Users DataGrid - Versão Simplificada */}
       <div className="users-section">
         <DataGrid<User>
           columns={columns}
@@ -649,41 +696,12 @@ function UserManagement() {
             onChange: handlePaginationChange,
           }}
           filters={{
-            searchable: true,
-            searchPlaceholder: 'Buscar por nome, email ou ID...',
-            onSearchChange: handleSearchChange,
-          }}
-          selection={{
-            type: 'checkbox',
-            selectedRowKeys: selectedRowKeys,
-            onChange: handleSelectionChange,
-          }}
-          actions={{
-            onCreate: () => setShowCreateModal(true),
-            createLabel: 'Novo Usuário',
-            bulkActions: [
-              {
-                key: 'activate',
-                label: 'Ativar',
-                icon: '🔓',
-              },
-              {
-                key: 'deactivate',
-                label: 'Desativar',
-                icon: '🔒',
-              },
-              {
-                key: 'delete',
-                label: 'Excluir',
-                icon: <Trash size={14} />,
-              },
-            ],
-            onBulkAction: handleBulkAction,
+            searchable: false,
           }}
           emptyState={{
             title: 'Nenhum usuário encontrado',
-            description: searchTerm 
-              ? `Não foram encontrados usuários que correspondam ao termo "${searchTerm}".`
+            description: searchTerm || roleFilter
+              ? `Nenhum usuário corresponde aos filtros aplicados.`
               : 'Não há usuários cadastrados no sistema ainda.',
             icon: <Users size={16} />,
             action: {

@@ -56,13 +56,18 @@ api.interceptors.response.use(
 
     // Tratamento específico de erros de autenticação
     if (error.response?.status === 401) {
-      // Token expirado ou inválido - limpar dados do localStorage
-      localStorage.removeItem('@pinovara:token');
-      localStorage.removeItem('@pinovara:user');
+      // IGNORAR erro 401 da rota de login (senha incorreta é esperado)
+      const isLoginRoute = error.config?.url?.includes('/auth/login');
       
-      // Redirect to login if not already there
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      if (!isLoginRoute) {
+        // Token expirado ou inválido - limpar dados do localStorage
+        localStorage.removeItem('@pinovara:token');
+        localStorage.removeItem('@pinovara:user');
+        
+        // Redirect to login if not already there
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
       }
     }
 
@@ -159,13 +164,44 @@ export const authAPI = {
    * Fazer login
    */
   login: async (data: LoginData): Promise<LoginResponse> => {
-    const response = await api.post<ApiResponse<LoginResponse>>('/auth/login', data);
+    try {
+      const response = await api.post<ApiResponse<LoginResponse>>('/auth/login', data);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error?.message || 'Erro no login');
+      if (!response.data.success) {
+        throw new Error(response.data.error?.message || 'Erro no login');
+      }
+
+      return response.data.data!;
+    } catch (error: any) {
+      // Capturar mensagem de erro do backend
+      if (error.response?.data?.error?.message) {
+        throw new Error(error.response.data.error.message);
+      }
+      
+      // Mensagens de erro específicas por código de status
+      if (error.response?.status === 401) {
+        throw new Error('Email ou senha incorretos');
+      }
+      
+      if (error.response?.status === 403) {
+        throw new Error('Acesso negado. Usuário inativo ou sem permissões');
+      }
+      
+      if (error.response?.status === 429) {
+        throw new Error('Muitas tentativas de login. Aguarde alguns minutos');
+      }
+      
+      if (error.response?.status === 500) {
+        throw new Error('Erro no servidor. Tente novamente mais tarde');
+      }
+      
+      if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        throw new Error('Erro de conexão. Verifique sua internet e se o servidor está online');
+      }
+      
+      // Erro genérico
+      throw new Error(error.message || 'Erro ao fazer login');
     }
-
-    return response.data.data!;
   },
 
   /**

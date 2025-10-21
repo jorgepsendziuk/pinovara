@@ -1,11 +1,10 @@
 /**
  * Serviço de Analytics
- * Coleta e agrega métricas de uso do sistema
+ * Coleta e agrega métricas de uso do sistema (internas + Google Analytics)
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../config/database';
+import googleAnalyticsService from './googleAnalyticsService';
 
 interface AnalyticsMetrics {
   usuarios: {
@@ -42,13 +41,49 @@ interface AnalyticsMetrics {
     atividadesPorDia: Array<{ data: string; count: number }>;
     acoesMaisComuns: Array<{ acao: string; count: number }>;
   };
+  googleAnalytics?: {
+    realtime: {
+      activeUsers: number;
+      screenPageViews: number;
+      eventCount: number;
+    };
+    traffic: {
+      totalUsers: number;
+      newUsers: number;
+      sessions: number;
+      averageSessionDuration: number;
+      bounceRate: number;
+    };
+    topPages: Array<{
+      page: string;
+      views: number;
+      averageTime: number;
+    }>;
+    devices: {
+      desktop: number;
+      mobile: number;
+      tablet: number;
+    };
+    locations: Array<{
+      country: string;
+      city: string;
+      users: number;
+    }>;
+    events: Array<{
+      eventName: string;
+      eventCount: number;
+    }>;
+  } | null;
 }
 
 class AnalyticsService {
   /**
-   * Buscar todas as métricas do sistema
+   * Buscar todas as métricas do sistema (internas + Google Analytics)
    */
   async getSystemMetrics(): Promise<AnalyticsMetrics> {
+    console.log('📊 Buscando métricas do sistema...');
+
+    // Buscar métricas internas
     const [
       usuarios,
       organizacoes,
@@ -63,12 +98,32 @@ class AnalyticsService {
       this.getAtividadesMetrics()
     ]);
 
+    console.log('✅ Métricas internas carregadas');
+
+    // Tentar buscar métricas do Google Analytics
+    let googleAnalyticsData = null;
+    try {
+      if (googleAnalyticsService.isReady()) {
+        console.log('📈 Buscando métricas do Google Analytics...');
+        googleAnalyticsData = await googleAnalyticsService.getAllMetrics();
+        if (googleAnalyticsData) {
+          console.log('✅ Métricas do Google Analytics carregadas');
+        }
+      } else {
+        console.log('⚠️ Google Analytics não configurado. Retornando apenas métricas internas.');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar métricas do Google Analytics:', error);
+      // Continua sem as métricas do GA
+    }
+
     return {
       usuarios,
       organizacoes,
       tecnicos,
       qualidadeDados,
-      atividades
+      atividades,
+      googleAnalytics: googleAnalyticsData
     };
   }
 
@@ -171,13 +226,13 @@ class AnalyticsService {
     // Crescimento diário (últimos 30 dias)
     const crescimentoDiario = await prisma.$queryRaw<Array<{ data: string; total: bigint }>>`
       SELECT 
-        TO_CHAR(DATE(creation_date), 'DD/MM') as data,
+        TO_CHAR(DATE(_creation_date), 'DD/MM') as data,
         COUNT(*)::bigint as total
       FROM pinovara.organizacao
       WHERE removido = false
-        AND creation_date >= NOW() - INTERVAL '30 days'
-      GROUP BY DATE(creation_date)
-      ORDER BY DATE(creation_date) ASC
+        AND _creation_date >= NOW() - INTERVAL '30 days'
+      GROUP BY DATE(_creation_date)
+      ORDER BY DATE(_creation_date) ASC
     `;
 
     return {

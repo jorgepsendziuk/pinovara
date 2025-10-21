@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Map,
+  Map as MapIcon,
   Search,
   Trash,
   Eye,
@@ -15,8 +15,9 @@ interface OrganizacaoComGps {
   nome: string;
   lat: number;
   lng: number;
-  estado: string;
-  municipio?: string;
+  estado: number;
+  estado_nome?: string;
+  municipio_nome?: string;
   cnpj?: string;
   telefone?: string;
 }
@@ -30,6 +31,8 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
   const [filteredOrganizacoes, setFilteredOrganizacoes] = useState<OrganizacaoComGps[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mapInstance, setMapInstance] = useState<any>(null);
+  const [markersMap, setMarkersMap] = useState<Map<number, any>>(new Map());
 
   // Filtros
   const [filtroEstado, setFiltroEstado] = useState('');
@@ -39,6 +42,14 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
   const [municipiosDisponiveis, setMunicipiosDisponiveis] = useState<string[]>([]);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
+
+  const handleIrPara = (org: OrganizacaoComGps) => {
+    if (mapInstance && markersMap.has(org.id)) {
+      const marker = markersMap.get(org.id);
+      mapInstance.setView([org.lat, org.lng], 15, { animate: true });
+      marker.openPopup();
+    }
+  };
 
   // Função para gerar relatório
   const gerarRelatorio = async (organizacaoId: number, nomeOrganizacao: string) => {
@@ -101,12 +112,15 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
       const orgsComGps = statsData.organizacoesComGps || [];
       setOrganizacoes(orgsComGps);
 
-      // Extrair estados e municípios únicos
-      const estados = [...new Set(orgsComGps.map((org: OrganizacaoComGps) => org.estado))].sort();
-      const municipios = [...new Set(orgsComGps.map((org: OrganizacaoComGps) => org.municipio).filter(Boolean))].sort();
+      // Extrair estados e municípios únicos (usando os nomes, não os IDs)
+      const estados = [...new Set(orgsComGps.map((org: OrganizacaoComGps) => org.estado_nome).filter(Boolean))].sort();
+      const municipios = [...new Set(orgsComGps.map((org: OrganizacaoComGps) => org.municipio_nome).filter(Boolean))].sort();
 
       setEstadosDisponiveis(estados);
       setMunicipiosDisponiveis(municipios);
+      
+      console.log('Estados disponíveis:', estados);
+      console.log('Municípios disponíveis:', municipios);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
@@ -119,11 +133,11 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
     let filtered = organizacoes;
 
     if (filtroEstado) {
-      filtered = filtered.filter(org => org.estado === filtroEstado);
+      filtered = filtered.filter(org => org.estado_nome === filtroEstado);
     }
 
     if (filtroMunicipio) {
-      filtered = filtered.filter(org => org.municipio === filtroMunicipio);
+      filtered = filtered.filter(org => org.municipio_nome === filtroMunicipio);
     }
 
     if (filtroNome) {
@@ -145,11 +159,10 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
   if (loading) {
     return (
       <div className="mapa-page">
-        <div className="mapa-header">
-          <h1><Map size={24} style={{marginRight: '0.5rem'}} /> Mapa das Organizações</h1>
-          <p>Carregando organizações...</p>
-        </div>
-        <div className="loading-spinner">⏳</div>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 1rem 0', fontSize: '1.5rem' }}>
+          <MapIcon size={24} /> Mapa das Organizações
+        </h2>
+        <div className="loading-spinner">Carregando organizações...</div>
       </div>
     );
   }
@@ -157,32 +170,14 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
   if (error) {
     return (
       <div className="mapa-page">
-        <div className="mapa-header">
-          <h1><Map size={24} style={{marginRight: '0.5rem'}} /> Mapa das Organizações</h1>
-          <p>Erro ao carregar dados</p>
-        </div>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 1rem 0', fontSize: '1.5rem' }}>
+          <MapIcon size={24} /> Mapa das Organizações
+        </h2>
         <div className="error-message">
           <p><XCircle size={16} style={{marginRight: '0.5rem'}} /> {error}</p>
-          <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', color: '#666' }}>
-            Verifique se você está logado no sistema.
-          </p>
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
             <button onClick={fetchOrganizacoes} className="btn btn-primary">
-              🔄 Tentar Novamente
-            </button>
-            <button
-              onClick={() => {
-                const token = localStorage.getItem('@pinovara:token');
-                console.log('Token no localStorage:', !!token ? 'Presente' : 'Ausente');
-                if (token) {
-                  console.log('Token length:', token.length);
-                  console.log('Token preview:', token.substring(0, 50) + '...');
-                }
-                alert(`Token: ${!!token ? 'Presente' : 'Ausente'}\nVerifique o console (F12) para mais detalhes.`);
-              }}
-              className="btn btn-secondary"
-            >
-              <Search size={14} style={{marginRight: '0.25rem'}} /> Debug Token
+              Tentar Novamente
             </button>
           </div>
         </div>
@@ -192,60 +187,111 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
 
   return (
     <div className="mapa-page">
-      <div className="mapa-header">
-        <div className="header-info">
-          <h1><Map size={24} style={{marginRight: '0.5rem'}} /> Mapa das Organizações</h1>
+      {/* Header Compacto */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '1rem'
+      }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.5rem' }}>
+          <MapIcon size={24} /> Mapa das Organizações
+          <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: 'normal' }}>
+            ({filteredOrganizacoes.length})
+          </span>
+        </h2>
+      </div>
+
+      {/* Filtros Compactos */}
+      <div style={{
+        background: 'white',
+        padding: '0.75rem 1rem',
+        marginBottom: '0.75rem',
+        borderRadius: '8px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        display: 'flex',
+        gap: '1rem',
+        alignItems: 'end',
+        flexWrap: 'wrap'
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', minWidth: '150px' }}>
+          <label htmlFor="filtro-estado" style={{ fontSize: '0.85rem', fontWeight: '500', color: '#374151' }}>
+            Estado:
+          </label>
+          <select
+            id="filtro-estado"
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+            style={{
+              padding: '0.4rem 0.75rem',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              fontSize: '0.85rem'
+            }}
+          >
+            <option value="">Todos</option>
+            {estadosDisponiveis.map(estado => (
+              <option key={estado} value={estado}>{estado}</option>
+            ))}
+          </select>
         </div>
 
-        {/* Filtros */}
-        <div className="filtros-section">
-          <div className="filtros-grid">
-            <div className="filtro-item">
-              <label htmlFor="filtro-estado">Estado:</label>
-              <select
-                id="filtro-estado"
-                value={filtroEstado}
-                onChange={(e) => setFiltroEstado(e.target.value)}
-              >
-                <option value="">Todos os estados</option>
-                {estadosDisponiveis.map(estado => (
-                  <option key={estado} value={estado}>{estado}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="filtro-item">
-              <label htmlFor="filtro-municipio">Município:</label>
-              <select
-                id="filtro-municipio"
-                value={filtroMunicipio}
-                onChange={(e) => setFiltroMunicipio(e.target.value)}
-              >
-                <option value="">Todos os municípios</option>
-                {municipiosDisponiveis.map(municipio => (
-                  <option key={municipio} value={municipio}>{municipio}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="filtro-item">
-              <label htmlFor="filtro-nome">Buscar:</label>
-              <input
-                id="filtro-nome"
-                type="text"
-                placeholder="Nome ou CNPJ..."
-                value={filtroNome}
-                onChange={(e) => setFiltroNome(e.target.value)}
-              />
-            </div>
-
-            <div className="filtro-item">
-              <button onClick={clearFilters} className="btn btn-secondary">
-                <Trash size={14} style={{marginRight: '0.25rem'}} /> Limpar Filtros
-              </button>
-            </div>
-          </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', minWidth: '180px' }}>
+          <label htmlFor="filtro-municipio" style={{ fontSize: '0.85rem', fontWeight: '500', color: '#374151' }}>
+            Município:
+          </label>
+          <select
+            id="filtro-municipio"
+            value={filtroMunicipio}
+            onChange={(e) => setFiltroMunicipio(e.target.value)}
+            style={{
+              padding: '0.4rem 0.75rem',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              fontSize: '0.85rem'
+            }}
+          >
+            <option value="">Todos</option>
+            {municipiosDisponiveis.map(municipio => (
+              <option key={municipio} value={municipio}>{municipio}</option>
+            ))}
+          </select>
         </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1, minWidth: '200px' }}>
+          <label htmlFor="filtro-nome" style={{ fontSize: '0.85rem', fontWeight: '500', color: '#374151' }}>
+            Buscar:
+          </label>
+          <input
+            id="filtro-nome"
+            type="text"
+            placeholder="Nome ou CNPJ..."
+            value={filtroNome}
+            onChange={(e) => setFiltroNome(e.target.value)}
+            style={{
+              padding: '0.4rem 0.75rem',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              fontSize: '0.85rem'
+            }}
+          />
+        </div>
+
+        {(filtroEstado || filtroMunicipio || filtroNome) && (
+          <button 
+            onClick={clearFilters} 
+            className="btn btn-sm"
+            style={{
+              padding: '0.4rem 0.75rem',
+              fontSize: '0.85rem',
+              background: '#f3f4f6',
+              color: '#666',
+              border: '1px solid #ddd'
+            }}
+          >
+            <Trash size={14} /> Limpar
+          </button>
+        )}
       </div>
 
       {/* Container Principal com Mapa e Lista */}
@@ -257,44 +303,64 @@ function MapaOrganizacoesPage({ onNavigate }: MapaOrganizacoesPageProps) {
             onOrganizacaoClick={(id) => onNavigate('detalhes', id)}
             onNavigate={onNavigate}
             onGerarRelatorio={gerarRelatorio}
+            onMapReady={(map, markers) => {
+              setMapInstance(map);
+              setMarkersMap(markers);
+            }}
           />
         </div>
 
         {/* Lista Lateral */}
         <div className="lista-lateral">
-        <h3>📍 Organizações ({filteredOrganizacoes.length})</h3>
-        <div className="lista-organizacoes">
-          {filteredOrganizacoes.length === 0 ? (
-            <p className="empty-state">Nenhuma organização encontrada com os filtros aplicados.</p>
-          ) : (
-            filteredOrganizacoes.map((org) => (
-              <div key={org.id} className="org-card">
-                <div className="org-info">
-                  <h4>{org.nome}</h4>
-                  <p className="org-details">
-                    {org.estado} • {org.municipio || 'Município não informado'}
-                    {org.telefone && <br />}
-                    {org.telefone && `📞 ${org.telefone}`}
-                  </p>
+          <h3 style={{ 
+            margin: '0 0 0.75rem 0',
+            fontSize: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            color: '#3b2313'
+          }}>
+            <MapIcon size={18} /> Organizações ({filteredOrganizacoes.length})
+          </h3>
+          <div className="lista-organizacoes">
+            {filteredOrganizacoes.length === 0 ? (
+              <p className="empty-state" style={{ fontSize: '0.9rem', color: '#666' }}>
+                Nenhuma organização encontrada.
+              </p>
+            ) : (
+              filteredOrganizacoes.map((org) => (
+                <div key={org.id} className="org-card">
+                  <div className="org-info">
+                    <h4>{org.nome}</h4>
+                    <p className="org-details">
+                      {org.estado_nome || 'Estado não informado'}
+                      {org.municipio_nome && ` - ${org.municipio_nome}`}
+                      {org.telefone && (
+                        <>
+                          <br />
+                          {org.telefone}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <div className="org-actions">
+                    <button
+                      className="btn btn-sm btn-outline"
+                      onClick={() => handleIrPara(org)}
+                    >
+                      <Eye size={14} /> Ir Para
+                    </button>
+                    <button
+                      className="btn btn-sm btn-primary"
+                      onClick={() => onNavigate('edicao', org.id)}
+                    >
+                      <Edit size={14} /> Editar
+                    </button>
+                  </div>
                 </div>
-                <div className="org-actions">
-                  <button
-                    className="btn btn-sm btn-outline"
-                    onClick={() => onNavigate('detalhes', org.id)}
-                  >
-                    <Eye size={14} style={{marginRight: '0.25rem'}} /> Ver
-                  </button>
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={() => onNavigate('edicao', org.id)}
-                  >
-                    <Edit size={14} style={{marginRight: '0.25rem'}} /> Editar
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -307,9 +373,10 @@ interface MapaGrandeProps {
   onOrganizacaoClick: (id: number) => void;
   onNavigate: (view: 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa' | 'detalhes', organizacaoId?: number) => void;
   onGerarRelatorio?: (organizacaoId: number, nomeOrganizacao: string) => void;
+  onMapReady?: (map: any, markers: Map<number, any>) => void;
 }
 
-function MapaGrande({ organizacoes, onOrganizacaoClick, onNavigate, onGerarRelatorio }: MapaGrandeProps) {
+function MapaGrande({ organizacoes, onOrganizacaoClick, onNavigate, onGerarRelatorio, onMapReady }: MapaGrandeProps) {
   useEffect(() => {
     if (organizacoes.length === 0) return;
 
@@ -323,15 +390,18 @@ function MapaGrande({ organizacoes, onOrganizacaoClick, onNavigate, onGerarRelat
       maxZoom: 18,
     }).addTo(map);
 
+    // Map para armazenar referências dos marcadores
+    const markers = new Map<number, any>();
+
     // Adicionar marcadores para cada organização
     organizacoes.forEach((org) => {
       // Criar popup HTML com botões
       const popupContent = document.createElement('div');
       popupContent.style.maxWidth = '250px';
       popupContent.style.fontFamily = 'system-ui, sans-serif';
-      const estadoSigla = (org.estado || '').toString().trim().substring(0, 2);
-      const municipioNome = org.municipio || '';
-      const localizacao = estadoSigla && municipioNome ? `${estadoSigla} - ${municipioNome}` : (estadoSigla || municipioNome || 'Não informado');
+      const estadoNome = org.estado_nome || 'Não informado';
+      const municipioNome = org.municipio_nome || '';
+      const localizacao = estadoNome && municipioNome ? `${estadoNome} - ${municipioNome}` : estadoNome;
       
       popupContent.innerHTML = `
         <h4 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 16px;">#${org.id} ${org.nome}</h4>
@@ -380,8 +450,8 @@ function MapaGrande({ organizacoes, onOrganizacaoClick, onNavigate, onGerarRelat
         .addTo(map)
         .bindPopup(popupContent);
 
-      // Não adicionar evento de clique para não redirecionar
-      // O clique agora apenas abre o popup
+      // Armazenar referência do marcador
+      markers.set(org.id, marker);
     });
 
     // Ajustar zoom para mostrar todos os marcadores
@@ -392,11 +462,17 @@ function MapaGrande({ organizacoes, onOrganizacaoClick, onNavigate, onGerarRelat
       map.fitBounds(group.getBounds().pad(0.1));
     }
 
+    // Notificar que o mapa está pronto
+    if (onMapReady) {
+      onMapReady(map, markers);
+    }
+
     // Cleanup function
     return () => {
       map.remove();
     };
-  }, [organizacoes, onOrganizacaoClick, onNavigate, onGerarRelatorio]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organizacoes]);
 
   return (
     <div

@@ -50,15 +50,15 @@ export const DadosColeta: React.FC<DadosColetaProps> = ({
         onClick={() => onToggleAccordion('dados-coleta')}
         style={{
           background: isAberto 
-            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            ? 'linear-gradient(135deg, #3b2313 0%, #056839 100%)'
+            : 'linear-gradient(135deg, #3b2313 0%, #056839 100%)',
           color: 'white'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <h3>
           <Clipboard size={20} />
           <span>Dados da Coleta (ODK Metadata)</span>
-        </div>
+        </h3>
         <ChevronDown 
           size={20}
           style={{
@@ -126,7 +126,7 @@ export const DadosColeta: React.FC<DadosColetaProps> = ({
                 fontSize: '14px', 
                 fontWeight: '600',
                 color: '#495057',
-                borderBottom: '2px solid #667eea',
+                borderBottom: '2px solid #056839',
                 paddingBottom: '8px'
               }}>
                 Identificação
@@ -178,21 +178,21 @@ export const DadosColeta: React.FC<DadosColetaProps> = ({
                 <div>
                   <div style={{ color: '#6c757d', fontSize: '11px', marginBottom: '2px' }}>Criado por</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <User size={14} color="#667eea" />
+                    <User size={14} color="#3b2313" />
                     <span style={{ color: '#495057' }}>{organizacao.creator_uri_user || '-'}</span>
                   </div>
                 </div>
                 <div>
                   <div style={{ color: '#6c757d', fontSize: '11px', marginBottom: '2px' }}>Data de Criação</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Calendar size={14} color="#667eea" />
+                    <Calendar size={14} color="#3b2313" />
                     <span style={{ color: '#495057' }}>{formatDate(organizacao.creation_date)}</span>
                   </div>
                 </div>
                 <div>
                   <div style={{ color: '#6c757d', fontSize: '11px', marginBottom: '2px' }}>Data de Submissão</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Calendar size={14} color="#667eea" />
+                    <Calendar size={14} color="#3b2313" />
                     <span style={{ color: '#495057' }}>{formatDate(organizacao.submission_date)}</span>
                   </div>
                 </div>
@@ -220,14 +220,14 @@ export const DadosColeta: React.FC<DadosColetaProps> = ({
                 <div>
                   <div style={{ color: '#6c757d', fontSize: '11px', marginBottom: '2px' }}>Atualizado por</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <User size={14} color="#667eea" />
+                    <User size={14} color="#3b2313" />
                     <span style={{ color: '#495057' }}>{organizacao.last_update_uri_user || '-'}</span>
                   </div>
                 </div>
                 <div>
                   <div style={{ color: '#6c757d', fontSize: '11px', marginBottom: '2px' }}>Data da Atualização</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Calendar size={14} color="#667eea" />
+                    <Calendar size={14} color="#3b2313" />
                     <span style={{ color: '#495057' }}>{formatDate(organizacao.last_update_date)}</span>
                   </div>
                 </div>

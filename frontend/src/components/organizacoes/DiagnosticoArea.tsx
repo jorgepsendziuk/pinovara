@@ -31,10 +31,10 @@ export const DiagnosticoArea: React.FC<DiagnosticoAreaProps> = ({
   };
   const getCorResposta = (resposta: number) => {
     switch(resposta) {
+      case 1: return '#d4edda'; // Sim - verde bem claro
+      case 2: return '#ffeaea'; // Não - vermelho bem claro
+      case 3: return '#fff9e6'; // Parcial - amarelo bem claro  
       case 4: return '#f8f9fa'; // Não se aplica - cinza bem claro
-      case 3: return '#d4edda'; // SIM - verde bem claro
-      case 2: return '#fff9e6'; // Parcial - amarelo bem claro  
-      case 1: return '#ffeaea'; // NÃO - vermelho bem claro
       default: return '#ffffff'; // Padrão - branco
     }
   };
@@ -138,7 +138,9 @@ export const DiagnosticoArea: React.FC<DiagnosticoAreaProps> = ({
           className="sub-accordion-content"
           style={{
             display: isOpen ? 'block' : 'none',
-            border: isOpen ? '1px solid #ced4da' : 'none',
+            borderLeft: isOpen ? '1px solid #ced4da' : 'none',
+            borderRight: isOpen ? '1px solid #ced4da' : 'none',
+            borderBottom: isOpen ? '1px solid #ced4da' : 'none',
             borderTop: 'none',
             borderRadius: '0 0 4px 4px',
             backgroundColor: '#fff'
@@ -214,9 +216,9 @@ export const DiagnosticoArea: React.FC<DiagnosticoAreaProps> = ({
                         }}
                       >
                         <option value={0} style={{ color: '#212529', backgroundColor: '#fff' }}>Selecione</option>
-                        <option value={3} style={{ color: '#212529', backgroundColor: '#d4edda' }}>SIM</option>
-                        <option value={2} style={{ color: '#212529', backgroundColor: '#fff9e6' }}>Parcial</option>
-                        <option value={1} style={{ color: '#212529', backgroundColor: '#ffeaea' }}>NÃO</option>
+                        <option value={1} style={{ color: '#212529', backgroundColor: '#d4edda' }}>Sim</option>
+                        <option value={2} style={{ color: '#212529', backgroundColor: '#ffeaea' }}>Não</option>
+                        <option value={3} style={{ color: '#212529', backgroundColor: '#fff9e6' }}>Parcial</option>
                         <option value={4} style={{ color: '#212529', backgroundColor: '#f8f9fa' }}>Não se Aplica</option>
                       </select>
                     </td>

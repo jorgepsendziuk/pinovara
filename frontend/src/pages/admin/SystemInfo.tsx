@@ -158,17 +158,30 @@ function SystemInfo() {
           {/* User Statistics */}
           <div className="info-section">
             <h2>Estatísticas de Usuários</h2>
-            <div className="stats-grid">
-              <div className="stat-card large">
-                <div className="stat-value">{systemInfo.users.total}</div>
-                <div className="stat-label">Total de Usuários</div>
-                <div className="stat-sublabel">Registrados no sistema</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+              <div style={{ 
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 
+                color: 'white',
+                padding: '1.25rem', 
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{systemInfo.users.total}</div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.95 }}>Total de Usuários</div>
               </div>
               
-              <div className="stat-card success">
-                <div className="stat-value">{systemInfo.users.active}</div>
-                <div className="stat-label">Usuários Ativos</div>
-                <div className="stat-percentage">
+              <div style={{ 
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
+                color: 'white',
+                padding: '1.25rem', 
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{systemInfo.users.active}</div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.95 }}>Usuários Ativos</div>
+                <div style={{ fontSize: '0.85rem', opacity: 0.9, marginTop: '0.25rem' }}>
                   {systemInfo.users.total > 0 
                     ? Math.round((systemInfo.users.active / systemInfo.users.total) * 100)
                     : 0
@@ -176,10 +189,17 @@ function SystemInfo() {
                 </div>
               </div>
               
-              <div className="stat-card warning">
-                <div className="stat-value">{systemInfo.users.inactive}</div>
-                <div className="stat-label">Usuários Inativos</div>
-                <div className="stat-percentage">
+              <div style={{ 
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', 
+                color: 'white',
+                padding: '1.25rem', 
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{systemInfo.users.inactive}</div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.95 }}>Usuários Inativos</div>
+                <div style={{ fontSize: '0.85rem', opacity: 0.9, marginTop: '0.25rem' }}>
                   {systemInfo.users.total > 0 
                     ? Math.round((systemInfo.users.inactive / systemInfo.users.total) * 100)
                     : 0
@@ -192,29 +212,53 @@ function SystemInfo() {
           {/* System Components */}
           <div className="info-section">
             <h2>Componentes do Sistema</h2>
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-value">{systemInfo.system.modules}</div>
-                <div className="stat-label">Módulos</div>
-                <div className="stat-sublabel">Módulos ativos do sistema</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+              <div style={{ 
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', 
+                color: 'white',
+                padding: '1.25rem', 
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{systemInfo.system.modules}</div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.95 }}>Módulos</div>
               </div>
               
-              <div className="stat-card">
-                <div className="stat-value">{systemInfo.system.roles}</div>
-                <div className="stat-label">Papéis</div>
-                <div className="stat-sublabel">Papéis de acesso configurados</div>
+              <div style={{ 
+                background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)', 
+                color: 'white',
+                padding: '1.25rem', 
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{systemInfo.system.roles}</div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.95 }}>Papéis</div>
               </div>
               
-              <div className="stat-card">
-                <div className="stat-value">{systemInfo.system.settings}</div>
-                <div className="stat-label">Configurações</div>
-                <div className="stat-sublabel">Parâmetros do sistema</div>
+              <div style={{ 
+                background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', 
+                color: 'white',
+                padding: '1.25rem', 
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(20, 184, 166, 0.3)',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{systemInfo.system.settings}</div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.95 }}>Configurações</div>
               </div>
               
-              <div className="stat-card">
-                <div className="stat-value">{systemInfo.system.auditLogs.toLocaleString()}</div>
-                <div className="stat-label">Logs de Auditoria</div>
-                <div className="stat-sublabel">Registros de atividades</div>
+              <div style={{ 
+                background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', 
+                color: 'white',
+                padding: '1.25rem', 
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{systemInfo.system.auditLogs.toLocaleString()}</div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.95 }}>Logs de Auditoria</div>
               </div>
             </div>
           </div>

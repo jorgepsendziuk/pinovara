@@ -11,7 +11,7 @@ interface AuditLog {
   ipAddress?: string;
   createdAt: string;
   userId?: string;
-  user?: {
+  users?: {
     id: string;
     email: string;
     name: string;
@@ -49,6 +49,11 @@ function AuditLogs() {
   });
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [exporting, setExporting] = useState(false);
+  
+  // Listas para os selects
+  const [users, setUsers] = useState<Array<{ id: number; name: string; email: string }>>([]);
+  const [actions, setActions] = useState<string[]>([]);
+  const [entities, setEntities] = useState<string[]>([]);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
@@ -85,6 +90,209 @@ function AuditLogs() {
     }
   };
 
+  const openLogInNewWindow = (log: AuditLog) => {
+    // Abre em nova guia completa sem restrições de tamanho
+    const newWindow = window.open('', '_blank');
+    
+    if (newWindow) {
+      const html = `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Log de Auditoria - ${log.action} - ${log.entity}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+              padding: 2rem; 
+              background: #f5f5f5;
+              color: #333;
+            }
+            .container { 
+              max-width: 900px; 
+              margin: 0 auto; 
+              background: white;
+              border-radius: 8px;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+              padding: 2rem;
+            }
+            h1 { 
+              color: #056839; 
+              margin-bottom: 1.5rem; 
+              font-size: 1.75rem;
+              border-bottom: 3px solid #056839;
+              padding-bottom: 0.75rem;
+            }
+            .detail-group { 
+              margin-bottom: 1.5rem; 
+              padding: 1rem;
+              background: #f8f9fa;
+              border-radius: 6px;
+              border-left: 4px solid #056839;
+            }
+            .detail-group label { 
+              display: block; 
+              font-weight: 600; 
+              margin-bottom: 0.5rem;
+              color: #056839;
+              font-size: 0.9rem;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .detail-group span, .detail-group div { 
+              display: block; 
+              padding: 0.5rem;
+              background: white;
+              border-radius: 4px;
+              font-size: 0.95rem;
+            }
+            .badge {
+              display: inline-block;
+              padding: 0.25rem 0.75rem;
+              border-radius: 12px;
+              font-size: 0.85rem;
+              font-weight: 600;
+              text-transform: uppercase;
+            }
+            .badge-create { background: #d4edda; color: #155724; }
+            .badge-update { background: #fff3cd; color: #856404; }
+            .badge-delete { background: #f8d7da; color: #721c24; }
+            .badge-login { background: #d1ecf1; color: #0c5460; }
+            pre { 
+              background: #f8f9fa; 
+              padding: 1rem; 
+              border-radius: 6px; 
+              overflow-x: auto;
+              border: 1px solid #dee2e6;
+              font-size: 0.85rem;
+              line-height: 1.5;
+              white-space: pre-wrap;
+              word-wrap: break-word;
+            }
+            .user-agent {
+              word-break: break-all;
+              font-family: monospace;
+              font-size: 0.85rem;
+            }
+            .header-info {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 1rem;
+              margin-bottom: 2rem;
+            }
+            .print-btn {
+              background: #056839;
+              color: white;
+              border: none;
+              padding: 0.75rem 1.5rem;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 1rem;
+              font-weight: 600;
+              margin-top: 1rem;
+              transition: background 0.3s;
+            }
+            .print-btn:hover {
+              background: #044628;
+            }
+            @media print {
+              body { background: white; padding: 0; }
+              .container { box-shadow: none; }
+              .print-btn { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>📋 Log de Auditoria</h1>
+            
+            <div class="header-info">
+              <div class="detail-group">
+                <label>Data/Hora:</label>
+                <span>${new Date(log.createdAt).toLocaleString('pt-BR', { 
+                  dateStyle: 'long', 
+                  timeStyle: 'medium' 
+                })}</span>
+              </div>
+              
+              <div class="detail-group">
+                <label>Ação:</label>
+                <span class="badge badge-${log.action.toLowerCase()}">${log.action}</span>
+              </div>
+            </div>
+
+            <div class="detail-group">
+              <label>Entidade:</label>
+              <span>${log.entity}</span>
+            </div>
+
+            ${log.entityId ? `
+              <div class="detail-group">
+                <label>ID da Entidade:</label>
+                ${log.entity === 'organizacao' ? `
+                  <a 
+                    href="/organizacoes/editar/${log.entityId}"
+                    target="_blank"
+                    style="color: #056839; font-weight: 600; text-decoration: underline;"
+                    title="Abrir organização para edição"
+                  >
+                    #${log.entityId} 🔗
+                  </a>
+                ` : `<span>${log.entityId}</span>`}
+              </div>
+            ` : ''}
+
+            ${log.users ? `
+              <div class="detail-group">
+                <label>Usuário:</label>
+                <div>
+                  <strong>${log.users.name}</strong><br>
+                  ${log.users.email}
+                </div>
+              </div>
+            ` : '<div class="detail-group"><label>Usuário:</label><span>Sistema</span></div>'}
+
+            ${log.ipAddress ? `
+              <div class="detail-group">
+                <label>Endereço IP:</label>
+                <span>${log.ipAddress}</span>
+              </div>
+            ` : ''}
+
+            ${log.userAgent ? `
+              <div class="detail-group">
+                <label>User Agent:</label>
+                <span class="user-agent">${log.userAgent}</span>
+              </div>
+            ` : ''}
+
+            ${log.oldData ? `
+              <div class="detail-group">
+                <label>📝 Dados Anteriores:</label>
+                <pre>${JSON.stringify(JSON.parse(log.oldData), null, 2)}</pre>
+              </div>
+            ` : ''}
+
+            ${log.newData ? `
+              <div class="detail-group">
+                <label>📝 Dados Novos:</label>
+                <pre>${JSON.stringify(JSON.parse(log.newData), null, 2)}</pre>
+              </div>
+            ` : ''}
+
+            <button class="print-btn" onclick="window.print()">🖨️ Imprimir</button>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      newWindow.document.write(html);
+      newWindow.document.close();
+    }
+  };
+
   const fetchStats = async () => {
     try {
       setStatsLoading(true);
@@ -107,6 +315,74 @@ function AuditLogs() {
       console.error('Erro ao carregar estatísticas:', err);
     } finally {
       setStatsLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+      const response = await fetch(`${API_BASE}/admin/users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // O endpoint retorna: { success: true, data: { users: [...], total: X } }
+        const usersList = data.data?.users || [];
+        console.log('✅ Usuários carregados:', usersList.length);
+        // Ordenar por ID crescente
+        const sortedUsers = Array.isArray(usersList) 
+          ? usersList.sort((a, b) => a.id - b.id) 
+          : [];
+        setUsers(sortedUsers);
+      } else {
+        console.warn('⚠️ Erro ao carregar usuários:', response.status);
+        setUsers([]);
+      }
+    } catch (err) {
+      console.error('❌ Erro ao carregar usuários:', err);
+      setUsers([]);
+    }
+  };
+
+  const fetchActionsAndEntities = async () => {
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+      // Buscar todos os logs sem paginação para extrair ações e entidades únicas
+      const response = await fetch(`${API_BASE}/admin/audit-logs?limit=1000`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const allLogs = data.data?.logs || [];
+        
+        if (Array.isArray(allLogs) && allLogs.length > 0) {
+          // Extrair ações únicas
+          const uniqueActions = Array.from(new Set(allLogs.map((log: AuditLog) => log.action))).sort();
+          setActions(uniqueActions as string[]);
+          
+          // Extrair entidades únicas
+          const uniqueEntities = Array.from(new Set(allLogs.map((log: AuditLog) => log.entity))).sort();
+          setEntities(uniqueEntities as string[]);
+        } else {
+          setActions([]);
+          setEntities([]);
+        }
+      } else {
+        setActions([]);
+        setEntities([]);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar ações e entidades:', err);
+      setActions([]);
+      setEntities([]);
     }
   };
 
@@ -224,6 +500,8 @@ function AuditLogs() {
   useEffect(() => {
     fetchLogs();
     fetchStats();
+    fetchUsers();
+    fetchActionsAndEntities();
   }, []);
 
   // Auto-refresh quando habilitado
@@ -286,32 +564,46 @@ function AuditLogs() {
         <div className="filters-grid">
           <div className="filter-group">
             <label>Ação:</label>
-            <input
-              type="text"
+            <select
               value={filters.action}
               onChange={(e) => handleFilterChange('action', e.target.value)}
-              placeholder="Ex: CREATE, UPDATE..."
-            />
+              className="form-select"
+            >
+              <option value="">Todas as ações</option>
+              {Array.isArray(actions) && actions.map(action => (
+                <option key={action} value={action}>{action}</option>
+              ))}
+            </select>
           </div>
           
           <div className="filter-group">
             <label>Entidade:</label>
-            <input
-              type="text"
+            <select
               value={filters.entity}
               onChange={(e) => handleFilterChange('entity', e.target.value)}
-              placeholder="Ex: users, settings..."
-            />
+              className="form-select"
+            >
+              <option value="">Todas as entidades</option>
+              {Array.isArray(entities) && entities.map(entity => (
+                <option key={entity} value={entity}>{entity}</option>
+              ))}
+            </select>
           </div>
           
           <div className="filter-group">
-            <label>ID do Usuário:</label>
-            <input
-              type="text"
+            <label>Usuário:</label>
+            <select
               value={filters.userId}
               onChange={(e) => handleFilterChange('userId', e.target.value)}
-              placeholder="ID do usuário"
-            />
+              className="form-select"
+            >
+              <option value="">Todos os usuários</option>
+              {Array.isArray(users) && users.map(user => (
+                <option key={user.id} value={user.id}>
+                  #{user.id} - {user.name}
+                </option>
+              ))}
+            </select>
           </div>
           
           <div className="filter-group">
@@ -378,8 +670,7 @@ function AuditLogs() {
                     <th>Data/Hora</th>
                     <th>Ação</th>
                     <th>Entidade</th>
-                    <th>Usuário</th>
-                    <th>IP</th>
+                    <th>Usuário (ID)</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
@@ -405,23 +696,41 @@ function AuditLogs() {
                         </div>
                       </td>
                       <td>
-                        {log.user ? (
+                        {log.users ? (
                           <div className="user-info">
-                            <div className="user-name">{log.user.name}</div>
-                            <div className="user-email">{log.user.email}</div>
+                            <div className="user-name">{log.users.name}</div>
+                            <div className="user-id" style={{ fontSize: '0.85rem', color: '#666' }}>
+                              #{log.userId}
+                            </div>
+                          </div>
+                        ) : log.userId ? (
+                          <div className="user-info">
+                            <div className="user-name">Usuário #{log.userId}</div>
+                            <div className="user-id" style={{ fontSize: '0.85rem', color: '#666' }}>
+                              ID: {log.userId}
+                            </div>
                           </div>
                         ) : (
                           <span className="no-user">Sistema</span>
                         )}
                       </td>
-                      <td>{log.ipAddress || 'N/A'}</td>
                       <td>
-                        <button
-                          onClick={() => setSelectedLog(log)}
-                          className="btn btn-small btn-outline"
-                        >
-                          Detalhes
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => setSelectedLog(log)}
+                            className="btn btn-small btn-outline"
+                            title="Ver detalhes no modal"
+                          >
+                            📋 Detalhes
+                          </button>
+                          <button
+                            onClick={() => openLogInNewWindow(log)}
+                            className="btn btn-small btn-primary"
+                            title="Abrir detalhes em nova janela"
+                          >
+                            🔗 Nova Janela
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -491,7 +800,24 @@ function AuditLogs() {
                 {selectedLog.entityId && (
                   <div className="detail-group">
                     <label>ID da Entidade:</label>
-                    <span>{selectedLog.entityId}</span>
+                    {selectedLog.entity === 'organizacao' ? (
+                      <a 
+                        href={`/organizacoes/editar/${selectedLog.entityId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ 
+                          color: '#056839', 
+                          fontWeight: '600',
+                          textDecoration: 'underline',
+                          cursor: 'pointer'
+                        }}
+                        title="Abrir organização para edição"
+                      >
+                        #{selectedLog.entityId} 🔗
+                      </a>
+                    ) : (
+                      <span>{selectedLog.entityId}</span>
+                    )}
                   </div>
                 )}
                 
@@ -500,13 +826,13 @@ function AuditLogs() {
                   <span>{new Date(selectedLog.createdAt).toLocaleString('pt-BR')}</span>
                 </div>
                 
-                {selectedLog.user && (
+                {selectedLog.users && (
                   <div className="detail-group">
                     <label>Usuário:</label>
                     <div className="user-detail">
-                      <div><strong>{selectedLog.user.name}</strong></div>
-                      <div>{selectedLog.user.email}</div>
-                      <div>ID: {selectedLog.user.id}</div>
+                      <div><strong>{selectedLog.users.name}</strong></div>
+                      <div>{selectedLog.users.email}</div>
+                      <div>ID: {selectedLog.users.id}</div>
                     </div>
                   </div>
                 )}

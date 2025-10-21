@@ -304,22 +304,22 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               title="Editar organização"
               style={{ 
                 padding: '6px 8px', 
-                border: '1px solid #007bff', 
+                border: '1px solid #3b2313', 
                 background: 'white',
                 borderRadius: '4px',
                 cursor: 'pointer', 
-                color: '#007bff',
+                color: '#3b2313',
                 display: 'flex',
                 alignItems: 'center',
                 transition: 'all 0.2s'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = '#007bff';
+                e.currentTarget.style.background = '#3b2313';
                 e.currentTarget.style.color = 'white';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#007bff';
+                e.currentTarget.style.color = '#3b2313';
               }}
             >
               <Edit size={14} />
@@ -470,7 +470,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               {isODKCollect ? (
                 <Clipboard size={16} color="#8b4513" />
               ) : (
-                <Monitor size={16} color="#667eea" />
+                <Monitor size={16} color="#056839" />
               )}
             </span>
             <span style={{ fontWeight: '500' }}>{nome || '-'}</span>
@@ -618,72 +618,73 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
 
   if (loading) {
     return (
-      <div className="lista-content">
-        <div className="content-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Building2 size={28} color="white" />
-            <h2>Lista de Organizações</h2>
-          </div>
-          <p>Carregando organizações...</p>
-        </div>
+      <div style={{ padding: '1.5rem' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1.5rem' }}>
+          <Building2 size={24} /> Lista de Organizações
+        </h2>
+        <div className="loading-spinner">Carregando organizações...</div>
       </div>
     );
   }
 
   return (
-    <div className="lista-content">
-      <div className="content-header">
-        <div className="header-info" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Building2 size={28} color="white" />
-          <h2>Lista de Organizações</h2>
-        </div>
-        <div className="header-actions">
-          {!isCoordinator() && (
-            <button
-              onClick={() => onNavigate('cadastro')}
-              className="btn btn-primary"
-            >
-              + Nova Organização
-            </button>
-          )}
-        </div>
+    <div style={{ padding: '1.5rem', maxWidth: '100%' }}>
+      {/* Header simples e compacto */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '1.5rem'
+      }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.5rem' }}>
+          <Building2 size={24} /> Lista de Organizações
+        </h2>
+        {!isCoordinator() && (
+          <button
+            onClick={() => onNavigate('cadastro')}
+            className="btn btn-primary"
+          >
+            + Nova Organização
+          </button>
+        )}
       </div>
 
-      {/* Filtros */}
+      {/* Filtros compactos */}
       <div style={{
         background: 'white',
-        padding: '1rem 1.5rem',
+        padding: '0.75rem 1rem',
         marginBottom: '1rem',
         borderRadius: '8px',
-        border: '1px solid #e5e7eb',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         display: 'flex',
         alignItems: 'center',
-        gap: '1rem'
+        gap: '1rem',
+        flexWrap: 'wrap'
       }}>
         <label style={{ 
           fontWeight: '600', 
           color: '#374151',
-          fontSize: '0.95rem',
+          fontSize: '0.9rem',
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem'
         }}>
-          <Clipboard size={18} />
-          Origem do Cadastro:
+          <Clipboard size={16} />
+          Origem:
         </label>
         <select 
           value={origemFiltro}
           onChange={(e) => {
             setOrigemFiltro(e.target.value as 'odk' | 'web' | 'todas');
-            setCurrentPage(1); // Resetar para primeira página ao filtrar
+            setCurrentPage(1);
           }}
           style={{
-            padding: '0.5rem 1rem',
+            padding: '0.4rem 0.75rem',
             borderRadius: '6px',
             border: '1px solid #d1d5db',
-            fontSize: '0.95rem',
+            fontSize: '0.85rem',
             cursor: 'pointer',
-            minWidth: '200px',
+            minWidth: '180px',
             background: 'white'
           }}
         >
@@ -694,7 +695,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         
         <div style={{ 
           marginLeft: 'auto',
-          fontSize: '0.875rem',
+          fontSize: '0.85rem',
           color: '#6b7280',
           display: 'flex',
           alignItems: 'center',
@@ -703,10 +704,11 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           <span style={{ fontWeight: '500' }}>Total:</span>
           <span style={{ 
             background: '#f3f4f6', 
-            padding: '0.25rem 0.75rem', 
+            padding: '0.2rem 0.6rem', 
             borderRadius: '12px',
             fontWeight: '600',
-            color: '#374151'
+            color: '#374151',
+            fontSize: '0.85rem'
           }}>
             {totalOrganizacoes}
           </span>
@@ -720,21 +722,21 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           bottom: '20px',
           right: '20px',
           background: 'white',
-          border: '2px solid #667eea',
+          border: '1px solid #3b2313',
           borderRadius: '8px',
-          padding: '10px 12px',
-          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)',
+          padding: '8px 10px',
+          boxShadow: '0 2px 8px rgba(59, 35, 19, 0.15)',
           zIndex: 999,
-          fontSize: '13px'
+          fontSize: '12px'
         }}>
           <div style={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center',
-            marginBottom: '8px'
+            marginBottom: '6px'
           }}>
-            <div style={{ fontWeight: '600', color: '#374151' }}>
-              Origem do Cadastro
+            <div style={{ fontWeight: '600', color: '#374151', fontSize: '0.85rem' }}>
+              Origem
             </div>
             <button
               onClick={() => setLegendaVisivel(false)}
@@ -742,7 +744,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
-                padding: '2px',
+                padding: '0',
                 display: 'flex',
                 alignItems: 'center',
                 color: '#9ca3af',
@@ -750,28 +752,32 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               }}
               onMouseOver={(e) => e.currentTarget.style.color = '#ef4444'}
               onMouseOut={(e) => e.currentTarget.style.color = '#9ca3af'}
-              title="Fechar legenda"
+              title="Fechar"
             >
-              <X size={16} />
+              <X size={14} />
             </button>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Clipboard size={16} color="#8b4513" />
-              <span style={{ color: '#64748b' }}>ODK Collect (Aplicativo)</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Clipboard size={14} color="#8b4513" />
+              <span style={{ color: '#64748b', fontSize: '0.85rem' }}>ODK Collect</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Monitor size={16} color="#667eea" />
-              <span style={{ color: '#64748b' }}>Sistema Web</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Monitor size={14} color="#056839" />
+              <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Sistema Web</span>
             </div>
           </div>
         </div>
       )}
 
-      <div className="lista-body">
-        {/* DataGrid de Organizações */}
-        <div className="organizacoes-datagrid-container">
-          <DataGrid<Organizacao>
+      {/* DataGrid */}
+      <div style={{ 
+        background: 'white',
+        borderRadius: '8px',
+        padding: '1rem',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      }}>
+        <DataGrid<Organizacao>
             columns={columns}
             dataSource={organizacoes}
             rowKey="id"
@@ -802,7 +808,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
             size="small"
             className="organizacoes-datagrid"
           />
-        </div>
       </div>
 
       {/* Modal de Arquivos */}

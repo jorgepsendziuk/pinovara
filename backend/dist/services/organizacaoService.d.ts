@@ -1,7 +1,7 @@
 import { Organizacao, OrganizacaoFilters, OrganizacaoListResponse } from '../types/organizacao';
 declare class OrganizacaoService {
     list(filters?: OrganizacaoFilters): Promise<OrganizacaoListResponse>;
-    getById(organizacaoId: number): Promise<Organizacao | null>;
+    getById(organizacaoId: number): Promise<any>;
     private _getByIdOLD_BACKUP;
     create(data: Partial<Organizacao>): Promise<Organizacao>;
     update(id: number, data: Partial<Organizacao>): Promise<Organizacao>;
