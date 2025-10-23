@@ -100,7 +100,7 @@ export const relatorioService = {
         .text('Plataforma de Inovação Agroecológica - UFBA', textX, 50);
       
       doc.fillColor('#666')
-        .fontSize(8)
+        .fontSize(10)
         .text(`Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, textX, 65);
       
       doc.y = 120;
@@ -182,9 +182,9 @@ export const relatorioService = {
           const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
           const alturaFinal = Math.max(alturaMinima, alturaTexto + 10);
           
-          doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
+          doc.font('Helvetica-Bold').fontSize(11).fillColor('#000')
             .text(label, 55, currentY, { width: 110, continued: false });
-          doc.font('Helvetica').fontSize(9)
+          doc.font('Helvetica').fontSize(11)
             .text(value, 170, currentY, { width: larguraTexto });
           
           // Linha divisória horizontal
@@ -205,9 +205,9 @@ export const relatorioService = {
           const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
           const alturaFinal = Math.max(alturaMinima, alturaTexto + 10);
           
-          doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
+          doc.font('Helvetica-Bold').fontSize(11).fillColor('#000')
             .text(label, xOffset + 5, currentY, { width: 110, continued: false });
-          doc.font('Helvetica').fontSize(9)
+          doc.font('Helvetica').fontSize(11)
             .text(value, xOffset + 120, currentY, { width: larguraTexto });
           
           // Linha divisória horizontal
@@ -326,14 +326,14 @@ export const relatorioService = {
           .rect(50, headerY - 5, 500, 20).stroke();
         
         // Textos do cabeçalho
-        doc.font('Helvetica-Bold').fontSize(9).fillColor('#056839');
+        doc.font('Helvetica-Bold').fontSize(11).fillColor('#056839');
         doc.text('Nome', 55, headerY);
         doc.text('CPF', 55 + colWidths[0], headerY);
         doc.text('Telefone', 55 + colWidths[0] + colWidths[1], headerY);
         doc.text('Relação', 55 + colWidths[0] + colWidths[1] + colWidths[2], headerY);
 
         // Dados dos participantes
-        doc.font('Helvetica').fontSize(8).fillColor('#000');
+        doc.font('Helvetica').fontSize(10).fillColor('#000');
         let currentY = headerY + 25;
         
         organizacao.organizacao_participante.forEach((participante: any, index: number) => {
@@ -390,7 +390,7 @@ export const relatorioService = {
           .text('DOCUMENTOS ANEXADOS', 50, doc.y);
         doc.moveDown(0.5);
 
-        doc.font('Helvetica').fontSize(9).fillColor('#000');
+        doc.font('Helvetica').fontSize(11).fillColor('#000');
         organizacao.organizacao_arquivo.forEach((arquivo: any, index: number) => {
           doc.font('Helvetica-Bold')
             .text(`${index + 1}. `, 50, doc.y, { continued: true });
@@ -398,9 +398,9 @@ export const relatorioService = {
             .text(arquivo.arquivo || 'Sem nome', { width: 480 });
           
           if (arquivo.obs) {
-            doc.fontSize(8).fillColor('#666')
+            doc.fontSize(10).fillColor('#666')
               .text(`   ${arquivo.obs}`, 50, doc.y, { width: 480 });
-            doc.fontSize(9).fillColor('#000');
+            doc.fontSize(11).fillColor('#000');
           }
           doc.moveDown(0.5);
         });
@@ -523,7 +523,7 @@ export const relatorioService = {
           .text('DADOS DE PRODUÇÃO', 50, doc.y);
         doc.moveDown(0.5);
 
-        doc.font('Helvetica').fontSize(9).fillColor('#000');
+        doc.font('Helvetica').fontSize(11).fillColor('#000');
         organizacao.organizacao_producao.forEach((producao: any, index: number) => {
           doc.font('Helvetica-Bold')
             .text(`${index + 1}. ${producao.cultura}`, 50, doc.y);
@@ -554,13 +554,13 @@ export const relatorioService = {
           .rect(50, headerY - 5, 500, 20).stroke();
         
         // Textos do cabeçalho
-        doc.font('Helvetica-Bold').fontSize(9).fillColor('#056839');
+        doc.font('Helvetica-Bold').fontSize(11).fillColor('#056839');
         doc.text('Nº', 55, headerY);
         doc.text('Município', 55 + colWidths[0], headerY);
         doc.text('Número de Sócios', 55 + colWidths[0] + colWidths[1], headerY);
 
         // Dados da abrangência
-        doc.font('Helvetica').fontSize(8).fillColor('#000');
+        doc.font('Helvetica').fontSize(10).fillColor('#000');
         let currentY = headerY + 25;
         
         organizacao.organizacao_abrangencia_socio.forEach((abrangencia: any, index: number) => {
@@ -607,7 +607,7 @@ export const relatorioService = {
           .text('ASSOCIADOS PESSOA JURÍDICA', 50, doc.y);
         doc.moveDown(0.5);
 
-        doc.font('Helvetica').fontSize(9).fillColor('#000');
+        doc.font('Helvetica').fontSize(11).fillColor('#000');
         organizacao.organizacao_abrangencia_pj.forEach((pj: any, index: number) => {
           doc.font('Helvetica-Bold')
             .text(`${index + 1}. ${pj.razao_social || pj.cnpj_pj}`, 50, doc.y);
@@ -627,7 +627,7 @@ export const relatorioService = {
           .text('DESCRIÇÃO GERAL DO EMPREENDIMENTO', 50, doc.y);
         doc.moveDown(0.5);
 
-        doc.font('Helvetica').fontSize(9).fillColor('#000')
+        doc.font('Helvetica').fontSize(11).fillColor('#000')
           .text(organizacao.descricao, 50, doc.y, {
             width: doc.page.width - 100,
             align: 'justify'
@@ -647,10 +647,10 @@ export const relatorioService = {
 
         // Eixos Trabalhados como texto livre
         if (organizacao.eixos_trabalhados) {
-          doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
+          doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
             .text('Eixos Trabalhados:', 50, doc.y);
           doc.moveDown(0.3);
-          doc.font('Helvetica').fontSize(9).fillColor('#000')
+          doc.font('Helvetica').fontSize(11).fillColor('#000')
             .text(organizacao.eixos_trabalhados, 50, doc.y, {
               width: doc.page.width - 100,
               align: 'justify'
@@ -681,7 +681,7 @@ export const relatorioService = {
             .text('METODOLOGIA UTILIZADA', 50, doc.y);
           doc.moveDown(0.5);
           
-          doc.font('Helvetica').fontSize(9).fillColor('#000')
+          doc.font('Helvetica').fontSize(11).fillColor('#000')
             .text(organizacao.metodologia, 50, doc.y, {
               width: doc.page.width - 100,
               align: 'justify'
@@ -695,7 +695,7 @@ export const relatorioService = {
             .text('ORIENTAÇÕES E SOLUÇÕES TÉCNICAS', 50, doc.y);
           doc.moveDown(0.5);
           
-          doc.font('Helvetica').fontSize(9).fillColor('#000')
+          doc.font('Helvetica').fontSize(11).fillColor('#000')
             .text(organizacao.orientacoes, 50, doc.y, {
               width: doc.page.width - 100,
               align: 'justify'
@@ -754,7 +754,7 @@ export const relatorioService = {
           .text('PARTICIPANTES DA ATIVIDADE', 50, doc.y);
         doc.moveDown(0.5);
 
-        doc.font('Helvetica').fontSize(9).fillColor('#000');
+        doc.font('Helvetica').fontSize(11).fillColor('#000');
         organizacao.organizacao_participante.forEach((participante: any, index: number) => {
           doc.font('Helvetica-Bold')
             .text(`${index + 1}. ${participante.nome}`, 50, doc.y);
