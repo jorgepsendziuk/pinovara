@@ -66,14 +66,28 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
 
   const gerarTermoAdesao = async (organizacaoId: number) => {
     try {
+      const token = localStorage.getItem('@pinovara:token');
+      
+      // Verificar se o token existe e não é null/undefined
+      if (!token || token === 'null' || token === 'undefined') {
+        throw new Error('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
       // Buscar dados completos da organização
       const response = await fetch(`${API_BASE}/organizacoes/${organizacaoId}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('@pinovara:token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // Token inválido - limpar localStorage e redirecionar
+          localStorage.removeItem('@pinovara:token');
+          localStorage.removeItem('@pinovara:user');
+          window.location.href = '/login';
+          return;
+        }
         throw new Error('Erro ao buscar dados da organização');
       }
 
@@ -113,6 +127,11 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
       setLoading(true);
       const token = localStorage.getItem('@pinovara:token');
 
+      // Verificar se o token existe e não é null/undefined
+      if (!token || token === 'null' || token === 'undefined') {
+        throw new Error('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
       const response = await fetch(`${API_BASE}/organizacoes/dashboard`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -121,6 +140,13 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // Token inválido - limpar localStorage e redirecionar
+          localStorage.removeItem('@pinovara:token');
+          localStorage.removeItem('@pinovara:user');
+          window.location.href = '/login';
+          return;
+        }
         throw new Error('Erro ao carregar estatísticas');
       }
 
@@ -136,13 +162,27 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
   // Função para gerar relatório
   const gerarRelatorio = async (organizacaoId: number, nomeOrganizacao: string) => {
     try {
+      const token = localStorage.getItem('@pinovara:token');
+      
+      // Verificar se o token existe e não é null/undefined
+      if (!token || token === 'null' || token === 'undefined') {
+        throw new Error('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
       const response = await fetch(`${API_BASE}/organizacoes/${organizacaoId}/relatorio/pdf`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('@pinovara:token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // Token inválido - limpar localStorage e redirecionar
+          localStorage.removeItem('@pinovara:token');
+          localStorage.removeItem('@pinovara:user');
+          window.location.href = '/login';
+          return;
+        }
         throw new Error('Erro ao gerar relatório');
       }
 

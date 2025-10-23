@@ -621,8 +621,9 @@ function MapaOrganizacoes() {
       const token = localStorage.getItem('@pinovara:token');
       console.log('🔑 Token encontrado:', !!token);
 
-      if (!token) {
-        throw new Error('Token de autenticação não encontrado');
+      // Verificar se o token existe e não é null/undefined
+      if (!token || token === 'null' || token === 'undefined') {
+        throw new Error('Token de autenticação não encontrado. Faça login novamente.');
       }
 
       console.log('Buscando organizações em:', `${API_BASE}/organizacoes`);
@@ -635,6 +636,13 @@ function MapaOrganizacoes() {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // Token inválido - limpar localStorage e redirecionar
+          localStorage.removeItem('@pinovara:token');
+          localStorage.removeItem('@pinovara:user');
+          window.location.href = '/login';
+          return;
+        }
         const errorText = await response.text();
         console.error('Erro na resposta:', response.status, errorText);
         throw new Error(`Erro ao carregar organizações: ${response.status}`);

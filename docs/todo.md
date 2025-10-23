@@ -39,7 +39,7 @@ uid:jimxxx@gmail.com|2025-10-16T12:18:12.408+0000	uid:odk_admin|2025-09-12T01:37
 
 
 
-eis a tabela server_preferences e seus dados para esse projeto, aqui tem o realm string que acho que é necessário para fazer o hash da senha. pesquise como é feito isso e como podemos adaptar para sincronizar com as alteracoes no nosso sistema, como alterar senha do usuario no sistema e refletir no usuario do odk:
+eis a tabela server_preferences e seus dados para esse projeto, aqui tem o realm string que é necessário para fazer o hash da senha. pesquise como é feito isso e como podemos adaptar para sincronizar com as alteracoes no nosso sistema, como alterar senha do usuario no sistema e refletir no usuario do odk:
 
 CREATE TABLE odk_prod._server_preferences_properties ( "_URI" varchar(80) NOT NULL, "_CREATOR_URI_USER" varchar(80) NOT NULL, "_CREATION_DATE" timestamp NOT NULL, "_LAST_UPDATE_URI_USER" varchar(80) NULL, "_LAST_UPDATE_DATE" timestamp NOT NULL, "KEY" varchar(128) NULL, "VALUE" varchar(20480) NULL, CONSTRAINT "_server_preferences_properties__URI_key" UNIQUE ("_URI"));
 CREATE INDEX _server_preferences_properties_lud ON odk_prod._server_preferences_properties USING btree ("_LAST_UPDATE_DATE");
@@ -78,11 +78,14 @@ melhorar mensagens de erro nginx
 assinaturas
 coisas que faltam no relatório:
 
-assinatura
+assinaturas falta no relatorio, elas sao gravadas 
 
-DADOS DE PRODUÇÃO
-1. Verduras de refoga e de salada (em geral)
- Mensal: 4kg | Anual: 14678kg
-2. Frutas diversas
- Mensal: 7kg | Anual: 9232kg
- no relatorio colocar em tabelas
+
+o campo assinatura leva o 
+
+ qual a politica de timeout?
+ avisar quando esta chegando timeout, pra evitar desconexao durante edicao
+
+do mesmo jeito das fotos e arquivos, as assinaturas tambem tem umas tabelas que guardam os nomes, ligacoes com o registro, e o blob. 
+deve ser colocado na edicao do mesmo jeito que os arquivos e fotos, com accordion proprio pra edicao e visualizacao.
+eis a estrutura do esquema de assinaturas:

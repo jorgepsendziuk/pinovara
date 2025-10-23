@@ -38,7 +38,7 @@ app.use(accessLogger);
 
 // Rate limiting (mais restritivo em produção)
 const rateLimitWindow = process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 60 * 1000; // 15min em prod, 1min em dev
-const rateLimitMax = process.env.NODE_ENV === 'production' ? 100 : 1000; // 100 em prod, 1000 em dev
+const rateLimitMax = process.env.NODE_ENV === 'production' ? 500 : 1000; // 500 em prod, 1000 em dev
 app.use(rateLimiter(rateLimitWindow, rateLimitMax));
 
 // ========== ROUTES ==========
