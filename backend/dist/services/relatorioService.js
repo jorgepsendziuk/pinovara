@@ -113,17 +113,17 @@ exports.relatorioService = {
                 });
                 const larguraColuna = (doc.page.width - 100) / 2 - 10;
                 const larguraTexto = larguraColuna - 120;
-                const alturaMinima = 30;
+                const alturaMinima = 20;
                 let alturaTotalEsquerda = 0;
                 let alturaTotalDireita = 0;
                 colunaEsquerda.forEach(([label, value]) => {
                     const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
-                    const alturaFinal = Math.max(alturaMinima, alturaTexto + 10);
+                    const alturaFinal = Math.max(alturaMinima, alturaTexto + 5);
                     alturaTotalEsquerda += alturaFinal;
                 });
                 colunaDireita.forEach(([label, value]) => {
                     const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
-                    const alturaFinal = Math.max(alturaMinima, alturaTexto + 10);
+                    const alturaFinal = Math.max(alturaMinima, alturaTexto + 5);
                     alturaTotalDireita += alturaFinal;
                 });
                 const alturaTotalTabela = Math.max(alturaTotalEsquerda, alturaTotalDireita);
