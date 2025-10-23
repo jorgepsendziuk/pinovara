@@ -744,36 +744,6 @@ export const relatorioService = {
         }
       }
 
-      // === PARTICIPANTES ===
-      if (organizacao.participantes_menos_10 === 1 && organizacao.organizacao_participante && organizacao.organizacao_participante.length > 0) {
-        if (doc.y > 600) {
-          doc.addPage();
-        }
-
-        doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
-          .text('PARTICIPANTES DA ATIVIDADE', 50, doc.y);
-        doc.moveDown(0.5);
-
-        doc.font('Helvetica').fontSize(11).fillColor('#000');
-        organizacao.organizacao_participante.forEach((participante: any, index: number) => {
-          doc.font('Helvetica-Bold')
-            .text(`${index + 1}. ${participante.nome}`, 50, doc.y);
-          doc.font('Helvetica')
-            .text(`   CPF: ${participante.cpf} | Telefone: ${participante.telefone}`, 70, doc.y + 12);
-
-          const relacaoMap = {
-            1: 'Diretor',
-            2: 'Conselheiro Fiscal',
-            3: 'Associado',
-            4: 'Colaborador'
-          };
-          const relacaoTexto = relacaoMap[participante.relacao as keyof typeof relacaoMap] ||
-                             (participante.relacao === 99 && participante.relacao_outros ? participante.relacao_outros : 'Outro');
-
-          doc.text(`   Relação: ${relacaoTexto}`, 70, doc.y + 24);
-          doc.moveDown(1.5);
-        });
-      }
 
       // Mapeamento de respostas
       const respostaMap: { [key: number]: string } = {
