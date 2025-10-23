@@ -13,6 +13,15 @@ const definicoes_1 = require("./relatorio/definicoes");
 const prisma = new client_1.PrismaClient();
 const UPLOAD_DIR = '/var/pinovara/shared/uploads/fotos';
 const DOCUMENTS_DIR = '/var/pinovara/shared/uploads/arquivos';
+function formatarCNPJ(cnpj) {
+    if (!cnpj)
+        return '';
+    const numeros = cnpj.replace(/\D/g, '');
+    if (numeros.length === 14) {
+        return numeros.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+    }
+    return cnpj;
+}
 exports.relatorioService = {
     async gerarRelatorioPDF(organizacaoId) {
         const doc = new pdfkit_1.default({ margin: 50, size: 'A4' });
@@ -73,18 +82,18 @@ exports.relatorioService = {
                     }
                 }
             }
-            const textX = logoAdded ? 120 : 50;
+            const textX = logoAdded ? 400 : 350;
             doc.fillColor('#056839')
                 .font('Helvetica-Bold')
                 .fontSize(16)
-                .text('SISTEMA PINOVARA', textX, 30);
+                .text('SISTEMA PINOVARA', textX, 30, { align: 'right' });
             doc.fillColor('#3b2313')
                 .font('Helvetica')
                 .fontSize(10)
-                .text('Plataforma de Inovação Agroecológica - UFBA', textX, 50);
+                .text('Plataforma de Inovação Agroecológica - UFBA', textX, 50, { align: 'right' });
             doc.fillColor('#666')
                 .fontSize(10)
-                .text(`Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, textX, 65);
+                .text(`Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, textX, 65, { align: 'right' });
             doc.y = 120;
             doc.fillColor('#3b2313')
                 .font('Helvetica-Bold')
@@ -175,7 +184,7 @@ exports.relatorioService = {
             doc.moveDown(0.5);
             const tabelaDados = [];
             if (org.cnpj)
-                tabelaDados.push(['CNPJ:', org.cnpj]);
+                tabelaDados.push(['CNPJ:', formatarCNPJ(org.cnpj)]);
             if (org.data_fundacao)
                 tabelaDados.push(['Data de Fundação:', new Date(org.data_fundacao).toLocaleDateString('pt-BR')]);
             if (org.telefone)
@@ -482,7 +491,7 @@ exports.relatorioService = {
                     doc.font('Helvetica-Bold')
                         .text(`${index + 1}. ${pj.razao_social || pj.cnpj_pj}`, 50, doc.y);
                     doc.font('Helvetica')
-                        .text(`   CNPJ: ${pj.cnpj_pj} | Sócios: ${pj.num_socios_total} (${pj.num_socios_caf} CAF)`, 70, doc.y + 12);
+                        .text(`   CNPJ: ${formatarCNPJ(pj.cnpj_pj)} | Sócios: ${pj.num_socios_total} (${pj.num_socios_caf} CAF)`, 70, doc.y + 12);
                     doc.moveDown(0.8);
                 });
             }
@@ -589,31 +598,6 @@ exports.relatorioService = {
                 if (dadosIndicadores.length > 0) {
                     criarTabela2Colunas(dadosIndicadores);
                 }
-            }
-            if (organizacao.participantes_menos_10 === 1 && organizacao.organizacao_participante && organizacao.organizacao_participante.length > 0) {
-                if (doc.y > 600) {
-                    doc.addPage();
-                }
-                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
-                    .text('PARTICIPANTES DA ATIVIDADE', 50, doc.y);
-                doc.moveDown(0.5);
-                doc.font('Helvetica').fontSize(11).fillColor('#000');
-                organizacao.organizacao_participante.forEach((participante, index) => {
-                    doc.font('Helvetica-Bold')
-                        .text(`${index + 1}. ${participante.nome}`, 50, doc.y);
-                    doc.font('Helvetica')
-                        .text(`   CPF: ${participante.cpf} | Telefone: ${participante.telefone}`, 70, doc.y + 12);
-                    const relacaoMap = {
-                        1: 'Diretor',
-                        2: 'Conselheiro Fiscal',
-                        3: 'Associado',
-                        4: 'Colaborador'
-                    };
-                    const relacaoTexto = relacaoMap[participante.relacao] ||
-                        (participante.relacao === 99 && participante.relacao_outros ? participante.relacao_outros : 'Outro');
-                    doc.text(`   Relação: ${relacaoTexto}`, 70, doc.y + 24);
-                    doc.moveDown(1.5);
-                });
             }
             const respostaMap = {
                 1: 'Sim',

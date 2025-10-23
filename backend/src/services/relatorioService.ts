@@ -10,6 +10,21 @@ const prisma = new PrismaClient();
 const UPLOAD_DIR = '/var/pinovara/shared/uploads/fotos';
 const DOCUMENTS_DIR = '/var/pinovara/shared/uploads/arquivos';
 
+// Função para formatar CNPJ
+function formatarCNPJ(cnpj: string): string {
+  if (!cnpj) return '';
+  
+  // Remove caracteres não numéricos
+  const numeros = cnpj.replace(/\D/g, '');
+  
+  // Aplica a máscara XX.XXX.XXX/XXXX-XX
+  if (numeros.length === 14) {
+    return numeros.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  }
+  
+  return cnpj; // Retorna original se não tiver 14 dígitos
+}
+
 export const relatorioService = {
   /**
    * Gera PDF com dados da organização e fotos
@@ -87,21 +102,21 @@ export const relatorioService = {
         }
       }
       
-      // Texto do cabeçalho com cores
-      const textX = logoAdded ? 120 : 50;
+      // Texto do cabeçalho com cores - posicionado à direita
+      const textX = logoAdded ? 400 : 350; // Movido mais para a direita
       doc.fillColor('#056839')
         .font('Helvetica-Bold')
         .fontSize(16)
-        .text('SISTEMA PINOVARA', textX, 30);
+        .text('SISTEMA PINOVARA', textX, 30, { align: 'right' });
       
       doc.fillColor('#3b2313')
         .font('Helvetica')
         .fontSize(10)
-        .text('Plataforma de Inovação Agroecológica - UFBA', textX, 50);
+        .text('Plataforma de Inovação Agroecológica - UFBA', textX, 50, { align: 'right' });
       
       doc.fillColor('#666')
         .fontSize(10)
-        .text(`Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, textX, 65);
+        .text(`Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, textX, 65, { align: 'right' });
       
       doc.y = 120;
 
@@ -232,7 +247,7 @@ export const relatorioService = {
 
       const tabelaDados: [string, string][] = [];
       // Nome removido - já está no título
-      if (org.cnpj) tabelaDados.push(['CNPJ:', org.cnpj]);
+      if (org.cnpj) tabelaDados.push(['CNPJ:', formatarCNPJ(org.cnpj)]);
       if (org.data_fundacao) tabelaDados.push(['Data de Fundação:', new Date(org.data_fundacao).toLocaleDateString('pt-BR')]);
       if (org.telefone) tabelaDados.push(['Telefone:', org.telefone]);
       if (org.email) tabelaDados.push(['E-mail:', org.email]);
@@ -612,7 +627,7 @@ export const relatorioService = {
           doc.font('Helvetica-Bold')
             .text(`${index + 1}. ${pj.razao_social || pj.cnpj_pj}`, 50, doc.y);
           doc.font('Helvetica')
-            .text(`   CNPJ: ${pj.cnpj_pj} | Sócios: ${pj.num_socios_total} (${pj.num_socios_caf} CAF)`, 70, doc.y + 12);
+            .text(`   CNPJ: ${formatarCNPJ(pj.cnpj_pj)} | Sócios: ${pj.num_socios_total} (${pj.num_socios_caf} CAF)`, 70, doc.y + 12);
           doc.moveDown(0.8);
         });
       }
