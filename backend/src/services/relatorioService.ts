@@ -102,21 +102,20 @@ export const relatorioService = {
         }
       }
       
-      // Texto do cabeçalho com cores - posicionado à direita
-      const textX = logoAdded ? 400 : 350; // Movido mais para a direita
+      // Texto do cabeçalho centralizado
       doc.fillColor('#056839')
         .font('Helvetica-Bold')
         .fontSize(16)
-        .text('SISTEMA PINOVARA', textX, 30, { align: 'right' });
+        .text('SISTEMA PINOVARA', 50, 30, { align: 'center' });
       
       doc.fillColor('#3b2313')
         .font('Helvetica')
         .fontSize(10)
-        .text('Plataforma de Inovação Agroecológica - UFBA', textX, 50, { align: 'right' });
+        .text('Plataforma de Inovação Agroecológica - UFBA', 50, 50, { align: 'center' });
       
       doc.fillColor('#666')
         .fontSize(10)
-        .text(`Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, textX, 65, { align: 'right' });
+        .text(`Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 50, 65, { align: 'center' });
       
       doc.y = 120;
 
