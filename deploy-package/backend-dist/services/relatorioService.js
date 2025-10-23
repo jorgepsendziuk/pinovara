@@ -83,7 +83,7 @@ exports.relatorioService = {
                 .fontSize(10)
                 .text('Plataforma de Inovação Agroecológica - UFBA', textX, 50);
             doc.fillColor('#666')
-                .fontSize(8)
+                .fontSize(10)
                 .text(`Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, textX, 65);
             doc.y = 120;
             doc.fillColor('#3b2313')
@@ -113,17 +113,17 @@ exports.relatorioService = {
                 });
                 const larguraColuna = (doc.page.width - 100) / 2 - 10;
                 const larguraTexto = larguraColuna - 120;
-                const alturaMinima = 20;
+                const alturaMinima = 25;
                 let alturaTotalEsquerda = 0;
                 let alturaTotalDireita = 0;
                 colunaEsquerda.forEach(([label, value]) => {
                     const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
-                    const alturaFinal = Math.max(alturaMinima, alturaTexto + 5);
+                    const alturaFinal = Math.max(alturaMinima, alturaTexto + 10);
                     alturaTotalEsquerda += alturaFinal;
                 });
                 colunaDireita.forEach(([label, value]) => {
                     const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
-                    const alturaFinal = Math.max(alturaMinima, alturaTexto + 5);
+                    const alturaFinal = Math.max(alturaMinima, alturaTexto + 10);
                     alturaTotalDireita += alturaFinal;
                 });
                 const alturaTotalTabela = Math.max(alturaTotalEsquerda, alturaTotalDireita);
@@ -138,9 +138,9 @@ exports.relatorioService = {
                 colunaEsquerda.forEach(([label, value], index) => {
                     const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
                     const alturaFinal = Math.max(alturaMinima, alturaTexto + 10);
-                    doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
+                    doc.font('Helvetica-Bold').fontSize(11).fillColor('#000')
                         .text(label, 55, currentY, { width: 110, continued: false });
-                    doc.font('Helvetica').fontSize(9)
+                    doc.font('Helvetica').fontSize(11)
                         .text(value, 170, currentY, { width: larguraTexto });
                     currentY += alturaFinal;
                     if (index < colunaEsquerda.length - 1) {
@@ -155,9 +155,9 @@ exports.relatorioService = {
                     const xOffset = 50 + larguraColuna + 10;
                     const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
                     const alturaFinal = Math.max(alturaMinima, alturaTexto + 10);
-                    doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
+                    doc.font('Helvetica-Bold').fontSize(11).fillColor('#000')
                         .text(label, xOffset + 5, currentY, { width: 110, continued: false });
-                    doc.font('Helvetica').fontSize(9)
+                    doc.font('Helvetica').fontSize(11)
                         .text(value, xOffset + 120, currentY, { width: larguraTexto });
                     currentY += alturaFinal;
                     if (index < colunaDireita.length - 1) {
@@ -197,7 +197,7 @@ exports.relatorioService = {
                 }
             }
             criarTabela2Colunas(tabelaDados);
-            if (doc.y > 680) {
+            if (doc.y > 600) {
                 doc.addPage();
             }
             doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
@@ -222,7 +222,7 @@ exports.relatorioService = {
             }
             criarTabela2Colunas(tabelaEndereco);
             if (org.representante_nome || org.organizacao_participante?.length > 0) {
-                if (doc.y > 680) {
+                if (doc.y > 600) {
                     doc.addPage();
                 }
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
@@ -252,7 +252,7 @@ exports.relatorioService = {
                 criarTabela2Colunas(tabelaRepresentante);
             }
             if (organizacao.organizacao_participante && organizacao.organizacao_participante.length > 0) {
-                if (doc.y > 650) {
+                if (doc.y > 550) {
                     doc.addPage();
                 }
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
@@ -264,12 +264,12 @@ exports.relatorioService = {
                 doc.rect(50, headerY - 5, 500, 20).fill('#f0f0f0');
                 doc.strokeColor('#056839').lineWidth(1)
                     .rect(50, headerY - 5, 500, 20).stroke();
-                doc.font('Helvetica-Bold').fontSize(9).fillColor('#056839');
+                doc.font('Helvetica-Bold').fontSize(11).fillColor('#056839');
                 doc.text('Nome', 55, headerY);
                 doc.text('CPF', 55 + colWidths[0], headerY);
                 doc.text('Telefone', 55 + colWidths[0] + colWidths[1], headerY);
                 doc.text('Relação', 55 + colWidths[0] + colWidths[1] + colWidths[2], headerY);
-                doc.font('Helvetica').fontSize(8).fillColor('#000');
+                doc.font('Helvetica').fontSize(10).fillColor('#000');
                 let currentY = headerY + 25;
                 organizacao.organizacao_participante.forEach((participante, index) => {
                     if (currentY > 700) {
@@ -310,16 +310,16 @@ exports.relatorioService = {
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                     .text('DOCUMENTOS ANEXADOS', 50, doc.y);
                 doc.moveDown(0.5);
-                doc.font('Helvetica').fontSize(9).fillColor('#000');
+                doc.font('Helvetica').fontSize(11).fillColor('#000');
                 organizacao.organizacao_arquivo.forEach((arquivo, index) => {
                     doc.font('Helvetica-Bold')
                         .text(`${index + 1}. `, 50, doc.y, { continued: true });
                     doc.font('Helvetica')
                         .text(arquivo.arquivo || 'Sem nome', { width: 480 });
                     if (arquivo.obs) {
-                        doc.fontSize(8).fillColor('#666')
+                        doc.fontSize(10).fillColor('#666')
                             .text(`   ${arquivo.obs}`, 50, doc.y, { width: 480 });
-                        doc.fontSize(9).fillColor('#000');
+                        doc.fontSize(11).fillColor('#000');
                     }
                     doc.moveDown(0.5);
                 });
@@ -419,7 +419,7 @@ exports.relatorioService = {
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                     .text('DADOS DE PRODUÇÃO', 50, doc.y);
                 doc.moveDown(0.5);
-                doc.font('Helvetica').fontSize(9).fillColor('#000');
+                doc.font('Helvetica').fontSize(11).fillColor('#000');
                 organizacao.organizacao_producao.forEach((producao, index) => {
                     doc.font('Helvetica-Bold')
                         .text(`${index + 1}. ${producao.cultura}`, 50, doc.y);
@@ -441,11 +441,11 @@ exports.relatorioService = {
                 doc.rect(50, headerY - 5, 500, 20).fill('#f0f0f0');
                 doc.strokeColor('#056839').lineWidth(1)
                     .rect(50, headerY - 5, 500, 20).stroke();
-                doc.font('Helvetica-Bold').fontSize(9).fillColor('#056839');
+                doc.font('Helvetica-Bold').fontSize(11).fillColor('#056839');
                 doc.text('Nº', 55, headerY);
                 doc.text('Município', 55 + colWidths[0], headerY);
                 doc.text('Número de Sócios', 55 + colWidths[0] + colWidths[1], headerY);
-                doc.font('Helvetica').fontSize(8).fillColor('#000');
+                doc.font('Helvetica').fontSize(10).fillColor('#000');
                 let currentY = headerY + 25;
                 organizacao.organizacao_abrangencia_socio.forEach((abrangencia, index) => {
                     if (currentY > 700) {
@@ -477,7 +477,7 @@ exports.relatorioService = {
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                     .text('ASSOCIADOS PESSOA JURÍDICA', 50, doc.y);
                 doc.moveDown(0.5);
-                doc.font('Helvetica').fontSize(9).fillColor('#000');
+                doc.font('Helvetica').fontSize(11).fillColor('#000');
                 organizacao.organizacao_abrangencia_pj.forEach((pj, index) => {
                     doc.font('Helvetica-Bold')
                         .text(`${index + 1}. ${pj.razao_social || pj.cnpj_pj}`, 50, doc.y);
@@ -493,7 +493,7 @@ exports.relatorioService = {
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                     .text('DESCRIÇÃO GERAL DO EMPREENDIMENTO', 50, doc.y);
                 doc.moveDown(0.5);
-                doc.font('Helvetica').fontSize(9).fillColor('#000')
+                doc.font('Helvetica').fontSize(11).fillColor('#000')
                     .text(organizacao.descricao, 50, doc.y, {
                     width: doc.page.width - 100,
                     align: 'justify'
@@ -508,10 +508,10 @@ exports.relatorioService = {
                     .text('ORIENTAÇÕES TÉCNICAS DA ATIVIDADE', 50, doc.y);
                 doc.moveDown(0.5);
                 if (organizacao.eixos_trabalhados) {
-                    doc.font('Helvetica-Bold').fontSize(10).fillColor('#056839')
+                    doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                         .text('Eixos Trabalhados:', 50, doc.y);
                     doc.moveDown(0.3);
-                    doc.font('Helvetica').fontSize(9).fillColor('#000')
+                    doc.font('Helvetica').fontSize(11).fillColor('#000')
                         .text(organizacao.eixos_trabalhados, 50, doc.y, {
                         width: doc.page.width - 100,
                         align: 'justify'
@@ -536,7 +536,7 @@ exports.relatorioService = {
                     doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                         .text('METODOLOGIA UTILIZADA', 50, doc.y);
                     doc.moveDown(0.5);
-                    doc.font('Helvetica').fontSize(9).fillColor('#000')
+                    doc.font('Helvetica').fontSize(11).fillColor('#000')
                         .text(organizacao.metodologia, 50, doc.y, {
                         width: doc.page.width - 100,
                         align: 'justify'
@@ -548,7 +548,7 @@ exports.relatorioService = {
                     doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                         .text('ORIENTAÇÕES E SOLUÇÕES TÉCNICAS', 50, doc.y);
                     doc.moveDown(0.5);
-                    doc.font('Helvetica').fontSize(9).fillColor('#000')
+                    doc.font('Helvetica').fontSize(11).fillColor('#000')
                         .text(organizacao.orientacoes, 50, doc.y, {
                         width: doc.page.width - 100,
                         align: 'justify'
@@ -597,7 +597,7 @@ exports.relatorioService = {
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                     .text('PARTICIPANTES DA ATIVIDADE', 50, doc.y);
                 doc.moveDown(0.5);
-                doc.font('Helvetica').fontSize(9).fillColor('#000');
+                doc.font('Helvetica').fontSize(11).fillColor('#000');
                 organizacao.organizacao_participante.forEach((participante, index) => {
                     doc.font('Helvetica-Bold')
                         .text(`${index + 1}. ${participante.nome}`, 50, doc.y);

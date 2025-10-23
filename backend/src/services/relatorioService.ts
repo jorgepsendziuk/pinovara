@@ -142,7 +142,7 @@ export const relatorioService = {
 
         const larguraColuna = (doc.page.width - 100) / 2 - 10;
         const larguraTexto = larguraColuna - 120; // Mais espaço para o texto
-        const alturaMinima = 20; // Altura mínima para cada linha
+        const alturaMinima = 25; // Altura mínima para cada linha (aumentada para fonte maior)
 
         // Calcular altura total da tabela baseada no conteúdo real
         let alturaTotalEsquerda = 0;
@@ -151,14 +151,14 @@ export const relatorioService = {
         colunaEsquerda.forEach(([label, value]) => {
           // Calcular altura baseada no conteúdo do texto
           const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
-          const alturaFinal = Math.max(alturaMinima, alturaTexto + 5); // +5 para padding reduzido
+          const alturaFinal = Math.max(alturaMinima, alturaTexto + 10); // +10 para padding
           alturaTotalEsquerda += alturaFinal;
         });
         
         colunaDireita.forEach(([label, value]) => {
           // Calcular altura baseada no conteúdo do texto
           const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
-          const alturaFinal = Math.max(alturaMinima, alturaTexto + 5); // +5 para padding reduzido
+          const alturaFinal = Math.max(alturaMinima, alturaTexto + 10); // +10 para padding
           alturaTotalDireita += alturaFinal;
         });
         
@@ -258,7 +258,7 @@ export const relatorioService = {
       criarTabela2Colunas(tabelaDados);
 
       // === TABELA DE ENDEREÇO ===
-      if (doc.y > 680) {
+      if (doc.y > 600) {
         doc.addPage();
       }
 
@@ -282,7 +282,7 @@ export const relatorioService = {
 
       // === TABELA DO REPRESENTANTE ===
       if (org.representante_nome || org.organizacao_participante?.length > 0) {
-        if (doc.y > 680) {
+        if (doc.y > 600) {
           doc.addPage();
         }
 
@@ -307,7 +307,7 @@ export const relatorioService = {
 
       // === LISTA DE PRESENÇA (PARTICIPANTES) ===
       if (organizacao.organizacao_participante && organizacao.organizacao_participante.length > 0) {
-        if (doc.y > 650) {
+        if (doc.y > 550) {
           doc.addPage();
         }
 
