@@ -113,17 +113,17 @@ exports.relatorioService = {
                 });
                 const larguraColuna = (doc.page.width - 100) / 2 - 10;
                 const larguraTexto = larguraColuna - 120;
-                const alturaMinima = 20;
+                const alturaMinima = 25;
                 let alturaTotalEsquerda = 0;
                 let alturaTotalDireita = 0;
                 colunaEsquerda.forEach(([label, value]) => {
                     const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
-                    const alturaFinal = Math.max(alturaMinima, alturaTexto + 5);
+                    const alturaFinal = Math.max(alturaMinima, alturaTexto + 10);
                     alturaTotalEsquerda += alturaFinal;
                 });
                 colunaDireita.forEach(([label, value]) => {
                     const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
-                    const alturaFinal = Math.max(alturaMinima, alturaTexto + 5);
+                    const alturaFinal = Math.max(alturaMinima, alturaTexto + 10);
                     alturaTotalDireita += alturaFinal;
                 });
                 const alturaTotalTabela = Math.max(alturaTotalEsquerda, alturaTotalDireita);
@@ -197,7 +197,7 @@ exports.relatorioService = {
                 }
             }
             criarTabela2Colunas(tabelaDados);
-            if (doc.y > 680) {
+            if (doc.y > 600) {
                 doc.addPage();
             }
             doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
@@ -222,7 +222,7 @@ exports.relatorioService = {
             }
             criarTabela2Colunas(tabelaEndereco);
             if (org.representante_nome || org.organizacao_participante?.length > 0) {
-                if (doc.y > 680) {
+                if (doc.y > 600) {
                     doc.addPage();
                 }
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
@@ -252,7 +252,7 @@ exports.relatorioService = {
                 criarTabela2Colunas(tabelaRepresentante);
             }
             if (organizacao.organizacao_participante && organizacao.organizacao_participante.length > 0) {
-                if (doc.y > 650) {
+                if (doc.y > 550) {
                     doc.addPage();
                 }
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
