@@ -35,7 +35,11 @@ export const relatorioService = {
           organizacao_arquivo: {
             orderBy: { ordinal_number: 'asc' }
           },
-          organizacao_participante: true,
+          organizacao_participante: {
+            include: {
+              relacao_organizacao_participante_relacaoTorelacao: true
+            }
+          },
           organizacao_indicador: true,
           organizacao_producao: true,
           organizacao_abrangencia_socio: {
@@ -305,7 +309,7 @@ export const relatorioService = {
 
         // Cabeçalho da tabela de participantes
         const startY = doc.y;
-        const colWidths = [80, 120, 80, 100, 100]; // Nome, CPF, Telefone, Email, Função
+        const colWidths = [120, 100, 120, 150]; // Nome, CPF, Telefone, Relação
         const headerY = startY;
         
         // Cabeçalho com fundo
@@ -318,8 +322,7 @@ export const relatorioService = {
         doc.text('Nome', 55, headerY);
         doc.text('CPF', 55 + colWidths[0], headerY);
         doc.text('Telefone', 55 + colWidths[0] + colWidths[1], headerY);
-        doc.text('E-mail', 55 + colWidths[0] + colWidths[1] + colWidths[2], headerY);
-        doc.text('Função', 55 + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], headerY);
+        doc.text('Relação', 55 + colWidths[0] + colWidths[1] + colWidths[2], headerY);
 
         // Dados dos participantes
         doc.font('Helvetica').fontSize(8).fillColor('#000');
@@ -344,19 +347,24 @@ export const relatorioService = {
           const nome = participante.nome || 'Não informado';
           const cpf = participante.cpf || 'Não informado';
           const telefone = participante.telefone || 'Não informado';
-          const email = participante.email || 'Não informado';
-          const funcao = participante.funcao || 'Não informado';
+          
+          // Relação - buscar descrição da tabela relacao ou usar relacao_outros
+          let relacao = 'Não informado';
+          if (participante.relacao_outros) {
+            relacao = participante.relacao_outros;
+          } else if (participante.relacao_organizacao_participante_relacaoTorelacao?.descricao) {
+            relacao = participante.relacao_organizacao_participante_relacaoTorelacao.descricao;
+          }
 
           // Truncar textos se muito longos
           const truncateText = (text: string, maxLength: number) => {
             return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
           };
 
-          doc.text(truncateText(nome, 25), 55, currentY);
+          doc.text(truncateText(nome, 20), 55, currentY);
           doc.text(truncateText(cpf, 15), 55 + colWidths[0], currentY);
           doc.text(truncateText(telefone, 15), 55 + colWidths[0] + colWidths[1], currentY);
-          doc.text(truncateText(email, 20), 55 + colWidths[0] + colWidths[1] + colWidths[2], currentY);
-          doc.text(truncateText(funcao, 15), 55 + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], currentY);
+          doc.text(truncateText(relacao, 25), 55 + colWidths[0] + colWidths[1] + colWidths[2], currentY);
 
           currentY += 20;
         });
