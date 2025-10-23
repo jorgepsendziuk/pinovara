@@ -533,9 +533,9 @@ export const relatorioService = {
         });
       }
 
-      // === ABRANGÊNCIA GEOGRÁFICA ===
+      // === ABRANGÊNCIA GEOGRÁFICA DOS SÓCIOS ===
       if (organizacao.organizacao_abrangencia_socio && organizacao.organizacao_abrangencia_socio.length > 0) {
-        if (doc.y > 600) {
+        if (doc.y > 650) {
           doc.addPage();
         }
 
@@ -543,12 +543,58 @@ export const relatorioService = {
           .text('ABRANGÊNCIA GEOGRÁFICA DOS SÓCIOS', 50, doc.y);
         doc.moveDown(0.5);
 
-        doc.font('Helvetica').fontSize(9).fillColor('#000');
+        // Cabeçalho da tabela de abrangência
+        const startY = doc.y;
+        const colWidths = [50, 200, 100]; // Nº, Município, Número de Sócios
+        const headerY = startY;
+        
+        // Cabeçalho com fundo
+        doc.rect(50, headerY - 5, 500, 20).fill('#f0f0f0');
+        doc.strokeColor('#056839').lineWidth(1)
+          .rect(50, headerY - 5, 500, 20).stroke();
+        
+        // Textos do cabeçalho
+        doc.font('Helvetica-Bold').fontSize(9).fillColor('#056839');
+        doc.text('Nº', 55, headerY);
+        doc.text('Município', 55 + colWidths[0], headerY);
+        doc.text('Número de Sócios', 55 + colWidths[0] + colWidths[1], headerY);
+
+        // Dados da abrangência
+        doc.font('Helvetica').fontSize(8).fillColor('#000');
+        let currentY = headerY + 25;
+        
         organizacao.organizacao_abrangencia_socio.forEach((abrangencia: any, index: number) => {
+          // Verificar se precisa de nova página
+          if (currentY > 700) {
+            doc.addPage();
+            currentY = 50;
+          }
+
+          // Linha divisória
+          if (index > 0) {
+            doc.strokeColor('#ddd').lineWidth(0.5)
+              .moveTo(50, currentY - 5)
+              .lineTo(550, currentY - 5)
+              .stroke();
+          }
+
+          // Dados da abrangência
           const municipioNome = abrangencia.municipio_ibge?.descricao || 'Município não informado';
-          doc.text(`${index + 1}. ${municipioNome} - ${abrangencia.num_socios} sócios`, 50, doc.y);
-          doc.moveDown(0.3);
+          const numSocios = abrangencia.num_socios || 0;
+
+          // Truncar textos se muito longos
+          const truncateText = (text: string, maxLength: number) => {
+            return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+          };
+
+          doc.text((index + 1).toString(), 55, currentY);
+          doc.text(truncateText(municipioNome, 30), 55 + colWidths[0], currentY);
+          doc.text(numSocios.toString(), 55 + colWidths[0] + colWidths[1], currentY);
+
+          currentY += 20;
         });
+
+        doc.y = currentY + 10;
       }
 
       // === ASSOCIADOS PESSOA JURÍDICA ===
