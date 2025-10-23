@@ -545,7 +545,8 @@ export const relatorioService = {
 
         doc.font('Helvetica').fontSize(9).fillColor('#000');
         organizacao.organizacao_abrangencia_socio.forEach((abrangencia: any, index: number) => {
-          doc.text(`${index + 1}. ${abrangencia.municipio?.descricao || 'Município não informado'} - ${abrangencia.num_socios} sócios`, 50, doc.y);
+          const municipioNome = abrangencia.municipio_ibge?.descricao || 'Município não informado';
+          doc.text(`${index + 1}. ${municipioNome} - ${abrangencia.num_socios} sócios`, 50, doc.y);
           doc.moveDown(0.3);
         });
       }
