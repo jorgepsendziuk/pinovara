@@ -142,20 +142,24 @@ export const relatorioService = {
 
         const larguraColuna = (doc.page.width - 100) / 2 - 10;
         const larguraTexto = larguraColuna - 120; // Mais espaço para o texto
-        const alturaLinha = 28; // Altura um pouco maior para acomodar textos longos
+        const alturaMinima = 20; // Altura mínima para cada linha
 
-        // Calcular altura total da tabela (com altura especial para Nome)
+        // Calcular altura total da tabela baseada no conteúdo real
         let alturaTotalEsquerda = 0;
         let alturaTotalDireita = 0;
         
         colunaEsquerda.forEach(([label, value]) => {
-          const alturaEspecial = label.includes('Nome:') ? 35 : alturaLinha; // 35px para Nome
-          alturaTotalEsquerda += alturaEspecial;
+          // Calcular altura baseada no conteúdo do texto
+          const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
+          const alturaFinal = Math.max(alturaMinima, alturaTexto + 10); // +10 para padding
+          alturaTotalEsquerda += alturaFinal;
         });
         
         colunaDireita.forEach(([label, value]) => {
-          const alturaEspecial = label.includes('Logradouro:') ? 35 : alturaLinha; // 35px para Logradouro
-          alturaTotalDireita += alturaEspecial;
+          // Calcular altura baseada no conteúdo do texto
+          const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
+          const alturaFinal = Math.max(alturaMinima, alturaTexto + 10); // +10 para padding
+          alturaTotalDireita += alturaFinal;
         });
         
         const alturaTotalTabela = Math.max(alturaTotalEsquerda, alturaTotalDireita);
@@ -174,7 +178,9 @@ export const relatorioService = {
         // Coluna Esquerda
         let currentY = startY + 5;
         colunaEsquerda.forEach(([label, value], index) => {
-          const alturaEspecial = label.includes('Nome:') ? 35 : alturaLinha; // 35px para Nome
+          // Calcular altura baseada no conteúdo do texto
+          const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
+          const alturaFinal = Math.max(alturaMinima, alturaTexto + 10);
           
           doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
             .text(label, 55, currentY, { width: 110, continued: false });
@@ -182,7 +188,7 @@ export const relatorioService = {
             .text(value, 170, currentY, { width: larguraTexto });
           
           // Linha divisória horizontal
-          currentY += alturaEspecial;
+          currentY += alturaFinal;
           if (index < colunaEsquerda.length - 1) {
             doc.strokeColor('#ddd').lineWidth(0.5)
               .moveTo(50, currentY - 5)
@@ -195,7 +201,9 @@ export const relatorioService = {
         currentY = startY + 5;
         colunaDireita.forEach(([label, value], index) => {
           const xOffset = 50 + larguraColuna + 10;
-          const alturaEspecial = label.includes('Logradouro:') ? 35 : alturaLinha; // 35px para Logradouro também
+          // Calcular altura baseada no conteúdo do texto
+          const alturaTexto = Math.ceil(doc.heightOfString(value, { width: larguraTexto }));
+          const alturaFinal = Math.max(alturaMinima, alturaTexto + 10);
           
           doc.font('Helvetica-Bold').fontSize(9).fillColor('#000')
             .text(label, xOffset + 5, currentY, { width: 110, continued: false });
@@ -203,7 +211,7 @@ export const relatorioService = {
             .text(value, xOffset + 120, currentY, { width: larguraTexto });
           
           // Linha divisória horizontal
-          currentY += alturaEspecial;
+          currentY += alturaFinal;
           if (index < colunaDireita.length - 1) {
             doc.strokeColor('#ddd').lineWidth(0.5)
               .moveTo(xOffset, currentY - 5)
