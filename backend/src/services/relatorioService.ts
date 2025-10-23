@@ -142,7 +142,7 @@ export const relatorioService = {
 
         const larguraColuna = (doc.page.width - 100) / 2 - 10;
         const larguraTexto = larguraColuna - 120; // Mais espaço para o texto
-        const alturaMinima = 20; // Altura mínima para cada linha
+        const alturaMinima = 30; // Altura mínima para cada linha
 
         // Calcular altura total da tabela baseada no conteúdo real
         let alturaTotalEsquerda = 0;

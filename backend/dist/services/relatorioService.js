@@ -113,7 +113,7 @@ exports.relatorioService = {
                 });
                 const larguraColuna = (doc.page.width - 100) / 2 - 10;
                 const larguraTexto = larguraColuna - 120;
-                const alturaMinima = 20;
+                const alturaMinima = 30;
                 let alturaTotalEsquerda = 0;
                 let alturaTotalDireita = 0;
                 colunaEsquerda.forEach(([label, value]) => {
