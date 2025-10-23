@@ -243,6 +243,55 @@ exports.relatorioService = {
                     tabelaRepresentante.push(['CEP:', org.representante_end_cep]);
                 criarTabela2Colunas(tabelaRepresentante);
             }
+            if (organizacao.organizacao_participante && organizacao.organizacao_participante.length > 0) {
+                if (doc.y > 650) {
+                    doc.addPage();
+                }
+                doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
+                    .text('LISTA DE PRESENÇA', 50, doc.y);
+                doc.moveDown(0.5);
+                const startY = doc.y;
+                const colWidths = [80, 120, 80, 100, 100];
+                const headerY = startY;
+                doc.rect(50, headerY - 5, 500, 20).fill('#f0f0f0');
+                doc.strokeColor('#056839').lineWidth(1)
+                    .rect(50, headerY - 5, 500, 20).stroke();
+                doc.font('Helvetica-Bold').fontSize(9).fillColor('#056839');
+                doc.text('Nome', 55, headerY);
+                doc.text('CPF', 55 + colWidths[0], headerY);
+                doc.text('Telefone', 55 + colWidths[0] + colWidths[1], headerY);
+                doc.text('E-mail', 55 + colWidths[0] + colWidths[1] + colWidths[2], headerY);
+                doc.text('Função', 55 + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], headerY);
+                doc.font('Helvetica').fontSize(8).fillColor('#000');
+                let currentY = headerY + 25;
+                organizacao.organizacao_participante.forEach((participante, index) => {
+                    if (currentY > 700) {
+                        doc.addPage();
+                        currentY = 50;
+                    }
+                    if (index > 0) {
+                        doc.strokeColor('#ddd').lineWidth(0.5)
+                            .moveTo(50, currentY - 5)
+                            .lineTo(550, currentY - 5)
+                            .stroke();
+                    }
+                    const nome = participante.nome || 'Não informado';
+                    const cpf = participante.cpf || 'Não informado';
+                    const telefone = participante.telefone || 'Não informado';
+                    const email = participante.email || 'Não informado';
+                    const funcao = participante.funcao || 'Não informado';
+                    const truncateText = (text, maxLength) => {
+                        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+                    };
+                    doc.text(truncateText(nome, 25), 55, currentY);
+                    doc.text(truncateText(cpf, 15), 55 + colWidths[0], currentY);
+                    doc.text(truncateText(telefone, 15), 55 + colWidths[0] + colWidths[1], currentY);
+                    doc.text(truncateText(email, 20), 55 + colWidths[0] + colWidths[1] + colWidths[2], currentY);
+                    doc.text(truncateText(funcao, 15), 55 + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], currentY);
+                    currentY += 20;
+                });
+                doc.y = currentY + 10;
+            }
             if (organizacao.organizacao_arquivo && organizacao.organizacao_arquivo.length > 0) {
                 if (doc.y > 650) {
                     doc.addPage();

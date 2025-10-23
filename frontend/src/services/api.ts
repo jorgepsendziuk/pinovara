@@ -86,7 +86,8 @@ api.interceptors.request.use(
     const publicRoutes = ['/auth/login', '/auth/register', '/auth/verify', '/health'];
     const isPublicRoute = publicRoutes.some(route => config.url?.includes(route));
 
-    if (!isPublicRoute && token && config.headers) {
+    // Só adicionar token se ele existir e não for null/undefined
+    if (!isPublicRoute && token && token !== 'null' && token !== 'undefined' && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 

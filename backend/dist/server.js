@@ -28,7 +28,7 @@ app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
 app.use(logging_1.accessLogger);
 const rateLimitWindow = process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 60 * 1000;
-const rateLimitMax = process.env.NODE_ENV === 'production' ? 100 : 1000;
+const rateLimitMax = process.env.NODE_ENV === 'production' ? 500 : 1000;
 app.use((0, logging_1.rateLimiter)(rateLimitWindow, rateLimitMax));
 app.use('/', routes_1.default);
 app.use('*', (req, res) => {
