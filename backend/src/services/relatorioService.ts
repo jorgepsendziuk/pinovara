@@ -309,7 +309,7 @@ export const relatorioService = {
 
         // Cabeçalho da tabela de participantes
         const startY = doc.y;
-        const colWidths = [120, 100, 120, 150]; // Nome, CPF, Telefone, Relação
+        const colWidths = [180, 100, 120, 150]; // Nome, CPF, Telefone, Relação
         const headerY = startY;
         
         // Cabeçalho com fundo
@@ -361,7 +361,7 @@ export const relatorioService = {
             return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
           };
 
-          doc.text(truncateText(nome, 20), 55, currentY);
+          doc.text(truncateText(nome, 30), 55, currentY);
           doc.text(truncateText(cpf, 15), 55 + colWidths[0], currentY);
           doc.text(truncateText(telefone, 15), 55 + colWidths[0] + colWidths[1], currentY);
           doc.text(truncateText(relacao, 25), 55 + colWidths[0] + colWidths[1] + colWidths[2], currentY);
