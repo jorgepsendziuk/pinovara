@@ -429,18 +429,46 @@ exports.relatorioService = {
                 });
             }
             if (organizacao.organizacao_abrangencia_socio && organizacao.organizacao_abrangencia_socio.length > 0) {
-                if (doc.y > 600) {
+                if (doc.y > 650) {
                     doc.addPage();
                 }
                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#056839')
                     .text('ABRANGÊNCIA GEOGRÁFICA DOS SÓCIOS', 50, doc.y);
                 doc.moveDown(0.5);
-                doc.font('Helvetica').fontSize(9).fillColor('#000');
+                const startY = doc.y;
+                const colWidths = [50, 200, 100];
+                const headerY = startY;
+                doc.rect(50, headerY - 5, 500, 20).fill('#f0f0f0');
+                doc.strokeColor('#056839').lineWidth(1)
+                    .rect(50, headerY - 5, 500, 20).stroke();
+                doc.font('Helvetica-Bold').fontSize(9).fillColor('#056839');
+                doc.text('Nº', 55, headerY);
+                doc.text('Município', 55 + colWidths[0], headerY);
+                doc.text('Número de Sócios', 55 + colWidths[0] + colWidths[1], headerY);
+                doc.font('Helvetica').fontSize(8).fillColor('#000');
+                let currentY = headerY + 25;
                 organizacao.organizacao_abrangencia_socio.forEach((abrangencia, index) => {
+                    if (currentY > 700) {
+                        doc.addPage();
+                        currentY = 50;
+                    }
+                    if (index > 0) {
+                        doc.strokeColor('#ddd').lineWidth(0.5)
+                            .moveTo(50, currentY - 5)
+                            .lineTo(550, currentY - 5)
+                            .stroke();
+                    }
                     const municipioNome = abrangencia.municipio_ibge?.descricao || 'Município não informado';
-                    doc.text(`${index + 1}. ${municipioNome} - ${abrangencia.num_socios} sócios`, 50, doc.y);
-                    doc.moveDown(0.3);
+                    const numSocios = abrangencia.num_socios || 0;
+                    const truncateText = (text, maxLength) => {
+                        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+                    };
+                    doc.text((index + 1).toString(), 55, currentY);
+                    doc.text(truncateText(municipioNome, 30), 55 + colWidths[0], currentY);
+                    doc.text(numSocios.toString(), 55 + colWidths[0] + colWidths[1], currentY);
+                    currentY += 20;
                 });
+                doc.y = currentY + 10;
             }
             if (organizacao.organizacao_abrangencia_pj && organizacao.organizacao_abrangencia_pj.length > 0) {
                 if (doc.y > 600) {
