@@ -89,3 +89,52 @@ o campo assinatura leva o
 do mesmo jeito das fotos e arquivos, as assinaturas tambem tem umas tabelas que guardam os nomes, ligacoes com o registro, e o blob. 
 deve ser colocado na edicao do mesmo jeito que os arquivos e fotos, com accordion proprio pra edicao e visualizacao.
 eis a estrutura do esquema de assinaturas:
+assinatura do responsavel legal é ligada no PINOVARA_CORE, e etm as tabelas 
+
+CREATE TABLE odk_prod."ORGANIZACAO_ASSINATURA_RESP_LEGAL_BLB" ( "_URI" varchar(80) NOT NULL, "_CREATOR_URI_USER" varchar(80) NOT NULL, "_CREATION_DATE" timestamp NOT NULL, "_LAST_UPDATE_URI_USER" varchar(80) NULL, "_LAST_UPDATE_DATE" timestamp NOT NULL, "_TOP_LEVEL_AURI" varchar(80) NULL, "VALUE" bytea NOT NULL, CONSTRAINT "ORGANIZACAO_ASSINATURA_RESP_LEGAL_BLB__URI_key" UNIQUE ("_URI"));
+CREATE INDEX "ORGANIZACAO_ASSINATURA_RESP_LEGAL_BLB_lud" ON odk_prod."ORGANIZACAO_ASSINATURA_RESP_LEGAL_BLB" USING btree ("_LAST_UPDATE_DATE");
+
+CREATE TABLE odk_prod."ORGANIZACAO_ASSINATURA_RESP_LEGAL_BN" ( "_URI" varchar(80) NOT NULL, "_CREATOR_URI_USER" varchar(80) NOT NULL, "_CREATION_DATE" timestamp NOT NULL, "_LAST_UPDATE_URI_USER" varchar(80) NULL, "_LAST_UPDATE_DATE" timestamp NOT NULL, "_PARENT_AURI" varchar(80) NULL, "_ORDINAL_NUMBER" int4 NOT NULL, "_TOP_LEVEL_AURI" varchar(80) NULL, "UNROOTED_FILE_PATH" varchar(4096) NULL, "CONTENT_TYPE" varchar(80) NULL, "CONTENT_LENGTH" int4 NULL, "CONTENT_HASH" varchar(255) NULL, CONSTRAINT "ORGANIZACAO_ASSINATURA_RESP_LEGAL_BN__URI_key" UNIQUE ("_URI"));
+CREATE INDEX "ORGANIZACAO_ASSINATURA_RESP_LEGAL_BN_lud" ON odk_prod."ORGANIZACAO_ASSINATURA_RESP_LEGAL_BN" USING btree ("_LAST_UPDATE_DATE");
+CREATE INDEX "ORGANIZACAO_ASSINATURA_RESP_LEGAL_BN_pa2" ON odk_prod."ORGANIZACAO_ASSINATURA_RESP_LEGAL_BN" USING hash ("_PARENT_AURI");
+
+CREATE TABLE odk_prod."ORGANIZACAO_ASSINATURA_RESP_LEGAL_REF" ( "_URI" varchar(80) NOT NULL, "_CREATOR_URI_USER" varchar(80) NOT NULL, "_CREATION_DATE" timestamp NOT NULL, "_LAST_UPDATE_URI_USER" varchar(80) NULL, "_LAST_UPDATE_DATE" timestamp NOT NULL, "_DOM_AURI" varchar(80) NOT NULL, "_SUB_AURI" varchar(80) NOT NULL, "_TOP_LEVEL_AURI" varchar(80) NULL, "PART" int4 NOT NULL, CONSTRAINT "ORGANIZACAO_ASSINATURA_RESP_LEGAL_REF__URI_key" UNIQUE ("_URI"));
+CREATE INDEX "ORGANIZACAO_ASSINATURA_RESP_LEGAL_REF_da9" ON odk_prod."ORGANIZACAO_ASSINATURA_RESP_LEGAL_REF" USING hash ("_DOM_AURI");
+CREATE INDEX "ORGANIZACAO_ASSINATURA_RESP_LEGAL_REF_lud" ON odk_prod."ORGANIZACAO_ASSINATURA_RESP_LEGAL_REF" USING btree ("_LAST_UPDATE_DATE");
+
+essa tabela de participantes tem tabela de assinaturas tambem ligadas a ela:
+
+CREATE TABLE odk_prod."ORGANIZACAO_PARTICIPANTES" ( "_URI" varchar(80) NOT NULL, "_CREATOR_URI_USER" varchar(80) NOT NULL, "_CREATION_DATE" timestamp NOT NULL, "_LAST_UPDATE_URI_USER" varchar(80) NULL, "_LAST_UPDATE_DATE" timestamp NOT NULL, "_PARENT_AURI" varchar(80) NULL, "_ORDINAL_NUMBER" int4 NOT NULL, "_TOP_LEVEL_AURI" varchar(80) NULL, "PARTICIPANTE_CPF" varchar(255) NULL, "PARTICIPANTE_NOME" varchar(255) NULL, "PARTICIPANTE_TELEFONE" varchar(255) NULL, "PARTICIPANTE_RELACAO_OUTROS" varchar(255) NULL, "PARTICIPANTE_RELACAO" varchar(255) NULL, CONSTRAINT "ORGANIZACAO_PARTICIPANTES__URI_key" UNIQUE ("_URI"));
+CREATE INDEX "ORGANIZACAO_PARTICIPANTES_lud" ON odk_prod."ORGANIZACAO_PARTICIPANTES" USING btree ("_LAST_UPDATE_DATE");
+CREATE INDEX "ORGANIZACAO_PARTICIPANTES_pa2" ON odk_prod."ORGANIZACAO_PARTICIPANTES" USING hash ("_PARENT_AURI");
+
+CREATE TABLE odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_BLB" ( "_URI" varchar(80) NOT NULL, "_CREATOR_URI_USER" varchar(80) NOT NULL, "_CREATION_DATE" timestamp NOT NULL, "_LAST_UPDATE_URI_USER" varchar(80) NULL, "_LAST_UPDATE_DATE" timestamp NOT NULL, "_TOP_LEVEL_AURI" varchar(80) NULL, "VALUE" bytea NOT NULL, CONSTRAINT "ORGANIZACAO_PARTICIPANTE_ASSINATURA_BLB__URI_key" UNIQUE ("_URI"));
+CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_BLB_lud" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_BLB" USING btree ("_LAST_UPDATE_DATE");
+
+CREATE TABLE odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_BN" ( "_URI" varchar(80) NOT NULL, "_CREATOR_URI_USER" varchar(80) NOT NULL, "_CREATION_DATE" timestamp NOT NULL, "_LAST_UPDATE_URI_USER" varchar(80) NULL, "_LAST_UPDATE_DATE" timestamp NOT NULL, "_PARENT_AURI" varchar(80) NULL, "_ORDINAL_NUMBER" int4 NOT NULL, "_TOP_LEVEL_AURI" varchar(80) NULL, "UNROOTED_FILE_PATH" varchar(4096) NULL, "CONTENT_TYPE" varchar(80) NULL, "CONTENT_LENGTH" int4 NULL, "CONTENT_HASH" varchar(255) NULL, CONSTRAINT "ORGANIZACAO_PARTICIPANTE_ASSINATURA_BN__URI_key" UNIQUE ("_URI"));
+CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_BN_lud" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_BN" USING btree ("_LAST_UPDATE_DATE");
+CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_BN_pa2" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_BN" USING hash ("_PARENT_AURI");
+
+
+CREATE TABLE odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" ( "_URI" varchar(80) NOT NULL, "_CREATOR_URI_USER" varchar(80) NOT NULL, "_CREATION_DATE" timestamp NOT NULL, "_LAST_UPDATE_URI_USER" varchar(80) NULL, "_LAST_UPDATE_DATE" timestamp NOT NULL, "_DOM_AURI" varchar(80) NOT NULL, "_SUB_AURI" varchar(80) NOT NULL, "_TOP_LEVEL_AURI" varchar(80) NULL, "PART" int4 NOT NULL, CONSTRAINT "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF__URI_key" UNIQUE ("_URI"));
+CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_da9" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" USING hash ("_DOM_AURI");
+CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_lud" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" USING btree ("_LAST_UPDATE_DATE");
+
+timeout of 30000ms exceeded
+
+
+25
+33
+39
+24
+21
+23
+41
+
+ja soltei o comunicado,
+
+Pessoal, a gente tá preparando pra lançar uma atualização do sistema pra resolver esses problemas.
+O que aconteceu é que nós tivemos dois formulários e tiveram diferenças entre esses formulários que não estavam mapeados corretamente.
+Alguns campos que não estavam sendo exibidos antes ou que não estavam sendo salvos (problemas acima) foram acrescentados no formulário de edição e no relatório corretamente.
+Os dados de vocês que vocês enviaram pelo formulário do aplicativo agora vão aparecer corretamente, sem prejuízo as respostas que já haviam sido validadas.
+Daqui a pouco vai sair uma versao corrigida, estamos só conferindo os dados pra liberar.

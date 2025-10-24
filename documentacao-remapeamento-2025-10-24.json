@@ -1,0 +1,3442 @@
+{
+  "metadata": {
+    "dataGeracao": "2025-10-24T19:49:12.524Z",
+    "totalOrganizacoes": 9,
+    "camposAfetados": 22,
+    "descricao": "Documentação completa do procedimento de remapeamento dos campos do diagnóstico organizacional"
+  },
+  "mapeamentoCampos": {
+    "go_controle_20": "go_controle_22",
+    "go_controle_21": "go_controle_23",
+    "go_controle_22": "go_controle_24",
+    "go_controle_23": "go_controle_25",
+    "go_controle_24": "go_controle_26",
+    "go_controle_25": "go_controle_27",
+    "go_educacao_26": "go_educacao_28",
+    "go_educacao_27": "go_educacao_29",
+    "go_educacao_28": "go_educacao_30",
+    "gc_comercial_15": "gc_comercial_16",
+    "gc_comercial_16": "gc_comercial_17",
+    "gc_comercial_17": "gc_comercial_18",
+    "gc_comercial_18": "gc_comercial_19",
+    "gc_comercial_19": "gc_comercial_20",
+    "gc_comercial_20": "gc_comercial_21",
+    "gc_modelo_21": "gc_modelo_22",
+    "gc_modelo_22": "gc_modelo_23",
+    "gc_modelo_23": "gc_modelo_24",
+    "gc_modelo_24": "gc_modelo_25",
+    "gc_modelo_25": "gc_modelo_26",
+    "gc_modelo_26": "gc_modelo_27",
+    "gc_modelo_27": "gc_modelo_28"
+  },
+  "textosPerguntas": {
+    "go_controle_22": "O conselho fiscal é atuante no empreendimento?",
+    "go_controle_23": "A direção se reúne periodicamente com o conselho fiscal?",
+    "go_controle_24": "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?",
+    "go_controle_25": "Realiza assembleias anuais para prestação de contas?",
+    "go_controle_26": "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?",
+    "go_controle_27": "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?",
+    "go_educacao_28": "Existe processo de formação continuada dos cooperados/associados?",
+    "go_educacao_29": "Os cooperados/associados são capacitados em Gestão do Empreendimento?",
+    "go_educacao_30": "Há planos para identificar, capacitar e preparar novos líderes?",
+    "gc_comercial_16": "Adota estratégias comerciais definidas?",
+    "gc_comercial_17": "Os produtos/empreendimento possuem marca comercial?",
+    "gc_comercial_18": "Realiza ou utiliza pesquisa/estudo de mercado?",
+    "gc_comercial_19": "Conhece os concorrentes e acompanha preços?",
+    "gc_comercial_20": "Possui plano de marketing?",
+    "gc_comercial_21": "Realiza promoções e divulgação dos produtos/serviços?",
+    "gc_modelo_22": "Existe regularidade nas vendas, com contratos permanentes?",
+    "gc_modelo_23": "Possui Modelo de Negócio definido?",
+    "gc_modelo_24": "Tem definido público-alvo e canais de comercialização?",
+    "gc_modelo_25": "Possui estratégias de precificação baseadas em custos e mercado?",
+    "gc_modelo_26": "Tem controle de qualidade dos produtos/serviços?",
+    "gc_modelo_27": "Possui sistema de pós-venda e relacionamento com clientes?",
+    "gc_modelo_28": "Tem estratégias para diversificação de produtos/serviços?"
+  },
+  "organizacoes": [
+    {
+      "id": 14,
+      "nome": "TESTE Completo - Salvamento Automatico 2025",
+      "validacao_status": 3,
+      "validacao_data": "2025-10-16T00:40:49.069Z",
+      "camposAfetados": [
+        {
+          "campoAntigo": "go_controle_22",
+          "campoNovo": "go_controle_24",
+          "pergunta": "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_23",
+          "campoNovo": "go_controle_25",
+          "pergunta": "Realiza assembleias anuais para prestação de contas?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_24",
+          "campoNovo": "go_controle_26",
+          "pergunta": "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": null,
+            "valorTraduzido": null,
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_25",
+          "campoNovo": "go_controle_27",
+          "pergunta": "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": null,
+            "valorTraduzido": null,
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_educacao_28",
+          "campoNovo": "go_educacao_30",
+          "pergunta": "Há planos para identificar, capacitar e preparar novos líderes?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": null,
+            "valorTraduzido": null,
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_16",
+          "campoNovo": "gc_comercial_17",
+          "pergunta": "Os produtos/empreendimento possuem marca comercial?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_17",
+          "campoNovo": "gc_comercial_18",
+          "pergunta": "Realiza ou utiliza pesquisa/estudo de mercado?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_18",
+          "campoNovo": "gc_comercial_19",
+          "pergunta": "Conhece os concorrentes e acompanha preços?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_19",
+          "campoNovo": "gc_comercial_20",
+          "pergunta": "Possui plano de marketing?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_20",
+          "campoNovo": "gc_comercial_21",
+          "pergunta": "Realiza promoções e divulgação dos produtos/serviços?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": null,
+            "valorTraduzido": null,
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_22",
+          "campoNovo": "gc_modelo_23",
+          "pergunta": "Possui Modelo de Negócio definido?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_23",
+          "campoNovo": "gc_modelo_24",
+          "pergunta": "Tem definido público-alvo e canais de comercialização?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_24",
+          "campoNovo": "gc_modelo_25",
+          "pergunta": "Possui estratégias de precificação baseadas em custos e mercado?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_25",
+          "campoNovo": "gc_modelo_26",
+          "pergunta": "Tem controle de qualidade dos produtos/serviços?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_26",
+          "campoNovo": "gc_modelo_27",
+          "pergunta": "Possui sistema de pós-venda e relacionamento com clientes?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_27",
+          "campoNovo": "gc_modelo_28",
+          "pergunta": "Tem estratégias para diversificação de produtos/serviços?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": null,
+            "valorTraduzido": null,
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "nome": "ASSOCIAÇÃO DOS ASSENTADOS  LOIVA LURDES E PEQUENOS PRODUTORES RURAIS DE BOREBI A REGIÃO \"NOIVA DA COLINA\".",
+      "validacao_status": 3,
+      "validacao_data": "2025-10-24T18:18:33.460Z",
+      "camposAfetados": [
+        {
+          "campoAntigo": "go_controle_22",
+          "campoNovo": "go_controle_24",
+          "pergunta": "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "go_controle_23",
+          "campoNovo": "go_controle_25",
+          "pergunta": "Realiza assembleias anuais para prestação de contas?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "go_controle_24",
+          "campoNovo": "go_controle_26",
+          "pergunta": "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "go_controle_25",
+          "campoNovo": "go_controle_27",
+          "pergunta": "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "go_educacao_28",
+          "campoNovo": "go_educacao_30",
+          "pergunta": "Há planos para identificar, capacitar e preparar novos líderes?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_16",
+          "campoNovo": "gc_comercial_17",
+          "pergunta": "Os produtos/empreendimento possuem marca comercial?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_17",
+          "campoNovo": "gc_comercial_18",
+          "pergunta": "Realiza ou utiliza pesquisa/estudo de mercado?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_18",
+          "campoNovo": "gc_comercial_19",
+          "pergunta": "Conhece os concorrentes e acompanha preços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_19",
+          "campoNovo": "gc_comercial_20",
+          "pergunta": "Possui plano de marketing?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_20",
+          "campoNovo": "gc_comercial_21",
+          "pergunta": "Realiza promoções e divulgação dos produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_22",
+          "campoNovo": "gc_modelo_23",
+          "pergunta": "Possui Modelo de Negócio definido?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_23",
+          "campoNovo": "gc_modelo_24",
+          "pergunta": "Tem definido público-alvo e canais de comercialização?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_24",
+          "campoNovo": "gc_modelo_25",
+          "pergunta": "Possui estratégias de precificação baseadas em custos e mercado?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_25",
+          "campoNovo": "gc_modelo_26",
+          "pergunta": "Tem controle de qualidade dos produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_26",
+          "campoNovo": "gc_modelo_27",
+          "pergunta": "Possui sistema de pós-venda e relacionamento com clientes?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_27",
+          "campoNovo": "gc_modelo_28",
+          "pergunta": "Tem estratégias para diversificação de produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "nome": "ASSOCIACAO DOS ASSENTADOS MARGARIDA ALVES-AAMA",
+      "validacao_status": 3,
+      "validacao_data": "2025-10-23T15:11:03.514Z",
+      "camposAfetados": [
+        {
+          "campoAntigo": "go_controle_22",
+          "campoNovo": "go_controle_24",
+          "pergunta": "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Aparentemente sim",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Somente uma vez por ano",
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_23",
+          "campoNovo": "go_controle_25",
+          "pergunta": "Realiza assembleias anuais para prestação de contas?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_24",
+          "campoNovo": "go_controle_26",
+          "pergunta": "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Somente uma vez por ano",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_25",
+          "campoNovo": "go_controle_27",
+          "pergunta": "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_educacao_28",
+          "campoNovo": "go_educacao_30",
+          "pergunta": "Há planos para identificar, capacitar e preparar novos líderes?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Sempre participam dos eventos governamentais e ou órgãos de assistência técnica.",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_16",
+          "campoNovo": "gc_comercial_17",
+          "pergunta": "Os produtos/empreendimento possuem marca comercial?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "No momento não se aplica a entidade.",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_17",
+          "campoNovo": "gc_comercial_18",
+          "pergunta": "Realiza ou utiliza pesquisa/estudo de mercado?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_18",
+          "campoNovo": "gc_comercial_19",
+          "pergunta": "Conhece os concorrentes e acompanha preços?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_19",
+          "campoNovo": "gc_comercial_20",
+          "pergunta": "Possui plano de marketing?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_20",
+          "campoNovo": "gc_comercial_21",
+          "pergunta": "Realiza promoções e divulgação dos produtos/serviços?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_22",
+          "campoNovo": "gc_modelo_23",
+          "pergunta": "Possui Modelo de Negócio definido?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_23",
+          "campoNovo": "gc_modelo_24",
+          "pergunta": "Tem definido público-alvo e canais de comercialização?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_24",
+          "campoNovo": "gc_modelo_25",
+          "pergunta": "Possui estratégias de precificação baseadas em custos e mercado?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": "Nao se aplica no status atual da entidade",
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_25",
+          "campoNovo": "gc_modelo_26",
+          "pergunta": "Tem controle de qualidade dos produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": "Nao se aplica no status atual da entidade",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_26",
+          "campoNovo": "gc_modelo_27",
+          "pergunta": "Possui sistema de pós-venda e relacionamento com clientes?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_27",
+          "campoNovo": "gc_modelo_28",
+          "pergunta": "Tem estratégias para diversificação de produtos/serviços?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "nome": "Associação dos Produtores Rurais Loiva Lourdes",
+      "validacao_status": 3,
+      "validacao_data": "2025-10-24T18:20:59.903Z",
+      "camposAfetados": [
+        {
+          "campoAntigo": "go_controle_22",
+          "campoNovo": "go_controle_24",
+          "pergunta": "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": "Participam das reuniões da diretoria.",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Uma vez por ano",
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_23",
+          "campoNovo": "go_controle_25",
+          "pergunta": "Realiza assembleias anuais para prestação de contas?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": "Mensalmente",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_24",
+          "campoNovo": "go_controle_26",
+          "pergunta": "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Uma vez por ano",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_25",
+          "campoNovo": "go_controle_27",
+          "pergunta": "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_educacao_28",
+          "campoNovo": "go_educacao_30",
+          "pergunta": "Há planos para identificar, capacitar e preparar novos líderes?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Os membros do diretório",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_16",
+          "campoNovo": "gc_comercial_17",
+          "pergunta": "Os produtos/empreendimento possuem marca comercial?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_17",
+          "campoNovo": "gc_comercial_18",
+          "pergunta": "Realiza ou utiliza pesquisa/estudo de mercado?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_18",
+          "campoNovo": "gc_comercial_19",
+          "pergunta": "Conhece os concorrentes e acompanha preços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_19",
+          "campoNovo": "gc_comercial_20",
+          "pergunta": "Possui plano de marketing?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_20",
+          "campoNovo": "gc_comercial_21",
+          "pergunta": "Realiza promoções e divulgação dos produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_22",
+          "campoNovo": "gc_modelo_23",
+          "pergunta": "Possui Modelo de Negócio definido?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_23",
+          "campoNovo": "gc_modelo_24",
+          "pergunta": "Tem definido público-alvo e canais de comercialização?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_24",
+          "campoNovo": "gc_modelo_25",
+          "pergunta": "Possui estratégias de precificação baseadas em custos e mercado?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_25",
+          "campoNovo": "gc_modelo_26",
+          "pergunta": "Tem controle de qualidade dos produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_26",
+          "campoNovo": "gc_modelo_27",
+          "pergunta": "Possui sistema de pós-venda e relacionamento com clientes?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_27",
+          "campoNovo": "gc_modelo_28",
+          "pergunta": "Tem estratégias para diversificação de produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "nome": "Associação de Produtores Rurais do Assentamento Antônio conselheiro APRAACON",
+      "validacao_status": 3,
+      "validacao_data": "2025-10-23T15:36:01.112Z",
+      "camposAfetados": [
+        {
+          "campoAntigo": "go_controle_22",
+          "campoNovo": "go_controle_24",
+          "pergunta": "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "go_controle_23",
+          "campoNovo": "go_controle_25",
+          "pergunta": "Realiza assembleias anuais para prestação de contas?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Ações pontuais",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Somente no final do ano",
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_24",
+          "campoNovo": "go_controle_26",
+          "pergunta": "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_25",
+          "campoNovo": "go_controle_27",
+          "pergunta": "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Somente no final do ano",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_educacao_28",
+          "campoNovo": "go_educacao_30",
+          "pergunta": "Há planos para identificar, capacitar e preparar novos líderes?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_16",
+          "campoNovo": "gc_comercial_17",
+          "pergunta": "Os produtos/empreendimento possuem marca comercial?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_17",
+          "campoNovo": "gc_comercial_18",
+          "pergunta": "Realiza ou utiliza pesquisa/estudo de mercado?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_18",
+          "campoNovo": "gc_comercial_19",
+          "pergunta": "Conhece os concorrentes e acompanha preços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_19",
+          "campoNovo": "gc_comercial_20",
+          "pergunta": "Possui plano de marketing?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_20",
+          "campoNovo": "gc_comercial_21",
+          "pergunta": "Realiza promoções e divulgação dos produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_22",
+          "campoNovo": "gc_modelo_23",
+          "pergunta": "Possui Modelo de Negócio definido?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_23",
+          "campoNovo": "gc_modelo_24",
+          "pergunta": "Tem definido público-alvo e canais de comercialização?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_24",
+          "campoNovo": "gc_modelo_25",
+          "pergunta": "Possui estratégias de precificação baseadas em custos e mercado?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_25",
+          "campoNovo": "gc_modelo_26",
+          "pergunta": "Tem controle de qualidade dos produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_26",
+          "campoNovo": "gc_modelo_27",
+          "pergunta": "Possui sistema de pós-venda e relacionamento com clientes?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_27",
+          "campoNovo": "gc_modelo_28",
+          "pergunta": "Tem estratégias para diversificação de produtos/serviços?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "nome": "ASSOCIAÇÃO DOS ASSENTADOS CAMPONESES FRUTOS DA TERRA",
+      "validacao_status": 3,
+      "validacao_data": "2025-10-24T18:23:47.569Z",
+      "camposAfetados": [
+        {
+          "campoAntigo": "go_controle_22",
+          "campoNovo": "go_controle_24",
+          "pergunta": "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "go_controle_23",
+          "campoNovo": "go_controle_25",
+          "pergunta": "Realiza assembleias anuais para prestação de contas?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "go_controle_24",
+          "campoNovo": "go_controle_26",
+          "pergunta": "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_25",
+          "campoNovo": "go_controle_27",
+          "pergunta": "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "go_educacao_28",
+          "campoNovo": "go_educacao_30",
+          "pergunta": "Há planos para identificar, capacitar e preparar novos líderes?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_16",
+          "campoNovo": "gc_comercial_17",
+          "pergunta": "Os produtos/empreendimento possuem marca comercial?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_17",
+          "campoNovo": "gc_comercial_18",
+          "pergunta": "Realiza ou utiliza pesquisa/estudo de mercado?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_18",
+          "campoNovo": "gc_comercial_19",
+          "pergunta": "Conhece os concorrentes e acompanha preços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_19",
+          "campoNovo": "gc_comercial_20",
+          "pergunta": "Possui plano de marketing?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_20",
+          "campoNovo": "gc_comercial_21",
+          "pergunta": "Realiza promoções e divulgação dos produtos/serviços?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_22",
+          "campoNovo": "gc_modelo_23",
+          "pergunta": "Possui Modelo de Negócio definido?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": "Feiras e cestas.",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_23",
+          "campoNovo": "gc_modelo_24",
+          "pergunta": "Tem definido público-alvo e canais de comercialização?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_24",
+          "campoNovo": "gc_modelo_25",
+          "pergunta": "Possui estratégias de precificação baseadas em custos e mercado?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_25",
+          "campoNovo": "gc_modelo_26",
+          "pergunta": "Tem controle de qualidade dos produtos/serviços?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_26",
+          "campoNovo": "gc_modelo_27",
+          "pergunta": "Possui sistema de pós-venda e relacionamento com clientes?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_27",
+          "campoNovo": "gc_modelo_28",
+          "pergunta": "Tem estratégias para diversificação de produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "nome": "COOTRASP - COOPERATIVA MULTIFUNCIONAL DE ASSESSORIA,\nPRODUÇÃO, INDUSTRIALIZAÇÃO E COMERCIALIZAÇÃO DOS ASSENTAMENTOS DA\nREFORMA AGRÁRIA EM SÃO PAULO",
+      "validacao_status": 3,
+      "validacao_data": "2025-10-24T18:47:34.286Z",
+      "camposAfetados": [
+        {
+          "campoAntigo": "go_controle_22",
+          "campoNovo": "go_controle_24",
+          "pergunta": "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Quando faz mostra.",
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_23",
+          "campoNovo": "go_controle_25",
+          "pergunta": "Realiza assembleias anuais para prestação de contas?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_24",
+          "campoNovo": "go_controle_26",
+          "pergunta": "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Quando faz mostra.",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_25",
+          "campoNovo": "go_controle_27",
+          "pergunta": "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_educacao_28",
+          "campoNovo": "go_educacao_30",
+          "pergunta": "Há planos para identificar, capacitar e preparar novos líderes?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_16",
+          "campoNovo": "gc_comercial_17",
+          "pergunta": "Os produtos/empreendimento possuem marca comercial?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_17",
+          "campoNovo": "gc_comercial_18",
+          "pergunta": "Realiza ou utiliza pesquisa/estudo de mercado?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_18",
+          "campoNovo": "gc_comercial_19",
+          "pergunta": "Conhece os concorrentes e acompanha preços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_19",
+          "campoNovo": "gc_comercial_20",
+          "pergunta": "Possui plano de marketing?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_20",
+          "campoNovo": "gc_comercial_21",
+          "pergunta": "Realiza promoções e divulgação dos produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_22",
+          "campoNovo": "gc_modelo_23",
+          "pergunta": "Possui Modelo de Negócio definido?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_23",
+          "campoNovo": "gc_modelo_24",
+          "pergunta": "Tem definido público-alvo e canais de comercialização?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_24",
+          "campoNovo": "gc_modelo_25",
+          "pergunta": "Possui estratégias de precificação baseadas em custos e mercado?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_25",
+          "campoNovo": "gc_modelo_26",
+          "pergunta": "Tem controle de qualidade dos produtos/serviços?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_26",
+          "campoNovo": "gc_modelo_27",
+          "pergunta": "Possui sistema de pós-venda e relacionamento com clientes?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_27",
+          "campoNovo": "gc_modelo_28",
+          "pergunta": "Tem estratégias para diversificação de produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "nome": "Associação de Desenvolvimento União da Vitória ADUV",
+      "validacao_status": 3,
+      "validacao_data": "2025-10-23T16:23:15.925Z",
+      "camposAfetados": [
+        {
+          "campoAntigo": "go_controle_22",
+          "campoNovo": "go_controle_24",
+          "pergunta": "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Não  foi observado firmeza na resposta",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_23",
+          "campoNovo": "go_controle_25",
+          "pergunta": "Realiza assembleias anuais para prestação de contas?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": "Somente quando necessário",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_24",
+          "campoNovo": "go_controle_26",
+          "pergunta": "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?",
+          "antes": {
+            "valor": 3,
+            "valorTraduzido": "Implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_25",
+          "campoNovo": "go_controle_27",
+          "pergunta": "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_educacao_28",
+          "campoNovo": "go_educacao_30",
+          "pergunta": "Há planos para identificar, capacitar e preparar novos líderes?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_16",
+          "campoNovo": "gc_comercial_17",
+          "pergunta": "Os produtos/empreendimento possuem marca comercial?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_17",
+          "campoNovo": "gc_comercial_18",
+          "pergunta": "Realiza ou utiliza pesquisa/estudo de mercado?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_18",
+          "campoNovo": "gc_comercial_19",
+          "pergunta": "Conhece os concorrentes e acompanha preços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_19",
+          "campoNovo": "gc_comercial_20",
+          "pergunta": "Possui plano de marketing?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_20",
+          "campoNovo": "gc_comercial_21",
+          "pergunta": "Realiza promoções e divulgação dos produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_22",
+          "campoNovo": "gc_modelo_23",
+          "pergunta": "Possui Modelo de Negócio definido?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_23",
+          "campoNovo": "gc_modelo_24",
+          "pergunta": "Tem definido público-alvo e canais de comercialização?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_24",
+          "campoNovo": "gc_modelo_25",
+          "pergunta": "Possui estratégias de precificação baseadas em custos e mercado?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_25",
+          "campoNovo": "gc_modelo_26",
+          "pergunta": "Tem controle de qualidade dos produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_26",
+          "campoNovo": "gc_modelo_27",
+          "pergunta": "Possui sistema de pós-venda e relacionamento com clientes?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_27",
+          "campoNovo": "gc_modelo_28",
+          "pergunta": "Tem estratégias para diversificação de produtos/serviços?",
+          "antes": {
+            "valor": 2,
+            "valorTraduzido": "Parcialmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "nome": "ASSOCIAÇÃO REGIONAL DE DESENVOLVIMENTO AGRÁRIO - ARDA",
+      "validacao_status": 3,
+      "validacao_data": "2025-10-24T19:15:39.623Z",
+      "camposAfetados": [
+        {
+          "campoAntigo": "go_controle_22",
+          "campoNovo": "go_controle_24",
+          "pergunta": "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": "Existe sim um conselho fiscal, composto por três pessoas e um suplente",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": "Como nao ha atividade na associação, o último foi de 2017",
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_23",
+          "campoNovo": "go_controle_25",
+          "pergunta": "Realiza assembleias anuais para prestação de contas?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": "Como a associação está sem atividades formais, nao se há uma necessidade de reuniões periódica e pontuais",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_24",
+          "campoNovo": "go_controle_26",
+          "pergunta": "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": "Como nao ha atividade na associação, o último foi de 2017",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_controle_25",
+          "campoNovo": "go_controle_27",
+          "pergunta": "Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": "Possui um grupo no whatsapp",
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "go_educacao_28",
+          "campoNovo": "go_educacao_30",
+          "pergunta": "Há planos para identificar, capacitar e preparar novos líderes?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": "Na associação segue o exemplo do movimento quando se forma o quadro de dirigentes, vê quem se destaca, soma nas tarefas, faz as tarefas pedidas, faz as formações quando se tem, e está ativo de forma orgânica nao so na associação mas no assentamento também",
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_16",
+          "campoNovo": "gc_comercial_17",
+          "pergunta": "Os produtos/empreendimento possuem marca comercial?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_17",
+          "campoNovo": "gc_comercial_18",
+          "pergunta": "Realiza ou utiliza pesquisa/estudo de mercado?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_18",
+          "campoNovo": "gc_comercial_19",
+          "pergunta": "Conhece os concorrentes e acompanha preços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_19",
+          "campoNovo": "gc_comercial_20",
+          "pergunta": "Possui plano de marketing?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_comercial_20",
+          "campoNovo": "gc_comercial_21",
+          "pergunta": "Realiza promoções e divulgação dos produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_22",
+          "campoNovo": "gc_modelo_23",
+          "pergunta": "Possui Modelo de Negócio definido?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": "Quando se tem sim",
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": true,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_23",
+          "campoNovo": "gc_modelo_24",
+          "pergunta": "Tem definido público-alvo e canais de comercialização?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_24",
+          "campoNovo": "gc_modelo_25",
+          "pergunta": "Possui estratégias de precificação baseadas em custos e mercado?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_25",
+          "campoNovo": "gc_modelo_26",
+          "pergunta": "Tem controle de qualidade dos produtos/serviços?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_26",
+          "campoNovo": "gc_modelo_27",
+          "pergunta": "Possui sistema de pós-venda e relacionamento com clientes?",
+          "antes": {
+            "valor": 1,
+            "valorTraduzido": "Não implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": true,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": true
+          }
+        },
+        {
+          "campoAntigo": "gc_modelo_27",
+          "campoNovo": "gc_modelo_28",
+          "pergunta": "Tem estratégias para diversificação de produtos/serviços?",
+          "antes": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "depois": {
+            "valor": 4,
+            "valorTraduzido": "Totalmente implementado",
+            "comentario": null,
+            "proposta": null
+          },
+          "mudancas": {
+            "valorMudou": false,
+            "comentarioMudou": false,
+            "propostaMudou": false,
+            "temMudancas": false
+          }
+        }
+      ]
+    }
+  ]
+}

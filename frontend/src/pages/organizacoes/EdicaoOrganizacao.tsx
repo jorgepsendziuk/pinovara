@@ -50,7 +50,8 @@ import {
   Plus,
   Calendar,
   User,
-  Clock
+  Clock,
+  PenTool
 } from 'lucide-react';
 import '../../styles/tabs.css';
 
@@ -233,6 +234,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         'endereco-localizacao',
         'arquivos',
         'fotos',
+        'assinaturas',
         'representante',
         'dados-coleta'
       ]);
@@ -771,6 +773,19 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
                   accordionAberto={accordionsAbertos.includes('fotos') ? 'fotos' : null}
                   onToggleAccordion={toggleAccordion}
                 />
+                
+                {/* Assinaturas - Em manutenção */}
+                <div className="accordion-item" style={{ opacity: 0.6 }}>
+                  <div className="accordion-header" style={{ background: '#f8f9fa', color: '#6c757d', cursor: 'not-allowed' }}>
+                    <h3>
+                      <PenTool size={20} />
+                      <span>Assinaturas (Em Manutenção)</span>
+                    </h3>
+                    <div style={{ fontSize: '12px', color: '#dc3545', fontWeight: '600' }}>
+                      🔧 EM DESENVOLVIMENTO
+                    </div>
+                  </div>
+                </div>
               </>
             )}
             
