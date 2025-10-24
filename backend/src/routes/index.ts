@@ -8,6 +8,7 @@ import documentoRoutes from './documentoRoutes';
 import fotoRoutes from './fotoRoutes';
 import fotoSyncRoutes from './fotoSyncRoutes';
 import arquivoSyncRoutes from './arquivoSyncRoutes';
+import assinaturaSyncRoutes from './assinaturaSyncRoutes';
 import relatorioRoutes from './relatorioRoutes';
 
 const router = Router();
@@ -71,6 +72,7 @@ router.use('/organizacoes', fotoRoutes);  // Foto routes - ANTES de organizacaoR
 router.use('/', documentoRoutes);  // Documento routes - usa /organizacoes/:id/documentos (ANTES de organizacaoRoutes)
 router.use('/', fotoSyncRoutes);  // Foto sync ODK routes - usa /organizacoes/:id/fotos/sync
 router.use('/', arquivoSyncRoutes);  // Arquivo sync ODK routes - usa /organizacoes/:id/arquivos/sync
+router.use('/', assinaturaSyncRoutes);  // Assinatura sync ODK routes - usa /organizacoes/:id/assinaturas/sync
 router.use('/', relatorioRoutes);  // Relatorio routes - usa /organizacoes/:id/relatorio/pdf
 router.use('/organizacoes', organizacaoRoutes);  // Organizacao routes - usa auth global
 router.use('/admin', adminRoutes);  // Admin routes - requer autenticação e papel admin

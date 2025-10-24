@@ -39,17 +39,17 @@ export const TODAS_AREAS = [
       { n:21, t:'Existem mecanismos para mediar e resolver disputas?', c:'go_direcao_21' }
     ]},
     { nome: 'Controles Internos e Avaliação', p: [
-      { n:22, t:'O conselho fiscal é atuante no empreendimento?', c:'go_controle_20' },
-      { n:23, t:'A direção se reúne periodicamente com o conselho fiscal?', c:'go_controle_21' },
-      { n:24, t:'A direção apresenta periodicamente relatórios contábeis/financeiros?', c:'go_controle_22' },
-      { n:25, t:'Realiza assembleias anuais para prestação de contas?', c:'go_controle_23' },
-      { n:26, t:'Possui mecanismos de controle, monitoramento e avaliação?', c:'go_controle_24' },
-      { n:27, t:'Há canais para dúvidas e sugestões sobre relatórios?', c:'go_controle_25' }
+      { n:22, t:'O conselho fiscal é atuante no empreendimento?', c:'go_controle_22' },
+      { n:23, t:'A direção se reúne periodicamente com o conselho fiscal?', c:'go_controle_23' },
+      { n:24, t:'A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?', c:'go_controle_24' },
+      { n:25, t:'Realiza assembleias anuais para prestação de contas?', c:'go_controle_25' },
+      { n:26, t:'Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?', c:'go_controle_26' },
+      { n:27, t:'Há canais para dúvidas e sugestões em relação aos relatórios e informações compartilhados?', c:'go_controle_27' }
     ]},
     { nome: 'Educação e Formação', p: [
-      { n:28, t:'Os cooperados/associados são capacitados em cooperativismo/associativismo?', c:'go_educacao_26' },
-      { n:29, t:'Os cooperados/associados são capacitados em Gestão do Empreendimento?', c:'go_educacao_27' },
-      { n:30, t:'Há planos para identificar, capacitar e preparar novos líderes?', c:'go_educacao_28' }
+      { n:28, t:'Os cooperados/associados são capacitados em cooperativismo/associativismo?', c:'go_educacao_28' },
+      { n:29, t:'Os cooperados/associados são capacitados em Gestão do Empreendimento?', c:'go_educacao_29' },
+      { n:30, t:'Há planos para identificar, capacitar e preparar novos líderes?', c:'go_educacao_30' }
     ]}
   ]},
   // GP - GESTÃO DE PESSOAS (20 práticas)
@@ -148,21 +148,21 @@ export const TODAS_AREAS = [
       { n:15, t:'Se atualiza sobre exigências dos mercados verdes?', c:'gc_mercado_15' }
     ]},
     { nome: 'Estratégia Comercial e Marketing', p: [
-      { n:16, t:'Adota estratégias comerciais definidas?', c:'gc_comercial_15' },
-      { n:17, t:'Os produtos/empreendimento possuem marca comercial?', c:'gc_comercial_16' },
-      { n:18, t:'Realiza ou utiliza pesquisa/estudo de mercado?', c:'gc_comercial_17' },
-      { n:19, t:'Conhece os concorrentes e acompanha preços?', c:'gc_comercial_18' },
-      { n:20, t:'Possui plano de marketing?', c:'gc_comercial_19' },
-      { n:21, t:'O marketing contribui para estratégias e aumento de vendas?', c:'gc_comercial_20' }
+      { n:16, t:'Adota estratégias comerciais definidas?', c:'gc_comercial_16' },
+      { n:17, t:'Os produtos/empreendimento possuem marca comercial?', c:'gc_comercial_17' },
+      { n:18, t:'Realiza ou utiliza pesquisa/estudo de mercado?', c:'gc_comercial_18' },
+      { n:19, t:'Conhece os concorrentes e acompanha preços?', c:'gc_comercial_19' },
+      { n:20, t:'Possui plano de marketing?', c:'gc_comercial_20' },
+      { n:21, t:'O marketing contribui para estratégias e aumento de vendas?', c:'gc_comercial_21' }
     ]},
     { nome: 'Sustentabilidade e Modelo do Negócio', p: [
-      { n:22, t:'Existe regularidade nas vendas, com contratos permanentes?', c:'gc_modelo_21' },
-      { n:23, t:'Possui Modelo de Negócio definido?', c:'gc_modelo_22' },
-      { n:24, t:'Vem utilizando o Modelo de Negócio para inserção no mercado?', c:'gc_modelo_23' },
-      { n:25, t:'A direção tem clareza da proposta de valor?', c:'gc_modelo_24' },
-      { n:26, t:'O negócio contribui para aumento da renda dos associados?', c:'gc_modelo_25' },
-      { n:27, t:'Possui Plano de Negócios elaborado?', c:'gc_modelo_26' },
-      { n:28, t:'O Plano de Negócios vem sendo utilizado?', c:'gc_modelo_27' }
+      { n:22, t:'Existe regularidade nas vendas, com contratos permanentes?', c:'gc_modelo_22' },
+      { n:23, t:'Possui Modelo de Negócio definido?', c:'gc_modelo_23' },
+      { n:24, t:'Vem utilizando o Modelo de Negócio para inserção no mercado?', c:'gc_modelo_24' },
+      { n:25, t:'A direção tem clareza da proposta de valor?', c:'gc_modelo_25' },
+      { n:26, t:'A direção tem clareza dos canais de distribuição?', c:'gc_modelo_26' },
+      { n:27, t:'A direção tem clareza dos segmentos de clientes?', c:'gc_modelo_27' },
+      { n:28, t:'A direção tem clareza das fontes de receita?', c:'gc_modelo_28' }
     ]}
   ]},
   // GPP - GESTÃO DE PROCESSOS PRODUTIVOS (29 práticas)

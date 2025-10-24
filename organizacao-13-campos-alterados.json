@@ -1,0 +1,241 @@
+{
+  "metadata": {
+    "organizacaoId": 13,
+    "nome": "ASSOCIAÇÃO DE COOPERAÇÃO AGRÍCOLA DAS COMUNAS DA TERRA DA REGIONAL GRANDE SÃO PAULO - TERRA E LIBERDADE",
+    "dataExtracao": "2025-10-24T19:51:26.601Z",
+    "totalCamposComMudancas": 10,
+    "descricao": "Dados antes e depois dos campos alterados na organização ID 13"
+  },
+  "camposAlterados": [
+    {
+      "campoAntigo": "go_controle_22",
+      "campoNovo": "go_controle_24",
+      "pergunta": "A direção tem o hábito de apresentar periodicamente relatórios contábeis, financeiros e administrativos?",
+      "antes": {
+        "valor": 1,
+        "valorTraduzido": "Não implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "depois": {
+        "valor": 3,
+        "valorTraduzido": "Implementado",
+        "comentario": "Esses relatórios e dados ficam a disposição de todos e todas. Eles não possuem um sistema, de fato, mas um conjunto de planilhas do Excel que estão interligadas. Estas vão desde o mapeamento da produção, até as especificidades, quantidades entregues, recu",
+        "proposta": null
+      },
+      "mudancas": {
+        "valorMudou": true,
+        "comentarioMudou": true,
+        "propostaMudou": false,
+        "temMudancas": true
+      }
+    },
+    {
+      "campoAntigo": "go_controle_24",
+      "campoNovo": "go_controle_26",
+      "pergunta": "Possui mecanismos de controle, monitoramento e avaliação do alcance de objetivos e metas?",
+      "antes": {
+        "valor": 3,
+        "valorTraduzido": "Implementado",
+        "comentario": "Esses relatórios e dados ficam a disposição de todos e todas. Eles não possuem um sistema, de fato, mas um conjunto de planilhas do Excel que estão interligadas. Estas vão desde o mapeamento da produção, até as especificidades, quantidades entregues, recu",
+        "proposta": null
+      },
+      "depois": {
+        "valor": 3,
+        "valorTraduzido": "Implementado",
+        "comentario": "Possui, mas não o monitora",
+        "proposta": null
+      },
+      "mudancas": {
+        "valorMudou": false,
+        "comentarioMudou": true,
+        "propostaMudou": false,
+        "temMudancas": true
+      }
+    },
+    {
+      "campoAntigo": "gc_comercial_16",
+      "campoNovo": "gc_comercial_17",
+      "pergunta": "Os produtos/empreendimento possuem marca comercial?",
+      "antes": {
+        "valor": 1,
+        "valorTraduzido": "Não implementado",
+        "comentario": "Mas sempre voltada para os princípios que norteiam a entidade.",
+        "proposta": null
+      },
+      "depois": {
+        "valor": 1,
+        "valorTraduzido": "Não implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "mudancas": {
+        "valorMudou": false,
+        "comentarioMudou": true,
+        "propostaMudou": false,
+        "temMudancas": true
+      }
+    },
+    {
+      "campoAntigo": "gc_comercial_17",
+      "campoNovo": "gc_comercial_18",
+      "pergunta": "Realiza ou utiliza pesquisa/estudo de mercado?",
+      "antes": {
+        "valor": 1,
+        "valorTraduzido": "Não implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "depois": {
+        "valor": 2,
+        "valorTraduzido": "Parcialmente implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "mudancas": {
+        "valorMudou": true,
+        "comentarioMudou": false,
+        "propostaMudou": false,
+        "temMudancas": true
+      }
+    },
+    {
+      "campoAntigo": "gc_comercial_20",
+      "campoNovo": "gc_comercial_21",
+      "pergunta": "Realiza promoções e divulgação dos produtos/serviços?",
+      "antes": {
+        "valor": 2,
+        "valorTraduzido": "Parcialmente implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "depois": {
+        "valor": 4,
+        "valorTraduzido": "Totalmente implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "mudancas": {
+        "valorMudou": true,
+        "comentarioMudou": false,
+        "propostaMudou": false,
+        "temMudancas": true
+      }
+    },
+    {
+      "campoAntigo": "gc_modelo_22",
+      "campoNovo": "gc_modelo_23",
+      "pergunta": "Possui Modelo de Negócio definido?",
+      "antes": {
+        "valor": 1,
+        "valorTraduzido": "Não implementado",
+        "comentario": "São 9 grupos de consumo militantes, a banca no Ceagesp, feiras no Sesc e eventos tradicionais.",
+        "proposta": null
+      },
+      "depois": {
+        "valor": 2,
+        "valorTraduzido": "Parcialmente implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "mudancas": {
+        "valorMudou": true,
+        "comentarioMudou": true,
+        "propostaMudou": false,
+        "temMudancas": true
+      }
+    },
+    {
+      "campoAntigo": "gc_modelo_23",
+      "campoNovo": "gc_modelo_24",
+      "pergunta": "Tem definido público-alvo e canais de comercialização?",
+      "antes": {
+        "valor": 2,
+        "valorTraduzido": "Parcialmente implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "depois": {
+        "valor": 4,
+        "valorTraduzido": "Totalmente implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "mudancas": {
+        "valorMudou": true,
+        "comentarioMudou": false,
+        "propostaMudou": false,
+        "temMudancas": true
+      }
+    },
+    {
+      "campoAntigo": "gc_modelo_25",
+      "campoNovo": "gc_modelo_26",
+      "pergunta": "Tem controle de qualidade dos produtos/serviços?",
+      "antes": {
+        "valor": 4,
+        "valorTraduzido": "Totalmente implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "depois": {
+        "valor": 1,
+        "valorTraduzido": "Não implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "mudancas": {
+        "valorMudou": true,
+        "comentarioMudou": false,
+        "propostaMudou": false,
+        "temMudancas": true
+      }
+    },
+    {
+      "campoAntigo": "gc_modelo_26",
+      "campoNovo": "gc_modelo_27",
+      "pergunta": "Possui sistema de pós-venda e relacionamento com clientes?",
+      "antes": {
+        "valor": 1,
+        "valorTraduzido": "Não implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "depois": {
+        "valor": 2,
+        "valorTraduzido": "Parcialmente implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "mudancas": {
+        "valorMudou": true,
+        "comentarioMudou": false,
+        "propostaMudou": false,
+        "temMudancas": true
+      }
+    },
+    {
+      "campoAntigo": "gc_modelo_27",
+      "campoNovo": "gc_modelo_28",
+      "pergunta": "Tem estratégias para diversificação de produtos/serviços?",
+      "antes": {
+        "valor": 2,
+        "valorTraduzido": "Parcialmente implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "depois": {
+        "valor": 4,
+        "valorTraduzido": "Totalmente implementado",
+        "comentario": null,
+        "proposta": null
+      },
+      "mudancas": {
+        "valorMudou": true,
+        "comentarioMudou": false,
+        "propostaMudou": false,
+        "temMudancas": true
+      }
+    }
+  ]
+}

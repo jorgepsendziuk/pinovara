@@ -184,6 +184,12 @@ model organizacao {
   go_controle_25_resposta                                            Int?
   go_controle_25_comentario                                          String?                         @db.VarChar
   go_controle_25_proposta                                            String?                         @db.VarChar
+  go_controle_26_resposta                                            Int?
+  go_controle_26_comentario                                          String?                         @db.VarChar
+  go_controle_26_proposta                                            String?                         @db.VarChar
+  go_controle_27_resposta                                            Int?
+  go_controle_27_comentario                                          String?                         @db.VarChar
+  go_controle_27_proposta                                            String?                         @db.VarChar
   go_educacao_26_resposta                                            Int?
   go_educacao_26_comentario                                          String?                         @db.VarChar
   go_educacao_26_proposta                                            String?                         @db.VarChar
@@ -193,6 +199,12 @@ model organizacao {
   go_educacao_28_resposta                                            Int?
   go_educacao_28_comentario                                          String?                         @db.VarChar
   go_educacao_28_proposta                                            String?                         @db.VarChar
+  go_educacao_29_resposta                                            Int?
+  go_educacao_29_comentario                                          String?                         @db.VarChar
+  go_educacao_29_proposta                                            String?                         @db.VarChar
+  go_educacao_30_resposta                                            Int?
+  go_educacao_30_comentario                                          String?                         @db.VarChar
+  go_educacao_30_proposta                                            String?                         @db.VarChar
   go_estrategia_5_resposta                                           Int?
   go_estrategia_5_comentario                                         String?                         @db.VarChar
   go_estrategia_5_proposta                                           String?                         @db.VarChar
@@ -361,6 +373,9 @@ model organizacao {
   gc_comercial_20_resposta                                           Int?
   gc_comercial_20_comentario                                         String?                         @db.VarChar
   gc_comercial_20_proposta                                           String?                         @db.VarChar
+  gc_comercial_21_resposta                                           Int?
+  gc_comercial_21_comentario                                         String?                         @db.VarChar
+  gc_comercial_21_proposta                                           String?                         @db.VarChar
   gc_modelo_21_resposta                                              Int?
   gc_modelo_21_comentario                                            String?                         @db.VarChar
   gc_modelo_21_proposta                                              String?                         @db.VarChar
@@ -382,6 +397,9 @@ model organizacao {
   gc_modelo_27_resposta                                              Int?
   gc_modelo_27_comentario                                            String?                         @db.VarChar
   gc_modelo_27_proposta                                              String?                         @db.VarChar
+  gc_modelo_28_resposta                                              Int?
+  gc_modelo_28_comentario                                            String?                         @db.VarChar
+  gc_modelo_28_proposta                                              String?                         @db.VarChar
   gf_contas_5_resposta                                               Int?
   gf_contas_5_comentario                                             String?                         @db.VarChar
   gf_contas_5_proposta                                               String?                         @db.VarChar
@@ -724,6 +742,7 @@ model organizacao {
   resposta_organizacao_gc_comercial_18_respostaToresposta            resposta?                       @relation("organizacao_gc_comercial_18_respostaToresposta", fields: [gc_comercial_18_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gc_comercial_19_respostaToresposta            resposta?                       @relation("organizacao_gc_comercial_19_respostaToresposta", fields: [gc_comercial_19_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gc_comercial_20_respostaToresposta            resposta?                       @relation("organizacao_gc_comercial_20_respostaToresposta", fields: [gc_comercial_20_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resposta_organizacao_gc_comercial_21_respostaToresposta            resposta?                       @relation("organizacao_gc_comercial_21_respostaToresposta", fields: [gc_comercial_21_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gc_e_comercial_1_respostaToresposta           resposta?                       @relation("organizacao_gc_e_comercial_1_respostaToresposta", fields: [gc_e_comercial_1_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gc_e_comercial_2_respostaToresposta           resposta?                       @relation("organizacao_gc_e_comercial_2_respostaToresposta", fields: [gc_e_comercial_2_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gc_e_comercial_3_respostaToresposta           resposta?                       @relation("organizacao_gc_e_comercial_3_respostaToresposta", fields: [gc_e_comercial_3_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -746,6 +765,7 @@ model organizacao {
   resposta_organizacao_gc_modelo_25_respostaToresposta               resposta?                       @relation("organizacao_gc_modelo_25_respostaToresposta", fields: [gc_modelo_25_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gc_modelo_26_respostaToresposta               resposta?                       @relation("organizacao_gc_modelo_26_respostaToresposta", fields: [gc_modelo_26_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gc_modelo_27_respostaToresposta               resposta?                       @relation("organizacao_gc_modelo_27_respostaToresposta", fields: [gc_modelo_27_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resposta_organizacao_gc_modelo_28_respostaToresposta               resposta?                       @relation("organizacao_gc_modelo_28_respostaToresposta", fields: [gc_modelo_28_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gf_analise_22_respostaToresposta              resposta?                       @relation("organizacao_gf_analise_22_respostaToresposta", fields: [gf_analise_22_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gf_analise_23_respostaToresposta              resposta?                       @relation("organizacao_gf_analise_23_respostaToresposta", fields: [gf_analise_23_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_gf_analise_24_respostaToresposta              resposta?                       @relation("organizacao_gf_analise_24_respostaToresposta", fields: [gf_analise_24_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -792,6 +812,8 @@ model organizacao {
   resposta_organizacao_go_controle_23_respostaToresposta             resposta?                       @relation("organizacao_go_controle_23_respostaToresposta", fields: [go_controle_23_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_go_controle_24_respostaToresposta             resposta?                       @relation("organizacao_go_controle_24_respostaToresposta", fields: [go_controle_24_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_go_controle_25_respostaToresposta             resposta?                       @relation("organizacao_go_controle_25_respostaToresposta", fields: [go_controle_25_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resposta_organizacao_go_controle_26_respostaToresposta             resposta?                       @relation("organizacao_go_controle_26_respostaToresposta", fields: [go_controle_26_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resposta_organizacao_go_controle_27_respostaToresposta             resposta?                       @relation("organizacao_go_controle_27_respostaToresposta", fields: [go_controle_27_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_go_direcao_14_respostaToresposta              resposta?                       @relation("organizacao_go_direcao_14_respostaToresposta", fields: [go_direcao_14_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_go_direcao_15_respostaToresposta              resposta?                       @relation("organizacao_go_direcao_15_respostaToresposta", fields: [go_direcao_15_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_go_direcao_16_respostaToresposta              resposta?                       @relation("organizacao_go_direcao_16_respostaToresposta", fields: [go_direcao_16_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -803,6 +825,8 @@ model organizacao {
   resposta_organizacao_go_educacao_26_respostaToresposta             resposta?                       @relation("organizacao_go_educacao_26_respostaToresposta", fields: [go_educacao_26_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_go_educacao_27_respostaToresposta             resposta?                       @relation("organizacao_go_educacao_27_respostaToresposta", fields: [go_educacao_27_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_go_educacao_28_respostaToresposta             resposta?                       @relation("organizacao_go_educacao_28_respostaToresposta", fields: [go_educacao_28_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resposta_organizacao_go_educacao_29_respostaToresposta             resposta?                       @relation("organizacao_go_educacao_29_respostaToresposta", fields: [go_educacao_29_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resposta_organizacao_go_educacao_30_respostaToresposta             resposta?                       @relation("organizacao_go_educacao_30_respostaToresposta", fields: [go_educacao_30_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_go_estrategia_5_respostaToresposta            resposta?                       @relation("organizacao_go_estrategia_5_respostaToresposta", fields: [go_estrategia_5_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_go_estrategia_6_respostaToresposta            resposta?                       @relation("organizacao_go_estrategia_6_respostaToresposta", fields: [go_estrategia_6_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resposta_organizacao_go_estrutura_1_respostaToresposta             resposta?                       @relation("organizacao_go_estrutura_1_respostaToresposta", fields: [go_estrutura_1_resposta], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1225,6 +1249,7 @@ model resposta {
   organizacao_organizacao_gc_comercial_18_respostaToresposta            organizacao[] @relation("organizacao_gc_comercial_18_respostaToresposta")
   organizacao_organizacao_gc_comercial_19_respostaToresposta            organizacao[] @relation("organizacao_gc_comercial_19_respostaToresposta")
   organizacao_organizacao_gc_comercial_20_respostaToresposta            organizacao[] @relation("organizacao_gc_comercial_20_respostaToresposta")
+  organizacao_organizacao_gc_comercial_21_respostaToresposta            organizacao[] @relation("organizacao_gc_comercial_21_respostaToresposta")
   organizacao_organizacao_gc_e_comercial_1_respostaToresposta           organizacao[] @relation("organizacao_gc_e_comercial_1_respostaToresposta")
   organizacao_organizacao_gc_e_comercial_2_respostaToresposta           organizacao[] @relation("organizacao_gc_e_comercial_2_respostaToresposta")
   organizacao_organizacao_gc_e_comercial_3_respostaToresposta           organizacao[] @relation("organizacao_gc_e_comercial_3_respostaToresposta")
@@ -1247,6 +1272,7 @@ model resposta {
   organizacao_organizacao_gc_modelo_25_respostaToresposta               organizacao[] @relation("organizacao_gc_modelo_25_respostaToresposta")
   organizacao_organizacao_gc_modelo_26_respostaToresposta               organizacao[] @relation("organizacao_gc_modelo_26_respostaToresposta")
   organizacao_organizacao_gc_modelo_27_respostaToresposta               organizacao[] @relation("organizacao_gc_modelo_27_respostaToresposta")
+  organizacao_organizacao_gc_modelo_28_respostaToresposta               organizacao[] @relation("organizacao_gc_modelo_28_respostaToresposta")
   organizacao_organizacao_gf_analise_22_respostaToresposta              organizacao[] @relation("organizacao_gf_analise_22_respostaToresposta")
   organizacao_organizacao_gf_analise_23_respostaToresposta              organizacao[] @relation("organizacao_gf_analise_23_respostaToresposta")
   organizacao_organizacao_gf_analise_24_respostaToresposta              organizacao[] @relation("organizacao_gf_analise_24_respostaToresposta")
@@ -1293,6 +1319,8 @@ model resposta {
   organizacao_organizacao_go_controle_23_respostaToresposta             organizacao[] @relation("organizacao_go_controle_23_respostaToresposta")
   organizacao_organizacao_go_controle_24_respostaToresposta             organizacao[] @relation("organizacao_go_controle_24_respostaToresposta")
   organizacao_organizacao_go_controle_25_respostaToresposta             organizacao[] @relation("organizacao_go_controle_25_respostaToresposta")
+  organizacao_organizacao_go_controle_26_respostaToresposta             organizacao[] @relation("organizacao_go_controle_26_respostaToresposta")
+  organizacao_organizacao_go_controle_27_respostaToresposta             organizacao[] @relation("organizacao_go_controle_27_respostaToresposta")
   organizacao_organizacao_go_direcao_14_respostaToresposta              organizacao[] @relation("organizacao_go_direcao_14_respostaToresposta")
   organizacao_organizacao_go_direcao_15_respostaToresposta              organizacao[] @relation("organizacao_go_direcao_15_respostaToresposta")
   organizacao_organizacao_go_direcao_16_respostaToresposta              organizacao[] @relation("organizacao_go_direcao_16_respostaToresposta")
@@ -1304,6 +1332,8 @@ model resposta {
   organizacao_organizacao_go_educacao_26_respostaToresposta             organizacao[] @relation("organizacao_go_educacao_26_respostaToresposta")
   organizacao_organizacao_go_educacao_27_respostaToresposta             organizacao[] @relation("organizacao_go_educacao_27_respostaToresposta")
   organizacao_organizacao_go_educacao_28_respostaToresposta             organizacao[] @relation("organizacao_go_educacao_28_respostaToresposta")
+  organizacao_organizacao_go_educacao_29_respostaToresposta             organizacao[] @relation("organizacao_go_educacao_29_respostaToresposta")
+  organizacao_organizacao_go_educacao_30_respostaToresposta             organizacao[] @relation("organizacao_go_educacao_30_respostaToresposta")
   organizacao_organizacao_go_estrategia_5_respostaToresposta            organizacao[] @relation("organizacao_go_estrategia_5_respostaToresposta")
   organizacao_organizacao_go_estrategia_6_respostaToresposta            organizacao[] @relation("organizacao_go_estrategia_6_respostaToresposta")
   organizacao_organizacao_go_estrutura_1_respostaToresposta             organizacao[] @relation("organizacao_go_estrutura_1_respostaToresposta")

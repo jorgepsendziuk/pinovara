@@ -13,6 +13,7 @@ const documentoRoutes_1 = __importDefault(require("./documentoRoutes"));
 const fotoRoutes_1 = __importDefault(require("./fotoRoutes"));
 const fotoSyncRoutes_1 = __importDefault(require("./fotoSyncRoutes"));
 const arquivoSyncRoutes_1 = __importDefault(require("./arquivoSyncRoutes"));
+const assinaturaSyncRoutes_1 = __importDefault(require("./assinaturaSyncRoutes"));
 const relatorioRoutes_1 = __importDefault(require("./relatorioRoutes"));
 const router = (0, express_1.Router)();
 router.get('/', (req, res) => {
@@ -71,6 +72,7 @@ router.use('/organizacoes', fotoRoutes_1.default);
 router.use('/', documentoRoutes_1.default);
 router.use('/', fotoSyncRoutes_1.default);
 router.use('/', arquivoSyncRoutes_1.default);
+router.use('/', assinaturaSyncRoutes_1.default);
 router.use('/', relatorioRoutes_1.default);
 router.use('/organizacoes', organizacaoRoutes_1.default);
 router.use('/admin', adminRoutes_1.default);

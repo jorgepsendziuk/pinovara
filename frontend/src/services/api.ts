@@ -378,10 +378,10 @@ export const auxiliarAPI = {
       console.warn('Usando dados padrão para estados:', error);
 
       return [
-        { id: 1, nome: 'Minas Gerais', uf: 'MG', codigo_ibge: 31 },
-        { id: 2, nome: 'Bahia', uf: 'BA', codigo_ibge: 29 },
-        { id: 3, nome: 'Espírito Santo', uf: 'ES', codigo_ibge: 32 },
-        { id: 4, nome: 'São Paulo', uf: 'SP', codigo_ibge: 35 }
+        { id: 1, nome: 'Minas Gerais', descricao: 'Minas Gerais', uf: 'MG', codigo_ibge: 31 },
+        { id: 2, nome: 'Bahia', descricao: 'Bahia', uf: 'BA', codigo_ibge: 29 },
+        { id: 3, nome: 'Espírito Santo', descricao: 'Espírito Santo', uf: 'ES', codigo_ibge: 32 },
+        { id: 4, nome: 'São Paulo', descricao: 'São Paulo', uf: 'SP', codigo_ibge: 35 }
       ];
     }
   },
@@ -404,10 +404,10 @@ export const auxiliarAPI = {
       console.warn('Usando dados padrão para municípios:', error);
       
       const municipiosPadrao = [
-        { id: 1, nome: 'Diamantina', codigo_ibge: 3120904, estadoId: 1 },
-        { id: 2, nome: 'Belo Horizonte', codigo_ibge: 3106200, estadoId: 1 },
-        { id: 3, nome: 'Salvador', codigo_ibge: 2927408, estadoId: 2 },
-        { id: 4, nome: 'Vitória', codigo_ibge: 3205309, estadoId: 3 }
+        { id: 1, nome: 'Diamantina', descricao: 'Diamantina', codigo_ibge: 3120904, estadoId: 1 },
+        { id: 2, nome: 'Belo Horizonte', descricao: 'Belo Horizonte', codigo_ibge: 3106200, estadoId: 1 },
+        { id: 3, nome: 'Salvador', descricao: 'Salvador', codigo_ibge: 2927408, estadoId: 2 },
+        { id: 4, nome: 'Vitória', descricao: 'Vitória', codigo_ibge: 3205309, estadoId: 3 }
       ];
       
       return estadoId 
@@ -737,6 +737,70 @@ export const fotoAPI = {
     }
 
     return response.data.data;
+  },
+};
+
+// ========== API DE ASSINATURAS ==========
+
+export interface Assinatura {
+  id: number;
+  nome_arquivo: string;
+  tipo: 'responsavel' | 'participante';
+  participante_nome?: string;
+  creation_date: string;
+  creator_uri_user: string;
+  tamanho_mb?: string;
+  ja_sincronizada?: boolean;
+}
+
+export const assinaturaAPI = {
+  /**
+   * Listar assinaturas disponíveis no ODK
+   */
+  listODKAvailable: async (organizacaoId: number): Promise<{ total: number; assinaturas: Assinatura[] }> => {
+    const response = await api.get<ApiResponse<{ total: number; assinaturas: Assinatura[] }>>(
+      `/organizacoes/${organizacaoId}/assinaturas/odk-disponiveis`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar assinaturas disponíveis');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
+   * Sincronizar assinaturas do ODK
+   */
+  syncFromODK: async (organizacaoId: number): Promise<any> => {
+    const response = await api.post<ApiResponse>(
+      `/organizacoes/${organizacaoId}/assinaturas/sync`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao sincronizar assinaturas');
+    }
+
+    return response.data.data;
+  },
+
+  /**
+   * Download de assinatura
+   */
+  download: async (organizacaoId: number, nomeArquivo: string): Promise<void> => {
+    const response = await api.get(
+      `/organizacoes/${organizacaoId}/assinaturas/${nomeArquivo}/view`,
+      { responseType: 'blob' }
+    );
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', nomeArquivo);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
   },
 };
 
