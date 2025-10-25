@@ -589,14 +589,21 @@ exports.relatorioService = {
                     15: 'Programa ou ações ambientais comunitárias',
                     16: 'Prática de proteção de nascentes e/ou uso racional de recursos hídricos'
                 };
-                const dadosIndicadores = [];
                 organizacao.organizacao_indicador.forEach((indicador, index) => {
+                    if (doc.y > 700) {
+                        doc.addPage();
+                    }
                     const descricao = indicadoresMap[indicador.valor] || `Indicador ${indicador.valor}`;
-                    dadosIndicadores.push([`${index + 1}.`, descricao]);
+                    const currentY = doc.y;
+                    doc.font('Helvetica-Bold').fontSize(11).fillColor('#056839')
+                        .text(`• ${index + 1}.`, 50, currentY);
+                    doc.font('Helvetica').fontSize(11).fillColor('#000')
+                        .text(descricao, 80, currentY, {
+                        width: doc.page.width - 130,
+                        align: 'left'
+                    });
+                    doc.moveDown(0.3);
                 });
-                if (dadosIndicadores.length > 0) {
-                    criarTabela2Colunas(dadosIndicadores);
-                }
             }
             const respostaMap = {
                 1: 'Sim',
