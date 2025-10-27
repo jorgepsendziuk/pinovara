@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GruposDiagnostico } from '../../types/organizacao';
 import { Clipboard, Users, BarChart, Target, Handshake, GraduationCap } from 'lucide-react';
+import './DiagnosticoArea.css';
 
 interface DiagnosticoAreaProps {
   titulo: string;
@@ -31,11 +32,21 @@ export const DiagnosticoArea: React.FC<DiagnosticoAreaProps> = ({
   };
   const getCorResposta = (resposta: number) => {
     switch(resposta) {
-      case 1: return '#d4edda'; // Sim - verde bem claro
-      case 2: return '#ffeaea'; // Não - vermelho bem claro
-      case 3: return '#fff9e6'; // Parcial - amarelo bem claro  
-      case 4: return '#f8f9fa'; // Não se aplica - cinza bem claro
-      default: return '#ffffff'; // Padrão - branco
+      case 1: return 'sim'; // Sim - verde
+      case 2: return 'nao'; // Não - vermelho
+      case 3: return 'parcial'; // Parcial - amarelo  
+      case 4: return 'na'; // Não se aplica - cinza
+      default: return 'na'; // Padrão - cinza
+    }
+  };
+
+  const getTextoResposta = (resposta: number) => {
+    switch(resposta) {
+      case 1: return 'Sim';
+      case 2: return 'Não';
+      case 3: return 'Parcial';
+      case 4: return 'Não se Aplica';
+      default: return 'Selecione';
     }
   };
 
@@ -147,123 +158,75 @@ export const DiagnosticoArea: React.FC<DiagnosticoAreaProps> = ({
           }}
         >
         
-        <div className="tabela-diagnostico" style={{ width: '100%', overflowX: 'auto' }}>
-          <table style={{ 
-            width: '100%', 
-            borderCollapse: 'collapse',
-            minWidth: '1200px'
-          }}>
-            <thead>
-              <tr>
-                <th style={{ padding: '12px', border: '1px solid #ddd', backgroundColor: '#f8f9fa', minWidth: '400px' }}>
-                  Pergunta
-                </th>
-                <th style={{ padding: '12px', border: '1px solid #ddd', backgroundColor: '#f8f9fa', width: '180px' }}>
-                  Resposta
-                </th>
-                <th style={{ padding: '12px', border: '1px solid #ddd', backgroundColor: '#f8f9fa', width: '300px' }}>
-                  Comentário
-                </th>
-                <th style={{ padding: '12px', border: '1px solid #ddd', backgroundColor: '#f8f9fa', width: '300px' }}>
-                  Proposta
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {perguntasCategoria.map((pergunta: any, index: number) => {
-                // Mapear área para prefixo correto do banco de dados
-                const prefixoMap: { [key: string]: string } = {
-                  'governanca-main': 'go',
-                  'pessoas-main': 'gp',
-                  'financeira-main': 'gf',
-                  'comercial-main': 'gc',
-                  'processos-main': 'gpp',
-                  'inovacao-main': 'gi',
-                  'socioambiental-main': 'gs',
-                  'infraestrutura-main': 'is'
-                };
-                
-                const prefixo = prefixoMap[area] || area.substring(0, 2);
-                const chave = `${prefixo}_${categoria}_${pergunta.numero}`;
-                const dadosResposta = dados[`${chave}_resposta`] || { resposta: 0 };
-                const dadosComentario = dados[`${chave}_comentario`] || { comentario: '' };
-                const dadosProposta = dados[`${chave}_proposta`] || { proposta: '' };
-
-                return (
-                  <tr key={pergunta.numero}>
-                    <td style={{ 
-                      padding: '12px', 
-                      border: '1px solid #ddd', 
-                      fontSize: '14px',
-                      lineHeight: '1.4',
-                      minWidth: '400px'
-                    }}>
-                      <strong>P{pergunta.numero}:</strong> {pergunta.texto}
-                    </td>
-                    <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                      <select
-                        value={dadosResposta.resposta || 0}
-                        onChange={(e) => onUpdate(categoria, pergunta.numero, 'resposta', parseInt(e.target.value))}
-                        style={{
-                          width: '100%',
-                          padding: '5px',
-                          backgroundColor: getCorResposta(dadosResposta.resposta || 0),
-                          border: '1px solid #ccc',
-                          borderRadius: '4px',
-                          color: '#212529',
-                          fontSize: '14px',
-                          fontWeight: '500'
-                        }}
-                      >
-                        <option value={0} style={{ color: '#212529', backgroundColor: '#fff' }}>Selecione</option>
-                        <option value={1} style={{ color: '#212529', backgroundColor: '#d4edda' }}>Sim</option>
-                        <option value={2} style={{ color: '#212529', backgroundColor: '#ffeaea' }}>Não</option>
-                        <option value={3} style={{ color: '#212529', backgroundColor: '#fff9e6' }}>Parcial</option>
-                        <option value={4} style={{ color: '#212529', backgroundColor: '#f8f9fa' }}>Não se Aplica</option>
-                      </select>
-                    </td>
-                    <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                      <textarea
-                        value={dadosComentario.comentario || ''}
-                        onChange={(e) => onUpdate(categoria, pergunta.numero, 'comentario', e.target.value)}
-                        placeholder="Comentários sobre a situação atual..."
-                        rows={3}
-                        style={{ 
-                          width: '100%', 
-                          padding: '8px',
-                          border: '1px solid #ccc',
-                          borderRadius: '4px',
-                          resize: 'vertical',
-                          backgroundColor: '#fff',
-                          color: '#212529',
-                          fontSize: '14px'
-                        }}
-                      />
-                    </td>
-                    <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                      <textarea
-                        value={dadosProposta.proposta || ''}
-                        onChange={(e) => onUpdate(categoria, pergunta.numero, 'proposta', e.target.value)}
-                        placeholder="Propostas de melhorias..."
-                        rows={3}
-                        style={{ 
-                          width: '100%', 
-                          padding: '8px',
-                          border: '1px solid #ccc',
-                          borderRadius: '4px',
-                          resize: 'vertical',
-                          backgroundColor: '#fff',
-                          color: '#212529',
-                          fontSize: '14px'
-                        }}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="diagnostico-table">
+          {/* Header */}
+          <div className="diagnostico-table-header">
+            <div className="col-pergunta">Pergunta</div>
+            <div className="col-resposta">Resposta</div>
+            <div className="col-comentario">Comentário</div>
+            <div className="col-proposta">Proposta</div>
           </div>
+          
+          {/* Rows */}
+          {perguntasCategoria.map((pergunta: any, index: number) => {
+            // Mapear área para prefixo correto do banco de dados
+            const prefixoMap: { [key: string]: string } = {
+              'governanca-main': 'go',
+              'pessoas-main': 'gp',
+              'financeira-main': 'gf',
+              'comercial-main': 'gc',
+              'processos-main': 'gpp',
+              'inovacao-main': 'gi',
+              'socioambiental-main': 'gs',
+              'infraestrutura-main': 'is'
+            };
+            
+            const prefixo = prefixoMap[area] || area.substring(0, 2);
+            const chave = `${prefixo}_${categoria}_${pergunta.numero}`;
+            const dadosResposta = dados[`${chave}_resposta`] || { resposta: 0 };
+            const dadosComentario = dados[`${chave}_comentario`] || { comentario: '' };
+            const dadosProposta = dados[`${chave}_proposta`] || { proposta: '' };
+
+            return (
+              <div key={pergunta.numero} className="diagnostico-row">
+                <div className="col-pergunta" data-label="Pergunta:">
+                  <strong>P{pergunta.numero}:</strong> {pergunta.texto}
+                </div>
+                <div className="col-resposta" data-label="Resposta:">
+                  <select
+                    value={dadosResposta.resposta || 0}
+                    onChange={(e) => onUpdate(categoria, pergunta.numero, 'resposta', parseInt(e.target.value))}
+                    className={`resposta-select resposta-${getCorResposta(dadosResposta.resposta || 0)}`}
+                  >
+                    <option value={0}>Selecione</option>
+                    <option value={1}>Sim</option>
+                    <option value={2}>Não</option>
+                    <option value={3}>Parcial</option>
+                    <option value={4}>Não se Aplica</option>
+                  </select>
+                </div>
+                <div className="col-comentario" data-label="Comentário:">
+                  <textarea
+                    value={dadosComentario.comentario || ''}
+                    onChange={(e) => onUpdate(categoria, pergunta.numero, 'comentario', e.target.value)}
+                    placeholder="Comentários sobre a situação atual..."
+                    rows={3}
+                    className="diagnostico-textarea"
+                  />
+                </div>
+                <div className="col-proposta" data-label="Proposta:">
+                  <textarea
+                    value={dadosProposta.proposta || ''}
+                    onChange={(e) => onUpdate(categoria, pergunta.numero, 'proposta', e.target.value)}
+                    placeholder="Propostas de melhorias..."
+                    rows={3}
+                    className="diagnostico-textarea"
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
         </div>
       </div>
     );

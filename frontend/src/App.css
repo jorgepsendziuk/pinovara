@@ -7077,16 +7077,7 @@ main, section, article, aside, header, footer {
   width: 100%;
 }
 
-/* Tabelas de diagnóstico */
-.tabela-diagnostico {
-  width: 100%;
-  overflow-x: auto;
-}
-
-.tabela-diagnostico table {
-  width: 100%;
-  min-width: 1200px;
-}
+/* Tabelas de diagnóstico - removido, agora usando grid responsivo */
 
 /* Spinner animation */
 .spinning {

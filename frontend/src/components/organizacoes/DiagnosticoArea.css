@@ -1,0 +1,300 @@
+/* Tabela de diagnóstico responsiva */
+.diagnostico-table {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 
+    minmax(200px, 1fr)    /* PERGUNTA */
+    minmax(120px, 0.6fr)  /* RESPOSTA */
+    minmax(200px, 1fr)    /* COMENTÁRIO */
+    minmax(200px, 1fr);   /* PROPOSTA */
+  gap: 0;
+}
+
+.diagnostico-table-header {
+  display: contents;
+}
+
+.diagnostico-table-header > div {
+  padding: 0.75rem 0.5rem;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #056839;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-align: center;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diagnostico-row {
+  display: contents;
+}
+
+.diagnostico-row > div {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #f1f3f4;
+  border-right: 1px solid #f1f3f4;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.diagnostico-row > div:last-child {
+  border-right: none;
+}
+
+.col-pergunta {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.col-resposta {
+  justify-content: center;
+}
+
+.resposta-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  min-width: 60px;
+}
+
+.resposta-sim { 
+  background-color: #d4edda; 
+  color: #155724; 
+}
+
+.resposta-nao { 
+  background-color: #f8d7da; 
+  color: #721c24; 
+}
+
+.resposta-parcial { 
+  background-color: #fff3cd; 
+  color: #856404; 
+}
+
+.resposta-na { 
+  background-color: #e2e3e5; 
+  color: #6c757d; 
+}
+
+.col-comentario,
+.col-proposta {
+  color: #495057;
+  font-style: italic;
+}
+
+/* Estilos para os elementos de formulário */
+.resposta-select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background-color: #fff;
+  color: #212529;
+}
+
+.resposta-select.resposta-sim {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.resposta-select.resposta-nao {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.resposta-select.resposta-parcial {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.resposta-select.resposta-na {
+  background-color: #e2e3e5;
+  color: #6c757d;
+}
+
+.diagnostico-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+  background-color: #fff;
+  color: #212529;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Responsividade */
+@media (max-width: 1200px) {
+  .diagnostico-table {
+    grid-template-columns: 
+      minmax(180px, 1fr)
+      minmax(100px, 0.5fr)
+      minmax(180px, 1fr)
+      minmax(180px, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .diagnostico-table {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  
+  .diagnostico-table-header {
+    display: none;
+  }
+  
+  .diagnostico-row {
+    display: block;
+    margin-bottom: 1.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+  }
+  
+  .diagnostico-row > div {
+    display: block;
+    border-right: none;
+    border-bottom: 1px solid #f1f3f4;
+    padding: 0.75rem 1rem;
+  }
+  
+  .diagnostico-row > div:last-child {
+    border-bottom: none;
+  }
+  
+  .diagnostico-row > div::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #495057;
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .col-resposta {
+    justify-content: flex-start;
+  }
+  
+  .col-resposta::before {
+    content: "Resposta:";
+  }
+}
+
+@media (max-width: 576px) {
+  .diagnostico-row > div {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .resposta-badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .diagnostico-table-header > div {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Estilos para o container principal */
+.diagnostico-container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Accordion styles */
+.diagnostico-accordion-item {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+}
+
+.diagnostico-accordion-header {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #3b2313 0%, #056839 100%);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.diagnostico-accordion-header:hover {
+  background: linear-gradient(135deg, #2d1a0e 0%, #044d2d 100%);
+}
+
+.diagnostico-accordion-title {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+}
+
+.diagnostico-accordion-content {
+  padding: 1.5rem;
+  background-color: #fff;
+}
+
+/* Sub-accordion styles */
+.sub-accordion-item {
+  margin-bottom: 1rem;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.sub-accordion-header {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #f8f9fa;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
+  color: #495057;
+  transition: all 0.2s ease;
+}
+
+.sub-accordion-header:hover {
+  background-color: #e9ecef;
+}
+
+.sub-accordion-content {
+  padding: 0;
+  background-color: #fff;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+.empty-state svg {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
