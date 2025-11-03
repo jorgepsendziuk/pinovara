@@ -957,15 +957,18 @@ class OrganizacaoService {
       total: item.count
     }));
 
-    // Organizações recentes - APENAS COM GPS (do ODK)
+    // Organizações recentes - TODAS, independente da origem (ODK ou Web)
     const organizacoesRecentes = organizacoesFiltradas
-      .filter(org => org.gps_lat !== null && org.gps_lng !== null) // Filtrar apenas com GPS
       .sort((a, b) => {
+        // Ordenar por ID (mais recente primeiro) se não tiver data_visita
+        if (!a.data_visita && !b.data_visita) {
+          return b.id - a.id;
+        }
         if (!a.data_visita) return 1;
         if (!b.data_visita) return -1;
         return new Date(b.data_visita).getTime() - new Date(a.data_visita).getTime();
       })
-      .slice(0, 50); // Aumentar limite para 50 organizações com GPS
+      .slice(0, 50); // Mostrar até 50 organizações recentes
 
     // Organizações com GPS para o mapa (limitar a 100)
     const organizacoesComGps = organizacoesFiltradas
