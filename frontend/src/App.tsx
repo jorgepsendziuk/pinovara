@@ -19,6 +19,7 @@ import SyncODKGeral from './pages/admin/SyncODKGeral';
 // Module Pages
 import OrganizacoesModule from './pages/modules/OrganizacoesModule';
 import PerfilModule from './pages/modules/PerfilModule';
+import RepositorioPublico from './pages/RepositorioPublico';
 
 // 🚧 Imports dos módulos em desenvolvimento - comentados
 /*
@@ -32,7 +33,6 @@ import MobilizacaoModule from './pages/modules/MobilizacaoModule';
 */
 import TestPermissions from './pages/TestPermissions';
 import AccessDenied from './pages/AccessDenied';
-import Profile from './pages/Profile';
 import ConfiguracaoODK from './pages/ConfiguracaoODK';
 import FormularioEnketo from './pages/FormularioEnketo';
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade';
@@ -49,6 +49,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
+      <Route path="/repositorio" element={<RepositorioPublico />} />
 
       <Route
         path="/login"

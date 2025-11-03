@@ -104,3 +104,4 @@ try {
 } catch (error) {
   console.error('❌ Erro durante a extração:', error.message);
 }
+

@@ -10,6 +10,7 @@ import fotoSyncRoutes from './fotoSyncRoutes';
 import arquivoSyncRoutes from './arquivoSyncRoutes';
 import assinaturaSyncRoutes from './assinaturaSyncRoutes';
 import relatorioRoutes from './relatorioRoutes';
+import repositorioRoutes from './repositorioRoutes';
 
 const router = Router();
 
@@ -57,6 +58,14 @@ router.get('/', (req, res) => {
         'DELETE /admin/users/:id/roles/:roleId',
         'GET /admin/stats'
       ],
+      repositorio: [
+        'GET /repositorio',
+        'GET /repositorio/:id',
+        'GET /repositorio/:id/download',
+        'GET /repositorio/stats/estatisticas',
+        'POST /repositorio/upload',
+        'DELETE /repositorio/:id'
+      ],
       system: [
         'GET /',
         'GET /health'
@@ -65,17 +74,22 @@ router.get('/', (req, res) => {
   });
 });
 
+
 // Registrar rotas dos módulos
 router.use('/', healthRoutes);  // Health routes no root
 router.use('/auth', authRoutes);
+router.use('/admin', adminRoutes);  // Admin routes - requer autenticação e papel admin
+router.use('/debug', debugRoutes);  // DEBUG routes - REMOVER EM PRODUÇÃO
+
+// Rotas específicas de organizações (devem vir antes das rotas genéricas)
 router.use('/organizacoes', fotoRoutes);  // Foto routes - ANTES de organizacaoRoutes (view é público)
-router.use('/', documentoRoutes);  // Documento routes - usa /organizacoes/:id/documentos (ANTES de organizacaoRoutes)
+
+// Rotas com / que usam autenticação global (estas devem vir POR ÚLTIMO)
+router.use('/', documentoRoutes);  // Documento routes - usa /organizacoes/:id/documentos
 router.use('/', fotoSyncRoutes);  // Foto sync ODK routes - usa /organizacoes/:id/fotos/sync
 router.use('/', arquivoSyncRoutes);  // Arquivo sync ODK routes - usa /organizacoes/:id/arquivos/sync
 router.use('/', assinaturaSyncRoutes);  // Assinatura sync ODK routes - usa /organizacoes/:id/assinaturas/sync
 router.use('/', relatorioRoutes);  // Relatorio routes - usa /organizacoes/:id/relatorio/pdf
 router.use('/organizacoes', organizacaoRoutes);  // Organizacao routes - usa auth global
-router.use('/admin', adminRoutes);  // Admin routes - requer autenticação e papel admin
-router.use('/debug', debugRoutes);  // DEBUG routes - REMOVER EM PRODUÇÃO
 
 export default router;

@@ -18,6 +18,7 @@ app.use((0, cors_1.default)({
     origin: [
         'http://localhost:5173',
         'http://localhost:8080',
+        'http://localhost:3000',
         'https://pinovaraufba.com.br'
     ],
     credentials: true,
@@ -30,6 +31,8 @@ app.use(logging_1.accessLogger);
 const rateLimitWindow = process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 60 * 1000;
 const rateLimitMax = process.env.NODE_ENV === 'production' ? 500 : 1000;
 app.use((0, logging_1.rateLimiter)(rateLimitWindow, rateLimitMax));
+const repositorioRoutes = require('./routes/repositorioRoutes');
+app.use('/repositorio', repositorioRoutes.default);
 app.use('/', routes_1.default);
 app.use('*', (req, res) => {
     res.status(404).json({

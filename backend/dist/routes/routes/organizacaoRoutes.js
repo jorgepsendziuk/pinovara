@@ -1,0 +1,53 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const organizacaoController_1 = require("../controllers/organizacaoController");
+const abrangenciaController_1 = require("../controllers/abrangenciaController");
+const associadosJuridicosController_1 = require("../controllers/associadosJuridicosController");
+const producaoController_1 = require("../controllers/producaoController");
+const indicadoresController_1 = require("../controllers/indicadoresController");
+const participantesController_1 = require("../controllers/participantesController");
+const auth_1 = require("../middleware/auth");
+const roleAuth_1 = require("../middleware/roleAuth");
+const router = (0, express_1.Router)();
+// Todas as rotas de organizações precisam de autenticação e verificação de permissões
+router.use(auth_1.authenticateToken);
+router.use(roleAuth_1.checkOrganizacaoPermission);
+// Dashboard - rota especial que deve vir antes das rotas com parâmetros
+router.get('/dashboard', organizacaoController_1.organizacaoController.getDashboard.bind(organizacaoController_1.organizacaoController));
+// Endpoints auxiliares para estados e municípios
+router.get('/estados', organizacaoController_1.organizacaoController.getEstados.bind(organizacaoController_1.organizacaoController));
+router.get('/municipios/:estadoId?', organizacaoController_1.organizacaoController.getMunicipios.bind(organizacaoController_1.organizacaoController));
+// CRUD básico - agora com controle de acesso por role
+router.get('/', organizacaoController_1.organizacaoController.list.bind(organizacaoController_1.organizacaoController));
+router.post('/', organizacaoController_1.organizacaoController.create.bind(organizacaoController_1.organizacaoController));
+router.get('/:id', organizacaoController_1.organizacaoController.getById.bind(organizacaoController_1.organizacaoController));
+router.put('/:id', organizacaoController_1.organizacaoController.update.bind(organizacaoController_1.organizacaoController));
+router.patch('/:id/validacao', organizacaoController_1.organizacaoController.updateValidacao.bind(organizacaoController_1.organizacaoController));
+router.delete('/:id', organizacaoController_1.organizacaoController.delete.bind(organizacaoController_1.organizacaoController));
+// Rotas para tabelas auxiliares
+// Abrangência Geográfica (Sócios)
+router.get('/:id/abrangencia-socios', abrangenciaController_1.abrangenciaController.list);
+router.post('/:id/abrangencia-socios', abrangenciaController_1.abrangenciaController.create);
+router.put('/:id/abrangencia-socios/:itemId', abrangenciaController_1.abrangenciaController.update);
+router.delete('/:id/abrangencia-socios/:itemId', abrangenciaController_1.abrangenciaController.delete);
+// Associados Jurídicos
+router.get('/:id/associados-juridicos', associadosJuridicosController_1.associadosJuridicosController.list);
+router.post('/:id/associados-juridicos', associadosJuridicosController_1.associadosJuridicosController.create);
+router.put('/:id/associados-juridicos/:itemId', associadosJuridicosController_1.associadosJuridicosController.update);
+router.delete('/:id/associados-juridicos/:itemId', associadosJuridicosController_1.associadosJuridicosController.delete);
+// Produção
+router.get('/:id/producao', producaoController_1.producaoController.list);
+router.post('/:id/producao', producaoController_1.producaoController.create);
+router.put('/:id/producao/:itemId', producaoController_1.producaoController.update);
+router.delete('/:id/producao/:itemId', producaoController_1.producaoController.delete);
+// Indicadores
+router.get('/:id/indicadores', indicadoresController_1.indicadoresController.list);
+router.post('/:id/indicadores', indicadoresController_1.indicadoresController.create);
+router.delete('/:id/indicadores/:indicadorId', indicadoresController_1.indicadoresController.delete);
+// Participantes
+router.get('/:id/participantes', participantesController_1.participantesController.list);
+router.post('/:id/participantes', participantesController_1.participantesController.create);
+router.put('/:id/participantes/:participanteId', participantesController_1.participantesController.update);
+router.delete('/:id/participantes/:participanteId', participantesController_1.participantesController.delete);
+exports.default = router;
