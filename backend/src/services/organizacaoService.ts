@@ -476,21 +476,123 @@ class OrganizacaoService {
       console.log(`✅ Criando organização com técnico ID: ${id_tecnico}`);
     }
 
-    const organizacao = await prisma.organizacao.create({
-      data: {
-        nome: nome.trim(),
-        cnpj: cnpj || null,
-        telefone: telefone || null,
-        email: email || null,
-        estado: estado || null,
-        municipio: municipio || null,
-        removido: false,
-        creator_uri_user: creator_uri_user || null,
-        id_tecnico: id_tecnico
-      }
-    });
+    // Preparar dados completos para criação
+    const dadosCriacao: any = {
+      nome: nome.trim(),
+      cnpj: cnpj ? cnpj.replace(/\D/g, '') : null, // Remover formatação do CNPJ
+      telefone: telefone ? telefone.replace(/\D/g, '') : null, // Remover formatação do telefone
+      email: email || null,
+      estado: estado || null,
+      municipio: municipio || null,
+      removido: false,
+      creator_uri_user: creator_uri_user || null,
+      id_tecnico: id_tecnico
+    };
 
-    return organizacao;
+    // Adicionar data_fundacao se fornecida
+    if (data.data_fundacao) {
+      try {
+        dadosCriacao.data_fundacao = typeof data.data_fundacao === 'string' 
+          ? new Date(data.data_fundacao) 
+          : data.data_fundacao;
+        
+        // Validar se a data é válida
+        if (isNaN(dadosCriacao.data_fundacao.getTime())) {
+          console.error('❌ Data de fundação inválida:', data.data_fundacao);
+          throw new ApiError({
+            message: 'Data de fundação inválida. Use o formato AAAA-MM-DD',
+            statusCode: HttpStatus.BAD_REQUEST,
+            code: ErrorCode.VALIDATION_ERROR,
+            details: { campo: 'data_fundacao', valor: data.data_fundacao }
+          });
+        }
+      } catch (error: any) {
+        if (error instanceof ApiError) throw error;
+        console.error('❌ Erro ao processar data_fundacao:', error);
+        throw new ApiError({
+          message: 'Erro ao processar data de fundação',
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: ErrorCode.VALIDATION_ERROR,
+          details: { campo: 'data_fundacao', erro: error.message }
+        });
+      }
+    }
+
+    // Adicionar data_visita se fornecida
+    if (data.data_visita) {
+      try {
+        dadosCriacao.data_visita = typeof data.data_visita === 'string' 
+          ? new Date(data.data_visita) 
+          : data.data_visita;
+        
+        // Validar se a data é válida
+        if (isNaN(dadosCriacao.data_visita.getTime())) {
+          console.error('❌ Data de visita inválida:', data.data_visita);
+          throw new ApiError({
+            message: 'Data de visita inválida. Use o formato AAAA-MM-DD',
+            statusCode: HttpStatus.BAD_REQUEST,
+            code: ErrorCode.VALIDATION_ERROR,
+            details: { campo: 'data_visita', valor: data.data_visita }
+          });
+        }
+      } catch (error: any) {
+        if (error instanceof ApiError) throw error;
+        console.error('❌ Erro ao processar data_visita:', error);
+        throw new ApiError({
+          message: 'Erro ao processar data de visita',
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: ErrorCode.VALIDATION_ERROR,
+          details: { campo: 'data_visita', erro: error.message }
+        });
+      }
+    }
+
+    try {
+      const organizacao = await prisma.organizacao.create({
+        data: dadosCriacao
+      });
+
+      return organizacao;
+    } catch (error: any) {
+      console.error('Erro ao criar organização no Prisma:', error);
+      
+      // Tratar erros específicos do Prisma
+      if (error.code === 'P2002') {
+        // Unique constraint violation
+        const target = error.meta?.target || ['campo desconhecido'];
+        throw new ApiError({
+          message: `Erro: Já existe uma organização com este(s) dado(s): ${Array.isArray(target) ? target.join(', ') : target}`,
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: 'P2002',
+          details: { campos: target }
+        });
+      } else if (error.code === 'P2003') {
+        // Foreign key constraint violation
+        const field = error.meta?.field_name || 'campo de referência';
+        throw new ApiError({
+          message: `Erro: Referência inválida no campo "${field}". Verifique se o valor selecionado existe.`,
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: 'P2003',
+          details: { campo: field }
+        });
+      } else if (error.code) {
+        // Outro erro do Prisma
+        throw new ApiError({
+          message: `Erro ao criar organização: ${error.message}`,
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: error.code,
+          details: error.meta
+        });
+      }
+      
+      // Erro genérico
+      throw new ApiError({
+        message: 'Erro ao criar organização',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR,
+        details: error.message
+      });
+    }
   }
 
   /**
@@ -534,12 +636,137 @@ class OrganizacaoService {
     delete (dadosLimpos as any).organizacao_participante;
     delete (dadosLimpos as any).organizacao_abrangencia_pj;
 
-    const organizacao = await prisma.organizacao.update({
-      where: { id },
-      data: dadosLimpos
-    });
+    // Limpar formatação de campos numéricos (remover caracteres especiais, manter apenas números)
+    const dadosAny = dadosLimpos as any;
+    
+    // CEPs - VarChar(8) no banco
+    if (dadosAny.organizacao_end_cep) {
+      dadosAny.organizacao_end_cep = dadosAny.organizacao_end_cep.replace(/\D/g, '');
+    }
+    if (dadosAny.representante_end_cep) {
+      dadosAny.representante_end_cep = dadosAny.representante_end_cep.replace(/\D/g, '');
+    }
+    
+    // CPF - VarChar(11) no banco
+    if (dadosAny.representante_cpf) {
+      dadosAny.representante_cpf = dadosAny.representante_cpf.replace(/\D/g, '');
+    }
+    
+    // CNPJ - remover formatação
+    if (dadosLimpos.cnpj) {
+      dadosLimpos.cnpj = dadosLimpos.cnpj.replace(/\D/g, '');
+    }
+    
+    // Telefones - remover formatação
+    if (dadosLimpos.telefone) {
+      dadosLimpos.telefone = dadosLimpos.telefone.replace(/\D/g, '');
+    }
+    if (dadosAny.representante_telefone) {
+      dadosAny.representante_telefone = dadosAny.representante_telefone.replace(/\D/g, '');
+    }
 
-    return organizacao;
+    // Converter strings de data para objetos Date com validação
+    const camposData = ['data_fundacao', 'data_visita', 'inicio', 'fim', 'validacao_data'];
+    
+    for (const campo of camposData) {
+      const valorCampo = (dadosLimpos as any)[campo];
+      if (valorCampo) {
+        try {
+          // Converter string para Date
+          if (typeof valorCampo === 'string') {
+            const dataString = valorCampo as string;
+            
+            // Se a string estiver vazia, remover o campo
+            if (dataString.trim() === '') {
+              delete (dadosLimpos as any)[campo];
+              continue;
+            }
+            
+            (dadosLimpos as any)[campo] = new Date(dataString);
+          }
+          
+          // Validar se a data é válida
+          const dataObj = (dadosLimpos as any)[campo] as Date;
+          if (isNaN(dataObj.getTime())) {
+            console.error(`❌ ${campo} inválida:`, valorCampo);
+            throw new ApiError({
+              message: `${campo.replace('_', ' ')} inválida. Use o formato AAAA-MM-DD`,
+              statusCode: HttpStatus.BAD_REQUEST,
+              code: ErrorCode.VALIDATION_ERROR,
+              details: { campo, valor: valorCampo }
+            });
+          }
+        } catch (error: any) {
+          if (error instanceof ApiError) throw error;
+          console.error(`❌ Erro ao processar ${campo}:`, error);
+          throw new ApiError({
+            message: `Erro ao processar ${campo.replace('_', ' ')}`,
+            statusCode: HttpStatus.BAD_REQUEST,
+            code: ErrorCode.VALIDATION_ERROR,
+            details: { campo, erro: error.message }
+          });
+        }
+      }
+    }
+
+    // Log dos dados que serão enviados ao Prisma
+    console.log('📝 Dados limpos para update:', JSON.stringify(dadosLimpos, null, 2));
+
+    try {
+      const organizacao = await prisma.organizacao.update({
+        where: { id },
+        data: dadosLimpos
+      });
+
+      return organizacao;
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar organização no Prisma:', error);
+      console.error('❌ Dados que causaram o erro:', JSON.stringify(dadosLimpos, null, 2));
+      
+      // Tratar erros específicos do Prisma
+      if (error.code === 'P2002') {
+        // Unique constraint violation
+        const target = error.meta?.target || ['campo desconhecido'];
+        throw new ApiError({
+          message: `Erro: Já existe uma organização com este(s) dado(s): ${Array.isArray(target) ? target.join(', ') : target}`,
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: 'P2002',
+          details: { campos: target }
+        });
+      } else if (error.code === 'P2003') {
+        // Foreign key constraint violation
+        const field = error.meta?.field_name || 'campo de referência';
+        throw new ApiError({
+          message: `Erro: Referência inválida no campo "${field}". Verifique se o valor selecionado existe.`,
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: 'P2003',
+          details: { campo: field }
+        });
+      } else if (error.code === 'P2025') {
+        // Record not found
+        throw new ApiError({
+          message: 'Organização não encontrada',
+          statusCode: HttpStatus.NOT_FOUND,
+          code: 'P2025'
+        });
+      } else if (error.code) {
+        // Outro erro do Prisma
+        throw new ApiError({
+          message: `Erro ao atualizar organização: ${error.message}`,
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: error.code,
+          details: error.meta
+        });
+      }
+      
+      // Erro genérico
+      throw new ApiError({
+        message: 'Erro ao atualizar organização',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR,
+        details: error.message
+      });
+    }
   }
 
   /**

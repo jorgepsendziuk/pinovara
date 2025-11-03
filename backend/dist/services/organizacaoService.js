@@ -360,20 +360,68 @@ class OrganizacaoService {
         if (id_tecnico) {
             console.log(`✅ Criando organização com técnico ID: ${id_tecnico}`);
         }
-        const organizacao = await prisma.organizacao.create({
-            data: {
-                nome: nome.trim(),
-                cnpj: cnpj || null,
-                telefone: telefone || null,
-                email: email || null,
-                estado: estado || null,
-                municipio: municipio || null,
-                removido: false,
-                creator_uri_user: creator_uri_user || null,
-                id_tecnico: id_tecnico
+        const dadosCriacao = {
+            nome: nome.trim(),
+            cnpj: cnpj || null,
+            telefone: telefone || null,
+            email: email || null,
+            estado: estado || null,
+            municipio: municipio || null,
+            removido: false,
+            creator_uri_user: creator_uri_user || null,
+            id_tecnico: id_tecnico
+        };
+        if (data.data_fundacao) {
+            dadosCriacao.data_fundacao = typeof data.data_fundacao === 'string'
+                ? new Date(data.data_fundacao)
+                : data.data_fundacao;
+        }
+        if (data.data_visita) {
+            dadosCriacao.data_visita = typeof data.data_visita === 'string'
+                ? new Date(data.data_visita)
+                : data.data_visita;
+        }
+        try {
+            const organizacao = await prisma.organizacao.create({
+                data: dadosCriacao
+            });
+            return organizacao;
+        }
+        catch (error) {
+            console.error('Erro ao criar organização no Prisma:', error);
+            if (error.code === 'P2002') {
+                const target = error.meta?.target || ['campo desconhecido'];
+                throw new ApiError({
+                    message: `Erro: Já existe uma organização com este(s) dado(s): ${Array.isArray(target) ? target.join(', ') : target}`,
+                    statusCode: api_1.HttpStatus.BAD_REQUEST,
+                    code: 'P2002',
+                    details: { campos: target }
+                });
             }
-        });
-        return organizacao;
+            else if (error.code === 'P2003') {
+                const field = error.meta?.field_name || 'campo de referência';
+                throw new ApiError({
+                    message: `Erro: Referência inválida no campo "${field}". Verifique se o valor selecionado existe.`,
+                    statusCode: api_1.HttpStatus.BAD_REQUEST,
+                    code: 'P2003',
+                    details: { campo: field }
+                });
+            }
+            else if (error.code) {
+                throw new ApiError({
+                    message: `Erro ao criar organização: ${error.message}`,
+                    statusCode: api_1.HttpStatus.BAD_REQUEST,
+                    code: error.code,
+                    details: error.meta
+                });
+            }
+            throw new ApiError({
+                message: 'Erro ao criar organização',
+                statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                code: api_1.ErrorCode.DATABASE_ERROR,
+                details: error.message
+            });
+        }
     }
     async update(id, data) {
         const existingOrg = await prisma.organizacao.findUnique({
@@ -404,11 +452,80 @@ class OrganizacaoService {
         delete dadosLimpos.organizacao_indicador;
         delete dadosLimpos.organizacao_participante;
         delete dadosLimpos.organizacao_abrangencia_pj;
-        const organizacao = await prisma.organizacao.update({
-            where: { id },
-            data: dadosLimpos
-        });
-        return organizacao;
+        if (dadosLimpos.data_fundacao) {
+            if (typeof dadosLimpos.data_fundacao === 'string') {
+                dadosLimpos.data_fundacao = new Date(dadosLimpos.data_fundacao);
+            }
+        }
+        if (dadosLimpos.data_visita) {
+            if (typeof dadosLimpos.data_visita === 'string') {
+                dadosLimpos.data_visita = new Date(dadosLimpos.data_visita);
+            }
+        }
+        if (dadosLimpos.inicio) {
+            if (typeof dadosLimpos.inicio === 'string') {
+                dadosLimpos.inicio = new Date(dadosLimpos.inicio);
+            }
+        }
+        if (dadosLimpos.fim) {
+            if (typeof dadosLimpos.fim === 'string') {
+                dadosLimpos.fim = new Date(dadosLimpos.fim);
+            }
+        }
+        if (dadosLimpos.validacao_data) {
+            if (typeof dadosLimpos.validacao_data === 'string') {
+                dadosLimpos.validacao_data = new Date(dadosLimpos.validacao_data);
+            }
+        }
+        try {
+            const organizacao = await prisma.organizacao.update({
+                where: { id },
+                data: dadosLimpos
+            });
+            return organizacao;
+        }
+        catch (error) {
+            console.error('Erro ao atualizar organização no Prisma:', error);
+            if (error.code === 'P2002') {
+                const target = error.meta?.target || ['campo desconhecido'];
+                throw new ApiError({
+                    message: `Erro: Já existe uma organização com este(s) dado(s): ${Array.isArray(target) ? target.join(', ') : target}`,
+                    statusCode: api_1.HttpStatus.BAD_REQUEST,
+                    code: 'P2002',
+                    details: { campos: target }
+                });
+            }
+            else if (error.code === 'P2003') {
+                const field = error.meta?.field_name || 'campo de referência';
+                throw new ApiError({
+                    message: `Erro: Referência inválida no campo "${field}". Verifique se o valor selecionado existe.`,
+                    statusCode: api_1.HttpStatus.BAD_REQUEST,
+                    code: 'P2003',
+                    details: { campo: field }
+                });
+            }
+            else if (error.code === 'P2025') {
+                throw new ApiError({
+                    message: 'Organização não encontrada',
+                    statusCode: api_1.HttpStatus.NOT_FOUND,
+                    code: 'P2025'
+                });
+            }
+            else if (error.code) {
+                throw new ApiError({
+                    message: `Erro ao atualizar organização: ${error.message}`,
+                    statusCode: api_1.HttpStatus.BAD_REQUEST,
+                    code: error.code,
+                    details: error.meta
+                });
+            }
+            throw new ApiError({
+                message: 'Erro ao atualizar organização',
+                statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                code: api_1.ErrorCode.DATABASE_ERROR,
+                details: error.message
+            });
+        }
     }
     async updateValidacao(id, dadosValidacao) {
         const existingOrg = await prisma.organizacao.findUnique({
