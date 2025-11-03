@@ -127,10 +127,21 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
       setLoading(true);
       const token = localStorage.getItem('@pinovara:token');
 
+      console.log('🔑 Token do localStorage:', token ? `${token.substring(0, 20)}...` : 'Não encontrado');
+
       // Verificar se o token existe e não é null/undefined
       if (!token || token === 'null' || token === 'undefined') {
-        throw new Error('Token de autenticação não encontrado. Faça login novamente.');
+        console.error('❌ Token não encontrado ou inválido');
+        setError('Sessão expirada. Faça login novamente.');
+        setTimeout(() => {
+          localStorage.removeItem('@pinovara:token');
+          localStorage.removeItem('@pinovara:user');
+          window.location.href = '/login';
+        }, 2000);
+        return;
       }
+
+      console.log('📡 Fazendo requisição para:', `${API_BASE}/organizacoes/dashboard`);
 
       const response = await fetch(`${API_BASE}/organizacoes/dashboard`, {
         headers: {
@@ -139,18 +150,27 @@ function DashboardOrganizacoes({ onNavigate }: DashboardOrganizacoesProps) {
         },
       });
 
+      console.log('📊 Status da resposta:', response.status);
+
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Erro na resposta:', errorData);
+        
         if (response.status === 401) {
           // Token inválido - limpar localStorage e redirecionar
-          localStorage.removeItem('@pinovara:token');
-          localStorage.removeItem('@pinovara:user');
-          window.location.href = '/login';
+          setError('Sessão expirada. Redirecionando para login...');
+          setTimeout(() => {
+            localStorage.removeItem('@pinovara:token');
+            localStorage.removeItem('@pinovara:user');
+            window.location.href = '/login';
+          }, 2000);
           return;
         }
-        throw new Error('Erro ao carregar estatísticas');
+        throw new Error(errorData.error?.message || 'Erro ao carregar estatísticas');
       }
 
       const responseData = await response.json();
+      console.log('✅ Dados recebidos com sucesso');
       setStats(responseData.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
