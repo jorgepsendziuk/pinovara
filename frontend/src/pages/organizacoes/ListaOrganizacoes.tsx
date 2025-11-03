@@ -719,8 +719,8 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       {legendaVisivel && (
         <div style={{
           position: 'fixed',
-          bottom: '20px',
-          right: '20px',
+          bottom: '120px',
+          right: '0px',
           background: 'white',
           border: '1px solid #3b2313',
           borderRadius: '8px',

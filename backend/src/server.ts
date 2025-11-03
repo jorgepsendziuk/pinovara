@@ -22,6 +22,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:8080',
+    'http://localhost:3000',
     'https://pinovaraufba.com.br'
   ],
   credentials: true,
@@ -42,6 +43,10 @@ const rateLimitMax = process.env.NODE_ENV === 'production' ? 500 : 1000; // 500 
 app.use(rateLimiter(rateLimitWindow, rateLimitMax));
 
 // ========== ROUTES ==========
+
+// ROTAS DO REPOSITÓRIO - ANTES DE TUDO (para evitar conflito com rotas globais)
+const repositorioRoutes = require('./routes/repositorioRoutes');
+app.use('/repositorio', repositorioRoutes.default);
 
 // API routes
 app.use('/', routes);

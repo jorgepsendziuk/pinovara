@@ -30,7 +30,8 @@ import {
   ChevronRight,
   ChevronLeft,
   ChevronRight as ChevronExpand,
-  Database
+  Database,
+  Archive
 } from 'lucide-react';
 
 // Hook personalizado para detectar breakpoints responsivos
@@ -175,6 +176,11 @@ const Sidebar: React.FC = () => {
       setIsMobileOpen(false);
     }
     
+    // Auto-colapsar em telas médias (tablets) e menores, se não foi expandido manualmente
+    if (isTablet && !userExpandedRef.current) {
+      setIsCollapsed(true);
+    }
+    
     // Ajustar largura baseada no tipo de dispositivo
     if (screenSize === 'mobile-sm') {
       setSidebarWidth(100); // Sidebar full-screen em mobile muito pequeno
@@ -232,6 +238,13 @@ const Sidebar: React.FC = () => {
           module: 'organizacoes'
         }
       ]
+    },
+    {
+      id: 'repositorio',
+      label: 'Repositório Público',
+      icon: Archive,
+      path: '/repositorio',
+      // Sem module definido para que todos possam ver (permissão é controlada dentro do componente)
     },
     
     // 🚧 ===== MÓDULOS EM DESENVOLVIMENTO - OCULTOS =====

@@ -59,6 +59,14 @@ router.get('/', (req, res) => {
                 'DELETE /admin/users/:id/roles/:roleId',
                 'GET /admin/stats'
             ],
+            repositorio: [
+                'GET /repositorio',
+                'GET /repositorio/:id',
+                'GET /repositorio/:id/download',
+                'GET /repositorio/stats/estatisticas',
+                'POST /repositorio/upload',
+                'DELETE /repositorio/:id'
+            ],
             system: [
                 'GET /',
                 'GET /health'
@@ -68,6 +76,8 @@ router.get('/', (req, res) => {
 });
 router.use('/', healthRoutes_1.default);
 router.use('/auth', authRoutes_1.default);
+router.use('/admin', adminRoutes_1.default);
+router.use('/debug', debugRoutes_1.default);
 router.use('/organizacoes', fotoRoutes_1.default);
 router.use('/', documentoRoutes_1.default);
 router.use('/', fotoSyncRoutes_1.default);
@@ -75,7 +85,5 @@ router.use('/', arquivoSyncRoutes_1.default);
 router.use('/', assinaturaSyncRoutes_1.default);
 router.use('/', relatorioRoutes_1.default);
 router.use('/organizacoes', organizacaoRoutes_1.default);
-router.use('/admin', adminRoutes_1.default);
-router.use('/debug', debugRoutes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map
