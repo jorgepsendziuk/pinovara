@@ -53,9 +53,28 @@ export const DadosRepresentanteComponent: React.FC<DadosRepresentanteProps> = ({
                 type="text"
                 id="representante_cpf"
                 value={dados.cpf}
-                onChange={(e) => onUpdate('cpf', e.target.value)}
+                onChange={(e) => {
+                  // Remove tudo que não é número
+                  const apenasNumeros = e.target.value.replace(/\D/g, '');
+                  // Limita a 11 dígitos
+                  const limitado = apenasNumeros.slice(0, 11);
+                  // Aplica formatação: 000.000.000-00
+                  let formatado = limitado;
+                  if (limitado.length > 9) {
+                    formatado = limitado.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                  } else if (limitado.length > 6) {
+                    formatado = limitado.replace(/^(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                  } else if (limitado.length > 3) {
+                    formatado = limitado.replace(/^(\d{3})(\d{1,3})/, '$1.$2');
+                  }
+                  onUpdate('cpf', formatado);
+                }}
                 placeholder="000.000.000-00"
+                maxLength={14}
               />
+              <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                Digite apenas números (11 dígitos)
+              </small>
             </div>
 
             <div className="form-group">
@@ -66,6 +85,7 @@ export const DadosRepresentanteComponent: React.FC<DadosRepresentanteProps> = ({
                 value={dados.rg}
                 onChange={(e) => onUpdate('rg', e.target.value)}
                 placeholder="00.000.000-0"
+                maxLength={12}
               />
             </div>
 
@@ -75,9 +95,34 @@ export const DadosRepresentanteComponent: React.FC<DadosRepresentanteProps> = ({
                 type="tel"
                 id="representante_telefone"
                 value={dados.telefone}
-                onChange={(e) => onUpdate('telefone', e.target.value)}
+                onChange={(e) => {
+                  // Remove tudo que não é número
+                  const apenasNumeros = e.target.value.replace(/\D/g, '');
+                  // Limita a 11 dígitos
+                  const limitado = apenasNumeros.slice(0, 11);
+                  // Aplica formatação: (00) 00000-0000 ou (00) 0000-0000
+                  let formatado = limitado;
+                  if (limitado.length > 10) {
+                    formatado = limitado.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+                  } else if (limitado.length > 6) {
+                    if (limitado.length === 10) {
+                      formatado = limitado.replace(/^(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+                    } else {
+                      formatado = limitado.replace(/^(\d{2})(\d{1,5})/, '($1) $2');
+                    }
+                  } else if (limitado.length > 2) {
+                    formatado = limitado.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+                  } else if (limitado.length > 0) {
+                    formatado = limitado.replace(/^(\d*)/, '($1');
+                  }
+                  onUpdate('telefone', formatado);
+                }}
                 placeholder="(00) 00000-0000"
+                maxLength={15}
               />
+              <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                Digite apenas números (10 ou 11 dígitos)
+              </small>
             </div>
 
             <div className="form-group">
@@ -89,6 +134,9 @@ export const DadosRepresentanteComponent: React.FC<DadosRepresentanteProps> = ({
                 onChange={(e) => onUpdate('email', e.target.value)}
                 placeholder="representante@email.com"
               />
+              <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                Formato: exemplo@dominio.com
+              </small>
             </div>
 
             <div className="form-group">
@@ -141,9 +189,24 @@ export const DadosRepresentanteComponent: React.FC<DadosRepresentanteProps> = ({
                 type="text"
                 id="representante_cep"
                 value={dados.endCep}
-                onChange={(e) => onUpdate('endCep', e.target.value)}
+                onChange={(e) => {
+                  // Remove tudo que não é número
+                  const apenasNumeros = e.target.value.replace(/\D/g, '');
+                  // Limita a 8 dígitos
+                  const limitado = apenasNumeros.slice(0, 8);
+                  // Aplica formatação: 00000-000
+                  let formatado = limitado;
+                  if (limitado.length > 5) {
+                    formatado = limitado.replace(/^(\d{5})(\d{1,3})/, '$1-$2');
+                  }
+                  onUpdate('endCep', formatado);
+                }}
                 placeholder="00000-000"
+                maxLength={9}
               />
+              <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                Digite apenas números (8 dígitos)
+              </small>
             </div>
 
             <div className="form-group">

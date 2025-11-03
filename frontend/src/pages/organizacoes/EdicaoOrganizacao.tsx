@@ -383,9 +383,83 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       setToastError(null); // Limpar erro anterior se houver
       
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error?.message || err.message || 'Erro desconhecido ao salvar organização';
-      setToastError(errorMessage);
-      setError(errorMessage);
+      console.error('Erro completo ao salvar:', err);
+      
+      // Tentar extrair informações detalhadas do erro
+      let errorMessage = 'Erro desconhecido ao salvar organização';
+      let fieldErrors: string[] = [];
+      
+      if (err.response?.data?.error) {
+        const errorData = err.response.data.error;
+        errorMessage = errorData.message || errorMessage;
+        
+        // Se houver details, pode conter informações sobre campos específicos
+        if (errorData.details) {
+          if (typeof errorData.details === 'string') {
+            fieldErrors.push(errorData.details);
+          } else if (Array.isArray(errorData.details)) {
+            fieldErrors = errorData.details;
+          } else if (typeof errorData.details === 'object') {
+            // Extrair campos do objeto de erros
+            fieldErrors = Object.entries(errorData.details).map(
+              ([campo, erro]) => `${campo}: ${erro}`
+            );
+          }
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // Verificar se é erro de validação do Prisma ou banco de dados
+      if (err.response?.data?.error?.code) {
+        const code = err.response.data.error.code;
+        
+        // Códigos comuns de erro do PostgreSQL/Prisma
+        if (code === 'P2002') {
+          errorMessage = 'Erro: Já existe uma organização com estes dados (CNPJ ou nome duplicado)';
+        } else if (code === 'P2003') {
+          errorMessage = 'Erro: Referência inválida (verifique Estado, Município ou outros campos relacionados)';
+        } else if (code === 'P2025') {
+          errorMessage = 'Erro: Organização não encontrada';
+        }
+      }
+      
+      // Montar mensagem final com detalhes dos campos
+      let finalMessage = errorMessage;
+      if (fieldErrors.length > 0) {
+        finalMessage += '\n\nDetalhes dos erros:\n' + fieldErrors.map(e => `• ${e}`).join('\n');
+      }
+      
+      // Tentar identificar campos problemáticos a partir da mensagem de erro
+      const camposMapeados: Record<string, string> = {
+        'nome': 'Nome da Organização',
+        'cnpj': 'CNPJ',
+        'estado': 'Estado',
+        'municipio': 'Município',
+        'telefone': 'Telefone',
+        'email': 'E-mail',
+        'data_fundacao': 'Data de Fundação',
+        'data_visita': 'Data de Visita',
+        'representante': 'Nome do Representante',
+        'representante_cpf': 'CPF do Representante',
+        'representante_email': 'E-mail do Representante',
+        'id_tecnico': 'Técnico Responsável'
+      };
+      
+      // Verificar se algum campo conhecido está na mensagem de erro
+      const camposEncontrados: string[] = [];
+      Object.entries(camposMapeados).forEach(([campo, label]) => {
+        if (errorMessage.toLowerCase().includes(campo.toLowerCase())) {
+          camposEncontrados.push(label);
+        }
+      });
+      
+      if (camposEncontrados.length > 0) {
+        finalMessage += `\n\n📋 Campo(s) com problema: ${camposEncontrados.join(', ')}`;
+      }
+      
+      setToastError(finalMessage);
+      setError(finalMessage);
       setSuccess(null); // Limpar sucesso anterior se houver
     } finally {
       setSaving(false);

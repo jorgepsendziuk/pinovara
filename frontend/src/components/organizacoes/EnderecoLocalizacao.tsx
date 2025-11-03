@@ -133,10 +133,24 @@ export const EnderecoLocalizacao: React.FC<EnderecoLocalizacaoProps> = ({
                       type="text"
                       id="organizacao_end_cep"
                       value={organizacao.organizacao_end_cep || ''}
-                      onChange={(e) => onUpdate('organizacao_end_cep', e.target.value)}
+                      onChange={(e) => {
+                        // Remove tudo que não é número
+                        const apenasNumeros = e.target.value.replace(/\D/g, '');
+                        // Limita a 8 dígitos
+                        const limitado = apenasNumeros.slice(0, 8);
+                        // Aplica formatação: 00000-000
+                        let formatado = limitado;
+                        if (limitado.length > 5) {
+                          formatado = limitado.replace(/^(\d{5})(\d{1,3})/, '$1-$2');
+                        }
+                        onUpdate('organizacao_end_cep', formatado);
+                      }}
                       placeholder="00000-000"
-                      maxLength={8}
+                      maxLength={9}
                     />
+                    <small style={{ color: '#6b7280', fontSize: '0.875rem', display: 'block', marginTop: '0.25rem' }}>
+                      Digite apenas números (8 dígitos)
+                    </small>
                   </div>
                 </div>
 

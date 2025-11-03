@@ -1,0 +1,265 @@
+/* Lista de Organizações - Estilos */
+
+/* ===== FILTROS ===== */
+
+.filters-section {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 1200px) {
+  .filters-grid {
+    grid-template-columns: 1fr 1fr 1fr 1fr auto;
+  }
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.filter-input {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: white;
+  height: 42px;
+  width: 100%;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-select {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: white;
+  cursor: pointer;
+  height: 42px;
+}
+
+.filter-select:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+  color: #9ca3af;
+}
+
+.filters-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+.filters-total {
+  font-size: 0.875rem;
+  color: #6b7280;
+  padding: 0.5rem 0;
+}
+
+.filters-total strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+/* ===== LAYOUT CARDS MOBILE ===== */
+
+.organizations-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.organization-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.organization-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.organization-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.organization-info h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+  word-break: break-word;
+}
+
+.organization-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.organization-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.organization-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.organization-actions button {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.organization-actions button:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.organization-actions .btn-primary {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+.organization-actions .btn-primary:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.organization-actions .btn-danger {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: white;
+}
+
+.organization-actions .btn-danger:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+/* ===== TOGGLE DESKTOP/MOBILE ===== */
+
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Tablets grandes e médios */
+@media (max-width: 1199px) and (min-width: 769px) {
+  .filters-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Toggle para cards em telas médias */
+@media (max-width: 1024px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+}
+
+/* Mobile (768px e menor) */
+@media (max-width: 768px) {
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-group:first-child {
+    grid-column: auto;
+  }
+  
+  .organization-card {
+    padding: 1rem;
+  }
+  
+  .organization-info h4 {
+    font-size: 0.95rem;
+  }
+  
+  .organization-meta {
+    font-size: 0.8rem;
+  }
+  
+  .organization-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .organization-actions button {
+    padding: 0.4rem;
+  }
+}
+
+/* Mobile pequeno (480px e menor) */
+@media (max-width: 480px) {
+  .filters-total {
+    font-size: 0.8rem;
+  }
+  
+  .organization-card {
+    padding: 0.875rem;
+  }
+  
+  .organization-card-header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .organization-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+

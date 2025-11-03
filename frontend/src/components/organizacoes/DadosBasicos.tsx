@@ -95,9 +95,30 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
                 type="text"
                 id="cnpj"
                 value={organizacao.cnpj || ''}
-                onChange={(e) => onUpdate('cnpj', e.target.value)}
+                onChange={(e) => {
+                  // Remove tudo que não é número
+                  const apenasNumeros = e.target.value.replace(/\D/g, '');
+                  // Limita a 14 dígitos
+                  const limitado = apenasNumeros.slice(0, 14);
+                  // Aplica formatação: 00.000.000/0000-00
+                  let formatado = limitado;
+                  if (limitado.length > 12) {
+                    formatado = limitado.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+                  } else if (limitado.length > 8) {
+                    formatado = limitado.replace(/^(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4');
+                  } else if (limitado.length > 5) {
+                    formatado = limitado.replace(/^(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                  } else if (limitado.length > 2) {
+                    formatado = limitado.replace(/^(\d{2})(\d{1,3})/, '$1.$2');
+                  }
+                  onUpdate('cnpj', formatado);
+                }}
                 placeholder="00.000.000/0000-00"
+                maxLength={18}
               />
+              <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                Digite apenas números (14 dígitos)
+              </small>
             </div>
 
             <div className="form-group">
@@ -116,9 +137,37 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
                 type="tel"
                 id="telefone"
                 value={organizacao.telefone || ''}
-                onChange={(e) => onUpdate('telefone', e.target.value)}
+                onChange={(e) => {
+                  // Remove tudo que não é número
+                  const apenasNumeros = e.target.value.replace(/\D/g, '');
+                  // Limita a 11 dígitos
+                  const limitado = apenasNumeros.slice(0, 11);
+                  // Aplica formatação: (00) 00000-0000 ou (00) 0000-0000
+                  let formatado = limitado;
+                  if (limitado.length > 10) {
+                    // Celular com 11 dígitos: (00) 00000-0000
+                    formatado = limitado.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+                  } else if (limitado.length > 6) {
+                    // Telefone fixo ou celular incompleto
+                    if (limitado.length === 10) {
+                      // Fixo completo: (00) 0000-0000
+                      formatado = limitado.replace(/^(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+                    } else {
+                      formatado = limitado.replace(/^(\d{2})(\d{1,5})/, '($1) $2');
+                    }
+                  } else if (limitado.length > 2) {
+                    formatado = limitado.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+                  } else if (limitado.length > 0) {
+                    formatado = limitado.replace(/^(\d*)/, '($1');
+                  }
+                  onUpdate('telefone', formatado);
+                }}
                 placeholder="(00) 00000-0000"
+                maxLength={15}
               />
+              <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                Digite apenas números (10 ou 11 dígitos)
+              </small>
             </div>
 
             <div className="form-group">
@@ -130,6 +179,9 @@ export const DadosBasicos: React.FC<DadosBasicosProps> = ({
                 onChange={(e) => onUpdate('email', e.target.value)}
                 placeholder="contato@organizacao.com"
               />
+              <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                Formato: exemplo@dominio.com
+              </small>
             </div>
 
             <div className="form-group">

@@ -5,6 +5,8 @@ import { DataGrid, DataGridColumn } from '../../components/DataGrid';
 import { StatusValidacaoBadge } from '../../utils/validacaoHelpers';
 import { ModalArquivos } from '../../components/organizacoes/ModalArquivos';
 import ModalValidacao from '../../components/organizacoes/ModalValidacao';
+import { auxiliarAPI } from '../../services/api';
+import './ListaOrganizacoes.css';
 import {
   Edit,
   Trash,
@@ -17,7 +19,8 @@ import {
   X,
   FileText,
   User,
-  FolderOpen
+  FolderOpen,
+  Search
 } from 'lucide-react';
 
 interface Organizacao {
@@ -33,6 +36,7 @@ interface Organizacao {
   telefone: string | null;
   email: string | null;
   meta_instance_id?: string | null;
+  id_tecnico?: number | null;
   tecnico_nome?: string | null;
   tecnico_email?: string | null;
   validacao_status?: number | null;
@@ -57,11 +61,24 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalOrganizacoes, setTotalOrganizacoes] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
   const [legendaVisivel, setLegendaVisivel] = useState(true);
   
   // Filtro de origem do cadastro
   const [origemFiltro, setOrigemFiltro] = useState<'odk' | 'web' | 'todas'>('todas');
+
+  // Estados de filtros
+  const [filtros, setFiltros] = useState({
+    nome: '',           // Input text - busca por nome
+    estadoId: '',       // Select - filtrar por estado (ID)
+    municipioId: '',    // Select - filtrar por município (ID)
+    tecnicoId: '',      // Select - filtrar por técnico (user ID)
+    statusValidacao: '' // Select - '', '0', '1', '2' (pendente, validado, rejeitado)
+  });
+
+  // Estados para popular os selects
+  const [estados, setEstados] = useState<any[]>([]);
+  const [municipios, setMunicipios] = useState<any[]>([]);
+  const [tecnicos, setTecnicos] = useState<any[]>([]);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
@@ -84,8 +101,12 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   };
 
   useEffect(() => {
+    carregarDadosFiltros();
+  }, []);
+
+  useEffect(() => {
     fetchOrganizacoes();
-  }, [currentPage, pageSize, searchTerm, origemFiltro]);
+  }, [currentPage, pageSize, origemFiltro, filtros]);
 
   const gerarRelatorio = async (organizacaoId: number, nomeOrganizacao: string) => {
     setGerandoRelatorio(organizacaoId);
@@ -191,6 +212,63 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     fetchOrganizacoes();
   };
 
+  const carregarDadosFiltros = async () => {
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+      
+      // Buscar todas as organizações para extrair estados, municípios e técnicos únicos
+      const orgResponse = await fetch(`${API_BASE}/organizacoes?page=1&pageSize=1000`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (orgResponse.ok) {
+        const orgData = await orgResponse.json();
+        const todasOrgs = orgData.data.organizacoes || [];
+        
+        // Carregar todos estados e municípios
+        const estadosData = await auxiliarAPI.getEstados();
+        const municipiosData = await auxiliarAPI.getMunicipios();
+        
+        // Filtrar apenas estados que têm organizações
+        const estadosComOrgs = new Set(todasOrgs.map((org: any) => org.estado).filter(Boolean));
+        const estadosFiltrados = estadosData.filter(e => estadosComOrgs.has(e.id));
+        setEstados(estadosFiltrados);
+        
+        // Filtrar apenas municípios que têm organizações
+        const municipiosComOrgs = new Set(todasOrgs.map((org: any) => org.municipio).filter(Boolean));
+        const municipiosFiltrados = municipiosData.filter(m => municipiosComOrgs.has(m.id));
+        setMunicipios(municipiosFiltrados);
+        
+        // Carregar usuários e filtrar apenas técnicos (role tecnico)
+        const usersResponse = await fetch(`${API_BASE}/admin/users`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json();
+          const allUsers = usersData.data?.users || [];
+          
+          // Filtrar apenas usuários com role 'tecnico' no módulo 'organizacoes'
+          const tecnicosRole = allUsers.filter((user: any) => 
+            user.roles?.some((role: any) => 
+              role.name === 'tecnico' && role.module?.name === 'organizacoes'
+            )
+          );
+          
+          setTecnicos(tecnicosRole);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados dos filtros:', error);
+    }
+  };
+
   const fetchOrganizacoes = async () => {
     try {
       setLoading(true);
@@ -199,8 +277,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       // Buscar TODAS as organizações (sem paginação) para poder filtrar no frontend
       const params = new URLSearchParams({
         page: '1',
-        pageSize: '1000', // Buscar todas
-        ...(searchTerm && { search: searchTerm })
+        pageSize: '1000' // Buscar todas
       });
 
       const response = await fetch(`${API_BASE}/organizacoes?${params}`, {
@@ -219,9 +296,50 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       
       console.log(`📊 Debug Filtro:`);
       console.log(`   Backend retornou: ${todasOrganizacoes.length} organizações`);
-      console.log(`   Filtro selecionado: ${origemFiltro}`);
       
-      // Aplicar filtro de origem
+      // 1. Aplicar filtros locais
+      if (filtros.nome) {
+        todasOrganizacoes = todasOrganizacoes.filter((org: Organizacao) =>
+          org.nome.toLowerCase().includes(filtros.nome.toLowerCase())
+        );
+        console.log(`   Após filtro nome: ${todasOrganizacoes.length}`);
+      }
+
+      if (filtros.estadoId) {
+        const estadoIdNum = parseInt(filtros.estadoId);
+        todasOrganizacoes = todasOrganizacoes.filter((org: Organizacao) =>
+          org.estado === estadoIdNum
+        );
+        console.log(`   Após filtro estado: ${todasOrganizacoes.length}`);
+      }
+
+      if (filtros.municipioId) {
+        const municipioIdNum = parseInt(filtros.municipioId);
+        todasOrganizacoes = todasOrganizacoes.filter((org: Organizacao) =>
+          org.municipio === municipioIdNum
+        );
+        console.log(`   Após filtro município: ${todasOrganizacoes.length}`);
+      }
+
+      if (filtros.tecnicoId) {
+        const tecnicoIdNum = parseInt(filtros.tecnicoId);
+        todasOrganizacoes = todasOrganizacoes.filter((org: Organizacao) =>
+          org.id_tecnico === tecnicoIdNum
+        );
+        console.log(`   Após filtro técnico: ${todasOrganizacoes.length}`);
+      }
+
+      if (filtros.statusValidacao !== '') {
+        // Filtrar por status específico (1=Não validado, 2=Validado, 3=Pendência, 4=Reprovado)
+        const statusNum = parseInt(filtros.statusValidacao);
+        todasOrganizacoes = todasOrganizacoes.filter((org: Organizacao) =>
+          org.validacao_status === statusNum
+        );
+        console.log(`   Após filtro status: ${todasOrganizacoes.length}`);
+      }
+      
+      // 2. Aplicar filtro de origem
+      console.log(`   Filtro origem selecionado: ${origemFiltro}`);
       if (origemFiltro === 'odk') {
         todasOrganizacoes = todasOrganizacoes.filter((org: Organizacao) => 
           org.meta_instance_id && org.meta_instance_id.trim() !== ''
@@ -232,11 +350,12 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           !org.meta_instance_id || org.meta_instance_id.trim() === ''
         );
         console.log(`   Após filtro Web: ${todasOrganizacoes.length}`);
-      } else {
-        console.log(`   Sem filtro (todas): ${todasOrganizacoes.length}`);
       }
       
-      // Aplicar paginação no frontend
+      // 3. ORDENAR DESC POR ID (mais recente primeiro)
+      todasOrganizacoes = todasOrganizacoes.sort((a, b) => b.id - a.id);
+      
+      // 4. Aplicar paginação no frontend
       const startIndex = (currentPage - 1) * pageSize;
       const endIndex = startIndex + pageSize;
       const organizacoesPaginadas = todasOrganizacoes.slice(startIndex, endIndex);
@@ -284,10 +403,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     setPageSize(pageSize);
   };
 
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
-    setCurrentPage(1); // Resetar para primeira página ao buscar
-  };
 
   // Definição das colunas da DataGrid
   const columns: DataGridColumn<Organizacao>[] = [
@@ -649,69 +764,128 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         )}
       </div>
 
-      {/* Filtros compactos */}
-      <div style={{
-        background: 'white',
-        padding: '0.75rem 1rem',
-        marginBottom: '1rem',
-        borderRadius: '8px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        flexWrap: 'wrap'
-      }}>
-        <label style={{ 
-          fontWeight: '600', 
-          color: '#374151',
-          fontSize: '0.9rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}>
-          <Clipboard size={16} />
-          Origem:
-        </label>
-        <select 
-          value={origemFiltro}
-          onChange={(e) => {
-            setOrigemFiltro(e.target.value as 'odk' | 'web' | 'todas');
-            setCurrentPage(1);
-          }}
-          style={{
-            padding: '0.4rem 0.75rem',
-            borderRadius: '6px',
-            border: '1px solid #d1d5db',
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-            minWidth: '180px',
-            background: 'white'
-          }}
-        >
-          <option value="odk">📋 ODK Collect (Aplicativo)</option>
-          <option value="web">💻 Sistema Web</option>
-          <option value="todas">📊 Todas as Origens</option>
-        </select>
+      {/* Seção de Filtros */}
+      <div className="filters-section">
+        <div className="filters-grid">
+          {/* Busca por nome */}
+          <div className="filter-group">
+            <label className="filter-label" htmlFor="filtro-nome">Nome</label>
+            <input
+              id="filtro-nome"
+              type="text"
+              placeholder="Buscar por nome..."
+              value={filtros.nome}
+              onChange={(e) => {
+                setFiltros({ ...filtros, nome: e.target.value });
+                setCurrentPage(1);
+              }}
+              className="filter-input"
+            />
+          </div>
+
+          {/* Select Estado */}
+          <div className="filter-group">
+            <label className="filter-label" htmlFor="filtro-estado">Estado</label>
+            <select
+              id="filtro-estado"
+              className="filter-select"
+              value={filtros.estadoId}
+              onChange={(e) => {
+                setFiltros({ ...filtros, estadoId: e.target.value });
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Todos os estados</option>
+              {estados.map(estado => (
+                <option key={estado.id} value={estado.id}>
+                  {estado.uf} - {estado.descricao}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Select Município */}
+          <div className="filter-group">
+            <label className="filter-label" htmlFor="filtro-municipio">Município</label>
+            <select
+              id="filtro-municipio"
+              className="filter-select"
+              value={filtros.municipioId}
+              onChange={(e) => {
+                setFiltros({ ...filtros, municipioId: e.target.value });
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Todos os municípios</option>
+              {municipios.map(municipio => (
+                <option key={municipio.id} value={municipio.id}>
+                  {municipio.descricao}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Select Técnico */}
+          <div className="filter-group">
+            <label className="filter-label" htmlFor="filtro-tecnico">Técnico</label>
+            <select
+              id="filtro-tecnico"
+              className="filter-select"
+              value={filtros.tecnicoId}
+              onChange={(e) => {
+                setFiltros({ ...filtros, tecnicoId: e.target.value });
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Todos os técnicos</option>
+              {tecnicos.map(tecnico => (
+                <option key={tecnico.id} value={tecnico.id}>
+                  {tecnico.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Select Status Validação */}
+          <div className="filter-group">
+            <label className="filter-label" htmlFor="filtro-status">Status</label>
+            <select
+              id="filtro-status"
+              className="filter-select"
+              value={filtros.statusValidacao}
+              onChange={(e) => {
+                setFiltros({ ...filtros, statusValidacao: e.target.value });
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Todos os status</option>
+              <option value="1">Não validado</option>
+              <option value="2">Validado</option>
+              <option value="3">Pendência</option>
+              <option value="4">Reprovado</option>
+            </select>
+          </div>
+
+          {/* Botão Limpar Filtros */}
+          <div className="filters-actions">
+            <button
+              type="button"
+              className="btn btn-danger btn-sm"
+              onClick={() => {
+                setFiltros({ nome: '', estadoId: '', municipioId: '', tecnicoId: '', statusValidacao: '' });
+                setOrigemFiltro('todas');
+                setCurrentPage(1);
+              }}
+              title="Limpar todos os filtros"
+            >
+              <X size={16} /> Limpar filtros
+            </button>
+          </div>
+        </div>
         
-        <div style={{ 
-          marginLeft: 'auto',
-          fontSize: '0.85rem',
-          color: '#6b7280',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}>
-          <span style={{ fontWeight: '500' }}>Total:</span>
-          <span style={{ 
-            background: '#f3f4f6', 
-            padding: '0.2rem 0.6rem', 
-            borderRadius: '12px',
-            fontWeight: '600',
-            color: '#374151',
-            fontSize: '0.85rem'
-          }}>
-            {totalOrganizacoes}
-          </span>
+        {/* Total de organizações */}
+        <div className="filters-total">
+          <span>Total: <strong>{totalOrganizacoes}</strong> organização(ões)</span>
         </div>
       </div>
 
@@ -771,7 +945,8 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       )}
 
       {/* DataGrid */}
-      <div style={{ 
+      {/* Layout Desktop - DataGrid */}
+      <div className="desktop-only" style={{ 
         background: 'white',
         borderRadius: '8px',
         padding: '1rem',
@@ -789,16 +964,9 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               showSizeChanger: true,
               onChange: handlePaginationChange,
             }}
-            filters={{
-              searchable: true,
-              searchPlaceholder: 'Buscar por nome, CNPJ ou localização...',
-              onSearchChange: handleSearchChange,
-            }}
             emptyState={{
               title: 'Nenhuma organização encontrada',
-              description: searchTerm
-                ? `Não foram encontradas organizações que correspondam ao termo "${searchTerm}".`
-                : 'Não há organizações cadastradas no sistema ainda.',
+              description: 'Não foram encontradas organizações que correspondam aos filtros selecionados.',
               action: {
                 label: 'Cadastrar primeira organização',
                 onClick: () => onNavigate('cadastro'),
@@ -808,6 +976,271 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
             size="small"
             className="organizacoes-datagrid"
           />
+      </div>
+
+      {/* Layout Mobile/Tablet - Cards */}
+      <div className="mobile-only">
+        <div className="organizations-cards">
+          {loading ? (
+            <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+              Carregando organizações...
+            </div>
+          ) : organizacoes.length === 0 ? (
+            <div style={{ 
+              padding: '3rem 1rem', 
+              textAlign: 'center', 
+              background: 'white',
+              borderRadius: '8px',
+              border: '2px dashed #e5e7eb'
+            }}>
+              <Building2 size={48} style={{ color: '#9ca3af', marginBottom: '1rem' }} />
+              <h3 style={{ color: '#374151', marginBottom: '0.5rem' }}>Nenhuma organização encontrada</h3>
+              <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+                {filtros.nome || filtros.estadoId || filtros.municipioId || filtros.tecnicoId || filtros.statusValidacao
+                  ? 'Não foram encontradas organizações que correspondam aos filtros selecionados.'
+                  : 'Não há organizações cadastradas no sistema ainda.'}
+              </p>
+              {!isCoordinator() && (
+                <button
+                  onClick={() => onNavigate('cadastro')}
+                  className="btn btn-primary"
+                >
+                  Cadastrar primeira organização
+                </button>
+              )}
+            </div>
+          ) : (
+            organizacoes.map((org) => (
+            <div key={org.id} className="organization-card">
+              <div className="organization-card-header">
+                <div className="organization-info">
+                  <h4>{org.nome}</h4>
+                  <div className="organization-meta">
+                    <span>
+                      📍 {org.estado_nome && org.municipio_nome 
+                        ? `${org.estado_nome} - ${org.municipio_nome}`
+                        : org.estado_nome || org.municipio_nome || 'Localização não informada'}
+                    </span>
+                    {org.tecnico_nome && (
+                      <span>
+                        <User size={14} /> {org.tecnico_nome}
+                      </span>
+                    )}
+                    <span>
+                      {org.meta_instance_id ? '📋 ODK Collect' : '💻 Sistema Web'}
+                    </span>
+                    <div>
+                      <StatusValidacaoBadge status={org.validacao_status} />
+                    </div>
+                  </div>
+                </div>
+                <div className="organization-actions">
+                  <button
+                    onClick={() => onNavigate('edicao', org.id)}
+                    title="Editar"
+                    style={{ color: '#3b82f6', borderColor: '#3b82f6' }}
+                  >
+                    <Edit size={16} />
+                  </button>
+                  
+                  {(isCoordinator() || hasPermission('sistema', 'admin')) && (
+                    <button
+                      onClick={() => abrirModalValidacao(org.id, org.nome)}
+                      title="Validar"
+                      style={{ color: '#10b981', borderColor: '#10b981' }}
+                    >
+                      <Clipboard size={16} />
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={() => gerarTermoAdesao(org.id, org.nome)}
+                    disabled={gerandoPDF === org.id}
+                    title="Imprimir Termo"
+                    style={{ color: '#8b5cf6', borderColor: '#8b5cf6' }}
+                  >
+                    <Printer size={16} />
+                  </button>
+                  
+                  <button
+                    onClick={() => gerarRelatorio(org.id, org.nome)}
+                    disabled={gerandoRelatorio === org.id}
+                    title="Gerar Relatório"
+                    style={{ color: '#f59e0b', borderColor: '#f59e0b' }}
+                  >
+                    <FileText size={16} />
+                  </button>
+                  
+                  <button
+                    onClick={() => abrirModalArquivos(org.id, org.nome)}
+                    title="Arquivos"
+                    style={{ color: '#06b6d4', borderColor: '#06b6d4' }}
+                  >
+                    <FolderOpen size={16} />
+                  </button>
+                  
+                  {!isCoordinator() && (
+                    <button
+                      onClick={() => handleDelete(org.id)}
+                      title="Excluir"
+                      style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                    >
+                      <Trash size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+          )}
+        </div>
+      </div>
+      
+      {/* Paginação Mobile */}
+      <div className="mobile-only">
+        {!loading && organizacoes.length > 0 && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '1rem',
+            marginTop: '1.5rem',
+            padding: '1rem',
+            background: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          }}>
+            {/* Informações de paginação */}
+            <div style={{ 
+              fontSize: '0.875rem', 
+              color: '#6b7280',
+              textAlign: 'center'
+            }}>
+              Mostrando {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalOrganizacoes)} de {totalOrganizacoes} organização(ões)
+            </div>
+            
+            {/* Botões de navegação */}
+            <div style={{
+              display: 'flex',
+              gap: '0.5rem',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => handlePaginationChange(1, pageSize)}
+                disabled={currentPage === 1}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  background: currentPage === 1 ? '#f3f4f6' : 'white',
+                  color: currentPage === 1 ? '#9ca3af' : '#374151',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Primeira
+              </button>
+              
+              <button
+                onClick={() => handlePaginationChange(currentPage - 1, pageSize)}
+                disabled={currentPage === 1}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  background: currentPage === 1 ? '#f3f4f6' : 'white',
+                  color: currentPage === 1 ? '#9ca3af' : '#374151',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s'
+                }}
+              >
+                ← Anterior
+              </button>
+              
+              <span style={{
+                padding: '0.5rem 1rem',
+                background: '#3b82f6',
+                color: 'white',
+                borderRadius: '6px',
+                fontSize: '0.875rem',
+                fontWeight: '600'
+              }}>
+                {currentPage} / {Math.ceil(totalOrganizacoes / pageSize)}
+              </span>
+              
+              <button
+                onClick={() => handlePaginationChange(currentPage + 1, pageSize)}
+                disabled={currentPage >= Math.ceil(totalOrganizacoes / pageSize)}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  background: currentPage >= Math.ceil(totalOrganizacoes / pageSize) ? '#f3f4f6' : 'white',
+                  color: currentPage >= Math.ceil(totalOrganizacoes / pageSize) ? '#9ca3af' : '#374151',
+                  cursor: currentPage >= Math.ceil(totalOrganizacoes / pageSize) ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Próxima →
+              </button>
+              
+              <button
+                onClick={() => handlePaginationChange(Math.ceil(totalOrganizacoes / pageSize), pageSize)}
+                disabled={currentPage >= Math.ceil(totalOrganizacoes / pageSize)}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  background: currentPage >= Math.ceil(totalOrganizacoes / pageSize) ? '#f3f4f6' : 'white',
+                  color: currentPage >= Math.ceil(totalOrganizacoes / pageSize) ? '#9ca3af' : '#374151',
+                  cursor: currentPage >= Math.ceil(totalOrganizacoes / pageSize) ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Última
+              </button>
+            </div>
+            
+            {/* Seletor de itens por página */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.875rem',
+              color: '#6b7280'
+            }}>
+              <span>Itens por página:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => handlePaginationChange(1, parseInt(e.target.value))}
+                style={{
+                  padding: '0.375rem 0.5rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  background: 'white',
+                  color: '#374151',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de Arquivos */}
