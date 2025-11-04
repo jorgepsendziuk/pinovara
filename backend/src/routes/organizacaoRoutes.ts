@@ -5,6 +5,7 @@ import { associadosJuridicosController } from '../controllers/associadosJuridico
 import { producaoController } from '../controllers/producaoController';
 import { indicadoresController } from '../controllers/indicadoresController';
 import { participantesController } from '../controllers/participantesController';
+import PlanoGestaoController from '../controllers/PlanoGestaoController';
 import { authenticateToken, requirePermission } from '../middleware/auth';
 import { checkOrganizacaoPermission } from '../middleware/roleAuth';
 
@@ -58,5 +59,11 @@ router.get('/:id/participantes', participantesController.list);
 router.post('/:id/participantes', participantesController.create);
 router.put('/:id/participantes/:participanteId', participantesController.update);
 router.delete('/:id/participantes/:participanteId', participantesController.delete);
+
+// Plano de Gestão
+router.get('/:id/plano-gestao', PlanoGestaoController.getPlanoGestao.bind(PlanoGestaoController));
+router.put('/:id/plano-gestao/rascunho', PlanoGestaoController.updateRascunho.bind(PlanoGestaoController));
+router.put('/:id/plano-gestao/acoes/:idAcaoModelo', PlanoGestaoController.upsertAcao.bind(PlanoGestaoController));
+router.delete('/:id/plano-gestao/acoes/:idAcaoModelo', PlanoGestaoController.deleteAcao.bind(PlanoGestaoController));
 
 export default router;

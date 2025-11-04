@@ -362,8 +362,8 @@ class OrganizacaoService {
         }
         const dadosCriacao = {
             nome: nome.trim(),
-            cnpj: cnpj || null,
-            telefone: telefone || null,
+            cnpj: cnpj ? cnpj.replace(/\D/g, '') : null,
+            telefone: telefone ? telefone.replace(/\D/g, '') : null,
             email: email || null,
             estado: estado || null,
             municipio: municipio || null,
@@ -372,14 +372,58 @@ class OrganizacaoService {
             id_tecnico: id_tecnico
         };
         if (data.data_fundacao) {
-            dadosCriacao.data_fundacao = typeof data.data_fundacao === 'string'
-                ? new Date(data.data_fundacao)
-                : data.data_fundacao;
+            try {
+                dadosCriacao.data_fundacao = typeof data.data_fundacao === 'string'
+                    ? new Date(data.data_fundacao)
+                    : data.data_fundacao;
+                if (isNaN(dadosCriacao.data_fundacao.getTime())) {
+                    console.error('❌ Data de fundação inválida:', data.data_fundacao);
+                    throw new ApiError({
+                        message: 'Data de fundação inválida. Use o formato AAAA-MM-DD',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST,
+                        code: api_1.ErrorCode.VALIDATION_ERROR,
+                        details: { campo: 'data_fundacao', valor: data.data_fundacao }
+                    });
+                }
+            }
+            catch (error) {
+                if (error instanceof ApiError)
+                    throw error;
+                console.error('❌ Erro ao processar data_fundacao:', error);
+                throw new ApiError({
+                    message: 'Erro ao processar data de fundação',
+                    statusCode: api_1.HttpStatus.BAD_REQUEST,
+                    code: api_1.ErrorCode.VALIDATION_ERROR,
+                    details: { campo: 'data_fundacao', erro: error.message }
+                });
+            }
         }
         if (data.data_visita) {
-            dadosCriacao.data_visita = typeof data.data_visita === 'string'
-                ? new Date(data.data_visita)
-                : data.data_visita;
+            try {
+                dadosCriacao.data_visita = typeof data.data_visita === 'string'
+                    ? new Date(data.data_visita)
+                    : data.data_visita;
+                if (isNaN(dadosCriacao.data_visita.getTime())) {
+                    console.error('❌ Data de visita inválida:', data.data_visita);
+                    throw new ApiError({
+                        message: 'Data de visita inválida. Use o formato AAAA-MM-DD',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST,
+                        code: api_1.ErrorCode.VALIDATION_ERROR,
+                        details: { campo: 'data_visita', valor: data.data_visita }
+                    });
+                }
+            }
+            catch (error) {
+                if (error instanceof ApiError)
+                    throw error;
+                console.error('❌ Erro ao processar data_visita:', error);
+                throw new ApiError({
+                    message: 'Erro ao processar data de visita',
+                    statusCode: api_1.HttpStatus.BAD_REQUEST,
+                    code: api_1.ErrorCode.VALIDATION_ERROR,
+                    details: { campo: 'data_visita', erro: error.message }
+                });
+            }
         }
         try {
             const organizacao = await prisma.organizacao.create({
@@ -452,31 +496,63 @@ class OrganizacaoService {
         delete dadosLimpos.organizacao_indicador;
         delete dadosLimpos.organizacao_participante;
         delete dadosLimpos.organizacao_abrangencia_pj;
-        if (dadosLimpos.data_fundacao) {
-            if (typeof dadosLimpos.data_fundacao === 'string') {
-                dadosLimpos.data_fundacao = new Date(dadosLimpos.data_fundacao);
+        const dadosAny = dadosLimpos;
+        if (dadosAny.organizacao_end_cep) {
+            dadosAny.organizacao_end_cep = dadosAny.organizacao_end_cep.replace(/\D/g, '');
+        }
+        if (dadosAny.representante_end_cep) {
+            dadosAny.representante_end_cep = dadosAny.representante_end_cep.replace(/\D/g, '');
+        }
+        if (dadosAny.representante_cpf) {
+            dadosAny.representante_cpf = dadosAny.representante_cpf.replace(/\D/g, '');
+        }
+        if (dadosLimpos.cnpj) {
+            dadosLimpos.cnpj = dadosLimpos.cnpj.replace(/\D/g, '');
+        }
+        if (dadosLimpos.telefone) {
+            dadosLimpos.telefone = dadosLimpos.telefone.replace(/\D/g, '');
+        }
+        if (dadosAny.representante_telefone) {
+            dadosAny.representante_telefone = dadosAny.representante_telefone.replace(/\D/g, '');
+        }
+        const camposData = ['data_fundacao', 'data_visita', 'inicio', 'fim', 'validacao_data'];
+        for (const campo of camposData) {
+            const valorCampo = dadosLimpos[campo];
+            if (valorCampo) {
+                try {
+                    if (typeof valorCampo === 'string') {
+                        const dataString = valorCampo;
+                        if (dataString.trim() === '') {
+                            delete dadosLimpos[campo];
+                            continue;
+                        }
+                        dadosLimpos[campo] = new Date(dataString);
+                    }
+                    const dataObj = dadosLimpos[campo];
+                    if (isNaN(dataObj.getTime())) {
+                        console.error(`❌ ${campo} inválida:`, valorCampo);
+                        throw new ApiError({
+                            message: `${campo.replace('_', ' ')} inválida. Use o formato AAAA-MM-DD`,
+                            statusCode: api_1.HttpStatus.BAD_REQUEST,
+                            code: api_1.ErrorCode.VALIDATION_ERROR,
+                            details: { campo, valor: valorCampo }
+                        });
+                    }
+                }
+                catch (error) {
+                    if (error instanceof ApiError)
+                        throw error;
+                    console.error(`❌ Erro ao processar ${campo}:`, error);
+                    throw new ApiError({
+                        message: `Erro ao processar ${campo.replace('_', ' ')}`,
+                        statusCode: api_1.HttpStatus.BAD_REQUEST,
+                        code: api_1.ErrorCode.VALIDATION_ERROR,
+                        details: { campo, erro: error.message }
+                    });
+                }
             }
         }
-        if (dadosLimpos.data_visita) {
-            if (typeof dadosLimpos.data_visita === 'string') {
-                dadosLimpos.data_visita = new Date(dadosLimpos.data_visita);
-            }
-        }
-        if (dadosLimpos.inicio) {
-            if (typeof dadosLimpos.inicio === 'string') {
-                dadosLimpos.inicio = new Date(dadosLimpos.inicio);
-            }
-        }
-        if (dadosLimpos.fim) {
-            if (typeof dadosLimpos.fim === 'string') {
-                dadosLimpos.fim = new Date(dadosLimpos.fim);
-            }
-        }
-        if (dadosLimpos.validacao_data) {
-            if (typeof dadosLimpos.validacao_data === 'string') {
-                dadosLimpos.validacao_data = new Date(dadosLimpos.validacao_data);
-            }
-        }
+        console.log('📝 Dados limpos para update:', JSON.stringify(dadosLimpos, null, 2));
         try {
             const organizacao = await prisma.organizacao.update({
                 where: { id },
@@ -485,7 +561,8 @@ class OrganizacaoService {
             return organizacao;
         }
         catch (error) {
-            console.error('Erro ao atualizar organização no Prisma:', error);
+            console.error('❌ Erro ao atualizar organização no Prisma:', error);
+            console.error('❌ Dados que causaram o erro:', JSON.stringify(dadosLimpos, null, 2));
             if (error.code === 'P2002') {
                 const target = error.meta?.target || ['campo desconhecido'];
                 throw new ApiError({
@@ -658,8 +735,10 @@ class OrganizacaoService {
             total: item.count
         }));
         const organizacoesRecentes = organizacoesFiltradas
-            .filter(org => org.gps_lat !== null && org.gps_lng !== null)
             .sort((a, b) => {
+            if (!a.data_visita && !b.data_visita) {
+                return b.id - a.id;
+            }
             if (!a.data_visita)
                 return 1;
             if (!b.data_visita)

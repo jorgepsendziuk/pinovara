@@ -120,21 +120,5 @@ CREATE TABLE odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" ( "_URI" varchar
 CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_da9" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" USING hash ("_DOM_AURI");
 CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_lud" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" USING btree ("_LAST_UPDATE_DATE");
 
-timeout of 30000ms exceeded
 
-
-25
-33
-39
-24
-21
-23
-41
-
-ja soltei o comunicado,
-
-Pessoal, a gente tá preparando pra lançar uma atualização do sistema pra resolver esses problemas.
-O que aconteceu é que nós tivemos dois formulários e tiveram diferenças entre esses formulários que não estavam mapeados corretamente.
-Alguns campos que não estavam sendo exibidos antes ou que não estavam sendo salvos (problemas acima) foram acrescentados no formulário de edição e no relatório corretamente.
-Os dados de vocês que vocês enviaram pelo formulário do aplicativo agora vão aparecer corretamente, sem prejuízo as respostas que já haviam sido validadas.
-Daqui a pouco vai sair uma versao corrigida, estamos só conferindo os dados pra liberar.
+quero colocar um campo "plano_gestao_rascunho" na tabela organizacao mesmo, texto longo, com formatacao 

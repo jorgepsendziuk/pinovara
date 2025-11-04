@@ -20,7 +20,8 @@ import {
   FileText,
   User,
   FolderOpen,
-  Search
+  Search,
+  ClipboardList
 } from 'lucide-react';
 
 interface Organizacao {
@@ -44,7 +45,7 @@ interface Organizacao {
 
 
 interface ListaOrganizacoesProps {
-  onNavigate: (view: 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa', organizacaoId?: number) => void;
+  onNavigate: (view: 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa' | 'planoGestao', organizacaoId?: number) => void;
 }
 
 function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
@@ -469,6 +470,31 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
             }}
           >
             <FileText size={14} />
+          </button>
+          <button
+            onClick={() => onNavigate('planoGestao', record.id)}
+            title="Plano de Gestão"
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #8b5cf6',
+              background: 'white',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              color: '#8b5cf6',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#8b5cf6';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.color = '#8b5cf6';
+            }}
+          >
+            <ClipboardList size={14} />
           </button>
           <button
             onClick={() => abrirModalArquivos(record.id, record.nome)}
