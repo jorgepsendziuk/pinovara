@@ -12,7 +12,6 @@ import AssociadosJuridicos from '../../components/organizacoes/AssociadosJuridic
 import DadosProducao from '../../components/organizacoes/DadosProducao';
 import { DadosRepresentanteComponent } from '../../components/organizacoes/DadosRepresentante';
 import { DiagnosticoArea } from '../../components/organizacoes/DiagnosticoArea';
-import { PlanoGestao } from '../../components/organizacoes/PlanoGestao';
 import { UploadDocumentos } from '../../components/organizacoes/UploadDocumentos';
 import { UploadFotos } from '../../components/organizacoes/UploadFotos';
 import { DadosColeta } from '../../components/organizacoes/DadosColeta';
@@ -33,7 +32,6 @@ import {
   XCircle,
   Loader2,
   Save,
-  Target,
   ChevronsDown,
   FileText,
   MapPin,
@@ -1027,16 +1025,6 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     </div>
   );
 
-  const renderAbaPlanoGestao = () => (
-    <div className="aba-content" style={{ width: '100%' }}>
-      <div className="plano-gestao-wrapper" style={{ 
-        width: '100%',
-        maxWidth: 'none'
-      }}>
-        <PlanoGestao onUpdate={(dados) => console.log('Dados atualizados:', dados)} />
-      </div>
-    </div>
-  );
 
   const renderAbaValidacao = () => (
     <div className="aba-content">
@@ -1473,19 +1461,6 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
             <Search size={16} /> <span>Diagnóstico</span>
           </button>
           <button
-            className={`tab-button ${abaAtiva === 'planoGestao' ? 'active' : ''}`}
-            onClick={() => setAbaAtiva('planoGestao')}
-            title="Plano de Gestão"
-            style={{
-              background: abaAtiva === 'planoGestao' 
-                ? 'linear-gradient(135deg, #3b2313 0%, #056839 100%)' 
-                : 'rgba(59, 35, 19, 0.1)', // Marrom do projeto (#3b2313) com 10% de opacidade
-              color: abaAtiva === 'planoGestao' ? 'white' : '#3b2313'
-            }}
-          >
-            <Target size={16} /> <span>Plano de Gestão</span>
-          </button>
-          <button
             className={`tab-button ${abaAtiva === 'validacao' ? 'active' : ''}`}
             onClick={() => setAbaAtiva('validacao')}
             title="Validação do Cadastro"
@@ -1518,7 +1493,6 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
           {abaAtiva === 'associados-juridicos' && renderAbaAssociadosJuridicos()}
           {abaAtiva === 'producao' && renderAbaProducao()}
           {abaAtiva === 'diagnostico' && renderAbaDiagnostico()}
-          {abaAtiva === 'planoGestao' && renderAbaPlanoGestao()}
           {abaAtiva === 'validacao' && renderAbaValidacao()}
           {abaAtiva === 'complementos' && renderAbaComplementos()}
 

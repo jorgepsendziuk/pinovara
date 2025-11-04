@@ -1,4 +1,7 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const organizacaoController_1 = require("../controllers/organizacaoController");
@@ -7,6 +10,7 @@ const associadosJuridicosController_1 = require("../controllers/associadosJuridi
 const producaoController_1 = require("../controllers/producaoController");
 const indicadoresController_1 = require("../controllers/indicadoresController");
 const participantesController_1 = require("../controllers/participantesController");
+const PlanoGestaoController_1 = __importDefault(require("../controllers/PlanoGestaoController"));
 const auth_1 = require("../middleware/auth");
 const roleAuth_1 = require("../middleware/roleAuth");
 const router = (0, express_1.Router)();
@@ -40,5 +44,9 @@ router.get('/:id/participantes', participantesController_1.participantesControll
 router.post('/:id/participantes', participantesController_1.participantesController.create);
 router.put('/:id/participantes/:participanteId', participantesController_1.participantesController.update);
 router.delete('/:id/participantes/:participanteId', participantesController_1.participantesController.delete);
+router.get('/:id/plano-gestao', PlanoGestaoController_1.default.getPlanoGestao.bind(PlanoGestaoController_1.default));
+router.put('/:id/plano-gestao/rascunho', PlanoGestaoController_1.default.updateRascunho.bind(PlanoGestaoController_1.default));
+router.put('/:id/plano-gestao/acoes/:idAcaoModelo', PlanoGestaoController_1.default.upsertAcao.bind(PlanoGestaoController_1.default));
+router.delete('/:id/plano-gestao/acoes/:idAcaoModelo', PlanoGestaoController_1.default.deleteAcao.bind(PlanoGestaoController_1.default));
 exports.default = router;
 //# sourceMappingURL=organizacaoRoutes.js.map

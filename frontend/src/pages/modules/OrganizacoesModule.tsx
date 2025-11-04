@@ -9,9 +9,10 @@ import ListaOrganizacoes from '../organizacoes/ListaOrganizacoes';
 // import DetalhesOrganizacao from '../organizacoes/DetalhesOrganizacao'; // Removido
 import EdicaoOrganizacao from '../organizacoes/EdicaoOrganizacao';
 import MapaOrganizacoesPage from '../organizacoes/MapaOrganizacoesPage';
+import PlanoGestaoPage from '../organizacoes/PlanoGestaoPage';
 import '../organizacoes/OrganizacoesModule.css';
 
-type ViewType = 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa' | 'detalhes';
+type ViewType = 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa' | 'detalhes' | 'planoGestao';
 
 function OrganizacoesModule() {
   const { isSupervisor } = useAuth();
@@ -42,6 +43,12 @@ function OrganizacoesModule() {
     } else if (path.includes('/edicao/')) {
       setViewAtiva('edicao');
       const id = path.split('/edicao/')[1];
+      if (id) {
+        setOrganizacaoSelecionada(parseInt(id));
+      }
+    } else if (path.includes('/plano-gestao/')) {
+      setViewAtiva('planoGestao');
+      const id = path.split('/plano-gestao/')[1];
       if (id) {
         setOrganizacaoSelecionada(parseInt(id));
       }
@@ -83,6 +90,11 @@ function OrganizacoesModule() {
           navigate(`/organizacoes/edicao/${organizacaoId}`);
         }
         break;
+      case 'planoGestao':
+        if (organizacaoId) {
+          navigate(`/organizacoes/plano-gestao/${organizacaoId}`);
+        }
+        break;
       case 'detalhes':
         // Redireciona para edição (funcionalidade combinada)
         if (organizacaoId) {
@@ -110,6 +122,17 @@ function OrganizacoesModule() {
             organizacaoId={organizacaoSelecionada} 
             onNavigate={(pagina: string, dados?: any) => handleNavegacao(pagina as ViewType, dados)} 
           />
+        ) : (
+          <div className="error-message">
+            <p>❌ ID da organização não fornecido</p>
+            <button onClick={() => setViewAtiva('lista')} className="btn btn-primary">
+              Voltar para Lista
+            </button>
+          </div>
+        );
+      case 'planoGestao':
+        return organizacaoSelecionada ? (
+          <PlanoGestaoPage organizacaoId={organizacaoSelecionada} />
         ) : (
           <div className="error-message">
             <p>❌ ID da organização não fornecido</p>

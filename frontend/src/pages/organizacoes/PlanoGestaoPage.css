@@ -1,0 +1,121 @@
+/* Plano de Gestão - Responsividade */
+
+/* Layout de tabela para telas grandes */
+@media (min-width: 1024px) {
+  .plano-acao-row {
+    display: table-row;
+  }
+  
+  .plano-acao-card {
+    display: none;
+  }
+}
+
+/* Layout de cards para telas menores */
+@media (max-width: 1023px) {
+  .plano-acao-table {
+    display: none;
+  }
+  
+  .plano-acao-card {
+    display: block;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .plano-acao-card.tem-edicao {
+    background: #fef3c7;
+    border-color: #f59e0b;
+  }
+  
+  .plano-acao-card.ja-editada {
+    background: #f0fdf4;
+    border-color: #10b981;
+  }
+  
+  .plano-acao-card-title {
+    font-weight: 600;
+    color: #3b2313;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #056839;
+    font-size: 15px;
+  }
+  
+  .plano-acao-card-field {
+    margin-bottom: 16px;
+  }
+  
+  .plano-acao-card-label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .plano-acao-card-value input,
+  .plano-acao-card-value textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    min-height: 44px; /* Melhor para toque em mobile */
+  }
+  
+  .plano-acao-card-value textarea {
+    min-height: 100px;
+    resize: vertical;
+  }
+  
+  .plano-acao-card-actions {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+  }
+  
+  .plano-acao-card-actions button {
+    width: 100%;
+  }
+}
+
+/* Altura aumentada para campos de texto */
+.plano-gestao-input {
+  min-height: 44px !important;
+  padding: 10px 12px !important;
+}
+
+.plano-gestao-textarea {
+  min-height: 120px !important;
+  padding: 12px !important;
+  line-height: 1.6;
+}
+
+/* Ajustes para o rascunho */
+.rascunho-textarea {
+  min-height: 200px !important;
+}
+
+@media (max-width: 768px) {
+  .rascunho-textarea {
+    min-height: 150px !important;
+  }
+}
+
+/* Scroll horizontal suave em tabelas pequenas */
+@media (min-width: 1024px) and (max-width: 1400px) {
+  .accordion-section {
+    overflow-x: auto;
+  }
+  
+  .table-default {
+    min-width: 1200px;
+  }
+}
