@@ -719,6 +719,9 @@ model organizacao {
   plano_gestao_rascunho                                              String?                         @db.Text
   plano_gestao_rascunho_updated_by                                   Int?
   plano_gestao_rascunho_updated_at                                   DateTime?                       @db.Timestamp(6)
+  plano_gestao_relatorio_sintetico                                   String?                         @db.Text
+  plano_gestao_relatorio_sintetico_updated_by                        Int?
+  plano_gestao_relatorio_sintetico_updated_at                        DateTime?                       @db.Timestamp(6)
   participantes_menos_10                                             Int?
   assinatura_rep_legal                                               String?
   uri                                                                String?                         @unique @map("_uri") @db.VarChar(80)
@@ -948,7 +951,9 @@ model organizacao {
   organizacao_participante                                           organizacao_participante[]
   organizacao_producao                                               organizacao_producao[]
   plano_gestao_acao                                                  plano_gestao_acao[]
+  plano_gestao_evidencia                                             plano_gestao_evidencia[]
   users_organizacao_plano_gestao_rascunho_updated_byTousers         users?                          @relation("organizacao_plano_gestao_rascunho_updated_byTousers", fields: [plano_gestao_rascunho_updated_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  users_organizacao_plano_gestao_relatorio_sintetico_updated_byTousers users?                        @relation("organizacao_plano_gestao_relatorio_sintetico_updated_byTousers", fields: [plano_gestao_relatorio_sintetico_updated_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([validacao_status], map: "idx_organizacao_validacao_status")
   @@schema("pinovara")
@@ -1171,6 +1176,8 @@ model users {
   audit_logs                                                        audit_logs[]
   organizacao                                                       organizacao[]
   organizacao_organizacao_plano_gestao_rascunho_updated_byTousers  organizacao[] @relation("organizacao_plano_gestao_rascunho_updated_byTousers")
+  organizacao_organizacao_plano_gestao_relatorio_sintetico_updated_byTousers organizacao[] @relation("organizacao_plano_gestao_relatorio_sintetico_updated_byTousers")
+  plano_gestao_evidencia                                           plano_gestao_evidencia[]
   user_roles                                                        user_roles[]
 
   @@schema("pinovara")
@@ -1478,6 +1485,7 @@ model plano_gestao_acao {
   id              Int                      @id @default(autoincrement())
   id_organizacao  Int
   id_acao_modelo  Int
+  acao            String?                  @db.Text
   responsavel     String?                  @db.VarChar(300)
   data_inicio     DateTime?                @db.Date
   data_termino    DateTime?                @db.Date
@@ -1491,5 +1499,24 @@ model plano_gestao_acao {
   @@unique([id_organizacao, id_acao_modelo])
   @@index([id_organizacao])
   @@index([id_acao_modelo])
+  @@schema("pinovara")
+}
+
+model plano_gestao_evidencia {
+  id              Int                      @id @default(autoincrement())
+  id_organizacao  Int
+  tipo            String                   @db.VarChar(50) // 'foto' ou 'lista_presenca'
+  nome_arquivo    String                   @db.VarChar(255)
+  caminho_arquivo String                   @db.VarChar(500)
+  descricao       String?                  @db.Text
+  uploaded_by     Int
+  created_at      DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at      DateTime                 @default(now()) @db.Timestamp(6)
+  organizacao     organizacao              @relation(fields: [id_organizacao], references: [id], onDelete: Cascade)
+  users           users                    @relation(fields: [uploaded_by], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([id_organizacao])
+  @@index([tipo])
+  @@index([uploaded_by])
   @@schema("pinovara")
 }

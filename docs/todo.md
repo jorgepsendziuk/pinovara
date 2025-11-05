@@ -120,5 +120,4 @@ CREATE TABLE odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" ( "_URI" varchar
 CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_da9" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" USING hash ("_DOM_AURI");
 CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_lud" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" USING btree ("_LAST_UPDATE_DATE");
 
-
-quero colocar um campo "plano_gestao_rascunho" na tabela organizacao mesmo, texto longo, com formatacao 
+accordions de grupos ao abrir ficam fundo verde com texto marrom, tem que ficar texto branco pra dar contrarste

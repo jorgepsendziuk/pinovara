@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { PlanoGestaoResponse, UpdateAcaoRequest, AcaoCompleta } from '../../types/planoGestao';
-import { ChevronDown, ChevronsDown, ChevronsUp, Edit, HelpCircle, Save, X } from 'lucide-react';
+import { PlanoGestaoResponse, AcaoCompleta, Evidencia } from '../../types/planoGestao';
+import { ChevronDown, ChevronsDown, ChevronsUp, Edit, HelpCircle, Save, Upload, Download, Trash2, Image, FileText, ClipboardList, FileText as FileTextIcon, Image as ImageIcon, Target } from 'lucide-react';
 import Toast from '../../components/Toast';
 import './PlanoGestaoPage.css';
 
@@ -22,11 +22,16 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
   const [gruposAbertos, setGruposAbertos] = useState<string[]>([]);
   const [editandoRascunho, setEditandoRascunho] = useState(false);
   const [rascunhoTexto, setRascunhoTexto] = useState('');
+  const [editandoRelatorio, setEditandoRelatorio] = useState(false);
+  const [relatorioTexto, setRelatorioTexto] = useState('');
   const [acoesEditando, setAcoesEditando] = useState<{[key: number]: any}>({});
   const [toasts, setToasts] = useState<Array<{id: string, message: string, type: 'success' | 'error'}>>([]);
   const [hintPopup, setHintPopup] = useState<{show: boolean, text: string, x: number, y: number, locked: boolean}>({show: false, text: '', x: 0, y: 0, locked: false});
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1400);
   const [legendaVisivel, setLegendaVisivel] = useState(true);
+  const [evidencias, setEvidencias] = useState<Evidencia[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState<'rascunho' | 'relatorio' | 'evidencias' | 'plano-gestao'>('rascunho');
 
   // Verifica se o usuário tem role de Técnico ou Admin
   const canEdit = user?.roles?.some((role: any) => 
@@ -182,6 +187,8 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
       const data = await response.json();
       setPlanoGestao(data);
       setRascunhoTexto(data.plano_gestao_rascunho || '');
+      setRelatorioTexto(data.plano_gestao_relatorio_sintetico || '');
+      setEvidencias(data.evidencias || []);
       
       // Ajustar altura dos textareas após carregar dados
       setTimeout(() => {
@@ -219,11 +226,11 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
   };
 
   const expandirTodos = () => {
-    const keys = ['rascunho'];
+    const keys: string[] = [];
     const grupoKeys: string[] = [];
     planoGestao?.planos.forEach((p, i) => {
       keys.push(`plano-${i}`);
-      p.grupos.forEach((g, j) => grupoKeys.push(`grupo-${i}-${j}`));
+      p.grupos.forEach((_g, j) => grupoKeys.push(`grupo-${i}-${j}`));
     });
     setAccordionsAbertos(keys);
     setGruposAbertos(grupoKeys);
@@ -259,9 +266,156 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
         setPlanoGestao({ ...planoGestao, plano_gestao_rascunho: rascunhoTexto });
       }
       addToast('Rascunho salvo com sucesso!', 'success');
+      loadPlanoGestao();
     } catch (err: any) {
       console.error('Erro ao salvar rascunho:', err);
       addToast(`Erro ao salvar rascunho: ${err.message}`, 'error');
+    }
+  };
+
+  const handleSaveRelatorioSintetico = async () => {
+    if (!canEdit) {
+      addToast('Apenas técnicos podem editar o relatório sintético', 'error');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/plano-gestao/relatorio-sintetico`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ relatorio: relatorioTexto || null })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
+      }
+
+      setEditandoRelatorio(false);
+      if (planoGestao) {
+        setPlanoGestao({ ...planoGestao, plano_gestao_relatorio_sintetico: relatorioTexto });
+      }
+      addToast('Relatório sintético salvo com sucesso!', 'success');
+      loadPlanoGestao();
+    } catch (err: any) {
+      console.error('Erro ao salvar relatório sintético:', err);
+      addToast(`Erro ao salvar relatório sintético: ${err.message}`, 'error');
+    }
+  };
+
+  const handleUploadEvidencia = async (file: File, tipo: 'foto' | 'lista_presenca', descricao?: string) => {
+    if (!canEdit) {
+      addToast('Apenas técnicos podem fazer upload de evidências', 'error');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+      const formData = new FormData();
+      formData.append('arquivo', file);
+      formData.append('tipo', tipo);
+      if (descricao) {
+        formData.append('descricao', descricao);
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/plano-gestao/evidencias`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erro ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      setEvidencias(prev => [result.evidencia, ...prev]);
+      addToast('Evidência enviada com sucesso!', 'success');
+    } catch (err: any) {
+      console.error('Erro ao fazer upload de evidência:', err);
+      addToast(`Erro ao fazer upload: ${err.message}`, 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteEvidencia = async (idEvidencia: number) => {
+    if (!canEdit) {
+      addToast('Apenas técnicos podem excluir evidências', 'error');
+      return;
+    }
+
+    if (!window.confirm('Tem certeza que deseja excluir esta evidência?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/plano-gestao/evidencias/${idEvidencia}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erro ${response.status}: ${response.statusText}`);
+      }
+
+      setEvidencias(prev => prev.filter(ev => ev.id !== idEvidencia));
+      addToast('Evidência excluída com sucesso!', 'success');
+    } catch (err: any) {
+      console.error('Erro ao excluir evidência:', err);
+      addToast(`Erro ao excluir evidência: ${err.message}`, 'error');
+    }
+  };
+
+  const handleDownloadEvidencia = async (evidencia: Evidencia) => {
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/plano-gestao/evidencias/${evidencia.id}/download`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Erro ao fazer download');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = evidencia.nome_arquivo;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      console.error('Erro ao fazer download:', err);
+      addToast(`Erro ao fazer download: ${err.message}`, 'error');
     }
   };
 
@@ -287,7 +441,19 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
       const date = new Date(originalValue);
       return date.toISOString().split('T')[0]; // YYYY-MM-DD
     }
+    // Para campo acao, retorna o valor editado ou null (para mostrar campo vazio com hint do modelo)
+    if (field === 'acao') {
+      return originalValue || null;
+    }
     return originalValue || '';
+  };
+
+  // Função auxiliar para obter o texto da ação (editado ou modelo) para exibição
+  const getAcaoText = (acao: AcaoCompleta): string => {
+    const valorEditado = getAcaoValue(acao, 'acao');
+    if (valorEditado) return valorEditado;
+    // Se não tem valor editado, retorna o valor do modelo (hint)
+    return (acao as any).acao_modelo || acao.acao || '-';
   };
 
   const handleSaveAcao = async (idAcaoModelo: number, acao: AcaoCompleta) => {
@@ -300,6 +466,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
 
       // Mescla dados originais com editados
       const dados = {
+        acao: editData.acao !== undefined ? editData.acao : (acao.acao || null),
         responsavel: editData.responsavel !== undefined ? editData.responsavel : (acao.responsavel || ''),
         data_inicio: editData.data_inicio !== undefined ? editData.data_inicio : (acao.data_inicio || null),
         data_termino: editData.data_termino !== undefined ? editData.data_termino : (acao.data_termino || null),
@@ -469,15 +636,51 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
         </div>
 
         <div style={{display: 'flex', gap: '8px'}}>
-          <button onClick={colapsarTodos} className="btn btn-secondary">
-            <ChevronsUp size={16} style={{marginRight: '6px'}} />
-            Recolher Todos
-          </button>
-          <button onClick={expandirTodos} className="btn btn-primary">
-            <ChevronsDown size={16} style={{marginRight: '6px'}} />
-            Expandir Todos
-          </button>
+          {abaAtiva === 'plano-gestao' && (
+            <>
+              <button onClick={colapsarTodos} className="btn btn-secondary">
+                <ChevronsUp size={16} style={{marginRight: '6px'}} />
+                Recolher Todos
+              </button>
+              <button onClick={expandirTodos} className="btn btn-primary">
+                <ChevronsDown size={16} style={{marginRight: '6px'}} />
+                Expandir Todos
+              </button>
+            </>
+          )}
         </div>
+      </div>
+
+      {/* Tabs Navigation */}
+      <div className="tabs-navigation" style={{marginBottom: '24px'}}>
+        <button
+          className={`tab-button ${abaAtiva === 'rascunho' ? 'active' : ''}`}
+          onClick={() => setAbaAtiva('rascunho')}
+        >
+          <ClipboardList size={16} />
+          <span>Rascunho / Notas Colaborativas</span>
+        </button>
+        <button
+          className={`tab-button ${abaAtiva === 'relatorio' ? 'active' : ''}`}
+          onClick={() => setAbaAtiva('relatorio')}
+        >
+          <FileTextIcon size={16} />
+          <span>Relatório Sintético</span>
+        </button>
+        <button
+          className={`tab-button ${abaAtiva === 'evidencias' ? 'active' : ''}`}
+          onClick={() => setAbaAtiva('evidencias')}
+        >
+          <ImageIcon size={16} />
+          <span>Evidências</span>
+        </button>
+        <button
+          className={`tab-button ${abaAtiva === 'plano-gestao' ? 'active' : ''}`}
+          onClick={() => setAbaAtiva('plano-gestao')}
+        >
+          <Target size={16} />
+          <span>Plano de Gestão</span>
+        </button>
       </div>
 
       {/* Legenda de Status - Flutuante Inferior */}
@@ -565,563 +768,1012 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
       )}
 
       <div className="edicao-body">
-        {/* Rascunho */}
-        <div className="accordion-item">
-          <button className="accordion-header" onClick={() => toggleAccordion('rascunho')}>
-            <h3>Rascunho / Notas Colaborativas</h3>
-            <ChevronDown
-              size={16}
-              className={`accordion-icon ${accordionsAbertos.includes('rascunho') ? 'open' : ''}`}
-              style={{
-                transition: 'transform 0.2s ease',
-                transform: accordionsAbertos.includes('rascunho') ? 'rotate(180deg)' : 'rotate(0deg)'
-              }}
-            />
-          </button>
-          <div className={`accordion-content ${accordionsAbertos.includes('rascunho') ? 'open' : ''}`}>
-            <div className="accordion-section">
-              <div style={{background: '#fef3c7', padding: '12px', borderRadius: '6px', marginBottom: '16px'}}>
-                <strong>💡 Espaço Colaborativo:</strong> Técnicos, Supervisores, Coordenadores e Administradores podem adicionar notas aqui.
-              </div>
-              {editandoRascunho ? (
-                <>
-                  <textarea
-                    value={rascunhoTexto}
-                    onChange={(e) => setRascunhoTexto(e.target.value)}
-                    className="rascunho-textarea"
-                    style={{width: '100%', padding: '12px', borderRadius: '4px', border: '1px solid #d1d5db'}}
-                    placeholder="Digite suas notas sobre o Plano de Gestão..."
-                  />
-                  <div style={{marginTop: '12px', display: 'flex', gap: '8px'}}>
-                    <button onClick={handleSaveRascunho} className="btn btn-primary">
-                      <Save size={16} style={{marginRight: '6px'}} />
-                      Salvar
-                    </button>
-                    <button onClick={() => {
-                      setEditandoRascunho(false);
-                      setRascunhoTexto(planoGestao.plano_gestao_rascunho || '');
-                    }} className="btn btn-secondary">
-                      Cancelar
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div style={{whiteSpace: 'pre-wrap', padding: '12px', background: '#f9fafb', borderRadius: '6px', minHeight: '60px'}}>
-                    {planoGestao.plano_gestao_rascunho || 'Nenhuma nota registrada ainda.'}
-                  </div>
-                  {planoGestao.plano_gestao_rascunho_updated_by_name && planoGestao.plano_gestao_rascunho_updated_at && (
-                    <div style={{
-                      marginTop: '8px',
-                      padding: '8px 12px',
-                      background: '#f0f9ff',
-                      borderLeft: '3px solid #3b82f6',
-                      borderRadius: '4px',
-                      fontSize: '13px',
-                      color: '#1e40af'
-                    }}>
-                      <strong>Última edição:</strong> {planoGestao.plano_gestao_rascunho_updated_by_name} em {new Date(planoGestao.plano_gestao_rascunho_updated_at).toLocaleString('pt-BR')}
-                    </div>
-                  )}
-                  <button onClick={() => setEditandoRascunho(true)} className="btn btn-primary" style={{marginTop: '12px'}}>
-                    <Edit size={16} style={{marginRight: '6px'}} />
-                    Editar Notas
-                  </button>
-                </>
-              )}
+        {/* Conteúdo das Abas */}
+        {abaAtiva === 'rascunho' && (
+          <div className="tab-content">
+            <div style={{background: '#fef3c7', padding: '12px', borderRadius: '6px', marginBottom: '16px'}}>
+              <strong>💡 Espaço Colaborativo:</strong> Técnicos, Supervisores, Coordenadores e Administradores podem adicionar notas aqui.
             </div>
-          </div>
-        </div>
-
-        {/* Planos */}
-        {planoGestao.planos.map((plano, planoIndex) => {
-          const totalAcoes = plano.grupos.reduce((t, g) => t + g.acoes.length, 0);
-          const acoesPreenchidas = plano.grupos.reduce((t, g) => 
-            t + g.acoes.filter(a => a.id_acao_editavel !== undefined).length, 0
-          );
-
-          return (
-            <div key={`plano-${planoIndex}`} className="accordion-item">
-              <button className="accordion-header" onClick={() => toggleAccordion(`plano-${planoIndex}`)}>
-                <h3>{plano.titulo}</h3>
-                <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-                  <span style={{background: '#056839', color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '13px'}}>
-                    {acoesPreenchidas} / {totalAcoes} ações
-                  </span>
-                  <ChevronDown
-                    size={16}
-                    className={`accordion-icon`}
-                    style={{
-                      transition: 'transform 0.2s ease',
-                      transform: accordionsAbertos.includes(`plano-${planoIndex}`) ? 'rotate(180deg)' : 'rotate(0deg)'
-                    }}
-                  />
+            {editandoRascunho ? (
+              <>
+                <textarea
+                  value={rascunhoTexto}
+                  onChange={(e) => setRascunhoTexto(e.target.value)}
+                  className="rascunho-textarea"
+                  style={{width: '100%', padding: '12px', borderRadius: '4px', border: '1px solid #d1d5db', minHeight: '80px'}}
+                  title="Notas colaborativas sobre o Plano de Gestão"
+                />
+                <div style={{marginTop: '12px', display: 'flex', gap: '8px'}}>
+                  <button onClick={handleSaveRascunho} className="btn btn-primary" title="Salvar">
+                    <Save size={16} style={{marginRight: '6px'}} />
+                    Salvar
+                  </button>
+                  <button onClick={() => {
+                    setEditandoRascunho(false);
+                    setRascunhoTexto(planoGestao.plano_gestao_rascunho || '');
+                  }} className="btn btn-secondary">
+                    Cancelar
+                  </button>
                 </div>
-              </button>
-              <div className={`accordion-content ${accordionsAbertos.includes(`plano-${planoIndex}`) ? 'open' : ''}`}>
-                <div className="accordion-section">
-                  {plano.grupos.map((grupo, grupoIndex) => {
-                    const grupoKey = `grupo-${planoIndex}-${grupoIndex}`;
-                    const grupoAberto = gruposAbertos.includes(grupoKey);
-                    
-                    return (
-                    <div key={grupoKey} className="accordion-item" style={{marginBottom: '16px', border: '1px solid #e5e7eb', borderRadius: '8px'}}>
-                      {/* Header do Grupo */}
-                      {grupo.nome && (
-                        <button 
-                          className="accordion-header"
-                          onClick={() => toggleGrupo(grupoKey)}
-                          style={{
-                            background: grupoAberto ? '#056839' : '#f9fafb',
-                            color: grupoAberto ? 'white' : '#3b2313',
-                            padding: '12px 16px',
-                            fontSize: '15px'
-                          }}
+              </>
+            ) : (
+              <>
+                <div style={{whiteSpace: 'pre-wrap', padding: '12px', background: '#f9fafb', borderRadius: '6px', minHeight: '60px'}}>
+                  {planoGestao.plano_gestao_rascunho || 'Nenhuma nota registrada ainda.'}
+                </div>
+                {planoGestao.plano_gestao_rascunho_updated_by_name && planoGestao.plano_gestao_rascunho_updated_at && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px 12px',
+                    background: '#f0f9ff',
+                    borderLeft: '3px solid #3b82f6',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    color: '#1e40af'
+                  }}>
+                    <strong>Última edição:</strong> {planoGestao.plano_gestao_rascunho_updated_by_name} em {new Date(planoGestao.plano_gestao_rascunho_updated_at).toLocaleString('pt-BR')}
+                  </div>
+                )}
+                <button onClick={() => setEditandoRascunho(true)} className="btn btn-primary" style={{marginTop: '12px'}}>
+                  <Edit size={16} style={{marginRight: '6px'}} />
+                  Editar Notas
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {abaAtiva === 'relatorio' && (
+          <div className="tab-content">
+            <div style={{background: '#fef3c7', padding: '12px', borderRadius: '6px', marginBottom: '16px'}}>
+              <strong>💡 Relato sobre o processo de elaboração do Plano de Gestão:</strong> pontos fortes e fracos / melhores práticas de gestão do empreendimento
+            </div>
+            {editandoRelatorio && canEdit ? (
+              <>
+                <textarea
+                  value={relatorioTexto}
+                  onChange={(e) => {
+                    setRelatorioTexto(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '4px',
+                    border: '1px solid #d1d5db',
+                    fontFamily: 'inherit',
+                    minHeight: '80px',
+                    resize: 'none',
+                    overflow: 'hidden'
+                  }}
+                  title="Relatório sintético com planejamento estruturado e processo de aplicação"
+                />
+                <div style={{marginTop: '12px', display: 'flex', gap: '8px'}}>
+                  <button onClick={handleSaveRelatorioSintetico} className="btn btn-primary" title="Salvar">
+                    <Save size={16} style={{marginRight: '6px'}} />
+                    Salvar
+                  </button>
+                  <button onClick={() => {
+                    setEditandoRelatorio(false);
+                    setRelatorioTexto(planoGestao?.plano_gestao_relatorio_sintetico || '');
+                  }} className="btn btn-secondary">
+                    Cancelar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{whiteSpace: 'pre-wrap', padding: '12px', background: '#f9fafb', borderRadius: '6px', minHeight: '60px'}}>
+                  {planoGestao?.plano_gestao_relatorio_sintetico || 'Nenhum relatório sintético registrado ainda.'}
+                </div>
+                {planoGestao?.plano_gestao_relatorio_sintetico_updated_by_name && planoGestao?.plano_gestao_relatorio_sintetico_updated_at && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px 12px',
+                    background: '#f0f9ff',
+                    borderLeft: '3px solid #3b82f6',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    color: '#1e40af'
+                  }}>
+                    <strong>Última edição:</strong> {planoGestao.plano_gestao_relatorio_sintetico_updated_by_name} em {new Date(planoGestao.plano_gestao_relatorio_sintetico_updated_at).toLocaleString('pt-BR')}
+                  </div>
+                )}
+                {canEdit && (
+                  <button onClick={() => setEditandoRelatorio(true)} className="btn btn-primary" style={{marginTop: '12px'}}>
+                    <Edit size={16} style={{marginRight: '6px'}} />
+                    Editar Relatório
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {abaAtiva === 'evidencias' && (
+          <div className="tab-content">
+            {/* Área de Upload */}
+            {canEdit && (
+              <div style={{
+                border: '2px dashed #d1d5db',
+                borderRadius: '8px',
+                padding: '24px',
+                textAlign: 'center',
+                marginBottom: '24px',
+                background: '#f9fafb',
+                transition: 'all 0.2s'
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.currentTarget.style.borderColor = '#056839';
+                e.currentTarget.style.background = '#f0fdf4';
+              }}
+              onDragLeave={(e) => {
+                e.currentTarget.style.borderColor = '#d1d5db';
+                e.currentTarget.style.background = '#f9fafb';
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.currentTarget.style.borderColor = '#d1d5db';
+                e.currentTarget.style.background = '#f9fafb';
+                const files = Array.from(e.dataTransfer.files);
+                if (files.length > 0) {
+                  const file = files[0];
+                  const tipo = file.type.startsWith('image/') ? 'foto' : 'lista_presenca';
+                  handleUploadEvidencia(file, tipo);
+                }
+              }}
+              >
+                <Upload size={32} style={{marginBottom: '12px', color: '#6b7280'}} />
+                <p style={{marginBottom: '12px', color: '#6b7280'}}>
+                  Arraste arquivos aqui ou clique para selecionar
+                </p>
+                <input
+                  type="file"
+                  id="upload-evidencia"
+                  style={{display: 'none'}}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const tipo = file.type.startsWith('image/') ? 'foto' : 'lista_presenca';
+                      handleUploadEvidencia(file, tipo);
+                    }
+                  }}
+                />
+                <div style={{display: 'flex', gap: '8px', justifyContent: 'center'}}>
+                  <button
+                    onClick={() => {
+                      const input = document.getElementById('upload-evidencia') as HTMLInputElement;
+                      input?.click();
+                    }}
+                    className="btn btn-primary"
+                    disabled={uploading}
+                  >
+                    <Upload size={16} style={{marginRight: '6px'}} />
+                    {uploading ? 'Enviando...' : 'Selecionar Arquivo'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Lista de Evidências */}
+            {evidencias.length === 0 ? (
+              <div style={{padding: '24px', textAlign: 'center', color: '#6b7280'}}>
+                Nenhuma evidência encontrada.
+              </div>
+            ) : (
+              <div style={{display: 'grid', gap: '12px'}}>
+                {evidencias.map((evidencia) => (
+                  <div
+                    key={evidencia.id}
+                    style={{
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '16px',
+                      background: 'white'
+                    }}
+                  >
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '8px',
+                      background: evidencia.tipo === 'foto' ? '#fef3c7' : '#dbeafe',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      {evidencia.tipo === 'foto' ? (
+                        <Image size={24} style={{color: '#f59e0b'}} />
+                      ) : (
+                        <FileText size={24} style={{color: '#3b82f6'}} />
+                      )}
+                    </div>
+                    <div style={{flex: 1, minWidth: 0}}>
+                      <div style={{fontWeight: 600, color: '#3b2313', marginBottom: '4px'}}>
+                        {evidencia.nome_arquivo}
+                      </div>
+                      <div style={{fontSize: '13px', color: '#6b7280'}}>
+                        {evidencia.uploaded_by_name && (
+                          <>Enviado por {evidencia.uploaded_by_name} em {new Date(evidencia.created_at).toLocaleString('pt-BR')}</>
+                        )}
+                      </div>
+                      {evidencia.descricao && (
+                        <div style={{fontSize: '13px', color: '#6b7280', marginTop: '4px'}}>
+                          {evidencia.descricao}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{display: 'flex', gap: '8px'}}>
+                      <button
+                        onClick={() => handleDownloadEvidencia(evidencia)}
+                        className="btn btn-secondary"
+                        style={{padding: '8px'}}
+                        title="Baixar arquivo"
+                      >
+                        <Download size={16} />
+                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => handleDeleteEvidencia(evidencia.id)}
+                          className="btn btn-secondary"
+                          style={{padding: '8px', color: '#dc2626'}}
+                          title="Excluir evidência"
                         >
-                          <h4 style={{
-                            margin: 0, 
-                            fontSize: '15px', 
-                            fontWeight: '600',
-                            color: grupoAberto ? 'white' : '#3b2313'
-                          }}>
-                            {grupo.nome}
-                          </h4>
-                          <ChevronDown
-                            size={16}
-                            style={{
-                              transition: 'transform 0.2s ease',
-                              transform: grupoAberto ? 'rotate(180deg)' : 'rotate(0deg)',
-                              color: grupoAberto ? 'white' : '#3b2313'
-                            }}
-                          />
+                          <Trash2 size={16} />
                         </button>
                       )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-                      {/* Conteúdo do Grupo */}
-                      <div className={`accordion-content ${grupoAberto || !grupo.nome ? 'open' : ''}`}>
-                        <div className="accordion-section" style={{padding: '16px'}}>
-                          
-                          {/* Desktop: Table */}
-                          <table className="table-default" style={{width: '100%', display: isMobile ? 'none' : 'table'}}>
-                        <thead>
-                          <tr>
-                            <th>Ação</th>
-                            <th style={{width: '150px'}}>Responsável</th>
-                            <th style={{width: '110px'}}>Início</th>
-                            <th style={{width: '110px'}}>Término</th>
-                            <th style={{width: '250px'}}>Como Será Feito?</th>
-                            <th style={{width: '150px'}}>Recursos</th>
-                            {canEdit && <th style={{width: '80px', textAlign: 'center'}}>Ações</th>}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {grupo.acoes.map((acao) => {
-                            const temEdicao = acoesEditando[acao.id] !== undefined;
-                            const statusInfo = getStatusAcao(acao);
-                            const corFundo = statusInfo.corFundo;
-                            
-                            return (
-                            <tr key={acao.id} style={{background: corFundo, transition: 'background 0.2s'}}>
-                              <td style={{padding: '12px'}}>
-                                <div style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
-                                  <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px'}}>
-                                    <span style={{fontWeight: 700, color: '#3b2313'}}>{acao.acao}</span>
-                                    <span style={{
-                                      fontSize: '9px',
-                                      fontWeight: 600,
-                                      color: statusInfo.corTexto,
-                                      textTransform: 'uppercase',
-                                      letterSpacing: '0.5px',
-                                      padding: '2px 6px',
-                                      borderRadius: '4px',
-                                      background: 'rgba(255,255,255,0.5)',
-                                      whiteSpace: 'nowrap',
-                                      flexShrink: 0
-                                    }}>
-                                      {statusInfo.label}
-                                    </span>
-                                  </div>
-                                  {(acao.created_at || acao.updated_at) && (
-                                    <div style={{fontSize: '11px', color: '#6b7280', fontStyle: 'italic'}}>
-                                      {acao.created_at && <span>Criado: {new Date(acao.created_at).toLocaleString('pt-BR')}</span>}
-                                      {acao.created_at && acao.updated_at && <br />}
-                                      {acao.updated_at && <span>Atualizado: {new Date(acao.updated_at).toLocaleString('pt-BR')}</span>}
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                              <td style={{padding: '8px'}}>
-                                {canEdit ? (
-                                  <textarea
-                                    value={getAcaoValue(acao, 'responsavel')}
-                                    onChange={(e) => {
-                                      handleChangeAcao(acao.id, 'responsavel', e.target.value);
-                                      e.target.style.height = 'auto';
-                                      e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
-                                    }}
-                                    onFocus={(e) => {
-                                      e.target.style.height = 'auto';
-                                      e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
-                                    }}
-                                    placeholder={acao.hint_responsavel || 'Responsável'}
-                                    style={{
-                                      width: '100%',
-                                      padding: '12px',
-                                      border: '1px solid #d1d5db',
-                                      borderRadius: '6px',
-                                      minHeight: '80px',
-                                      height: getAcaoValue(acao, 'responsavel') ? 'auto' : '80px',
-                                      fontSize: '14px',
-                                      lineHeight: '1.5',
-                                      resize: 'none',
-                                      overflow: 'hidden',
-                                      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-                                    }}
-                                  />
-                                ) : (
-                                  <span style={{whiteSpace: 'pre-wrap'}}>{acao.responsavel || '-'}</span>
-                                )}
-                              </td>
-                              <td style={{padding: '12px'}}>
-                                {canEdit ? (
-                                  <input
-                                    type="date"
-                                    value={getAcaoValue(acao, 'data_inicio')}
-                                    onChange={(e) => handleChangeAcao(acao.id, 'data_inicio', e.target.value)}
-                                    style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '44px', fontSize: '14px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
-                                  />
-                                ) : (
-                                  <span>{acao.data_inicio ? new Date(acao.data_inicio).toLocaleDateString('pt-BR') : '-'}</span>
-                                )}
-                              </td>
-                              <td style={{padding: '12px'}}>
-                                {canEdit ? (
-                                  <input
-                                    type="date"
-                                    value={getAcaoValue(acao, 'data_termino')}
-                                    onChange={(e) => handleChangeAcao(acao.id, 'data_termino', e.target.value)}
-                                    style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '44px', fontSize: '14px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
-                                  />
-                                ) : (
-                                  <span>{acao.data_termino ? new Date(acao.data_termino).toLocaleDateString('pt-BR') : '-'}</span>
-                                )}
-                              </td>
-                              <td style={{padding: '12px', position: 'relative'}}>
-                                {canEdit ? (
-                                  <div style={{position: 'relative'}}>
-                                    {acao.hint_como_sera_feito && (
-                                      <HelpCircle
-                                        data-hint-icon
-                                        size={18}
-                                        onMouseEnter={(e) => showHint(e, acao.hint_como_sera_feito || '')}
-                                        onMouseLeave={hideHint}
-                                        onClick={(e) => toggleHint(e, acao.hint_como_sera_feito || '')}
-                                        style={{
-                                          position: 'absolute',
-                                          right: '8px',
-                                          top: '8px',
-                                          color: '#3b82f6',
-                                          cursor: 'pointer',
-                                          zIndex: 1
-                                        }}
-                                      />
-                                    )}
-                                    <textarea
-                                      value={getAcaoValue(acao, 'como_sera_feito')}
-                                      onChange={(e) => {
-                                        handleChangeAcao(acao.id, 'como_sera_feito', e.target.value);
-                                        e.target.style.height = 'auto';
-                                        e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
-                                      }}
-                                      onFocus={(e) => {
-                                        e.target.style.height = 'auto';
-                                        e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
-                                      }}
-                                      placeholder={acao.hint_como_sera_feito || "Digite como será feito..."}
-                                      style={{
-                                        width: '100%',
-                                        padding: '12px',
-                                        paddingRight: acao.hint_como_sera_feito ? '36px' : '12px',
-                                        border: '1px solid #d1d5db',
-                                        borderRadius: '6px',
-                                        minHeight: '80px',
-                                        height: getAcaoValue(acao, 'como_sera_feito') ? 'auto' : '80px',
-                                        fontSize: '14px',
-                                        lineHeight: '1.6',
-                                        resize: 'none',
-                                        overflow: 'hidden',
-                                        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-                                      }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <span style={{fontSize: '13px', whiteSpace: 'pre-wrap'}}>
-                                    {acao.como_sera_feito || acao.hint_como_sera_feito || '-'}
-                                  </span>
-                                )}
-                              </td>
-                              <td style={{padding: '8px'}}>
-                                {canEdit ? (
-                                  <textarea
-                                    value={getAcaoValue(acao, 'recursos')}
-                                    onChange={(e) => {
-                                      handleChangeAcao(acao.id, 'recursos', e.target.value);
-                                      e.target.style.height = 'auto';
-                                      e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
-                                    }}
-                                    onFocus={(e) => {
-                                      e.target.style.height = 'auto';
-                                      e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
-                                    }}
-                                    placeholder={acao.hint_recursos || 'Recursos'}
-                                    style={{
-                                      width: '100%',
-                                      padding: '12px',
-                                      border: '1px solid #d1d5db',
-                                      borderRadius: '6px',
-                                      minHeight: '80px',
-                                      height: getAcaoValue(acao, 'recursos') ? 'auto' : '80px',
-                                      fontSize: '14px',
-                                      lineHeight: '1.5',
-                                      resize: 'none',
-                                      overflow: 'hidden',
-                                      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-                                    }}
-                                  />
-                                ) : (
-                                  <span style={{whiteSpace: 'pre-wrap'}}>{acao.recursos || '-'}</span>
-                                )}
-                              </td>
-                              {canEdit && (
-                                <td style={{padding: '4px', textAlign: 'center'}}>
-                                  {temEdicao && (
-                                    <button
-                                      onClick={() => handleSaveAcao(acao.id, acao)}
-                                      className="btn btn-sm btn-primary"
-                                      style={{padding: '4px 12px', fontSize: '12px'}}
-                                    >
-                                      💾 Salvar
-                                    </button>
-                                  )}
-                                </td>
-                              )}
-                            </tr>
-                          );
-                          })}
-                        </tbody>
-                      </table>
+        {abaAtiva === 'plano-gestao' && planoGestao && (
+          <div className="tab-content">
+            {planoGestao.planos.map((plano, planoIndex) => {
+              const totalAcoes = plano.grupos.reduce((t, g) => t + g.acoes.length, 0);
+              const acoesPreenchidas = plano.grupos.reduce((t, g) => 
+                t + g.acoes.filter(a => a.id_acao_editavel !== undefined).length, 0
+              );
 
-                          {/* Mobile/Tablet: Cards */}
-                          <div style={{display: isMobile ? 'block' : 'none'}}>
-                            {grupo.acoes.map((acao) => {
-                              const temEdicao = acoesEditando[acao.id] !== undefined;
-                              const statusInfo = getStatusAcao(acao);
-                              const corFundo = statusInfo.corFundo;
-                              
-                              // Define a cor da borda baseada no status
-                              let corBorda = '#e5e7eb'; // Cinza padrão
-                              if (statusInfo.status === 'concluido') {
-                                corBorda = '#10b981'; // Verde
-                              } else if (statusInfo.status === 'pendente') {
-                                corBorda = '#f59e0b'; // Amarelo/Laranja
-                              }
-                              
-                              return (
-                                <div key={`card-${acao.id}`} style={{
-                                  background: corFundo,
-                                  border: `2px solid ${corBorda}`,
-                                  borderRadius: '8px',
-                                  padding: '16px',
-                                  marginBottom: '16px',
-                                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                }}>
-                                  <div style={{
-                                    marginBottom: '16px',
-                                    paddingBottom: '12px',
-                                    borderBottom: '2px solid #056839'
-                                  }}>
-                                    <div style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
-                                      gap: '12px',
-                                      marginBottom: '4px'
-                                    }}>
-                                      <div style={{
-                                        fontWeight: 700,
-                                        color: '#3b2313',
-                                        fontSize: '15px',
-                                        flex: 1
-                                      }}>
-                                        {acao.acao}
-                                      </div>
-                                      
-                                      {/* Badge de Status */}
-                                      <span style={{
-                                        fontSize: '9px',
-                                        fontWeight: 600,
-                                        color: statusInfo.corTexto,
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.5px',
-                                        padding: '4px 8px',
-                                        borderRadius: '4px',
-                                        background: 'rgba(255,255,255,0.6)',
-                                        whiteSpace: 'nowrap',
-                                        flexShrink: 0
-                                      }}>
-                                        {statusInfo.label}
-                                      </span>
-                                    </div>
+              return (
+                <div key={`plano-${planoIndex}`} className="accordion-item">
+                  <button className="accordion-header" onClick={() => toggleAccordion(`plano-${planoIndex}`)}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                      <Target size={18} style={{color: '#056839'}} />
+                      <h3>{plano.titulo}</h3>
+                    </div>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                      <span style={{background: '#056839', color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '13px'}}>
+                        {acoesPreenchidas} / {totalAcoes} ações
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        className={`accordion-icon`}
+                        style={{
+                          transition: 'transform 0.2s ease',
+                          transform: accordionsAbertos.includes(`plano-${planoIndex}`) ? 'rotate(180deg)' : 'rotate(0deg)'
+                        }}
+                      />
+                    </div>
+                  </button>
+                  <div className={`accordion-content ${accordionsAbertos.includes(`plano-${planoIndex}`) ? 'open' : ''}`}>
+                    <div className="accordion-section">
+                      {plano.grupos.map((grupo, grupoIndex) => {
+                        const grupoKey = `grupo-${planoIndex}-${grupoIndex}`;
+                        const grupoAberto = gruposAbertos.includes(grupoKey);
+                        
+                        return (
+                        <div key={grupoKey} className="accordion-item" style={{marginBottom: '16px', border: '1px solid #e5e7eb', borderRadius: '8px'}}>
+                          {/* Header do Grupo */}
+                          {grupo.nome && (
+                            <button 
+                              className="accordion-header"
+                              onClick={() => toggleGrupo(grupoKey)}
+                              style={{
+                                background: grupoAberto ? '#056839' : 'white',
+                                color: grupoAberto ? 'white' : '#3b2313',
+                                padding: '12px 16px',
+                                border: 'none',
+                                borderRadius: grupoAberto ? '8px 8px 0 0' : '8px',
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <h4 style={{
+                                margin: 0,
+                                fontSize: '16px',
+                                fontWeight: 600,
+                                color: grupoAberto ? 'white' : '#3b2313'
+                              }}>
+                                {grupo.nome}
+                              </h4>
+                              <ChevronDown
+                                size={16}
+                                style={{
+                                  transition: 'transform 0.2s ease',
+                                  transform: grupoAberto ? 'rotate(180deg)' : 'rotate(0deg)',
+                                  color: grupoAberto ? 'white' : '#3b2313'
+                                }}
+                              />
+                            </button>
+                          )}
+
+                          {/* Conteúdo do Grupo */}
+                          <div className={`accordion-content ${grupoAberto || !grupo.nome ? 'open' : ''}`}>
+                            <div className="accordion-section" style={{padding: '16px'}}>
+                              {/* Desktop: Table */}
+                              <table className="table-default" style={{width: '100%', display: isMobile ? 'none' : 'table'}}>
+                                <thead>
+                                  <tr>
+                                    <th>Ação</th>
+                                    <th style={{width: '150px'}}>Responsável</th>
+                                    <th style={{width: '110px'}}>Início</th>
+                                    <th style={{width: '110px'}}>Término</th>
+                                    <th style={{width: '250px'}}>Como Será Feito?</th>
+                                    <th style={{width: '150px'}}>Recursos</th>
+                                    <th style={{width: '120px', textAlign: 'center'}}>Status</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {grupo.acoes.map((acao) => {
+                                    const temEdicao = acoesEditando[acao.id] !== undefined;
+                                    const statusInfo = getStatusAcao(acao);
+                                    const corFundo = statusInfo.corFundo;
                                     
-                                    {(acao.created_at || acao.updated_at) && (
-                                      <div style={{fontSize: '11px', color: '#6b7280', fontStyle: 'italic'}}>
-                                        {acao.created_at && <span>Criado: {new Date(acao.created_at).toLocaleString('pt-BR')}</span>}
-                                        {acao.created_at && acao.updated_at && <br />}
-                                        {acao.updated_at && <span>Atualizado: {new Date(acao.updated_at).toLocaleString('pt-BR')}</span>}
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {canEdit ? (
-                                    <>
-                                      <div style={{marginBottom: '16px'}}>
-                                        <label style={{display: 'block', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase'}}>
-                                          Responsável
-                                        </label>
-                                        <textarea
-                                          value={getAcaoValue(acao, 'responsavel')}
-                                          onChange={(e) => {
-                                            handleChangeAcao(acao.id, 'responsavel', e.target.value);
-                                            e.target.style.height = 'auto';
-                                            e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
-                                          }}
-                                          onFocus={(e) => {
-                                            e.target.style.height = 'auto';
-                                            e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
-                                          }}
-                                          placeholder={acao.hint_responsavel || 'Responsável'}
-                                          style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '80px', height: getAcaoValue(acao, 'responsavel') ? 'auto' : '80px', fontSize: '14px', lineHeight: '1.5', resize: 'none', overflow: 'hidden', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
-                                        />
-                                      </div>
-
-                                      <div style={{marginBottom: '16px'}}>
-                                        <label style={{display: 'block', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase'}}>
-                                          Data de Início
-                                        </label>
-                                        <input
-                                          type="date"
-                                          value={getAcaoValue(acao, 'data_inicio')}
-                                          onChange={(e) => handleChangeAcao(acao.id, 'data_inicio', e.target.value)}
-                                          style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '44px', fontSize: '14px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
-                                        />
-                                      </div>
-
-                                      <div style={{marginBottom: '16px'}}>
-                                        <label style={{display: 'block', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase'}}>
-                                          Data de Término
-                                        </label>
-                                        <input
-                                          type="date"
-                                          value={getAcaoValue(acao, 'data_termino')}
-                                          onChange={(e) => handleChangeAcao(acao.id, 'data_termino', e.target.value)}
-                                          style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '44px', fontSize: '14px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
-                                        />
-                                      </div>
-
-                                      <div style={{marginBottom: '16px'}}>
-                                        <label style={{display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase'}}>
-                                          Como Será Feito?
-                                          {acao.hint_como_sera_feito && (
+                                    return (
+                                    <tr key={acao.id} style={{background: corFundo, transition: 'background 0.2s'}}>
+                                      <td style={{padding: '12px'}}>
+                                        <div style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
+                                          <div style={{display: 'flex', alignItems: 'flex-start', gap: '8px'}}>
+                                            {canEdit ? (
+                                              <div style={{flex: 1, position: 'relative'}}>
+                                                {((acao as any).acao_modelo || acao.acao) && (
+                                                  <HelpCircle
+                                                    data-hint-icon
+                                                    size={16}
+                                                    onMouseEnter={(e) => showHint(e, ((acao as any).acao_modelo || acao.acao) || '')}
+                                                    onMouseLeave={hideHint}
+                                                    onClick={(e) => toggleHint(e, ((acao as any).acao_modelo || acao.acao) || '')}
+                                                    style={{
+                                                      position: 'absolute',
+                                                      right: '8px',
+                                                      top: '8px',
+                                                      color: '#3b82f6',
+                                                      cursor: 'pointer',
+                                                      zIndex: 1
+                                                    }}
+                                                  />
+                                                )}
+                                                <textarea
+                                                  value={getAcaoValue(acao, 'acao') || ''}
+                                                  onChange={(e) => {
+                                                    handleChangeAcao(acao.id, 'acao', e.target.value);
+                                                    e.target.style.height = 'auto';
+                                                    e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                                  }}
+                                                  onFocus={(e) => {
+                                                    e.target.style.height = 'auto';
+                                                    e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                                  }}
+                                                  title={((acao as any).acao_modelo || acao.acao) || ''}
+                                                  style={{
+                                                    width: '100%',
+                                                    padding: '8px',
+                                                    paddingRight: ((acao as any).acao_modelo || acao.acao) ? '32px' : '8px',
+                                                    border: '1px solid #d1d5db',
+                                                    borderRadius: '6px',
+                                                    minHeight: '80px',
+                                                    fontSize: '14px',
+                                                    fontWeight: 700,
+                                                    color: '#3b2313',
+                                                    lineHeight: '1.5',
+                                                    resize: 'none',
+                                                    overflow: 'hidden',
+                                                    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+                                                  }}
+                                                />
+                                              </div>
+                                            ) : (
+                                              <span style={{fontWeight: 700, color: '#3b2313'}}>{getAcaoText(acao)}</span>
+                                            )}
+                                          </div>
+                                          {(acao.created_at || acao.updated_at) && (
+                                            <div style={{fontSize: '11px', color: '#6b7280', fontStyle: 'italic'}}>
+                                              {acao.created_at && <span>Criado: {new Date(acao.created_at).toLocaleString('pt-BR')}</span>}
+                                              {acao.created_at && acao.updated_at && <br />}
+                                              {acao.updated_at && <span>Atualizado: {new Date(acao.updated_at).toLocaleString('pt-BR')}</span>}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td style={{padding: '8px', position: 'relative'}}>
+                                        {canEdit ? (
+                                          <div style={{position: 'relative'}}>
+                                            {acao.hint_responsavel && (
+                                              <HelpCircle
+                                                data-hint-icon
+                                                size={16}
+                                                onMouseEnter={(e) => showHint(e, acao.hint_responsavel || '')}
+                                                onMouseLeave={hideHint}
+                                                onClick={(e) => toggleHint(e, acao.hint_responsavel || '')}
+                                                style={{
+                                                  position: 'absolute',
+                                                  right: '8px',
+                                                  top: '8px',
+                                                  color: '#3b82f6',
+                                                  cursor: 'pointer',
+                                                  zIndex: 1
+                                                }}
+                                              />
+                                            )}
+                                            <textarea
+                                              value={getAcaoValue(acao, 'responsavel')}
+                                              onChange={(e) => {
+                                                handleChangeAcao(acao.id, 'responsavel', e.target.value);
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                              }}
+                                              onFocus={(e) => {
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                              }}
+                                              title={acao.hint_responsavel || ''}
+                                              style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                paddingRight: acao.hint_responsavel ? '32px' : '12px',
+                                                border: '1px solid #d1d5db',
+                                                borderRadius: '6px',
+                                                minHeight: '80px',
+                                                height: getAcaoValue(acao, 'responsavel') ? 'auto' : '80px',
+                                                fontSize: '14px',
+                                                lineHeight: '1.5',
+                                                resize: 'none',
+                                                overflow: 'hidden',
+                                                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+                                              }}
+                                            />
+                                          </div>
+                                        ) : (
+                                          <span style={{whiteSpace: 'pre-wrap'}}>{acao.responsavel || '-'}</span>
+                                        )}
+                                      </td>
+                                      <td style={{padding: '12px', position: 'relative'}}>
+                                        {canEdit ? (
+                                          <div style={{position: 'relative'}}>
                                             <HelpCircle
                                               data-hint-icon
                                               size={16}
-                                              onMouseEnter={(e) => showHint(e, acao.hint_como_sera_feito || '')}
+                                              onMouseEnter={(e) => showHint(e, 'Data de início da ação')}
                                               onMouseLeave={hideHint}
-                                              onClick={(e) => toggleHint(e, acao.hint_como_sera_feito || '')}
-                                              style={{color: '#3b82f6', cursor: 'pointer'}}
+                                              onClick={(e) => toggleHint(e, 'Data de início da ação')}
+                                              style={{
+                                                position: 'absolute',
+                                                right: '8px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                color: '#3b82f6',
+                                                cursor: 'pointer',
+                                                zIndex: 1
+                                              }}
                                             />
+                                            <input
+                                              type="date"
+                                              value={getAcaoValue(acao, 'data_inicio')}
+                                              onChange={(e) => handleChangeAcao(acao.id, 'data_inicio', e.target.value)}
+                                              title="Data de início"
+                                              style={{width: '100%', padding: '12px', paddingRight: '32px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '44px', fontSize: '14px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
+                                            />
+                                          </div>
+                                        ) : (
+                                          <span>{acao.data_inicio ? new Date(acao.data_inicio).toLocaleDateString('pt-BR') : '-'}</span>
+                                        )}
+                                      </td>
+                                      <td style={{padding: '12px', position: 'relative'}}>
+                                        {canEdit ? (
+                                          <div style={{position: 'relative'}}>
+                                            <HelpCircle
+                                              data-hint-icon
+                                              size={16}
+                                              onMouseEnter={(e) => showHint(e, 'Data de término da ação')}
+                                              onMouseLeave={hideHint}
+                                              onClick={(e) => toggleHint(e, 'Data de término da ação')}
+                                              style={{
+                                                position: 'absolute',
+                                                right: '8px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                color: '#3b82f6',
+                                                cursor: 'pointer',
+                                                zIndex: 1
+                                              }}
+                                            />
+                                            <input
+                                              type="date"
+                                              value={getAcaoValue(acao, 'data_termino')}
+                                              onChange={(e) => handleChangeAcao(acao.id, 'data_termino', e.target.value)}
+                                              title="Data de término"
+                                              style={{width: '100%', padding: '12px', paddingRight: '32px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '44px', fontSize: '14px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
+                                            />
+                                          </div>
+                                        ) : (
+                                          <span>{acao.data_termino ? new Date(acao.data_termino).toLocaleDateString('pt-BR') : '-'}</span>
+                                        )}
+                                      </td>
+                                      <td style={{padding: '12px', position: 'relative'}}>
+                                        {canEdit ? (
+                                          <div style={{position: 'relative'}}>
+                                            {acao.hint_como_sera_feito && (
+                                              <HelpCircle
+                                                data-hint-icon
+                                                size={18}
+                                                onMouseEnter={(e) => showHint(e, acao.hint_como_sera_feito || '')}
+                                                onMouseLeave={hideHint}
+                                                onClick={(e) => toggleHint(e, acao.hint_como_sera_feito || '')}
+                                                style={{
+                                                  position: 'absolute',
+                                                  right: '8px',
+                                                  top: '8px',
+                                                  color: '#3b82f6',
+                                                  cursor: 'pointer',
+                                                  zIndex: 1
+                                                }}
+                                              />
+                                            )}
+                                            <textarea
+                                              value={getAcaoValue(acao, 'como_sera_feito')}
+                                              onChange={(e) => {
+                                                handleChangeAcao(acao.id, 'como_sera_feito', e.target.value);
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                              }}
+                                              onFocus={(e) => {
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                              }}
+                                              title={acao.hint_como_sera_feito || ''}
+                                              style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                paddingRight: acao.hint_como_sera_feito ? '36px' : '12px',
+                                                border: '1px solid #d1d5db',
+                                                borderRadius: '6px',
+                                                minHeight: '80px',
+                                                height: getAcaoValue(acao, 'como_sera_feito') ? 'auto' : '80px',
+                                                fontSize: '14px',
+                                                lineHeight: '1.6',
+                                                resize: 'none',
+                                                overflow: 'hidden',
+                                                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+                                              }}
+                                            />
+                                          </div>
+                                        ) : (
+                                          <span style={{fontSize: '13px', whiteSpace: 'pre-wrap'}}>
+                                            {acao.como_sera_feito || acao.hint_como_sera_feito || '-'}
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td style={{padding: '8px', position: 'relative'}}>
+                                        {canEdit ? (
+                                          <div style={{position: 'relative'}}>
+                                            {acao.hint_recursos && (
+                                              <HelpCircle
+                                                data-hint-icon
+                                                size={16}
+                                                onMouseEnter={(e) => showHint(e, acao.hint_recursos || '')}
+                                                onMouseLeave={hideHint}
+                                                onClick={(e) => toggleHint(e, acao.hint_recursos || '')}
+                                                style={{
+                                                  position: 'absolute',
+                                                  right: '8px',
+                                                  top: '8px',
+                                                  color: '#3b82f6',
+                                                  cursor: 'pointer',
+                                                  zIndex: 1
+                                                }}
+                                              />
+                                            )}
+                                            <textarea
+                                              value={getAcaoValue(acao, 'recursos')}
+                                              onChange={(e) => {
+                                                handleChangeAcao(acao.id, 'recursos', e.target.value);
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                              }}
+                                              onFocus={(e) => {
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                              }}
+                                              title={acao.hint_recursos || ''}
+                                              style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                paddingRight: acao.hint_recursos ? '32px' : '12px',
+                                                border: '1px solid #d1d5db',
+                                                borderRadius: '6px',
+                                                minHeight: '80px',
+                                                height: getAcaoValue(acao, 'recursos') ? 'auto' : '80px',
+                                                fontSize: '14px',
+                                                lineHeight: '1.5',
+                                                resize: 'none',
+                                                overflow: 'hidden',
+                                                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+                                              }}
+                                            />
+                                          </div>
+                                        ) : (
+                                          <span style={{whiteSpace: 'pre-wrap'}}>{acao.recursos || '-'}</span>
+                                        )}
+                                      </td>
+                                      <td style={{padding: '4px', textAlign: 'center', verticalAlign: 'middle'}}>
+                                        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px'}}>
+                                          <span style={{
+                                            fontSize: '9px',
+                                            fontWeight: 600,
+                                            color: statusInfo.corTexto,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.5px',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            background: 'rgba(255,255,255,0.8)',
+                                            whiteSpace: 'nowrap',
+                                            display: 'inline-block'
+                                          }}>
+                                            {statusInfo.label}
+                                          </span>
+                                          {canEdit && temEdicao && (
+                                            <button
+                                              onClick={() => handleSaveAcao(acao.id, acao)}
+                                              className="btn btn-sm btn-primary"
+                                              style={{padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'}}
+                                              title="Salvar"
+                                            >
+                                              <Save size={16} />
+                                              <span>Salvar</span>
+                                            </button>
                                           )}
-                                        </label>
-                                        <textarea
-                                          value={getAcaoValue(acao, 'como_sera_feito')}
-                                          onChange={(e) => {
-                                            handleChangeAcao(acao.id, 'como_sera_feito', e.target.value);
-                                            e.target.style.height = 'auto';
-                                            e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
-                                          }}
-                                          onFocus={(e) => {
-                                            e.target.style.height = 'auto';
-                                            e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
-                                          }}
-                                          placeholder={acao.hint_como_sera_feito || "Digite como será feito..."}
-                                          style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '80px', height: getAcaoValue(acao, 'como_sera_feito') ? 'auto' : '80px', fontSize: '14px', lineHeight: '1.6', resize: 'none', overflow: 'hidden', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
-                                        />
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                  })}
+                                </tbody>
+                              </table>
+
+                              {/* Mobile/Tablet: Cards */}
+                              <div style={{display: isMobile ? 'block' : 'none'}}>
+                                {grupo.acoes.map((acao) => {
+                                  const temEdicao = acoesEditando[acao.id] !== undefined;
+                                  const statusInfo = getStatusAcao(acao);
+                                  const corFundo = statusInfo.corFundo;
+                                  
+                                  // Define a cor da borda baseada no status
+                                  let corBorda = '#e5e7eb'; // Cinza padrão
+                                  if (statusInfo.status === 'concluido') {
+                                    corBorda = '#10b981'; // Verde
+                                  } else if (statusInfo.status === 'pendente') {
+                                    corBorda = '#f59e0b'; // Amarelo/Laranja
+                                  }
+                                  
+                                  return (
+                                    <div key={`card-${acao.id}`} style={{
+                                      background: corFundo,
+                                      border: `2px solid ${corBorda}`,
+                                      borderRadius: '8px',
+                                      padding: '16px',
+                                      marginBottom: '16px',
+                                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                    }}>
+                                      <div style={{
+                                        marginBottom: '16px',
+                                        paddingBottom: '12px',
+                                        borderBottom: '2px solid #056839'
+                                      }}>
+                                        <div style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'space-between',
+                                          gap: '12px',
+                                          marginBottom: '4px'
+                                        }}>
+                                          {canEdit ? (
+                                            <div style={{flex: 1, position: 'relative'}}>
+                                              {((acao as any).acao_modelo || acao.acao) && (
+                                                <HelpCircle
+                                                  data-hint-icon
+                                                  size={16}
+                                                  onMouseEnter={(e) => showHint(e, ((acao as any).acao_modelo || acao.acao) || '')}
+                                                  onMouseLeave={hideHint}
+                                                  onClick={(e) => toggleHint(e, ((acao as any).acao_modelo || acao.acao) || '')}
+                                                  style={{
+                                                    position: 'absolute',
+                                                    right: '8px',
+                                                    top: '8px',
+                                                    color: '#3b82f6',
+                                                    cursor: 'pointer',
+                                                    zIndex: 1
+                                                  }}
+                                                />
+                                              )}
+                                              <textarea
+                                                value={getAcaoValue(acao, 'acao') || ''}
+                                                onChange={(e) => {
+                                                  handleChangeAcao(acao.id, 'acao', e.target.value);
+                                                  e.target.style.height = 'auto';
+                                                  e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                                }}
+                                                onFocus={(e) => {
+                                                  e.target.style.height = 'auto';
+                                                  e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                                }}
+                                                title={((acao as any).acao_modelo || acao.acao) || ''}
+                                                style={{
+                                                  width: '100%',
+                                                  padding: '8px',
+                                                  paddingRight: ((acao as any).acao_modelo || acao.acao) ? '32px' : '8px',
+                                                  border: '1px solid #d1d5db',
+                                                  borderRadius: '6px',
+                                                  minHeight: '80px',
+                                                  fontSize: '15px',
+                                                  fontWeight: 700,
+                                                  color: '#3b2313',
+                                                  lineHeight: '1.5',
+                                                  resize: 'none',
+                                                  overflow: 'hidden',
+                                                  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+                                                }}
+                                              />
+                                            </div>
+                                          ) : (
+                                            <div style={{
+                                              fontWeight: 700,
+                                              color: '#3b2313',
+                                              fontSize: '15px',
+                                              flex: 1
+                                            }}>
+                                              {getAcaoText(acao)}
+                                            </div>
+                                          )}
+                                          
+                                          {/* Badge de Status */}
+                                          <span style={{
+                                            fontSize: '9px',
+                                            fontWeight: 600,
+                                            color: statusInfo.corTexto,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.5px',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            background: 'rgba(255,255,255,0.8)',
+                                            whiteSpace: 'nowrap',
+                                            flexShrink: 0
+                                          }}>
+                                            {statusInfo.label}
+                                          </span>
+                                        </div>
+                                        
+                                        {(acao.created_at || acao.updated_at) && (
+                                          <div style={{fontSize: '11px', color: '#6b7280', fontStyle: 'italic'}}>
+                                            {acao.created_at && <span>Criado: {new Date(acao.created_at).toLocaleString('pt-BR')}</span>}
+                                            {acao.created_at && acao.updated_at && <br />}
+                                            {acao.updated_at && <span>Atualizado: {new Date(acao.updated_at).toLocaleString('pt-BR')}</span>}
+                                          </div>
+                                        )}
                                       </div>
 
-                                      <div style={{marginBottom: '16px'}}>
-                                        <label style={{display: 'block', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase'}}>
-                                          Recursos
-                                        </label>
-                                        <textarea
-                                          value={getAcaoValue(acao, 'recursos')}
-                                          onChange={(e) => {
-                                            handleChangeAcao(acao.id, 'recursos', e.target.value);
-                                            e.target.style.height = 'auto';
-                                            e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
-                                          }}
-                                          onFocus={(e) => {
-                                            e.target.style.height = 'auto';
-                                            e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
-                                          }}
-                                          placeholder={acao.hint_recursos || 'Recursos'}
-                                          style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '80px', height: getAcaoValue(acao, 'recursos') ? 'auto' : '80px', fontSize: '14px', lineHeight: '1.5', resize: 'none', overflow: 'hidden', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
-                                        />
-                                      </div>
+                                      {canEdit ? (
+                                        <>
+                                          <div style={{marginBottom: '16px'}}>
+                                            <label style={{display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase'}}>
+                                              Responsável
+                                              {acao.hint_responsavel && (
+                                                <HelpCircle
+                                                  data-hint-icon
+                                                  size={16}
+                                                  onMouseEnter={(e) => showHint(e, acao.hint_responsavel || '')}
+                                                  onMouseLeave={hideHint}
+                                                  onClick={(e) => toggleHint(e, acao.hint_responsavel || '')}
+                                                  style={{color: '#3b82f6', cursor: 'pointer'}}
+                                                />
+                                              )}
+                                            </label>
+                                            <textarea
+                                              value={getAcaoValue(acao, 'responsavel')}
+                                              onChange={(e) => {
+                                                handleChangeAcao(acao.id, 'responsavel', e.target.value);
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                              }}
+                                              onFocus={(e) => {
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                              }}
+                                              title={acao.hint_responsavel || ''}
+                                              style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '80px', height: getAcaoValue(acao, 'responsavel') ? 'auto' : '80px', fontSize: '14px', lineHeight: '1.5', resize: 'none', overflow: 'hidden', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
+                                            />
+                                          </div>
 
-                                      {temEdicao && (
-                                        <button
-                                          onClick={() => handleSaveAcao(acao.id, acao)}
-                                          className="btn btn-primary"
-                                          style={{width: '100%', marginTop: '8px'}}
-                                        >
-                                          💾 Salvar
-                                        </button>
+                                          <div style={{marginBottom: '16px'}}>
+                                            <label style={{display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase'}}>
+                                              Data de Início
+                                              <HelpCircle
+                                                data-hint-icon
+                                                size={16}
+                                                onMouseEnter={(e) => showHint(e, 'Data de início da ação')}
+                                                onMouseLeave={hideHint}
+                                                onClick={(e) => toggleHint(e, 'Data de início da ação')}
+                                                style={{color: '#3b82f6', cursor: 'pointer'}}
+                                              />
+                                            </label>
+                                            <input
+                                              type="date"
+                                              value={getAcaoValue(acao, 'data_inicio')}
+                                              onChange={(e) => handleChangeAcao(acao.id, 'data_inicio', e.target.value)}
+                                              title="Data de início"
+                                              style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '44px', fontSize: '14px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
+                                            />
+                                          </div>
+
+                                          <div style={{marginBottom: '16px'}}>
+                                            <label style={{display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase'}}>
+                                              Data de Término
+                                              <HelpCircle
+                                                data-hint-icon
+                                                size={16}
+                                                onMouseEnter={(e) => showHint(e, 'Data de término da ação')}
+                                                onMouseLeave={hideHint}
+                                                onClick={(e) => toggleHint(e, 'Data de término da ação')}
+                                                style={{color: '#3b82f6', cursor: 'pointer'}}
+                                              />
+                                            </label>
+                                            <input
+                                              type="date"
+                                              value={getAcaoValue(acao, 'data_termino')}
+                                              onChange={(e) => handleChangeAcao(acao.id, 'data_termino', e.target.value)}
+                                              title="Data de término"
+                                              style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '44px', fontSize: '14px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
+                                            />
+                                          </div>
+
+                                          <div style={{marginBottom: '16px'}}>
+                                            <label style={{display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase'}}>
+                                              Como Será Feito?
+                                              {acao.hint_como_sera_feito && (
+                                                <HelpCircle
+                                                  data-hint-icon
+                                                  size={16}
+                                                  onMouseEnter={(e) => showHint(e, acao.hint_como_sera_feito || '')}
+                                                  onMouseLeave={hideHint}
+                                                  onClick={(e) => toggleHint(e, acao.hint_como_sera_feito || '')}
+                                                  style={{color: '#3b82f6', cursor: 'pointer'}}
+                                                />
+                                              )}
+                                            </label>
+                                            <textarea
+                                              value={getAcaoValue(acao, 'como_sera_feito')}
+                                              onChange={(e) => {
+                                                handleChangeAcao(acao.id, 'como_sera_feito', e.target.value);
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                              }}
+                                              onFocus={(e) => {
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                              }}
+                                              title={acao.hint_como_sera_feito || ''}
+                                              style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '80px', height: getAcaoValue(acao, 'como_sera_feito') ? 'auto' : '80px', fontSize: '14px', lineHeight: '1.6', resize: 'none', overflow: 'hidden', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
+                                            />
+                                          </div>
+
+                                          <div style={{marginBottom: '16px'}}>
+                                            <label style={{display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: '#374151', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase'}}>
+                                              Recursos
+                                              {acao.hint_recursos && (
+                                                <HelpCircle
+                                                  data-hint-icon
+                                                  size={16}
+                                                  onMouseEnter={(e) => showHint(e, acao.hint_recursos || '')}
+                                                  onMouseLeave={hideHint}
+                                                  onClick={(e) => toggleHint(e, acao.hint_recursos || '')}
+                                                  style={{color: '#3b82f6', cursor: 'pointer'}}
+                                                />
+                                              )}
+                                            </label>
+                                            <textarea
+                                              value={getAcaoValue(acao, 'recursos')}
+                                              onChange={(e) => {
+                                                handleChangeAcao(acao.id, 'recursos', e.target.value);
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                              }}
+                                              onFocus={(e) => {
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
+                                              }}
+                                              title={acao.hint_recursos || ''}
+                                              style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '80px', height: getAcaoValue(acao, 'recursos') ? 'auto' : '80px', fontSize: '14px', lineHeight: '1.5', resize: 'none', overflow: 'hidden', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
+                                            />
+                                          </div>
+
+                                          {temEdicao && (
+                                            <button
+                                              onClick={() => handleSaveAcao(acao.id, acao)}
+                                              className="btn btn-primary"
+                                              style={{width: '100%', marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}
+                                              title="Salvar"
+                                            >
+                                              <Save size={16} />
+                                              <span>Salvar</span>
+                                            </button>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <>
+                                          <div style={{marginBottom: '12px'}}>
+                                            <strong>Responsável:</strong> {acao.responsavel || '-'}
+                                          </div>
+                                          <div style={{marginBottom: '12px'}}>
+                                            <strong>Início:</strong> {acao.data_inicio ? new Date(acao.data_inicio).toLocaleDateString('pt-BR') : '-'}
+                                          </div>
+                                          <div style={{marginBottom: '12px'}}>
+                                            <strong>Término:</strong> {acao.data_termino ? new Date(acao.data_termino).toLocaleDateString('pt-BR') : '-'}
+                                          </div>
+                                          <div style={{marginBottom: '12px'}}>
+                                            <strong>Como Será Feito?:</strong> {acao.como_sera_feito || acao.hint_como_sera_feito || '-'}
+                                          </div>
+                                          <div style={{marginBottom: '12px'}}>
+                                            <strong>Recursos:</strong> {acao.recursos || '-'}
+                                          </div>
+                                          <div style={{marginTop: '12px'}}>
+                                            <span style={{
+                                              fontSize: '9px',
+                                              fontWeight: 600,
+                                              color: statusInfo.corTexto,
+                                              textTransform: 'uppercase',
+                                              letterSpacing: '0.5px',
+                                              padding: '4px 8px',
+                                              borderRadius: '4px',
+                                              background: 'rgba(255,255,255,0.8)',
+                                              whiteSpace: 'nowrap'
+                                            }}>
+                                              {statusInfo.label}
+                                            </span>
+                                          </div>
+                                        </>
                                       )}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <div style={{marginBottom: '12px'}}>
-                                        <strong>Responsável:</strong> {acao.responsavel || '-'}
-                                      </div>
-                                      <div style={{marginBottom: '12px'}}>
-                                        <strong>Início:</strong> {acao.data_inicio ? new Date(acao.data_inicio).toLocaleDateString('pt-BR') : '-'}
-                                      </div>
-                                      <div style={{marginBottom: '12px'}}>
-                                        <strong>Término:</strong> {acao.data_termino ? new Date(acao.data_termino).toLocaleDateString('pt-BR') : '-'}
-                                      </div>
-                                      <div style={{marginBottom: '12px'}}>
-                                        <strong>Como Será Feito?:</strong> {acao.como_sera_feito || acao.hint_como_sera_feito || '-'}
-                                      </div>
-                                      <div>
-                                        <strong>Recursos:</strong> {acao.recursos || '-'}
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              );
-                            })}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
                           </div>
-
                         </div>
-                      </div>
+                      );
+                      })}
                     </div>
-                  );
-                  })}
+                  </div>
                 </div>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

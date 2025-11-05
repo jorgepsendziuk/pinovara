@@ -5,7 +5,7 @@ import { associadosJuridicosController } from '../controllers/associadosJuridico
 import { producaoController } from '../controllers/producaoController';
 import { indicadoresController } from '../controllers/indicadoresController';
 import { participantesController } from '../controllers/participantesController';
-import PlanoGestaoController from '../controllers/PlanoGestaoController';
+import PlanoGestaoController, { uploadEvidencia } from '../controllers/PlanoGestaoController';
 import { authenticateToken, requirePermission } from '../middleware/auth';
 import { checkOrganizacaoPermission } from '../middleware/roleAuth';
 
@@ -63,7 +63,12 @@ router.delete('/:id/participantes/:participanteId', participantesController.dele
 // Plano de Gestão
 router.get('/:id/plano-gestao', PlanoGestaoController.getPlanoGestao.bind(PlanoGestaoController));
 router.put('/:id/plano-gestao/rascunho', PlanoGestaoController.updateRascunho.bind(PlanoGestaoController));
+router.put('/:id/plano-gestao/relatorio-sintetico', PlanoGestaoController.updateRelatorioSintetico.bind(PlanoGestaoController));
 router.put('/:id/plano-gestao/acoes/:idAcaoModelo', PlanoGestaoController.upsertAcao.bind(PlanoGestaoController));
 router.delete('/:id/plano-gestao/acoes/:idAcaoModelo', PlanoGestaoController.deleteAcao.bind(PlanoGestaoController));
+router.post('/:id/plano-gestao/evidencias', uploadEvidencia.single('arquivo'), PlanoGestaoController.uploadEvidencia.bind(PlanoGestaoController));
+router.get('/:id/plano-gestao/evidencias', PlanoGestaoController.listEvidencias.bind(PlanoGestaoController));
+router.delete('/:id/plano-gestao/evidencias/:idEvidencia', PlanoGestaoController.deleteEvidencia.bind(PlanoGestaoController));
+router.get('/:id/plano-gestao/evidencias/:idEvidencia/download', PlanoGestaoController.downloadEvidencia.bind(PlanoGestaoController));
 
 export default router;

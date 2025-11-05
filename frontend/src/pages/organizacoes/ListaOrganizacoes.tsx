@@ -439,105 +439,105 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
             {/* Botão Editar */}
             {podeEditar && (
-              <button
-                onClick={() => onNavigate('edicao', record.id)}
-                title="Editar organização"
-                style={{ 
-                  padding: '6px 8px', 
-                  border: '1px solid #3b2313', 
-                  background: 'white',
-                  borderRadius: '4px',
-                  cursor: 'pointer', 
-                  color: '#3b2313',
-                  display: 'flex',
-                  alignItems: 'center',
+            <button
+              onClick={() => onNavigate('edicao', record.id)}
+              title="Editar organização"
+              style={{ 
+                padding: '6px 8px', 
+                border: '1px solid #3b2313', 
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer', 
+                color: '#3b2313',
+                display: 'flex',
+                alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#3b2313';
-                  e.currentTarget.style.color = 'white';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.color = '#3b2313';
-                }}
-              >
-                <Edit size={16} />
-              </button>
-            )}
-            
-            {/* Botão Relatório */}
-            <button
-              onClick={() => gerarRelatorio(record.id, record.nome)}
-              title="Gerar Relatório Completo"
-              disabled={gerandoRelatorio === record.id}
-              style={{
-                padding: '6px 8px',
-                border: '1px solid #056839',
-                background: 'white',
-                borderRadius: '4px',
-                cursor: gerandoRelatorio === record.id ? 'not-allowed' : 'pointer',
-                color: gerandoRelatorio === record.id ? '#ccc' : '#056839',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
                 transition: 'all 0.2s'
               }}
               onMouseOver={(e) => {
-                if (gerandoRelatorio !== record.id) {
-                  e.currentTarget.style.background = '#056839';
-                  e.currentTarget.style.color = 'white';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (gerandoRelatorio !== record.id) {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.color = '#056839';
-                }
-              }}
-            >
-              <FileText size={16} />
-            </button>
-            
-            {/* Botão Plano de Gestão */}
-            <button
-              onClick={() => onNavigate('planoGestao', record.id)}
-              title="Plano de Gestão e Estratégias"
-              style={{
-                padding: '6px 8px',
-                border: '1px solid #8b5cf6',
-                background: 'white',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                color: '#8b5cf6',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#8b5cf6';
+                e.currentTarget.style.background = '#3b2313';
                 e.currentTarget.style.color = 'white';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#8b5cf6';
+                e.currentTarget.style.color = '#3b2313';
               }}
             >
-              <Target size={16} />
+                <Edit size={16} />
             </button>
+          )}
+            
+            {/* Botão Relatório */}
+          <button
+            onClick={() => gerarRelatorio(record.id, record.nome)}
+            title="Gerar Relatório Completo"
+            disabled={gerandoRelatorio === record.id}
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #056839',
+              background: 'white',
+              borderRadius: '4px',
+              cursor: gerandoRelatorio === record.id ? 'not-allowed' : 'pointer',
+              color: gerandoRelatorio === record.id ? '#ccc' : '#056839',
+              display: 'flex',
+              alignItems: 'center',
+                justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              if (gerandoRelatorio !== record.id) {
+                e.currentTarget.style.background = '#056839';
+                e.currentTarget.style.color = 'white';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (gerandoRelatorio !== record.id) {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#056839';
+              }
+            }}
+          >
+              <FileText size={16} />
+          </button>
+            
+            {/* Botão Plano de Gestão */}
+          <button
+              onClick={() => onNavigate('planoGestao', record.id)}
+              title="Plano de Gestão e Estratégias"
+            style={{
+              padding: '6px 8px',
+                border: '1px solid #8b5cf6',
+              background: 'white',
+              borderRadius: '4px',
+              cursor: 'pointer',
+                color: '#8b5cf6',
+              display: 'flex',
+              alignItems: 'center',
+                justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+                e.currentTarget.style.background = '#8b5cf6';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#8b5cf6';
+            }}
+          >
+              <Target size={16} />
+          </button>
             
             {/* Botão Outras Ações */}
             <div style={{ position: 'relative' }}>
-              <button
+          <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setMenuAcoesAberto(menuAberto ? null : record.id);
                 }}
                 title="Outras ações"
-                style={{
-                  padding: '6px 8px',
+            style={{
+              padding: '6px 8px',
                   border: '1px solid #6b7280',
                   background: menuAberto ? '#6b7280' : 'white',
                   borderRadius: '4px',
@@ -572,7 +572,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                     right: 0,
                     top: '100%',
                     marginTop: '4px',
-                    background: 'white',
+              background: 'white',
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
@@ -656,64 +656,64 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                       textAlign: 'left',
                       background: 'transparent',
                       border: 'none',
-                      borderRadius: '4px',
-                      cursor: gerandoPDF === record.id ? 'not-allowed' : 'pointer',
+              borderRadius: '4px',
+              cursor: gerandoPDF === record.id ? 'not-allowed' : 'pointer',
                       color: gerandoPDF === record.id ? '#9ca3af' : '#374151',
-                      display: 'flex',
-                      alignItems: 'center',
+              display: 'flex',
+              alignItems: 'center',
                       gap: '8px',
                       fontSize: '14px',
                       transition: 'background 0.2s',
-                      opacity: gerandoPDF === record.id ? 0.5 : 1
-                    }}
-                    onMouseOver={(e) => {
-                      if (gerandoPDF !== record.id) {
+              opacity: gerandoPDF === record.id ? 0.5 : 1
+            }}
+            onMouseOver={(e) => {
+              if (gerandoPDF !== record.id) {
                         e.currentTarget.style.background = '#f3f4f6';
-                      }
-                    }}
-                    onMouseOut={(e) => {
+              }
+            }}
+            onMouseOut={(e) => {
                       e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
+            }}
+          >
                     <Printer size={16} color="#28a745" />
                     <span>Imprimir Termo</span>
-                  </button>
-                  {!isCoordinator() && (
-                    <button
+          </button>
+          {!isCoordinator() && (
+            <button
                       onClick={() => {
                         handleExcluir(record.id);
                         setMenuAcoesAberto(null);
                       }}
-                      style={{
+              style={{ 
                         width: '100%',
                         padding: '8px 12px',
                         textAlign: 'left',
                         background: 'transparent',
                         border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
+                borderRadius: '4px',
+                cursor: 'pointer', 
                         color: '#dc2626',
-                        display: 'flex',
-                        alignItems: 'center',
+                display: 'flex',
+                alignItems: 'center',
                         gap: '8px',
                         fontSize: '14px',
                         transition: 'background 0.2s',
                         borderTop: '1px solid #e5e7eb',
                         marginTop: '4px',
                         paddingTop: '8px'
-                      }}
-                      onMouseOver={(e) => {
+              }}
+              onMouseOver={(e) => {
                         e.currentTarget.style.background = '#fee2e2';
-                      }}
-                      onMouseOut={(e) => {
+              }}
+              onMouseOut={(e) => {
                         e.currentTarget.style.background = 'transparent';
-                      }}
-                    >
+              }}
+            >
                       <Trash size={16} color="#dc2626" />
                       <span>Excluir</span>
-                    </button>
-                  )}
-                </div>
+            </button>
+          )}
+        </div>
               )}
             </div>
           </div>
@@ -1200,23 +1200,23 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                 </div>
                 <div className="organization-actions" style={{ position: 'relative' }}>
                   {!isCoordinator() && !isSupervisor() && (
-                    <button
-                      onClick={() => onNavigate('edicao', org.id)}
+                  <button
+                    onClick={() => onNavigate('edicao', org.id)}
                       title="Editar organização"
                       style={{ color: '#3b2313', borderColor: '#3b2313', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px' }}
-                    >
-                      <Edit size={16} />
-                    </button>
+                  >
+                    <Edit size={16} />
+                  </button>
                   )}
                   
-                  <button
+                    <button
                     onClick={() => gerarRelatorio(org.id, org.nome)}
                     disabled={gerandoRelatorio === org.id}
                     title="Gerar Relatório Completo"
                     style={{ color: '#056839', borderColor: '#056839', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', opacity: gerandoRelatorio === org.id ? 0.5 : 1 }}
-                  >
+                    >
                     <FileText size={16} />
-                  </button>
+                    </button>
                   
                   <button
                     onClick={() => onNavigate('planoGestao', org.id)}
@@ -1228,7 +1228,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                   
                   {/* Botão Outras Ações Mobile */}
                   <div style={{ position: 'relative' }}>
-                    <button
+                  <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setMenuAcoesAberto(menuAcoesAberto === org.id ? null : org.id);
@@ -1243,10 +1243,10 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                         justifyContent: 'center',
                         padding: '8px'
                       }}
-                    >
+                  >
                       <MoreVertical size={16} />
-                    </button>
-                    
+                  </button>
+                  
                     {/* Menu Dropdown Mobile */}
                     {menuAcoesAberto === org.id && (
                       <div
@@ -1266,7 +1266,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                         onClick={(e) => e.stopPropagation()}
                       >
                         {(isCoordinator() || hasPermission('sistema', 'admin')) && (
-                          <button
+                  <button
                             onClick={() => {
                               abrirModalValidacao(org.id, org.nome);
                               setMenuAcoesAberto(null);
@@ -1295,7 +1295,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                           >
                             <Clipboard size={16} color="#10b981" />
                             <span>Validar</span>
-                          </button>
+                  </button>
                         )}
                         <button
                           onClick={() => {
@@ -1361,8 +1361,8 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                           <Printer size={16} color="#28a745" />
                           <span>Imprimir Termo</span>
                         </button>
-                        {!isCoordinator() && (
-                          <button
+                  {!isCoordinator() && (
+                    <button
                             onClick={() => {
                               handleDelete(org.id);
                               setMenuAcoesAberto(null);
@@ -1391,11 +1391,11 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                             onMouseOut={(e) => {
                               e.currentTarget.style.background = 'transparent';
                             }}
-                          >
+                    >
                             <Trash size={16} color="#dc2626" />
                             <span>Excluir</span>
-                          </button>
-                        )}
+                    </button>
+                  )}
                       </div>
                     )}
                   </div>
