@@ -18,7 +18,7 @@ function OrganizacoesModule() {
   const { isSupervisor } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [viewAtiva, setViewAtiva] = useState<ViewType>('dashboard');
+  const [viewAtiva, setViewAtiva] = useState<ViewType>('lista');
   const [organizacaoSelecionada, setOrganizacaoSelecionada] = useState<number | null>(null);
 
   // Determinar view baseada na URL
@@ -53,8 +53,8 @@ function OrganizacoesModule() {
         setOrganizacaoSelecionada(parseInt(id));
       }
     } else {
-      // Rota padrão /organizacoes vai para dashboard
-      setViewAtiva('dashboard');
+      // Rota padrão /organizacoes vai para lista
+      setViewAtiva('lista');
     }
   }, [location.pathname, isSupervisor, navigate]);
 
@@ -74,7 +74,7 @@ function OrganizacoesModule() {
     // Navegar para a URL correspondente
     switch (view) {
       case 'dashboard':
-        navigate('/organizacoes/dashboard');
+        navigate('/organizacoes/lista');
         break;
       case 'lista':
         navigate('/organizacoes/lista');
@@ -157,7 +157,7 @@ function OrganizacoesModule() {
           </div>
         );
       default:
-        return <DashboardOrganizacoes onNavigate={handleNavegacao} />;
+        return <ListaOrganizacoes onNavigate={handleNavegacao} />;
     }
   };
 

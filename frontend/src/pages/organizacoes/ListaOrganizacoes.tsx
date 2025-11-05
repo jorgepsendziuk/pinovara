@@ -21,7 +21,8 @@ import {
   User,
   FolderOpen,
   Search,
-  ClipboardList
+  Target,
+  MoreVertical
 } from 'lucide-react';
 
 interface Organizacao {
@@ -57,6 +58,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const [modalArquivosAberto, setModalArquivosAberto] = useState(false);
   const [modalValidacaoAberto, setModalValidacaoAberto] = useState(false);
   const [organizacaoSelecionada, setOrganizacaoSelecionada] = useState<{ id: number; nome: string } | null>(null);
+  const [menuAcoesAberto, setMenuAcoesAberto] = useState<number | null>(null); // ID da organização com menu aberto
 
   // Estados para DataGrid
   const [currentPage, setCurrentPage] = useState(1);
@@ -104,6 +106,22 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   useEffect(() => {
     carregarDadosFiltros();
   }, []);
+
+  // Fechar menu de ações ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuAcoesAberto !== null) {
+        setMenuAcoesAberto(null);
+      }
+    };
+    
+    if (menuAcoesAberto !== null) {
+      document.addEventListener('click', handleClickOutside);
+      return () => {
+        document.removeEventListener('click', handleClickOutside);
+      };
+    }
+  }, [menuAcoesAberto]);
 
   useEffect(() => {
     fetchOrganizacoes();
@@ -412,175 +430,295 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       title: 'Ações',
       width: '20%',
       align: 'center',
-      render: (_, record: Organizacao) => (
-        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          {!isCoordinator() && !isSupervisor() && (
+      render: (_, record: Organizacao) => {
+        const podeValidar = isCoordinator() || hasPermission('sistema', 'admin');
+        const podeEditar = !isCoordinator() && !isSupervisor();
+        const menuAberto = menuAcoesAberto === record.id;
+        
+        return (
+          <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+            {/* Botão Editar */}
+            {podeEditar && (
+              <button
+                onClick={() => onNavigate('edicao', record.id)}
+                title="Editar organização"
+                style={{ 
+                  padding: '6px 8px', 
+                  border: '1px solid #3b2313', 
+                  background: 'white',
+                  borderRadius: '4px',
+                  cursor: 'pointer', 
+                  color: '#3b2313',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#3b2313';
+                  e.currentTarget.style.color = 'white';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#3b2313';
+                }}
+              >
+                <Edit size={16} />
+              </button>
+            )}
+            
+            {/* Botão Relatório */}
             <button
-              onClick={() => onNavigate('edicao', record.id)}
-              title="Editar organização"
-              style={{ 
-                padding: '6px 8px', 
-                border: '1px solid #3b2313', 
+              onClick={() => gerarRelatorio(record.id, record.nome)}
+              title="Gerar Relatório Completo"
+              disabled={gerandoRelatorio === record.id}
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #056839',
                 background: 'white',
                 borderRadius: '4px',
-                cursor: 'pointer', 
-                color: '#3b2313',
+                cursor: gerandoRelatorio === record.id ? 'not-allowed' : 'pointer',
+                color: gerandoRelatorio === record.id ? '#ccc' : '#056839',
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 transition: 'all 0.2s'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = '#3b2313';
+                if (gerandoRelatorio !== record.id) {
+                  e.currentTarget.style.background = '#056839';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (gerandoRelatorio !== record.id) {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#056839';
+                }
+              }}
+            >
+              <FileText size={16} />
+            </button>
+            
+            {/* Botão Plano de Gestão */}
+            <button
+              onClick={() => onNavigate('planoGestao', record.id)}
+              title="Plano de Gestão e Estratégias"
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #8b5cf6',
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#8b5cf6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#8b5cf6';
                 e.currentTarget.style.color = 'white';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#3b2313';
+                e.currentTarget.style.color = '#8b5cf6';
               }}
             >
-              <Edit size={14} />
+              <Target size={16} />
             </button>
-          )}
-          <button
-            onClick={() => gerarRelatorio(record.id, record.nome)}
-            title="Gerar Relatório Completo"
-            disabled={gerandoRelatorio === record.id}
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #056839',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: gerandoRelatorio === record.id ? 'not-allowed' : 'pointer',
-              color: gerandoRelatorio === record.id ? '#ccc' : '#056839',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              if (gerandoRelatorio !== record.id) {
-                e.currentTarget.style.background = '#056839';
-                e.currentTarget.style.color = 'white';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (gerandoRelatorio !== record.id) {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#056839';
-              }
-            }}
-          >
-            <FileText size={14} />
-          </button>
-          <button
-            onClick={() => onNavigate('planoGestao', record.id)}
-            title="Plano de Gestão"
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #8b5cf6',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: '#8b5cf6',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#8b5cf6';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#8b5cf6';
-            }}
-          >
-            <ClipboardList size={14} />
-          </button>
-          <button
-            onClick={() => abrirModalArquivos(record.id, record.nome)}
-            title="Ver Arquivos Anexados"
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #f59e0b',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: '#f59e0b',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#f59e0b';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#f59e0b';
-            }}
-          >
-            <FolderOpen size={14} />
-          </button>
-          <button
-            onClick={() => gerarTermoAdesao(record.id)}
-            title="Imprimir Termo de Adesão"
-            disabled={gerandoPDF === record.id}
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #28a745',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: gerandoPDF === record.id ? 'not-allowed' : 'pointer',
-              color: gerandoPDF === record.id ? '#ccc' : '#28a745',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.2s',
-              opacity: gerandoPDF === record.id ? 0.5 : 1
-            }}
-            onMouseOver={(e) => {
-              if (gerandoPDF !== record.id) {
-                e.currentTarget.style.background = '#28a745';
-                e.currentTarget.style.color = 'white';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (gerandoPDF !== record.id) {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#28a745';
-              }
-            }}
-          >
-            <Printer size={14} />
-          </button>
-          {!isCoordinator() && (
-            <button
-              onClick={() => handleExcluir(record.id)}
-              title="Excluir organização"
-              style={{ 
-                padding: '6px 8px', 
-                border: '1px solid #dc3545', 
-                background: 'white',
-                borderRadius: '4px',
-                cursor: 'pointer', 
-                color: '#dc3545',
-                display: 'flex',
-                alignItems: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#dc3545';
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#dc3545';
-              }}
-            >
-              <Trash size={14} />
-            </button>
-          )}
-        </div>
-      ),
+            
+            {/* Botão Outras Ações */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuAcoesAberto(menuAberto ? null : record.id);
+                }}
+                title="Outras ações"
+                style={{
+                  padding: '6px 8px',
+                  border: '1px solid #6b7280',
+                  background: menuAberto ? '#6b7280' : 'white',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  color: menuAberto ? 'white' : '#6b7280',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  if (!menuAberto) {
+                    e.currentTarget.style.background = '#6b7280';
+                    e.currentTarget.style.color = 'white';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!menuAberto) {
+                    e.currentTarget.style.background = 'white';
+                    e.currentTarget.style.color = '#6b7280';
+                  }
+                }}
+              >
+                <MoreVertical size={16} />
+              </button>
+              
+              {/* Menu Dropdown */}
+              {menuAberto && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '100%',
+                    marginTop: '4px',
+                    background: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    zIndex: 1000,
+                    minWidth: '180px',
+                    padding: '4px'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {podeValidar && (
+                    <button
+                      onClick={() => {
+                        abrirModalValidacao(record.id, record.nome);
+                        setMenuAcoesAberto(null);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        textAlign: 'left',
+                        background: 'transparent',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        color: '#374151',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = '#f3f4f6';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <Clipboard size={16} color="#10b981" />
+                      <span>Validar</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      abrirModalArquivos(record.id, record.nome);
+                      setMenuAcoesAberto(null);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      textAlign: 'left',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      color: '#374151',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '14px',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = '#f3f4f6';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <FolderOpen size={16} color="#f59e0b" />
+                    <span>Arquivos</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      gerarTermoAdesao(record.id);
+                      setMenuAcoesAberto(null);
+                    }}
+                    disabled={gerandoPDF === record.id}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      textAlign: 'left',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: gerandoPDF === record.id ? 'not-allowed' : 'pointer',
+                      color: gerandoPDF === record.id ? '#9ca3af' : '#374151',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '14px',
+                      transition: 'background 0.2s',
+                      opacity: gerandoPDF === record.id ? 0.5 : 1
+                    }}
+                    onMouseOver={(e) => {
+                      if (gerandoPDF !== record.id) {
+                        e.currentTarget.style.background = '#f3f4f6';
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <Printer size={16} color="#28a745" />
+                    <span>Imprimir Termo</span>
+                  </button>
+                  {!isCoordinator() && (
+                    <button
+                      onClick={() => {
+                        handleExcluir(record.id);
+                        setMenuAcoesAberto(null);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        textAlign: 'left',
+                        background: 'transparent',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        color: '#dc2626',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        transition: 'background 0.2s',
+                        borderTop: '1px solid #e5e7eb',
+                        marginTop: '4px',
+                        paddingTop: '8px'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = '#fee2e2';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <Trash size={16} color="#dc2626" />
+                      <span>Excluir</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'id',
@@ -1060,60 +1198,207 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                     </div>
                   </div>
                 </div>
-                <div className="organization-actions">
-                  <button
-                    onClick={() => onNavigate('edicao', org.id)}
-                    title="Editar"
-                    style={{ color: '#3b82f6', borderColor: '#3b82f6' }}
-                  >
-                    <Edit size={16} />
-                  </button>
-                  
-                  {(isCoordinator() || hasPermission('sistema', 'admin')) && (
+                <div className="organization-actions" style={{ position: 'relative' }}>
+                  {!isCoordinator() && !isSupervisor() && (
                     <button
-                      onClick={() => abrirModalValidacao(org.id, org.nome)}
-                      title="Validar"
-                      style={{ color: '#10b981', borderColor: '#10b981' }}
+                      onClick={() => onNavigate('edicao', org.id)}
+                      title="Editar organização"
+                      style={{ color: '#3b2313', borderColor: '#3b2313', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px' }}
                     >
-                      <Clipboard size={16} />
+                      <Edit size={16} />
                     </button>
                   )}
                   
                   <button
-                    onClick={() => gerarTermoAdesao(org.id, org.nome)}
-                    disabled={gerandoPDF === org.id}
-                    title="Imprimir Termo"
-                    style={{ color: '#8b5cf6', borderColor: '#8b5cf6' }}
-                  >
-                    <Printer size={16} />
-                  </button>
-                  
-                  <button
                     onClick={() => gerarRelatorio(org.id, org.nome)}
                     disabled={gerandoRelatorio === org.id}
-                    title="Gerar Relatório"
-                    style={{ color: '#f59e0b', borderColor: '#f59e0b' }}
+                    title="Gerar Relatório Completo"
+                    style={{ color: '#056839', borderColor: '#056839', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', opacity: gerandoRelatorio === org.id ? 0.5 : 1 }}
                   >
                     <FileText size={16} />
                   </button>
                   
                   <button
-                    onClick={() => abrirModalArquivos(org.id, org.nome)}
-                    title="Arquivos"
-                    style={{ color: '#06b6d4', borderColor: '#06b6d4' }}
+                    onClick={() => onNavigate('planoGestao', org.id)}
+                    title="Plano de Gestão e Estratégias"
+                    style={{ color: '#8b5cf6', borderColor: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px' }}
                   >
-                    <FolderOpen size={16} />
+                    <Target size={16} />
                   </button>
                   
-                  {!isCoordinator() && (
+                  {/* Botão Outras Ações Mobile */}
+                  <div style={{ position: 'relative' }}>
                     <button
-                      onClick={() => handleDelete(org.id)}
-                      title="Excluir"
-                      style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuAcoesAberto(menuAcoesAberto === org.id ? null : org.id);
+                      }}
+                      title="Outras ações"
+                      style={{
+                        color: menuAcoesAberto === org.id ? 'white' : '#6b7280',
+                        borderColor: '#6b7280',
+                        background: menuAcoesAberto === org.id ? '#6b7280' : 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '8px'
+                      }}
                     >
-                      <Trash size={16} />
+                      <MoreVertical size={16} />
                     </button>
-                  )}
+                    
+                    {/* Menu Dropdown Mobile */}
+                    {menuAcoesAberto === org.id && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          right: 0,
+                          top: '100%',
+                          marginTop: '4px',
+                          background: 'white',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          zIndex: 1000,
+                          minWidth: '180px',
+                          padding: '4px'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {(isCoordinator() || hasPermission('sistema', 'admin')) && (
+                          <button
+                            onClick={() => {
+                              abrirModalValidacao(org.id, org.nome);
+                              setMenuAcoesAberto(null);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px',
+                              textAlign: 'left',
+                              background: 'transparent',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              color: '#374151',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              fontSize: '14px',
+                              transition: 'background 0.2s'
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.background = '#f3f4f6';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.background = 'transparent';
+                            }}
+                          >
+                            <Clipboard size={16} color="#10b981" />
+                            <span>Validar</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            abrirModalArquivos(org.id, org.nome);
+                            setMenuAcoesAberto(null);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            textAlign: 'left',
+                            background: 'transparent',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            color: '#374151',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '14px',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = '#f3f4f6';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                          }}
+                        >
+                          <FolderOpen size={16} color="#f59e0b" />
+                          <span>Arquivos</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            gerarTermoAdesao(org.id, org.nome);
+                            setMenuAcoesAberto(null);
+                          }}
+                          disabled={gerandoPDF === org.id}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            textAlign: 'left',
+                            background: 'transparent',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: gerandoPDF === org.id ? 'not-allowed' : 'pointer',
+                            color: gerandoPDF === org.id ? '#9ca3af' : '#374151',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '14px',
+                            transition: 'background 0.2s',
+                            opacity: gerandoPDF === org.id ? 0.5 : 1
+                          }}
+                          onMouseOver={(e) => {
+                            if (gerandoPDF !== org.id) {
+                              e.currentTarget.style.background = '#f3f4f6';
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                          }}
+                        >
+                          <Printer size={16} color="#28a745" />
+                          <span>Imprimir Termo</span>
+                        </button>
+                        {!isCoordinator() && (
+                          <button
+                            onClick={() => {
+                              handleDelete(org.id);
+                              setMenuAcoesAberto(null);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px',
+                              textAlign: 'left',
+                              background: 'transparent',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              color: '#dc2626',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              fontSize: '14px',
+                              transition: 'background 0.2s',
+                              borderTop: '1px solid #e5e7eb',
+                              marginTop: '4px',
+                              paddingTop: '8px'
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.background = '#fee2e2';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.background = 'transparent';
+                            }}
+                          >
+                            <Trash size={16} color="#dc2626" />
+                            <span>Excluir</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

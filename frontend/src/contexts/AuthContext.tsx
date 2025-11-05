@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authAPI, AuthUser, LoginResponse, RegisterResponse, hasPermission, hasAnyPermission } from '../services/api';
 import AccessDenied from '../pages/AccessDenied';
 
@@ -369,6 +370,14 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
  */
 export function PublicRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      // Redirecionar para lista de organizações quando autenticado
+      navigate('/organizacoes/lista', { replace: true });
+    }
+  }, [isAuthenticated, loading, navigate]);
 
   if (loading) {
     return (
@@ -380,9 +389,10 @@ export function PublicRoute({ children }: { children: ReactNode }) {
   }
 
   if (isAuthenticated) {
-    // Redirecionar para dashboard ou página inicial
+    // Mostrar mensagem enquanto redireciona
     return (
-      <div className="redirecting">
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
         <p>Você já está logado. Redirecionando...</p>
       </div>
     );
