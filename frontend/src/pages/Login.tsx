@@ -81,7 +81,7 @@ function Login() {
     try {
       await login(formData);
       console.log('✅ Login bem-sucedido, navegando...');
-      navigate('/organizacoes/dashboard');
+      navigate('/organizacoes/lista');
     } catch (error: any) {
       console.error('🔴 Erro capturado no Login:', error);
       
