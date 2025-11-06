@@ -297,8 +297,21 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       }
       
       // Preparar dados completos
+      // Remover campos do plano de gestão (devem ser atualizados apenas pelos endpoints específicos)
+      const { 
+        plano_gestao_rascunho,
+        plano_gestao_rascunho_updated_by,
+        plano_gestao_rascunho_updated_at,
+        plano_gestao_rascunho_updated_by_name,
+        plano_gestao_relatorio_sintetico,
+        plano_gestao_relatorio_sintetico_updated_by,
+        plano_gestao_relatorio_sintetico_updated_at,
+        plano_gestao_relatorio_sintetico_updated_by_name,
+        ...organizacaoSemPlanoGestao 
+      } = organizacao || {};
+      
       const dadosBrutos = {
-        ...(organizacao || {}),
+        ...organizacaoSemPlanoGestao,
         // Dados do representante
         representante_nome: dadosRepresentante.nome || null,
         representante_cpf: dadosRepresentante.cpf || null,

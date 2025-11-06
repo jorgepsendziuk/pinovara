@@ -20,8 +20,8 @@ export declare const fotoService: {
         ordinal_number: number;
         top_level_auri: string | null;
         id_organizacao: number | null;
-        grupo: number | null;
         foto: string | null;
+        grupo: number | null;
     }>;
     listByOrganizacao(organizacaoId: number): Promise<{
         id: number;
@@ -35,8 +35,8 @@ export declare const fotoService: {
         ordinal_number: number;
         top_level_auri: string | null;
         id_organizacao: number | null;
-        grupo: number | null;
         foto: string | null;
+        grupo: number | null;
     }[]>;
     findById(id: number): Promise<{
         id: number;
@@ -50,8 +50,8 @@ export declare const fotoService: {
         ordinal_number: number;
         top_level_auri: string | null;
         id_organizacao: number | null;
-        grupo: number | null;
         foto: string | null;
+        grupo: number | null;
     } | null>;
     update(id: number, data: UpdateFotoDTO): Promise<{
         id: number;
@@ -65,8 +65,8 @@ export declare const fotoService: {
         ordinal_number: number;
         top_level_auri: string | null;
         id_organizacao: number | null;
-        grupo: number | null;
         foto: string | null;
+        grupo: number | null;
     }>;
     delete(id: number): Promise<{
         id: number;
@@ -80,8 +80,8 @@ export declare const fotoService: {
         ordinal_number: number;
         top_level_auri: string | null;
         id_organizacao: number | null;
-        grupo: number | null;
         foto: string | null;
+        grupo: number | null;
     }>;
 };
 export {};

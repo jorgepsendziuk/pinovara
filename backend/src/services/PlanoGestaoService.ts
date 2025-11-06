@@ -7,7 +7,6 @@ export interface AcaoModeloData {
   tipo: string;
   titulo: string;
   grupo: string | null;
-  acao: string; // Valor original do modelo (usado como hint quando não há valor editado)
   acao_modelo: string; // Valor original do modelo (preservado separadamente)
   hint_como_sera_feito: string | null;
   hint_responsavel: string | null;

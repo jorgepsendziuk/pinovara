@@ -1,7 +1,37 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const organizacaoController_1 = require("../controllers/organizacaoController");
@@ -10,7 +40,7 @@ const associadosJuridicosController_1 = require("../controllers/associadosJuridi
 const producaoController_1 = require("../controllers/producaoController");
 const indicadoresController_1 = require("../controllers/indicadoresController");
 const participantesController_1 = require("../controllers/participantesController");
-const PlanoGestaoController_1 = __importDefault(require("../controllers/PlanoGestaoController"));
+const PlanoGestaoController_1 = __importStar(require("../controllers/PlanoGestaoController"));
 const auth_1 = require("../middleware/auth");
 const roleAuth_1 = require("../middleware/roleAuth");
 const router = (0, express_1.Router)();
@@ -46,7 +76,12 @@ router.put('/:id/participantes/:participanteId', participantesController_1.parti
 router.delete('/:id/participantes/:participanteId', participantesController_1.participantesController.delete);
 router.get('/:id/plano-gestao', PlanoGestaoController_1.default.getPlanoGestao.bind(PlanoGestaoController_1.default));
 router.put('/:id/plano-gestao/rascunho', PlanoGestaoController_1.default.updateRascunho.bind(PlanoGestaoController_1.default));
+router.put('/:id/plano-gestao/relatorio-sintetico', PlanoGestaoController_1.default.updateRelatorioSintetico.bind(PlanoGestaoController_1.default));
 router.put('/:id/plano-gestao/acoes/:idAcaoModelo', PlanoGestaoController_1.default.upsertAcao.bind(PlanoGestaoController_1.default));
 router.delete('/:id/plano-gestao/acoes/:idAcaoModelo', PlanoGestaoController_1.default.deleteAcao.bind(PlanoGestaoController_1.default));
+router.post('/:id/plano-gestao/evidencias', PlanoGestaoController_1.uploadEvidencia.single('arquivo'), PlanoGestaoController_1.default.uploadEvidencia.bind(PlanoGestaoController_1.default));
+router.get('/:id/plano-gestao/evidencias', PlanoGestaoController_1.default.listEvidencias.bind(PlanoGestaoController_1.default));
+router.delete('/:id/plano-gestao/evidencias/:idEvidencia', PlanoGestaoController_1.default.deleteEvidencia.bind(PlanoGestaoController_1.default));
+router.get('/:id/plano-gestao/evidencias/:idEvidencia/download', PlanoGestaoController_1.default.downloadEvidencia.bind(PlanoGestaoController_1.default));
 exports.default = router;
 //# sourceMappingURL=organizacaoRoutes.js.map
