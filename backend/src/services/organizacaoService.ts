@@ -7,19 +7,7 @@ import {
 } from '../types/organizacao';
 import { ErrorCode, HttpStatus, PaginatedResponse } from '../types/api';
 import { extractEmailFromCreatorUri } from '../utils/odkHelper';
-
-class ApiError extends Error {
-  statusCode: number;
-  code?: string;
-  details?: any;
-
-  constructor({ message, statusCode, code, details }: { message: string; statusCode: number; code?: string; details?: any }) {
-    super(message);
-    this.statusCode = statusCode;
-    this.code = code;
-    this.details = details;
-  }
-}
+import { ApiError } from '../utils/ApiError';
 
 const prisma = new PrismaClient();
 
@@ -211,22 +199,85 @@ class OrganizacaoService {
    */
   async getById(organizacaoId: number): Promise<any> {
     try {
-      const organizacao = await prisma.organizacao.findUnique({
-        where: { id: organizacaoId },
-        include: {
-          // Incluir dados do usuário validador
-          users: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
+      console.log('🔍 Buscando organização ID:', organizacaoId);
+      
+      // Buscar organização sem include primeiro para verificar se existe
+      let organizacao = await prisma.organizacao.findUnique({
+        where: { id: organizacaoId }
       });
 
+      console.log('📦 Organização encontrada (sem include):', organizacao ? 'SIM' : 'NÃO');
+      if (organizacao) {
+        console.log('📦 Organização removida?', organizacao.removido);
+        console.log('📦 Organização ID:', organizacao.id);
+        console.log('📦 Organização nome:', organizacao.nome);
+      }
+      
       if (!organizacao) {
-        throw new Error('Organização não encontrada');
+        console.error('❌ Organização não encontrada para ID:', organizacaoId);
+        throw new ApiError({
+          message: 'Organização não encontrada',
+          statusCode: HttpStatus.NOT_FOUND,
+          code: ErrorCode.RESOURCE_NOT_FOUND
+        });
+      }
+      
+      // Verificar se está removida (mas ainda permitir edição se necessário)
+      // Não vamos bloquear aqui, apenas logar
+      if (organizacao.removido) {
+        console.warn('⚠️ Organização está marcada como removida, mas permitindo acesso');
+      }
+
+      // Se existe, buscar com include do relacionamento users
+      // Usar try-catch para capturar erros do relacionamento
+      try {
+        organizacao = await prisma.organizacao.findUnique({
+          where: { id: organizacaoId },
+          include: {
+            // Incluir dados do usuário validador (pode ser null se não houver validador)
+            users: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        });
+
+        console.log('📦 Organização encontrada (com include):', organizacao ? 'SIM' : 'NÃO');
+      } catch (includeError: any) {
+        console.error('❌ Erro ao buscar com include:', includeError);
+        console.warn('⚠️ Tentando buscar sem include do relacionamento users');
+        // Se houver erro no include, usar a organização já encontrada sem include
+        // e buscar o relacionamento separadamente se necessário
+        organizacao = await prisma.organizacao.findUnique({
+          where: { id: organizacaoId }
+        });
+        
+        if (organizacao && organizacao.validacao_usuario) {
+          try {
+            const user = await prisma.users.findUnique({
+              where: { id: organizacao.validacao_usuario },
+              select: { id: true, name: true, email: true }
+            });
+            (organizacao as any).users = user;
+          } catch (userError) {
+            console.warn('⚠️ Erro ao buscar usuário validador:', userError);
+            (organizacao as any).users = null;
+          }
+        } else {
+          (organizacao as any).users = null;
+        }
+      }
+
+      if (!organizacao) {
+        console.error('❌ Organização não encontrada para ID:', organizacaoId);
+        throw new ApiError({
+          message: 'Organização não encontrada',
+          statusCode: HttpStatus.NOT_FOUND,
+          code: ErrorCode.RESOURCE_NOT_FOUND
+        });
       }
 
       // Buscar nomes do estado e município
@@ -599,12 +650,20 @@ class OrganizacaoService {
    * Atualizar organização
    */
   async update(id: number, data: Partial<Organizacao>): Promise<Organizacao> {
+    console.log('🔄 Iniciando update da organização ID:', id);
+    
     // Verificar se organização existe
     const existingOrg = await prisma.organizacao.findUnique({
       where: { id }
     });
 
+    console.log('📋 Organização existente encontrada:', existingOrg ? 'SIM' : 'NÃO');
+    if (existingOrg) {
+      console.log('📋 Organização removida?', existingOrg.removido);
+    }
+
     if (!existingOrg || existingOrg.removido) {
+      console.error('❌ Organização não encontrada ou removida para ID:', id);
       throw new ApiError({
         message: 'Organização não encontrada',
         statusCode: HttpStatus.NOT_FOUND,
@@ -614,27 +673,133 @@ class OrganizacaoService {
 
     // Remover campos de relacionamento e campos computados que o Prisma não aceita
     const dadosLimpos = { ...data };
-    delete (dadosLimpos as any).id;
-    delete (dadosLimpos as any).users; // Relacionamento com usuário validador
-    delete (dadosLimpos as any).enfase_organizacao_enfaseToenfase;
-    delete (dadosLimpos as any).estado_organizacao_estadoToestado;
-    delete (dadosLimpos as any).municipio_ibge;
-    delete (dadosLimpos as any).sim_nao_organizacao_participantes_menos_10Tosim_nao;
-    delete (dadosLimpos as any).resposta_organizacao_gc_comercial_15_respostaToresposta;
     
-    // Remover campos adicionais que não fazem parte do schema
-    delete (dadosLimpos as any).estado_nome;
-    delete (dadosLimpos as any).municipio_nome;
-    delete (dadosLimpos as any).tecnico_nome;
-    delete (dadosLimpos as any).tecnico_email;
+    // Lista de campos que devem ser removidos (relacionamentos, campos computados, etc.)
+    const camposParaRemover = [
+      // Campo ID não deve ser atualizado
+      'id',
+      
+      // Relacionamentos diretos (nomes dos relacionamentos no Prisma)
+      'users', // Relacionamento com usuário validador
+      'enfase_organizacao_enfaseToenfase',
+      'estado_organizacao_estadoToestado',
+      'municipio_ibge',
+      'sim_nao_organizacao_participantes_menos_10Tosim_nao',
+      
+      // Todos os relacionamentos de resposta (padrão: resposta_organizacao_*_Toresposta)
+      // Serão removidos pelo padrão abaixo
+      
+      // Campos computados/adicionais que não fazem parte do schema
+      'estado_nome',
+      'municipio_nome',
+      'tecnico_nome',
+      'tecnico_email',
+      
+      // Arrays de relacionamentos (tabelas relacionadas)
+      'organizacao_producao',
+      'organizacao_foto',
+      'organizacao_documento',
+      'organizacao_indicador',
+      'organizacao_participante',
+      'organizacao_abrangencia_pj',
+      'organizacao_abrangencia_socio',
+      'plano_gestao_evidencia',
+      'plano_gestao_acao',
+      
+      // Campos do plano de gestão (devem ser atualizados apenas pelos endpoints específicos)
+      'plano_gestao_rascunho',
+      'plano_gestao_rascunho_updated_by',
+      'plano_gestao_rascunho_updated_at',
+      'plano_gestao_rascunho_updated_by_name',
+      'plano_gestao_relatorio_sintetico',
+      'plano_gestao_relatorio_sintetico_updated_by',
+      'plano_gestao_relatorio_sintetico_updated_at',
+      'plano_gestao_relatorio_sintetico_updated_by_name',
+      
+      // Relacionamentos de usuários do plano de gestão
+      'users_organizacao_plano_gestao_rascunho_updated_byTousers',
+      'users_organizacao_plano_gestao_relatorio_sintetico_updated_byTousers',
+      
+      // Campos de metadados do ODK que não devem ser atualizados diretamente
+      'meta_instance_id',
+      'creator_uri_user',
+      '_uri',
+      '_creation_date',
+      '_last_update_date',
+      '_last_update_uri_user',
+      '_parent_auri',
+      '_ordinal_number',
+      '_top_level_auri',
+      
+      // Campos de validação (devem ser atualizados apenas pelo endpoint específico)
+      // Nota: validacao_status, validacao_usuario, validacao_data, validacao_obs
+      // podem ser atualizados, mas apenas por coordenadores via endpoint específico
+      // Por segurança, vamos permitir que sejam atualizados aqui também
+      // (o controller já verifica permissões)
+    ];
     
-    // Remover arrays de relacionamentos que não podem ser atualizados diretamente
-    delete (dadosLimpos as any).organizacao_producao;
-    delete (dadosLimpos as any).organizacao_foto;
-    delete (dadosLimpos as any).organizacao_documento;
-    delete (dadosLimpos as any).organizacao_indicador;
-    delete (dadosLimpos as any).organizacao_participante;
-    delete (dadosLimpos as any).organizacao_abrangencia_pj;
+    // Remover campos específicos da lista
+    camposParaRemover.forEach(campo => {
+      delete (dadosLimpos as any)[campo];
+    });
+    
+    // Remover todos os campos de relacionamento que seguem padrões conhecidos
+    // Padrão 1: resposta_organizacao_*_Toresposta
+    // Padrão 2: *_organizacao_*_To*
+    // Padrão 3: organizacao_* (arrays de relacionamento)
+    Object.keys(dadosLimpos).forEach(key => {
+      // Remover relacionamentos de resposta
+      if (key.startsWith('resposta_organizacao_') && key.endsWith('Toresposta')) {
+        delete (dadosLimpos as any)[key];
+        return;
+      }
+      
+      // Remover relacionamentos que seguem padrão *_To*
+      if (key.includes('_To') && (key.includes('organizacao_') || key.includes('_organizacao_'))) {
+        delete (dadosLimpos as any)[key];
+        return;
+      }
+      
+      // Remover arrays de relacionamento que começam com organizacao_
+      if (key.startsWith('organizacao_') && Array.isArray((dadosLimpos as any)[key])) {
+        delete (dadosLimpos as any)[key];
+        return;
+      }
+      
+      // Remover campos que são objetos (provavelmente relacionamentos)
+      if (typeof (dadosLimpos as any)[key] === 'object' && (dadosLimpos as any)[key] !== null && !Array.isArray((dadosLimpos as any)[key]) && !((dadosLimpos as any)[key] instanceof Date)) {
+        // Verificar se parece ser um relacionamento (tem campos como id, name, etc.)
+        const obj = (dadosLimpos as any)[key];
+        if (obj.id !== undefined || obj.name !== undefined || obj.email !== undefined) {
+          delete (dadosLimpos as any)[key];
+          return;
+        }
+      }
+    });
+    
+    // Remover campos undefined (Prisma não aceita undefined, apenas null)
+    Object.keys(dadosLimpos).forEach(key => {
+      if ((dadosLimpos as any)[key] === undefined) {
+        delete (dadosLimpos as any)[key];
+      }
+    });
+
+    // Validar e limitar campos de texto longos (VarChar com limite)
+    // descricao - VarChar(8192)
+    if (dadosLimpos.descricao && typeof dadosLimpos.descricao === 'string') {
+      if (dadosLimpos.descricao.length > 8192) {
+        console.warn(`⚠️ Descrição muito longa (${dadosLimpos.descricao.length} chars), truncando para 8192`);
+        dadosLimpos.descricao = dadosLimpos.descricao.substring(0, 8192);
+      }
+    }
+    
+    // obs - VarChar(8192)
+    if ((dadosLimpos as any).obs && typeof (dadosLimpos as any).obs === 'string') {
+      if ((dadosLimpos as any).obs.length > 8192) {
+        console.warn(`⚠️ Observação muito longa (${(dadosLimpos as any).obs.length} chars), truncando para 8192`);
+        (dadosLimpos as any).obs = (dadosLimpos as any).obs.substring(0, 8192);
+      }
+    }
 
     // Limpar formatação de campos numéricos (remover caracteres especiais, manter apenas números)
     const dadosAny = dadosLimpos as any;
@@ -693,7 +858,7 @@ class OrganizacaoService {
               message: `${campo.replace('_', ' ')} inválida. Use o formato AAAA-MM-DD`,
               statusCode: HttpStatus.BAD_REQUEST,
               code: ErrorCode.VALIDATION_ERROR,
-              details: { campo, valor: valorCampo }
+              details: [{ campo, valor: valorCampo }]
             });
           }
         } catch (error: any) {
@@ -703,7 +868,7 @@ class OrganizacaoService {
             message: `Erro ao processar ${campo.replace('_', ' ')}`,
             statusCode: HttpStatus.BAD_REQUEST,
             code: ErrorCode.VALIDATION_ERROR,
-            details: { campo, erro: error.message }
+            details: [{ campo, erro: error.message }]
           });
         }
       }
@@ -718,9 +883,13 @@ class OrganizacaoService {
         data: dadosLimpos
       });
 
+      console.log('✅ Organização atualizada com sucesso:', id);
       return organizacao;
     } catch (error: any) {
       console.error('❌ Erro ao atualizar organização no Prisma:', error);
+      console.error('❌ Tipo do erro:', error.constructor.name);
+      console.error('❌ Código do erro:', error.code);
+      console.error('❌ Meta:', error.meta);
       console.error('❌ Dados que causaram o erro:', JSON.stringify(dadosLimpos, null, 2));
       
       // Tratar erros específicos do Prisma

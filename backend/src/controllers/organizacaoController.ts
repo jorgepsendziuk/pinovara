@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import organizacaoService from '../services/organizacaoService';
-import { ApiError } from '../services/authService';
+import { ApiError } from '../utils/ApiError';
 import { OrganizacaoFilters } from '../types/organizacao';
 import { HttpStatus } from '../types/api';
 import { AuthRequest } from '../middleware/auth';
@@ -204,7 +204,24 @@ class OrganizacaoController {
 
       // Verificar se técnico tem acesso a esta organização antes de atualizar (filtro híbrido)
       if (userPermissions?.isTechnician && !userPermissions?.canAccessAll) {
-        const organizacaoExistente = await organizacaoService.getById(id);
+        let organizacaoExistente;
+        try {
+          organizacaoExistente = await organizacaoService.getById(id);
+        } catch (error: any) {
+          if (error instanceof ApiError && error.statusCode === HttpStatus.NOT_FOUND) {
+            res.status(HttpStatus.NOT_FOUND).json({
+              success: false,
+              error: {
+                message: 'Organização não encontrada',
+                statusCode: HttpStatus.NOT_FOUND
+              },
+              timestamp: new Date().toISOString()
+            });
+            return;
+          }
+          throw error; // Re-lançar se não for erro de não encontrado
+        }
+        
         if (!organizacaoExistente) {
           res.status(HttpStatus.NOT_FOUND).json({
             success: false,
@@ -458,6 +475,9 @@ class OrganizacaoController {
    */
   private handleError(error: any, res: Response): void {
     console.error('Organizacao Controller Error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
 
     if (error instanceof ApiError) {
       res.status(error.statusCode).json({
@@ -473,12 +493,20 @@ class OrganizacaoController {
       return;
     }
 
-    // Erro genérico
+    // Erro genérico - incluir mais informações em desenvolvimento
+    const isDevelopment = process.env.NODE_ENV !== 'production';
     res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: {
-        message: 'Erro interno do servidor',
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR
+        message: isDevelopment ? (error.message || 'Erro interno do servidor') : 'Erro interno do servidor',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        ...(isDevelopment && {
+          details: {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          }
+        })
       },
       timestamp: new Date().toISOString()
     });
