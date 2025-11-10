@@ -138,6 +138,7 @@ class PlanoGestaoController {
       const idOrganizacao = parseInt(req.params.id);
       const idAcaoModelo = parseInt(req.params.idAcaoModelo);
       const dados = req.body;
+      console.log('📥 [PlanoGestao] Dados recebidos no upsert de ação:', JSON.stringify(dados));
 
       if (isNaN(idOrganizacao)) {
         res.status(400).json({ 
@@ -155,6 +156,17 @@ class PlanoGestaoController {
 
       // Validar e converter datas se fornecidas
       const dadosProcessados: any = {};
+
+      if ('acao' in dados) {
+        if (dados.acao === null || dados.acao === undefined) {
+          dadosProcessados.acao = null;
+        } else if (typeof dados.acao === 'string') {
+          const valorAcao = dados.acao.trim();
+          dadosProcessados.acao = valorAcao.length === 0 ? null : valorAcao;
+        } else {
+          dadosProcessados.acao = String(dados.acao);
+        }
+      }
 
       if ('responsavel' in dados) {
         dadosProcessados.responsavel = dados.responsavel;
@@ -179,6 +191,8 @@ class PlanoGestaoController {
       if ('recursos' in dados) {
         dadosProcessados.recursos = dados.recursos;
       }
+
+      console.log('🛠️ [PlanoGestao] Dados processados para upsert:', JSON.stringify(dadosProcessados));
 
       await PlanoGestaoService.upsertAcao(
         idOrganizacao, 
