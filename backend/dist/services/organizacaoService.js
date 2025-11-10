@@ -3,14 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const api_1 = require("../types/api");
 const odkHelper_1 = require("../utils/odkHelper");
-class ApiError extends Error {
-    constructor({ message, statusCode, code, details }) {
-        super(message);
-        this.statusCode = statusCode;
-        this.code = code;
-        this.details = details;
-    }
-}
+const ApiError_1 = require("../utils/ApiError");
 const prisma = new client_1.PrismaClient();
 class OrganizacaoService {
     async list(filters = {}) {
@@ -146,20 +139,72 @@ class OrganizacaoService {
     }
     async getById(organizacaoId) {
         try {
-            const organizacao = await prisma.organizacao.findUnique({
-                where: { id: organizacaoId },
-                include: {
-                    users: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true
+            console.log('🔍 Buscando organização ID:', organizacaoId);
+            let organizacao = await prisma.organizacao.findUnique({
+                where: { id: organizacaoId }
+            });
+            console.log('📦 Organização encontrada (sem include):', organizacao ? 'SIM' : 'NÃO');
+            if (organizacao) {
+                console.log('📦 Organização removida?', organizacao.removido);
+                console.log('📦 Organização ID:', organizacao.id);
+                console.log('📦 Organização nome:', organizacao.nome);
+            }
+            if (!organizacao) {
+                console.error('❌ Organização não encontrada para ID:', organizacaoId);
+                throw new ApiError_1.ApiError({
+                    message: 'Organização não encontrada',
+                    statusCode: api_1.HttpStatus.NOT_FOUND,
+                    code: api_1.ErrorCode.RESOURCE_NOT_FOUND
+                });
+            }
+            if (organizacao.removido) {
+                console.warn('⚠️ Organização está marcada como removida, mas permitindo acesso');
+            }
+            try {
+                organizacao = await prisma.organizacao.findUnique({
+                    where: { id: organizacaoId },
+                    include: {
+                        users: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true
+                            }
                         }
                     }
+                });
+                console.log('📦 Organização encontrada (com include):', organizacao ? 'SIM' : 'NÃO');
+            }
+            catch (includeError) {
+                console.error('❌ Erro ao buscar com include:', includeError);
+                console.warn('⚠️ Tentando buscar sem include do relacionamento users');
+                organizacao = await prisma.organizacao.findUnique({
+                    where: { id: organizacaoId }
+                });
+                if (organizacao && organizacao.validacao_usuario) {
+                    try {
+                        const user = await prisma.users.findUnique({
+                            where: { id: organizacao.validacao_usuario },
+                            select: { id: true, name: true, email: true }
+                        });
+                        organizacao.users = user;
+                    }
+                    catch (userError) {
+                        console.warn('⚠️ Erro ao buscar usuário validador:', userError);
+                        organizacao.users = null;
+                    }
                 }
-            });
+                else {
+                    organizacao.users = null;
+                }
+            }
             if (!organizacao) {
-                throw new Error('Organização não encontrada');
+                console.error('❌ Organização não encontrada para ID:', organizacaoId);
+                throw new ApiError_1.ApiError({
+                    message: 'Organização não encontrada',
+                    statusCode: api_1.HttpStatus.NOT_FOUND,
+                    code: api_1.ErrorCode.RESOURCE_NOT_FOUND
+                });
             }
             let estadoNome = null;
             let municipioNome = null;
@@ -341,7 +386,7 @@ class OrganizacaoService {
     async create(data) {
         const { nome, cnpj, telefone, email, estado, municipio, creator_uri_user, id_tecnico: idTecnicoRecebido } = data;
         if (!nome || nome.trim().length === 0) {
-            throw new ApiError({
+            throw new ApiError_1.ApiError({
                 message: 'Nome da organização é obrigatório',
                 statusCode: api_1.HttpStatus.BAD_REQUEST,
                 code: api_1.ErrorCode.MISSING_REQUIRED_FIELD
@@ -378,23 +423,23 @@ class OrganizacaoService {
                     : data.data_fundacao;
                 if (isNaN(dadosCriacao.data_fundacao.getTime())) {
                     console.error('❌ Data de fundação inválida:', data.data_fundacao);
-                    throw new ApiError({
+                    throw new ApiError_1.ApiError({
                         message: 'Data de fundação inválida. Use o formato AAAA-MM-DD',
                         statusCode: api_1.HttpStatus.BAD_REQUEST,
                         code: api_1.ErrorCode.VALIDATION_ERROR,
-                        details: { campo: 'data_fundacao', valor: data.data_fundacao }
+                        details: [{ campo: 'data_fundacao', valor: data.data_fundacao }]
                     });
                 }
             }
             catch (error) {
-                if (error instanceof ApiError)
+                if (error instanceof ApiError_1.ApiError)
                     throw error;
                 console.error('❌ Erro ao processar data_fundacao:', error);
-                throw new ApiError({
+                throw new ApiError_1.ApiError({
                     message: 'Erro ao processar data de fundação',
                     statusCode: api_1.HttpStatus.BAD_REQUEST,
                     code: api_1.ErrorCode.VALIDATION_ERROR,
-                    details: { campo: 'data_fundacao', erro: error.message }
+                    details: [{ campo: 'data_fundacao', erro: error.message }]
                 });
             }
         }
@@ -405,23 +450,23 @@ class OrganizacaoService {
                     : data.data_visita;
                 if (isNaN(dadosCriacao.data_visita.getTime())) {
                     console.error('❌ Data de visita inválida:', data.data_visita);
-                    throw new ApiError({
+                    throw new ApiError_1.ApiError({
                         message: 'Data de visita inválida. Use o formato AAAA-MM-DD',
                         statusCode: api_1.HttpStatus.BAD_REQUEST,
                         code: api_1.ErrorCode.VALIDATION_ERROR,
-                        details: { campo: 'data_visita', valor: data.data_visita }
+                        details: [{ campo: 'data_visita', valor: data.data_visita }]
                     });
                 }
             }
             catch (error) {
-                if (error instanceof ApiError)
+                if (error instanceof ApiError_1.ApiError)
                     throw error;
                 console.error('❌ Erro ao processar data_visita:', error);
-                throw new ApiError({
+                throw new ApiError_1.ApiError({
                     message: 'Erro ao processar data de visita',
                     statusCode: api_1.HttpStatus.BAD_REQUEST,
                     code: api_1.ErrorCode.VALIDATION_ERROR,
-                    details: { campo: 'data_visita', erro: error.message }
+                    details: [{ campo: 'data_visita', erro: error.message }]
                 });
             }
         }
@@ -435,31 +480,31 @@ class OrganizacaoService {
             console.error('Erro ao criar organização no Prisma:', error);
             if (error.code === 'P2002') {
                 const target = error.meta?.target || ['campo desconhecido'];
-                throw new ApiError({
+                throw new ApiError_1.ApiError({
                     message: `Erro: Já existe uma organização com este(s) dado(s): ${Array.isArray(target) ? target.join(', ') : target}`,
                     statusCode: api_1.HttpStatus.BAD_REQUEST,
                     code: 'P2002',
-                    details: { campos: target }
+                    details: [{ campos: target }]
                 });
             }
             else if (error.code === 'P2003') {
                 const field = error.meta?.field_name || 'campo de referência';
-                throw new ApiError({
+                throw new ApiError_1.ApiError({
                     message: `Erro: Referência inválida no campo "${field}". Verifique se o valor selecionado existe.`,
                     statusCode: api_1.HttpStatus.BAD_REQUEST,
                     code: 'P2003',
-                    details: { campo: field }
+                    details: [{ campo: field }]
                 });
             }
             else if (error.code) {
-                throw new ApiError({
+                throw new ApiError_1.ApiError({
                     message: `Erro ao criar organização: ${error.message}`,
                     statusCode: api_1.HttpStatus.BAD_REQUEST,
                     code: error.code,
                     details: error.meta
                 });
             }
-            throw new ApiError({
+            throw new ApiError_1.ApiError({
                 message: 'Erro ao criar organização',
                 statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
                 code: api_1.ErrorCode.DATABASE_ERROR,
@@ -468,35 +513,142 @@ class OrganizacaoService {
         }
     }
     async update(id, data) {
+        console.log('🔄 Iniciando update da organização ID:', id);
         const existingOrg = await prisma.organizacao.findUnique({
             where: { id }
         });
+        console.log('📋 Organização existente encontrada:', existingOrg ? 'SIM' : 'NÃO');
+        if (existingOrg) {
+            console.log('📋 Organização removida?', existingOrg.removido);
+        }
         if (!existingOrg || existingOrg.removido) {
-            throw new ApiError({
+            console.error('❌ Organização não encontrada ou removida para ID:', id);
+            throw new ApiError_1.ApiError({
                 message: 'Organização não encontrada',
                 statusCode: api_1.HttpStatus.NOT_FOUND,
                 code: api_1.ErrorCode.RESOURCE_NOT_FOUND
             });
         }
         const dadosLimpos = { ...data };
-        delete dadosLimpos.id;
-        delete dadosLimpos.users;
-        delete dadosLimpos.enfase_organizacao_enfaseToenfase;
-        delete dadosLimpos.estado_organizacao_estadoToestado;
-        delete dadosLimpos.municipio_ibge;
-        delete dadosLimpos.sim_nao_organizacao_participantes_menos_10Tosim_nao;
-        delete dadosLimpos.resposta_organizacao_gc_comercial_15_respostaToresposta;
-        delete dadosLimpos.estado_nome;
-        delete dadosLimpos.municipio_nome;
-        delete dadosLimpos.tecnico_nome;
-        delete dadosLimpos.tecnico_email;
-        delete dadosLimpos.organizacao_producao;
-        delete dadosLimpos.organizacao_foto;
-        delete dadosLimpos.organizacao_documento;
-        delete dadosLimpos.organizacao_indicador;
-        delete dadosLimpos.organizacao_participante;
-        delete dadosLimpos.organizacao_abrangencia_pj;
+        console.log('📥 Dados recebidos do frontend:', Object.keys(data).length, 'campos');
+        const camposRecebidos = Object.keys(data);
+        const camposParaRemover = [
+            'id',
+            'users',
+            'enfase_organizacao_enfaseToenfase',
+            'estado_organizacao_estadoToestado',
+            'municipio_ibge',
+            'sim_nao_organizacao_participantes_menos_10Tosim_nao',
+            'estado_nome',
+            'municipio_nome',
+            'tecnico_nome',
+            'tecnico_email',
+            'organizacao_producao',
+            'organizacao_foto',
+            'organizacao_documento',
+            'organizacao_indicador',
+            'organizacao_participante',
+            'organizacao_abrangencia_pj',
+            'organizacao_abrangencia_socio',
+            'plano_gestao_evidencia',
+            'plano_gestao_acao',
+            'plano_gestao_rascunho',
+            'plano_gestao_rascunho_updated_by',
+            'plano_gestao_rascunho_updated_at',
+            'plano_gestao_rascunho_updated_by_name',
+            'plano_gestao_relatorio_sintetico',
+            'plano_gestao_relatorio_sintetico_updated_by',
+            'plano_gestao_relatorio_sintetico_updated_at',
+            'plano_gestao_relatorio_sintetico_updated_by_name',
+            'users_organizacao_plano_gestao_rascunho_updated_byTousers',
+            'users_organizacao_plano_gestao_relatorio_sintetico_updated_byTousers',
+            'meta_instance_id',
+            'creator_uri_user',
+            '_uri',
+            '_creation_date',
+            '_last_update_date',
+            '_last_update_uri_user',
+            '_parent_auri',
+            '_ordinal_number',
+            '_top_level_auri',
+        ];
+        const camposRemovidosExplicitos = [];
+        camposParaRemover.forEach(campo => {
+            if (dadosLimpos[campo] !== undefined) {
+                camposRemovidosExplicitos.push(campo);
+                delete dadosLimpos[campo];
+            }
+        });
+        const camposRemovidosPorPadrao = [];
+        Object.keys(dadosLimpos).forEach(key => {
+            let removido = false;
+            let motivo = '';
+            if (key.startsWith('resposta_organizacao_') && key.endsWith('Toresposta')) {
+                removido = true;
+                motivo = 'Relacionamento de resposta (padrão resposta_organizacao_*_Toresposta)';
+            }
+            if (!removido && key.includes('_To') && (key.includes('organizacao_') || key.includes('_organizacao_'))) {
+                removido = true;
+                motivo = 'Relacionamento (padrão *_To*)';
+            }
+            if (!removido && key.startsWith('organizacao_') && Array.isArray(dadosLimpos[key])) {
+                removido = true;
+                motivo = 'Array de relacionamento (organizacao_*)';
+            }
+            if (!removido && typeof dadosLimpos[key] === 'object' && dadosLimpos[key] !== null && !Array.isArray(dadosLimpos[key]) && !(dadosLimpos[key] instanceof Date)) {
+                const obj = dadosLimpos[key];
+                if (obj.id !== undefined || obj.name !== undefined || obj.email !== undefined) {
+                    removido = true;
+                    motivo = 'Objeto relacionamento (tem id/name/email)';
+                }
+            }
+            if (removido) {
+                camposRemovidosPorPadrao.push(`${key} (${motivo})`);
+                delete dadosLimpos[key];
+            }
+        });
+        const camposUndefined = [];
+        Object.keys(dadosLimpos).forEach(key => {
+            if (dadosLimpos[key] === undefined) {
+                camposUndefined.push(key);
+                delete dadosLimpos[key];
+            }
+        });
+        console.log('🧹 Limpeza de campos realizada:');
+        console.log('   📊 Total de campos recebidos:', camposRecebidos.length);
+        console.log('   🗑️  Campos removidos explicitamente:', camposRemovidosExplicitos.length);
+        if (camposRemovidosExplicitos.length > 0) {
+            console.log('      -', camposRemovidosExplicitos.join(', '));
+        }
+        console.log('   🗑️  Campos removidos por padrão:', camposRemovidosPorPadrao.length);
+        if (camposRemovidosPorPadrao.length > 0) {
+            camposRemovidosPorPadrao.slice(0, 10).forEach(campo => console.log('      -', campo));
+            if (camposRemovidosPorPadrao.length > 10) {
+                console.log(`      ... e mais ${camposRemovidosPorPadrao.length - 10} campos`);
+            }
+        }
+        console.log('   🗑️  Campos undefined removidos:', camposUndefined.length);
+        if (camposUndefined.length > 0) {
+            console.log('      -', camposUndefined.join(', '));
+        }
+        console.log('   ✅ Campos que serão salvos:', Object.keys(dadosLimpos).length);
+        console.log('      -', Object.keys(dadosLimpos).slice(0, 20).join(', '));
+        if (Object.keys(dadosLimpos).length > 20) {
+            console.log(`      ... e mais ${Object.keys(dadosLimpos).length - 20} campos`);
+        }
         const dadosAny = dadosLimpos;
+        if (dadosAny.descricao && typeof dadosAny.descricao === 'string') {
+            if (dadosAny.descricao.length > 8192) {
+                console.warn(`⚠️ Descrição muito longa (${dadosAny.descricao.length} chars), truncando para 8192`);
+                dadosAny.descricao = dadosAny.descricao.substring(0, 8192);
+            }
+        }
+        if (dadosAny.obs && typeof dadosAny.obs === 'string') {
+            if (dadosAny.obs.length > 8192) {
+                console.warn(`⚠️ Observação muito longa (${dadosAny.obs.length} chars), truncando para 8192`);
+                dadosAny.obs = dadosAny.obs.substring(0, 8192);
+            }
+        }
         if (dadosAny.organizacao_end_cep) {
             dadosAny.organizacao_end_cep = dadosAny.organizacao_end_cep.replace(/\D/g, '');
         }
@@ -531,23 +683,23 @@ class OrganizacaoService {
                     const dataObj = dadosLimpos[campo];
                     if (isNaN(dataObj.getTime())) {
                         console.error(`❌ ${campo} inválida:`, valorCampo);
-                        throw new ApiError({
+                        throw new ApiError_1.ApiError({
                             message: `${campo.replace('_', ' ')} inválida. Use o formato AAAA-MM-DD`,
                             statusCode: api_1.HttpStatus.BAD_REQUEST,
                             code: api_1.ErrorCode.VALIDATION_ERROR,
-                            details: { campo, valor: valorCampo }
+                            details: [{ campo, valor: valorCampo }]
                         });
                     }
                 }
                 catch (error) {
-                    if (error instanceof ApiError)
+                    if (error instanceof ApiError_1.ApiError)
                         throw error;
                     console.error(`❌ Erro ao processar ${campo}:`, error);
-                    throw new ApiError({
+                    throw new ApiError_1.ApiError({
                         message: `Erro ao processar ${campo.replace('_', ' ')}`,
                         statusCode: api_1.HttpStatus.BAD_REQUEST,
                         code: api_1.ErrorCode.VALIDATION_ERROR,
-                        details: { campo, erro: error.message }
+                        details: [{ campo, erro: error.message }]
                     });
                 }
             }
@@ -558,45 +710,49 @@ class OrganizacaoService {
                 where: { id },
                 data: dadosLimpos
             });
+            console.log('✅ Organização atualizada com sucesso:', id);
             return organizacao;
         }
         catch (error) {
             console.error('❌ Erro ao atualizar organização no Prisma:', error);
+            console.error('❌ Tipo do erro:', error.constructor.name);
+            console.error('❌ Código do erro:', error.code);
+            console.error('❌ Meta:', error.meta);
             console.error('❌ Dados que causaram o erro:', JSON.stringify(dadosLimpos, null, 2));
             if (error.code === 'P2002') {
                 const target = error.meta?.target || ['campo desconhecido'];
-                throw new ApiError({
+                throw new ApiError_1.ApiError({
                     message: `Erro: Já existe uma organização com este(s) dado(s): ${Array.isArray(target) ? target.join(', ') : target}`,
                     statusCode: api_1.HttpStatus.BAD_REQUEST,
                     code: 'P2002',
-                    details: { campos: target }
+                    details: [{ campos: target }]
                 });
             }
             else if (error.code === 'P2003') {
                 const field = error.meta?.field_name || 'campo de referência';
-                throw new ApiError({
+                throw new ApiError_1.ApiError({
                     message: `Erro: Referência inválida no campo "${field}". Verifique se o valor selecionado existe.`,
                     statusCode: api_1.HttpStatus.BAD_REQUEST,
                     code: 'P2003',
-                    details: { campo: field }
+                    details: [{ campo: field }]
                 });
             }
             else if (error.code === 'P2025') {
-                throw new ApiError({
+                throw new ApiError_1.ApiError({
                     message: 'Organização não encontrada',
                     statusCode: api_1.HttpStatus.NOT_FOUND,
                     code: 'P2025'
                 });
             }
             else if (error.code) {
-                throw new ApiError({
+                throw new ApiError_1.ApiError({
                     message: `Erro ao atualizar organização: ${error.message}`,
                     statusCode: api_1.HttpStatus.BAD_REQUEST,
                     code: error.code,
                     details: error.meta
                 });
             }
-            throw new ApiError({
+            throw new ApiError_1.ApiError({
                 message: 'Erro ao atualizar organização',
                 statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
                 code: api_1.ErrorCode.DATABASE_ERROR,
@@ -609,7 +765,7 @@ class OrganizacaoService {
             where: { id }
         });
         if (!existingOrg || existingOrg.removido) {
-            throw new ApiError({
+            throw new ApiError_1.ApiError({
                 message: 'Organização não encontrada',
                 statusCode: api_1.HttpStatus.NOT_FOUND,
                 code: api_1.ErrorCode.RESOURCE_NOT_FOUND
@@ -631,7 +787,7 @@ class OrganizacaoService {
             where: { id }
         });
         if (!existingOrg || existingOrg.removido) {
-            throw new ApiError({
+            throw new ApiError_1.ApiError({
                 message: 'Organização não encontrada',
                 statusCode: api_1.HttpStatus.NOT_FOUND,
                 code: api_1.ErrorCode.RESOURCE_NOT_FOUND
@@ -830,7 +986,7 @@ class OrganizacaoService {
         }
         catch (error) {
             console.error('Erro ao buscar municípios:', error);
-            throw new ApiError({
+            throw new ApiError_1.ApiError({
                 message: 'Erro ao buscar municípios',
                 statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
                 code: api_1.ErrorCode.DATABASE_ERROR
@@ -850,7 +1006,7 @@ class OrganizacaoService {
         }
         catch (error) {
             console.error('Erro ao buscar estados:', error);
-            throw new ApiError({
+            throw new ApiError_1.ApiError({
                 message: 'Erro ao buscar estados',
                 statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
                 code: api_1.ErrorCode.DATABASE_ERROR

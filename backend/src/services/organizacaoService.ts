@@ -554,7 +554,7 @@ class OrganizacaoService {
             message: 'Data de fundação inválida. Use o formato AAAA-MM-DD',
             statusCode: HttpStatus.BAD_REQUEST,
             code: ErrorCode.VALIDATION_ERROR,
-            details: { campo: 'data_fundacao', valor: data.data_fundacao }
+            details: [{ campo: 'data_fundacao', valor: data.data_fundacao }]
           });
         }
       } catch (error: any) {
@@ -564,7 +564,7 @@ class OrganizacaoService {
           message: 'Erro ao processar data de fundação',
           statusCode: HttpStatus.BAD_REQUEST,
           code: ErrorCode.VALIDATION_ERROR,
-          details: { campo: 'data_fundacao', erro: error.message }
+          details: [{ campo: 'data_fundacao', erro: error.message }]
         });
       }
     }
@@ -583,7 +583,7 @@ class OrganizacaoService {
             message: 'Data de visita inválida. Use o formato AAAA-MM-DD',
             statusCode: HttpStatus.BAD_REQUEST,
             code: ErrorCode.VALIDATION_ERROR,
-            details: { campo: 'data_visita', valor: data.data_visita }
+            details: [{ campo: 'data_visita', valor: data.data_visita }]
           });
         }
       } catch (error: any) {
@@ -593,7 +593,7 @@ class OrganizacaoService {
           message: 'Erro ao processar data de visita',
           statusCode: HttpStatus.BAD_REQUEST,
           code: ErrorCode.VALIDATION_ERROR,
-          details: { campo: 'data_visita', erro: error.message }
+          details: [{ campo: 'data_visita', erro: error.message }]
         });
       }
     }
@@ -615,7 +615,7 @@ class OrganizacaoService {
           message: `Erro: Já existe uma organização com este(s) dado(s): ${Array.isArray(target) ? target.join(', ') : target}`,
           statusCode: HttpStatus.BAD_REQUEST,
           code: 'P2002',
-          details: { campos: target }
+          details: [{ campos: target }]
         });
       } else if (error.code === 'P2003') {
         // Foreign key constraint violation
@@ -624,7 +624,7 @@ class OrganizacaoService {
           message: `Erro: Referência inválida no campo "${field}". Verifique se o valor selecionado existe.`,
           statusCode: HttpStatus.BAD_REQUEST,
           code: 'P2003',
-          details: { campo: field }
+          details: [{ campo: field }]
         });
       } else if (error.code) {
         // Outro erro do Prisma
@@ -827,26 +827,26 @@ class OrganizacaoService {
       console.log(`      ... e mais ${Object.keys(dadosLimpos).length - 20} campos`);
     }
 
+    const dadosAny = dadosLimpos as Record<string, any>;
+
     // Validar e limitar campos de texto longos (VarChar com limite)
     // descricao - VarChar(8192)
-    if (dadosLimpos.descricao && typeof dadosLimpos.descricao === 'string') {
-      if (dadosLimpos.descricao.length > 8192) {
-        console.warn(`⚠️ Descrição muito longa (${dadosLimpos.descricao.length} chars), truncando para 8192`);
-        dadosLimpos.descricao = dadosLimpos.descricao.substring(0, 8192);
+    if (dadosAny.descricao && typeof dadosAny.descricao === 'string') {
+      if (dadosAny.descricao.length > 8192) {
+        console.warn(`⚠️ Descrição muito longa (${dadosAny.descricao.length} chars), truncando para 8192`);
+        dadosAny.descricao = dadosAny.descricao.substring(0, 8192);
       }
     }
     
     // obs - VarChar(8192)
-    if ((dadosLimpos as any).obs && typeof (dadosLimpos as any).obs === 'string') {
-      if ((dadosLimpos as any).obs.length > 8192) {
-        console.warn(`⚠️ Observação muito longa (${(dadosLimpos as any).obs.length} chars), truncando para 8192`);
-        (dadosLimpos as any).obs = (dadosLimpos as any).obs.substring(0, 8192);
+    if (dadosAny.obs && typeof dadosAny.obs === 'string') {
+      if (dadosAny.obs.length > 8192) {
+        console.warn(`⚠️ Observação muito longa (${dadosAny.obs.length} chars), truncando para 8192`);
+        dadosAny.obs = dadosAny.obs.substring(0, 8192);
       }
     }
 
     // Limpar formatação de campos numéricos (remover caracteres especiais, manter apenas números)
-    const dadosAny = dadosLimpos as any;
-    
     // CEPs - VarChar(8) no banco
     if (dadosAny.organizacao_end_cep) {
       dadosAny.organizacao_end_cep = dadosAny.organizacao_end_cep.replace(/\D/g, '');
@@ -943,7 +943,7 @@ class OrganizacaoService {
           message: `Erro: Já existe uma organização com este(s) dado(s): ${Array.isArray(target) ? target.join(', ') : target}`,
           statusCode: HttpStatus.BAD_REQUEST,
           code: 'P2002',
-          details: { campos: target }
+          details: [{ campos: target }]
         });
       } else if (error.code === 'P2003') {
         // Foreign key constraint violation
@@ -952,7 +952,7 @@ class OrganizacaoService {
           message: `Erro: Referência inválida no campo "${field}". Verifique se o valor selecionado existe.`,
           statusCode: HttpStatus.BAD_REQUEST,
           code: 'P2003',
-          details: { campo: field }
+          details: [{ campo: field }]
         });
       } else if (error.code === 'P2025') {
         // Record not found

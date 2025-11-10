@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.organizacaoController = void 0;
 const organizacaoService_1 = __importDefault(require("../services/organizacaoService"));
-const authService_1 = require("../services/authService");
+const ApiError_1 = require("../utils/ApiError");
 const api_1 = require("../types/api");
 const odkHelper_1 = require("../utils/odkHelper");
 const auditService_1 = __importDefault(require("../services/auditService"));
@@ -163,7 +163,24 @@ class OrganizacaoController {
                 return;
             }
             if (userPermissions?.isTechnician && !userPermissions?.canAccessAll) {
-                const organizacaoExistente = await organizacaoService_1.default.getById(id);
+                let organizacaoExistente;
+                try {
+                    organizacaoExistente = await organizacaoService_1.default.getById(id);
+                }
+                catch (error) {
+                    if (error instanceof ApiError_1.ApiError && error.statusCode === api_1.HttpStatus.NOT_FOUND) {
+                        res.status(api_1.HttpStatus.NOT_FOUND).json({
+                            success: false,
+                            error: {
+                                message: 'Organização não encontrada',
+                                statusCode: api_1.HttpStatus.NOT_FOUND
+                            },
+                            timestamp: new Date().toISOString()
+                        });
+                        return;
+                    }
+                    throw error;
+                }
                 if (!organizacaoExistente) {
                     res.status(api_1.HttpStatus.NOT_FOUND).json({
                         success: false,
@@ -363,7 +380,10 @@ class OrganizacaoController {
     }
     handleError(error, res) {
         console.error('Organizacao Controller Error:', error);
-        if (error instanceof authService_1.ApiError) {
+        console.error('Error stack:', error.stack);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        if (error instanceof ApiError_1.ApiError) {
             res.status(error.statusCode).json({
                 success: false,
                 error: {
@@ -376,11 +396,19 @@ class OrganizacaoController {
             });
             return;
         }
+        const isDevelopment = process.env.NODE_ENV !== 'production';
         res.status(api_1.HttpStatus.INTERNAL_SERVER_ERROR).json({
             success: false,
             error: {
-                message: 'Erro interno do servidor',
-                statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR
+                message: isDevelopment ? (error.message || 'Erro interno do servidor') : 'Erro interno do servidor',
+                statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                ...(isDevelopment && {
+                    details: {
+                        name: error.name,
+                        message: error.message,
+                        stack: error.stack
+                    }
+                })
             },
             timestamp: new Date().toISOString()
         });
