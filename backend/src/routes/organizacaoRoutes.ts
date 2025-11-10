@@ -64,6 +64,10 @@ router.delete('/:id/participantes/:participanteId', participantesController.dele
 router.get('/:id/plano-gestao', PlanoGestaoController.getPlanoGestao.bind(PlanoGestaoController));
 router.put('/:id/plano-gestao/rascunho', PlanoGestaoController.updateRascunho.bind(PlanoGestaoController));
 router.put('/:id/plano-gestao/relatorio-sintetico', PlanoGestaoController.updateRelatorioSintetico.bind(PlanoGestaoController));
+router.get('/:id/plano-gestao/pdf', PlanoGestaoController.gerarPdf.bind(PlanoGestaoController));
+router.post('/:id/plano-gestao/acoes', PlanoGestaoController.createAcaoPersonalizada.bind(PlanoGestaoController));
+router.put('/:id/plano-gestao/acoes/personalizadas/:acaoId', PlanoGestaoController.updateAcaoPersonalizada.bind(PlanoGestaoController));
+router.delete('/:id/plano-gestao/acoes/personalizadas/:acaoId', PlanoGestaoController.deleteAcaoPersonalizada.bind(PlanoGestaoController));
 router.put('/:id/plano-gestao/acoes/:idAcaoModelo', PlanoGestaoController.upsertAcao.bind(PlanoGestaoController));
 router.delete('/:id/plano-gestao/acoes/:idAcaoModelo', PlanoGestaoController.deleteAcao.bind(PlanoGestaoController));
 router.post('/:id/plano-gestao/evidencias', uploadEvidencia.single('arquivo'), PlanoGestaoController.uploadEvidencia.bind(PlanoGestaoController));

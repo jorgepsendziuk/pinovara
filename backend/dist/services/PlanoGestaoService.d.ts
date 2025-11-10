@@ -18,6 +18,10 @@ export interface AcaoEditavelData {
     data_termino: Date | null;
     como_sera_feito: string | null;
     recursos: string | null;
+    adicionada?: boolean;
+    suprimida?: boolean;
+    tipo_plano?: string | null;
+    grupo_plano?: string | null;
 }
 export interface AcaoCompleta extends AcaoModeloData {
     id_acao_editavel?: number;
@@ -29,6 +33,10 @@ export interface AcaoCompleta extends AcaoModeloData {
     recursos: string | null;
     created_at: Date | null;
     updated_at: Date | null;
+    adicionada: boolean;
+    suprimida: boolean;
+    tipo_plano?: string | null;
+    grupo_plano?: string | null;
 }
 export interface GrupoAcoes {
     nome: string | null;
@@ -73,8 +81,29 @@ declare class PlanoGestaoService {
         data_termino?: Date | null;
         como_sera_feito?: string | null;
         recursos?: string | null;
+        suprimida?: boolean;
     }): Promise<void>;
     deleteAcao(idOrganizacao: number, idAcaoModelo: number): Promise<void>;
+    createAcaoPersonalizada(idOrganizacao: number, dados: {
+        tipo: string;
+        grupo: string | null;
+        acao?: string | null;
+        responsavel?: string | null;
+        data_inicio?: Date | null;
+        data_termino?: Date | null;
+        como_sera_feito?: string | null;
+        recursos?: string | null;
+    }): Promise<number>;
+    updateAcaoPersonalizada(idOrganizacao: number, idAcao: number, dados: {
+        acao?: string | null;
+        responsavel?: string | null;
+        data_inicio?: Date | null;
+        data_termino?: Date | null;
+        como_sera_feito?: string | null;
+        recursos?: string | null;
+        suprimida?: boolean;
+    }): Promise<void>;
+    deleteAcaoPersonalizada(idOrganizacao: number, idAcao: number): Promise<void>;
     updateRelatorioSintetico(idOrganizacao: number, relatorio: string | null, userId: number): Promise<void>;
     uploadEvidencia(idOrganizacao: number, tipo: 'foto' | 'lista_presenca', nomeArquivo: string, caminhoArquivo: string, descricao: string | null, userId: number): Promise<Evidencia>;
     listEvidencias(idOrganizacao: number): Promise<Evidencia[]>;
