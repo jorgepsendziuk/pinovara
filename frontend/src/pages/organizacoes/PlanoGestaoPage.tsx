@@ -55,17 +55,41 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
 
   // Recolhe o menu lateral automaticamente em telas menores
   useEffect(() => {
-    if (isMobile) {
-      const sidebarToggle = document.querySelector('[data-sidebar-toggle]') as HTMLElement;
-      const sidebar = document.querySelector('.sidebar') as HTMLElement;
-      
-      if (sidebar && !sidebar.classList.contains('collapsed')) {
-        if (sidebarToggle) {
-          sidebarToggle.click();
-        }
+    let attempts = 0;
+    const maxAttempts = 6;
+
+    const tryCollapseSidebar = () => {
+      const sidebar = document.querySelector('.sidebar') as HTMLElement | null;
+      const sidebarToggle = document.querySelector('.sidebar-toggle') as HTMLElement | null;
+
+      if (!sidebar || !sidebarToggle) {
+        return false;
       }
+
+      const viewportWidth = window.innerWidth;
+
+      // Em telas muito pequenas o menu já opera como drawer; evitar interferir
+      const shouldCollapse = viewportWidth >= 900;
+
+      if (shouldCollapse && !sidebar.classList.contains('collapsed')) {
+        sidebarToggle.click();
+        return true;
+      }
+
+      return sidebar.classList.contains('collapsed');
+    };
+
+    if (!tryCollapseSidebar()) {
+      const intervalId = setInterval(() => {
+        attempts += 1;
+        if (tryCollapseSidebar() || attempts >= maxAttempts) {
+          clearInterval(intervalId);
+        }
+      }, 180);
+
+      return () => clearInterval(intervalId);
     }
-  }, [isMobile]);
+  }, []);
 
   // Fecha o popup ao clicar fora quando estiver locked
   useEffect(() => {
@@ -521,7 +545,17 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
         return newState;
       });
 
-      addToast(`Ação "${acao.acao}" salva com sucesso!`, 'success');
+      const valorEditado = typeof dados.acao === 'string' ? dados.acao.trim() : '';
+      const valorOriginal = typeof acao.acao === 'string' ? acao.acao.trim() : '';
+      const valorModelo = typeof (acao as any).acao_modelo === 'string' ? (acao as any).acao_modelo.trim() : '';
+
+      const tituloAcaoSalva = valorEditado && valorEditado.toLowerCase() !== 'null'
+        ? valorEditado
+        : (valorOriginal && valorOriginal.toLowerCase() !== 'null'
+          ? valorOriginal
+          : (valorModelo || 'Ação'));
+
+      addToast(`Ação "${tituloAcaoSalva}" salva com sucesso!`, 'success');
       await loadPlanoGestao();
     } catch (err: any) {
       console.error('Erro ao salvar ação:', err);
@@ -1142,7 +1176,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                         <div style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
                                           <div style={{display: 'flex', alignItems: 'flex-start', gap: '8px'}}>
                                             {canEdit ? (
-                                              <div style={{flex: 1, position: 'relative'}}>
+                                              <div style={{flex: 1, position: 'relative', minWidth: 0}}>
                                                 {((acao as any).acao_modelo || acao.acao) && (
                                                   <HelpCircle
                                                     data-hint-icon
@@ -1204,7 +1238,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                       </td>
                                       <td style={{padding: '8px', position: 'relative'}}>
                                         {canEdit ? (
-                                          <div style={{position: 'relative'}}>
+                                          <div style={{position: 'relative', minWidth: 0}}>
                                             {acao.hint_responsavel && (
                                               <HelpCircle
                                                 data-hint-icon
@@ -1256,7 +1290,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                       </td>
                                       <td style={{padding: '12px', position: 'relative'}}>
                                         {canEdit ? (
-                                          <div style={{position: 'relative'}}>
+                                          <div style={{position: 'relative', minWidth: 0}}>
                                             <HelpCircle
                                               data-hint-icon
                                               size={16}
@@ -1287,7 +1321,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                       </td>
                                       <td style={{padding: '12px', position: 'relative'}}>
                                         {canEdit ? (
-                                          <div style={{position: 'relative'}}>
+                                          <div style={{position: 'relative', minWidth: 0}}>
                                             <HelpCircle
                                               data-hint-icon
                                               size={16}
@@ -1318,7 +1352,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                       </td>
                                       <td style={{padding: '12px', position: 'relative'}}>
                                         {canEdit ? (
-                                          <div style={{position: 'relative'}}>
+                                          <div style={{position: 'relative', minWidth: 0}}>
                                             {acao.hint_como_sera_feito && (
                                               <HelpCircle
                                                 data-hint-icon
@@ -1372,7 +1406,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                       </td>
                                       <td style={{padding: '8px', position: 'relative'}}>
                                         {canEdit ? (
-                                          <div style={{position: 'relative'}}>
+                                          <div style={{position: 'relative', minWidth: 0}}>
                                             {acao.hint_recursos && (
                                               <HelpCircle
                                                 data-hint-icon
@@ -1494,7 +1528,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                           marginBottom: '4px'
                                         }}>
                                           {canEdit ? (
-                                            <div style={{flex: 1, position: 'relative'}}>
+                                            <div style={{flex: 1, position: 'relative', minWidth: 0}}>
                                               {((acao as any).acao_modelo || acao.acao) && (
                                                 <HelpCircle
                                                   data-hint-icon
