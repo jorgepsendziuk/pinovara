@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { PDFService, OrganizacaoData } from '../../services/pdfService';
 import { DataGrid, DataGridColumn } from '../../components/DataGrid';
@@ -71,12 +72,15 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
 
   // Estados de filtros
   const [filtros, setFiltros] = useState({
-    nome: '',           // Input text - busca por nome
+    nome: '',           // Input text - busca por nome (com debounce)
     estadoId: '',       // Select - filtrar por estado (ID)
     municipioId: '',    // Select - filtrar por município (ID)
     tecnicoId: '',      // Select - filtrar por técnico (user ID)
     statusValidacao: '' // Select - '', '0', '1', '2' (pendente, validado, rejeitado)
   });
+  
+  // Estado separado para o input de busca (valor temporário)
+  const [nomeInput, setNomeInput] = useState('');
 
   // Estados para popular os selects
   const [estados, setEstados] = useState<any[]>([]);
@@ -109,7 +113,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
 
   // Fechar menu de ações ao clicar fora
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = () => {
       if (menuAcoesAberto !== null) {
         setMenuAcoesAberto(null);
       }
@@ -123,6 +127,13 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     }
   }, [menuAcoesAberto]);
 
+  // Função para executar a busca
+  const executarBusca = () => {
+    setFiltros(prev => ({ ...prev, nome: nomeInput }));
+    setCurrentPage(1); // Resetar para primeira página ao buscar
+  };
+  
+  // Buscar organizações quando filtros, página ou tamanho mudarem
   useEffect(() => {
     fetchOrganizacoes();
   }, [currentPage, pageSize, origemFiltro, filtros]);
@@ -372,7 +383,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       }
       
       // 3. ORDENAR DESC POR ID (mais recente primeiro)
-      todasOrganizacoes = todasOrganizacoes.sort((a, b) => b.id - a.id);
+      todasOrganizacoes = todasOrganizacoes.sort((a: Organizacao, b: Organizacao) => b.id - a.id);
       
       // 4. Aplicar paginação no frontend
       const startIndex = (currentPage - 1) * pageSize;
@@ -437,10 +448,10 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         
         return (
           <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
-            {/* Botão Editar */}
+            {/* Link Editar */}
             {podeEditar && (
-            <button
-              onClick={() => onNavigate('edicao', record.id)}
+            <Link
+              to={`/organizacoes/edicao/${record.id}`}
               title="Editar organização"
               style={{ 
                 padding: '6px 8px', 
@@ -452,7 +463,8 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                 display: 'flex',
                 alignItems: 'center',
                   justifyContent: 'center',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                textDecoration: 'none'
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.background = '#3b2313';
@@ -464,7 +476,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               }}
             >
                 <Edit size={16} />
-            </button>
+            </Link>
           )}
             
             {/* Botão Relatório */}
@@ -500,9 +512,9 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               <FileText size={16} />
           </button>
             
-            {/* Botão Plano de Gestão */}
-          <button
-              onClick={() => onNavigate('planoGestao', record.id)}
+            {/* Link Plano de Gestão */}
+          <Link
+              to={`/organizacoes/plano-gestao/${record.id}`}
               title="Plano de Gestão e Estratégias"
             style={{
               padding: '6px 8px',
@@ -514,7 +526,8 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               display: 'flex',
               alignItems: 'center',
                 justifyContent: 'center',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              textDecoration: 'none'
             }}
             onMouseOver={(e) => {
                 e.currentTarget.style.background = '#8b5cf6';
@@ -526,7 +539,37 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
             }}
           >
               <Target size={16} />
-          </button>
+          </Link>
+            
+            {/* Botão Arquivos */}
+            <button
+              onClick={() => {
+                abrirModalArquivos(record.id, record.nome);
+              }}
+              title="Arquivos"
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #f59e0b',
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#f59e0b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#f59e0b';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#f59e0b';
+              }}
+            >
+              <FolderOpen size={16} />
+            </button>
             
             {/* Botão Outras Ações */}
             <div style={{ position: 'relative' }}>
@@ -614,36 +657,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                       <span>Validar</span>
                     </button>
                   )}
-                  <button
-                    onClick={() => {
-                      abrirModalArquivos(record.id, record.nome);
-                      setMenuAcoesAberto(null);
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      textAlign: 'left',
-                      background: 'transparent',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      color: '#374151',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      fontSize: '14px',
-                      transition: 'background 0.2s'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = '#f3f4f6';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    <FolderOpen size={16} color="#f59e0b" />
-                    <span>Arquivos</span>
-                  </button>
                   <button
                     onClick={() => {
                       gerarTermoAdesao(record.id);
@@ -934,17 +947,40 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           {/* Busca por nome */}
           <div className="filter-group">
             <label className="filter-label" htmlFor="filtro-nome">Nome</label>
-            <input
-              id="filtro-nome"
-              type="text"
-              placeholder="Buscar por nome..."
-              value={filtros.nome}
-              onChange={(e) => {
-                setFiltros({ ...filtros, nome: e.target.value });
-                setCurrentPage(1);
-              }}
-              className="filter-input"
-            />
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
+              <input
+                id="filtro-nome"
+                type="text"
+                placeholder="Buscar por nome..."
+                value={nomeInput}
+                onChange={(e) => {
+                  setNomeInput(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    executarBusca();
+                  }
+                }}
+                className="filter-input"
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={executarBusca}
+                className="btn btn-primary"
+                style={{
+                  padding: '0.5rem 1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: 'auto',
+                  height: 'auto'
+                }}
+                title="Buscar"
+              >
+                <Search size={18} />
+              </button>
+            </div>
           </div>
 
           {/* Select Estado */}
@@ -1194,19 +1230,19 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                       {org.meta_instance_id ? '📋 ODK Collect' : '💻 Sistema Web'}
                     </span>
                     <div>
-                      <StatusValidacaoBadge status={org.validacao_status} />
+                      <StatusValidacaoBadge status={org.validacao_status ?? null} />
                     </div>
                   </div>
                 </div>
                 <div className="organization-actions" style={{ position: 'relative' }}>
                   {!isCoordinator() && !isSupervisor() && (
-                  <button
-                    onClick={() => onNavigate('edicao', org.id)}
+                  <Link
+                    to={`/organizacoes/edicao/${org.id}`}
                       title="Editar organização"
-                      style={{ color: '#3b2313', borderColor: '#3b2313', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px' }}
+                      style={{ color: '#3b2313', borderColor: '#3b2313', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', textDecoration: 'none' }}
                   >
                     <Edit size={16} />
-                  </button>
+                  </Link>
                   )}
                   
                     <button
@@ -1218,12 +1254,23 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                     <FileText size={16} />
                     </button>
                   
-                  <button
-                    onClick={() => onNavigate('planoGestao', org.id)}
+                  <Link
+                    to={`/organizacoes/plano-gestao/${org.id}`}
                     title="Plano de Gestão e Estratégias"
-                    style={{ color: '#8b5cf6', borderColor: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px' }}
+                    style={{ color: '#8b5cf6', borderColor: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', textDecoration: 'none' }}
                   >
                     <Target size={16} />
+                  </Link>
+                  
+                  {/* Botão Arquivos */}
+                  <button
+                    onClick={() => {
+                      abrirModalArquivos(org.id, org.nome);
+                    }}
+                    title="Arquivos"
+                    style={{ color: '#f59e0b', borderColor: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px' }}
+                  >
+                    <FolderOpen size={16} />
                   </button>
                   
                   {/* Botão Outras Ações Mobile */}
@@ -1299,37 +1346,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                         )}
                         <button
                           onClick={() => {
-                            abrirModalArquivos(org.id, org.nome);
-                            setMenuAcoesAberto(null);
-                          }}
-                          style={{
-                            width: '100%',
-                            padding: '8px 12px',
-                            textAlign: 'left',
-                            background: 'transparent',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            color: '#374151',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '14px',
-                            transition: 'background 0.2s'
-                          }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.background = '#f3f4f6';
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                          }}
-                        >
-                          <FolderOpen size={16} color="#f59e0b" />
-                          <span>Arquivos</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            gerarTermoAdesao(org.id, org.nome);
+                            gerarTermoAdesao(org.id);
                             setMenuAcoesAberto(null);
                           }}
                           disabled={gerandoPDF === org.id}
@@ -1364,7 +1381,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                   {!isCoordinator() && (
                     <button
                             onClick={() => {
-                              handleDelete(org.id);
+                              handleExcluir(org.id);
                               setMenuAcoesAberto(null);
                             }}
                             style={{

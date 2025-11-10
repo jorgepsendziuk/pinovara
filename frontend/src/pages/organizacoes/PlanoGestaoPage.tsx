@@ -33,9 +33,9 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
   const [uploading, setUploading] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState<'rascunho' | 'relatorio' | 'evidencias' | 'plano-gestao'>('rascunho');
 
-  // Verifica se o usuário tem role de Técnico ou Admin
-  const canEdit = user?.roles?.some((role: any) => 
-    role.name === 'tecnico' || role.name === 'admin'
+  // Verifica se o usuário tem role com permissão de edição
+  const canEdit = user?.roles?.some((role: any) =>
+    ['tecnico', 'admin', 'coordenador', 'supervisao'].includes(role.name)
   ) || false;
 
   useEffect(() => {

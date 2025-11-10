@@ -674,6 +674,10 @@ class OrganizacaoService {
     // Remover campos de relacionamento e campos computados que o Prisma não aceita
     const dadosLimpos = { ...data };
     
+    // Log dos dados recebidos (antes da limpeza)
+    console.log('📥 Dados recebidos do frontend:', Object.keys(data).length, 'campos');
+    const camposRecebidos = Object.keys(data);
+    
     // Lista de campos que devem ser removidos (relacionamentos, campos computados, etc.)
     const camposParaRemover = [
       // Campo ID não deve ser atualizado
@@ -739,50 +743,89 @@ class OrganizacaoService {
     ];
     
     // Remover campos específicos da lista
+    const camposRemovidosExplicitos: string[] = [];
     camposParaRemover.forEach(campo => {
-      delete (dadosLimpos as any)[campo];
+      if ((dadosLimpos as any)[campo] !== undefined) {
+        camposRemovidosExplicitos.push(campo);
+        delete (dadosLimpos as any)[campo];
+      }
     });
     
     // Remover todos os campos de relacionamento que seguem padrões conhecidos
+    const camposRemovidosPorPadrao: string[] = [];
     // Padrão 1: resposta_organizacao_*_Toresposta
     // Padrão 2: *_organizacao_*_To*
     // Padrão 3: organizacao_* (arrays de relacionamento)
     Object.keys(dadosLimpos).forEach(key => {
+      let removido = false;
+      let motivo = '';
+      
       // Remover relacionamentos de resposta
       if (key.startsWith('resposta_organizacao_') && key.endsWith('Toresposta')) {
-        delete (dadosLimpos as any)[key];
-        return;
+        removido = true;
+        motivo = 'Relacionamento de resposta (padrão resposta_organizacao_*_Toresposta)';
       }
       
       // Remover relacionamentos que seguem padrão *_To*
-      if (key.includes('_To') && (key.includes('organizacao_') || key.includes('_organizacao_'))) {
-        delete (dadosLimpos as any)[key];
-        return;
+      if (!removido && key.includes('_To') && (key.includes('organizacao_') || key.includes('_organizacao_'))) {
+        removido = true;
+        motivo = 'Relacionamento (padrão *_To*)';
       }
       
       // Remover arrays de relacionamento que começam com organizacao_
-      if (key.startsWith('organizacao_') && Array.isArray((dadosLimpos as any)[key])) {
-        delete (dadosLimpos as any)[key];
-        return;
+      if (!removido && key.startsWith('organizacao_') && Array.isArray((dadosLimpos as any)[key])) {
+        removido = true;
+        motivo = 'Array de relacionamento (organizacao_*)';
       }
       
       // Remover campos que são objetos (provavelmente relacionamentos)
-      if (typeof (dadosLimpos as any)[key] === 'object' && (dadosLimpos as any)[key] !== null && !Array.isArray((dadosLimpos as any)[key]) && !((dadosLimpos as any)[key] instanceof Date)) {
+      if (!removido && typeof (dadosLimpos as any)[key] === 'object' && (dadosLimpos as any)[key] !== null && !Array.isArray((dadosLimpos as any)[key]) && !((dadosLimpos as any)[key] instanceof Date)) {
         // Verificar se parece ser um relacionamento (tem campos como id, name, etc.)
         const obj = (dadosLimpos as any)[key];
         if (obj.id !== undefined || obj.name !== undefined || obj.email !== undefined) {
-          delete (dadosLimpos as any)[key];
-          return;
+          removido = true;
+          motivo = 'Objeto relacionamento (tem id/name/email)';
         }
+      }
+      
+      if (removido) {
+        camposRemovidosPorPadrao.push(`${key} (${motivo})`);
+        delete (dadosLimpos as any)[key];
       }
     });
     
     // Remover campos undefined (Prisma não aceita undefined, apenas null)
+    const camposUndefined: string[] = [];
     Object.keys(dadosLimpos).forEach(key => {
       if ((dadosLimpos as any)[key] === undefined) {
+        camposUndefined.push(key);
         delete (dadosLimpos as any)[key];
       }
     });
+    
+    // Log detalhado dos campos removidos
+    console.log('🧹 Limpeza de campos realizada:');
+    console.log('   📊 Total de campos recebidos:', camposRecebidos.length);
+    console.log('   🗑️  Campos removidos explicitamente:', camposRemovidosExplicitos.length);
+    if (camposRemovidosExplicitos.length > 0) {
+      console.log('      -', camposRemovidosExplicitos.join(', '));
+    }
+    console.log('   🗑️  Campos removidos por padrão:', camposRemovidosPorPadrao.length);
+    if (camposRemovidosPorPadrao.length > 0) {
+      camposRemovidosPorPadrao.slice(0, 10).forEach(campo => console.log('      -', campo));
+      if (camposRemovidosPorPadrao.length > 10) {
+        console.log(`      ... e mais ${camposRemovidosPorPadrao.length - 10} campos`);
+      }
+    }
+    console.log('   🗑️  Campos undefined removidos:', camposUndefined.length);
+    if (camposUndefined.length > 0) {
+      console.log('      -', camposUndefined.join(', '));
+    }
+    console.log('   ✅ Campos que serão salvos:', Object.keys(dadosLimpos).length);
+    console.log('      -', Object.keys(dadosLimpos).slice(0, 20).join(', '));
+    if (Object.keys(dadosLimpos).length > 20) {
+      console.log(`      ... e mais ${Object.keys(dadosLimpos).length - 20} campos`);
+    }
 
     // Validar e limitar campos de texto longos (VarChar com limite)
     // descricao - VarChar(8192)
