@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import PlanoGestaoService from '../services/PlanoGestaoService';
+import PlanoGestaoPdfService from '../services/PlanoGestaoPdfService';
 import { AuthRequest } from '../middleware/auth';
 
 // Pasta para arquivos de evidências do plano de gestão
@@ -74,6 +75,39 @@ class PlanoGestaoController {
       res.status(500).json({ 
         error: 'Erro ao buscar plano de gestão',
         details: error.message 
+      });
+    }
+  }
+
+  /**
+   * GET /api/organizacoes/:id/plano-gestao/pdf
+   * Gera PDF do plano de gestão (ignorando ações suprimidas)
+   */
+  async gerarPdf(req: Request, res: Response): Promise<void> {
+    try {
+      const idOrganizacao = parseInt(req.params.id);
+
+      if (isNaN(idOrganizacao)) {
+        res.status(400).json({ error: 'ID da organização inválido' });
+        return;
+      }
+
+      const pdfStream = await PlanoGestaoPdfService.gerarPdfPlanoGestao(idOrganizacao);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=plano-gestao_${idOrganizacao}.pdf`);
+
+      pdfStream.on('error', (error) => {
+        console.error('Erro no stream de PDF do plano de gestão:', error);
+        res.status(500).end();
+      });
+
+      pdfStream.pipe(res);
+    } catch (error: any) {
+      console.error('Erro ao gerar PDF do plano de gestão:', error);
+      res.status(500).json({
+        error: 'Erro ao gerar PDF do plano de gestão',
+        details: error.message
       });
     }
   }
@@ -192,6 +226,10 @@ class PlanoGestaoController {
         dadosProcessados.recursos = dados.recursos;
       }
 
+      if ('suprimida' in dados) {
+        dadosProcessados.suprimida = Boolean(dados.suprimida);
+      }
+
       console.log('🛠️ [PlanoGestao] Dados processados para upsert:', JSON.stringify(dadosProcessados));
 
       await PlanoGestaoService.upsertAcao(
@@ -253,6 +291,133 @@ class PlanoGestaoController {
       res.status(500).json({ 
         error: 'Erro ao deletar ação',
         details: error.message 
+      });
+    }
+  }
+
+  /**
+   * POST /api/organizacoes/:id/plano-gestao/acoes
+   * Cria uma ação personalizada dentro de um grupo específico
+   */
+  async createAcaoPersonalizada(req: Request, res: Response): Promise<void> {
+    try {
+      const idOrganizacao = parseInt(req.params.id);
+      const {
+        tipo,
+        grupo,
+        acao,
+        responsavel,
+        data_inicio,
+        data_termino,
+        como_sera_feito,
+        recursos
+      } = req.body;
+
+      if (isNaN(idOrganizacao)) {
+        res.status(400).json({ error: 'ID da organização inválido' });
+        return;
+      }
+
+      if (!tipo || typeof tipo !== 'string') {
+        res.status(400).json({ error: 'Tipo do plano é obrigatório' });
+        return;
+      }
+
+      const dadosProcessados = {
+        tipo: tipo,
+        grupo: typeof grupo === 'string' || grupo === null ? grupo : String(grupo),
+        acao: typeof acao === 'string' ? acao.trim() || null : (acao ?? null),
+        responsavel: typeof responsavel === 'string' ? responsavel : responsavel ?? null,
+        data_inicio: data_inicio ? new Date(data_inicio) : null,
+        data_termino: data_termino ? new Date(data_termino) : null,
+        como_sera_feito: typeof como_sera_feito === 'string' ? como_sera_feito : como_sera_feito ?? null,
+        recursos: typeof recursos === 'string' ? recursos : recursos ?? null
+      };
+
+      const novaAcaoId = await PlanoGestaoService.createAcaoPersonalizada(idOrganizacao, dadosProcessados);
+
+      res.status(201).json({
+        message: 'Ação personalizada criada com sucesso',
+        id: novaAcaoId
+      });
+    } catch (error: any) {
+      console.error('Erro ao criar ação personalizada:', error);
+      res.status(500).json({
+        error: 'Erro ao criar ação personalizada',
+        details: error.message
+      });
+    }
+  }
+
+  /**
+   * PUT /api/organizacoes/:id/plano-gestao/acoes/personalizadas/:acaoId
+   * Atualiza uma ação personalizada existente
+   */
+  async updateAcaoPersonalizada(req: Request, res: Response): Promise<void> {
+    try {
+      const idOrganizacao = parseInt(req.params.id);
+      const idAcao = parseInt(req.params.acaoId);
+      const dados = req.body;
+
+      if (isNaN(idOrganizacao) || isNaN(idAcao)) {
+        res.status(400).json({ error: 'IDs inválidos' });
+        return;
+      }
+
+      const dadosProcessados: any = {};
+
+      if ('acao' in dados) {
+        if (dados.acao === null || dados.acao === undefined) {
+          dadosProcessados.acao = null;
+        } else if (typeof dados.acao === 'string') {
+          const valor = dados.acao.trim();
+          dadosProcessados.acao = valor.length === 0 ? null : valor;
+        } else {
+          dadosProcessados.acao = String(dados.acao);
+        }
+      }
+
+      if ('responsavel' in dados) dadosProcessados.responsavel = dados.responsavel;
+      if ('data_inicio' in dados) dadosProcessados.data_inicio = dados.data_inicio ? new Date(dados.data_inicio) : null;
+      if ('data_termino' in dados) dadosProcessados.data_termino = dados.data_termino ? new Date(dados.data_termino) : null;
+      if ('como_sera_feito' in dados) dadosProcessados.como_sera_feito = dados.como_sera_feito;
+      if ('recursos' in dados) dadosProcessados.recursos = dados.recursos;
+      if ('suprimida' in dados) dadosProcessados.suprimida = Boolean(dados.suprimida);
+
+      await PlanoGestaoService.updateAcaoPersonalizada(idOrganizacao, idAcao, dadosProcessados);
+
+      res.status(200).json({ message: 'Ação personalizada atualizada com sucesso' });
+    } catch (error: any) {
+      console.error('Erro ao atualizar ação personalizada:', error);
+      res.status(500).json({
+        error: 'Erro ao atualizar ação personalizada',
+        details: error.message
+      });
+    }
+  }
+
+  /**
+   * DELETE /api/organizacoes/:id/plano-gestao/acoes/personalizadas/:acaoId
+   * Remove uma ação personalizada
+   */
+  async deleteAcaoPersonalizada(req: Request, res: Response): Promise<void> {
+    try {
+      const idOrganizacao = parseInt(req.params.id);
+      const idAcao = parseInt(req.params.acaoId);
+
+      if (isNaN(idOrganizacao) || isNaN(idAcao)) {
+        res.status(400).json({ error: 'IDs inválidos' });
+        return;
+      }
+
+      await PlanoGestaoService.deleteAcaoPersonalizada(idOrganizacao, idAcao);
+
+      res.status(200).json({ message: 'Ação personalizada removida com sucesso' });
+    } catch (error: any) {
+      console.error('Erro ao remover ação personalizada:', error);
+      res.status(500).json({
+        error: 'Erro ao remover ação personalizada',
+        details: error.message
       });
     }
   }

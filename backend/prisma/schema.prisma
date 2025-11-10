@@ -1484,7 +1484,7 @@ model plano_gestao_acao_modelo {
 model plano_gestao_acao {
   id              Int                      @id @default(autoincrement())
   id_organizacao  Int
-  id_acao_modelo  Int
+  id_acao_modelo  Int?
   acao            String?                  @db.Text
   responsavel     String?                  @db.VarChar(300)
   data_inicio     DateTime?                @db.Date
@@ -1493,8 +1493,12 @@ model plano_gestao_acao {
   recursos        String?                  @db.VarChar(300)
   created_at      DateTime                 @default(now()) @db.Timestamp(6)
   updated_at      DateTime                 @default(now()) @db.Timestamp(6)
+  adicionada      Boolean                  @default(false)
+  suprimida       Boolean                  @default(false)
+  tipo_plano      String?                  @db.VarChar(100)
+  grupo_plano     String?                  @db.VarChar(300)
   organizacao     organizacao              @relation(fields: [id_organizacao], references: [id], onDelete: Cascade)
-  plano_gestao_acao_modelo plano_gestao_acao_modelo @relation(fields: [id_acao_modelo], references: [id])
+  plano_gestao_acao_modelo plano_gestao_acao_modelo? @relation(fields: [id_acao_modelo], references: [id])
 
   @@unique([id_organizacao, id_acao_modelo])
   @@index([id_organizacao])

@@ -77,6 +77,10 @@ router.delete('/:id/participantes/:participanteId', participantesController_1.pa
 router.get('/:id/plano-gestao', PlanoGestaoController_1.default.getPlanoGestao.bind(PlanoGestaoController_1.default));
 router.put('/:id/plano-gestao/rascunho', PlanoGestaoController_1.default.updateRascunho.bind(PlanoGestaoController_1.default));
 router.put('/:id/plano-gestao/relatorio-sintetico', PlanoGestaoController_1.default.updateRelatorioSintetico.bind(PlanoGestaoController_1.default));
+router.get('/:id/plano-gestao/pdf', PlanoGestaoController_1.default.gerarPdf.bind(PlanoGestaoController_1.default));
+router.post('/:id/plano-gestao/acoes', PlanoGestaoController_1.default.createAcaoPersonalizada.bind(PlanoGestaoController_1.default));
+router.put('/:id/plano-gestao/acoes/personalizadas/:acaoId', PlanoGestaoController_1.default.updateAcaoPersonalizada.bind(PlanoGestaoController_1.default));
+router.delete('/:id/plano-gestao/acoes/personalizadas/:acaoId', PlanoGestaoController_1.default.deleteAcaoPersonalizada.bind(PlanoGestaoController_1.default));
 router.put('/:id/plano-gestao/acoes/:idAcaoModelo', PlanoGestaoController_1.default.upsertAcao.bind(PlanoGestaoController_1.default));
 router.delete('/:id/plano-gestao/acoes/:idAcaoModelo', PlanoGestaoController_1.default.deleteAcao.bind(PlanoGestaoController_1.default));
 router.post('/:id/plano-gestao/evidencias', PlanoGestaoController_1.uploadEvidencia.single('arquivo'), PlanoGestaoController_1.default.uploadEvidencia.bind(PlanoGestaoController_1.default));

@@ -26,6 +26,10 @@ export interface AcaoEditavel {
   recursos: string | null;
   created_at: string | null;
   updated_at: string | null;
+  adicionada?: boolean;
+  suprimida?: boolean;
+  tipo_plano?: string | null;
+  grupo_plano?: string | null;
 }
 
 export interface AcaoCompleta extends AcaoModelo, AcaoEditavel {}
@@ -74,6 +78,7 @@ export interface UpdateAcaoRequest {
   data_termino?: string | null;
   como_sera_feito?: string | null;
   recursos?: string | null;
+  suprimida?: boolean;
 }
 
 export interface UpdateRascunhoRequest {

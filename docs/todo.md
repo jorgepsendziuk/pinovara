@@ -226,7 +226,5 @@ php8.2 /var/www/html/legaliza/cmd.php "class=VTituloNovoDocumentGerar&method=onG
 php8.2 /var/www/html/legaliza/cmd.php "class=VTituloNovoDocumentGerar&method=onGenerate&static=1&key=371706"
 
 
-ok, mudanca drastica agora... querem adicionar mais acoes para cada grupo, sob demanda.
-entao teremos que ter um botao de adicionar acao, sem os hints, para acoes personalizadas que nao foram planejadas
-e tambem uma opcao de suprimir (ignorar) acoes que estavam planejadas mas nao vao ser respondidas.
-vou precisar tambem de um relatorio em pdf desse plano de gestao, sem mostrar esses ignorados..
+atribuicao de varios tecnicos, o tecnico criador da organizacao deve poder selecionar outros tecnicos para ter acesso a editar essa organizacao tambem.
+vamos planejar essa mudanca na arquitetura. pode ser um accordion na primeira aba de edicao da organizacao

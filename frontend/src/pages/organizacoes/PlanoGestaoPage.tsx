@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { PlanoGestaoResponse, AcaoCompleta, Evidencia } from '../../types/planoGestao';
-import { ChevronDown, ChevronsDown, ChevronsUp, Edit, HelpCircle, Save, Upload, Download, Trash2, Image, FileText, ClipboardList, FileText as FileTextIcon, Image as ImageIcon, Target } from 'lucide-react';
+import { ChevronDown, ChevronsDown, ChevronsUp, Edit, HelpCircle, Save, Upload, Download, Trash2, Image, FileText, ClipboardList, FileText as FileTextIcon, Image as ImageIcon, Target, Plus } from 'lucide-react';
 import Toast from '../../components/Toast';
 import './PlanoGestaoPage.css';
 
@@ -24,7 +24,13 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
   const [rascunhoTexto, setRascunhoTexto] = useState('');
   const [editandoRelatorio, setEditandoRelatorio] = useState(false);
   const [relatorioTexto, setRelatorioTexto] = useState('');
-  const [acoesEditando, setAcoesEditando] = useState<{[key: number]: any}>({});
+  const [acoesEditando, setAcoesEditando] = useState<Record<string, any>>({});
+  const [acoesSalvando, setAcoesSalvando] = useState<Record<string, boolean>>({});
+  const [acoesSuprimindo, setAcoesSuprimindo] = useState<Record<string, boolean>>({});
+  const getAcaoKey = (acao: AcaoCompleta) => 
+    acao.adicionada ? `custom-${acao.id_acao_editavel}` : `modelo-${acao.id}`;
+
+  const isAcaoPersonalizada = (acao: AcaoCompleta) => Boolean(acao.adicionada);
   const [toasts, setToasts] = useState<Array<{id: string, message: string, type: 'success' | 'error'}>>([]);
   const [hintPopup, setHintPopup] = useState<{show: boolean, text: string, x: number, y: number, locked: boolean}>({show: false, text: '', x: 0, y: 0, locked: false});
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1400);
@@ -32,6 +38,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
   const [evidencias, setEvidencias] = useState<Evidencia[]>([]);
   const [uploading, setUploading] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState<'rascunho' | 'relatorio' | 'evidencias' | 'plano-gestao'>('rascunho');
+  const [gerandoPdfPlano, setGerandoPdfPlano] = useState(false);
 
   // Verifica se o usuário tem role com permissão de edição
   const canEdit = user?.roles?.some((role: any) =>
@@ -120,6 +127,9 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
 
   // Calcula o status de uma ação individual (Não iniciado, Concluído, Pendente)
   const getStatusAcao = (acao: AcaoCompleta): { status: 'nao-iniciado' | 'concluido' | 'pendente', corFundo: string, label: string, corTexto: string } => {
+    if (acao.suprimida) {
+      return { status: 'nao-iniciado', corFundo: '#f8fafc', label: 'Ignorada', corTexto: '#475569' };
+    }
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
@@ -443,20 +453,58 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
     }
   };
 
-  const handleChangeAcao = (idAcaoModelo: number, field: string, value: any) => {
+  const handleDownloadPlanoPdf = async () => {
+    try {
+      setGerandoPdfPlano(true);
+      const token = localStorage.getItem('@pinovara:token');
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/plano-gestao/pdf`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erro ${response.status}: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `plano-gestao-${organizacaoId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      addToast('PDF gerado com sucesso!', 'success');
+    } catch (err: any) {
+      console.error('Erro ao gerar PDF do plano:', err);
+      addToast(`Erro ao gerar PDF: ${err.message || 'Erro desconhecido'}`, 'error');
+    } finally {
+      setGerandoPdfPlano(false);
+    }
+  };
+
+  const handleChangeAcao = (acao: AcaoCompleta, field: string, value: any) => {
+    const key = getAcaoKey(acao);
     setAcoesEditando(prev => ({
       ...prev,
-      [idAcaoModelo]: {
-        ...(prev[idAcaoModelo] || {}),
+      [key]: {
+        ...(prev[key] || {}),
         [field]: value
       }
     }));
   };
 
   const getAcaoValue = (acao: AcaoCompleta, field: string) => {
+    const key = getAcaoKey(acao);
     // Se está editando, retorna o valor editado
-    if (acoesEditando[acao.id] && acoesEditando[acao.id][field] !== undefined) {
-      return acoesEditando[acao.id][field];
+    if (acoesEditando[key] && acoesEditando[key][field] !== undefined) {
+      return acoesEditando[key][field];
     }
     // Senão, retorna o valor original
     const originalValue = (acao as any)[field];
@@ -480,9 +528,10 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
     return (acao as any).acao_modelo || acao.acao || '-';
   };
 
-  const handleSaveAcao = async (idAcaoModelo: number, acao: AcaoCompleta) => {
+  const handleSaveAcao = async (acao: AcaoCompleta) => {
     try {
-      const editData = acoesEditando[idAcaoModelo];
+      const acaoKey = getAcaoKey(acao);
+      const editData = acoesEditando[acaoKey];
       if (!editData) {
         addToast('Nenhuma alteração foi feita', 'error');
         return;
@@ -498,20 +547,36 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
         recursos: editData.recursos !== undefined ? editData.recursos : (acao.recursos || '')
       };
 
-      console.log('💾 Salvando ação:', idAcaoModelo, dados);
-
       const token = localStorage.getItem('@pinovara:token');
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/plano-gestao/acoes/${idAcaoModelo}`,
-        {
+      const apiBase = `${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/plano-gestao/acoes`;
+
+      setAcoesSalvando(prev => ({ ...prev, [acaoKey]: true }));
+
+      let response: Response;
+      if (isAcaoPersonalizada(acao)) {
+        if (!acao.id_acao_editavel) {
+          throw new Error('Identificador da ação personalizada não encontrado');
+        }
+
+        response = await fetch(`${apiBase}/personalizadas/${acao.id_acao_editavel}`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(dados)
-        }
-      );
+        });
+      } else {
+        const idAcaoModelo = acao.id;
+        response = await fetch(`${apiBase}/${idAcaoModelo}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(dados)
+        });
+      }
 
       if (!response.ok) {
         let errorMessage = `Erro ${response.status}: ${response.statusText}`;
@@ -541,7 +606,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
       // Remove da lista de editados
       setAcoesEditando(prev => {
         const newState = {...prev};
-        delete newState[idAcaoModelo];
+        delete newState[acaoKey];
         return newState;
       });
 
@@ -560,6 +625,164 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
     } catch (err: any) {
       console.error('Erro ao salvar ação:', err);
       addToast(`Erro ao salvar ação: ${err.message || 'Erro desconhecido'}`, 'error');
+    } finally {
+      const acaoKey = getAcaoKey(acao);
+      setAcoesSalvando(prev => {
+        const newState = { ...prev };
+        delete newState[acaoKey];
+        return newState;
+      });
+    }
+  };
+
+  const handleAdicionarAcao = async (tipoPlano: string, grupoNome: string | null, planoKey: string, grupoKey: string) => {
+    if (!canEdit) {
+      addToast('Apenas usuários com permissão podem adicionar ações', 'error');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/plano-gestao/acoes`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            tipo: tipoPlano,
+            grupo: grupoNome,
+            acao: null,
+            responsavel: null,
+            data_inicio: null,
+            data_termino: null,
+            como_sera_feito: null,
+            recursos: null
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json().catch(() => ({}));
+
+      setAccordionsAbertos(prev => prev.includes(planoKey) ? prev : [...prev, planoKey]);
+      setGruposAbertos(prev => prev.includes(grupoKey) ? prev : [...prev, grupoKey]);
+
+      await loadPlanoGestao();
+
+      addToast('Ação personalizada adicionada com sucesso!', 'success');
+    } catch (err: any) {
+      console.error('Erro ao adicionar ação personalizada:', err);
+      addToast(`Erro ao adicionar ação: ${err.message || 'Erro desconhecido'}`, 'error');
+    }
+  };
+
+  const handleToggleSuprimir = async (acao: AcaoCompleta, suprimir: boolean) => {
+    if (!canEdit) {
+      addToast('Apenas usuários com permissão podem alterar esta ação', 'error');
+      return;
+    }
+
+    const acaoKey = getAcaoKey(acao);
+    setAcoesSuprimindo(prev => ({ ...prev, [acaoKey]: true }));
+
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+      const apiBase = `${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/plano-gestao/acoes`;
+      const payload = { suprimida: suprimir };
+
+      let response: Response;
+      if (isAcaoPersonalizada(acao)) {
+        if (!acao.id_acao_editavel) {
+          throw new Error('Identificador da ação personalizada não encontrado');
+        }
+        response = await fetch(`${apiBase}/personalizadas/${acao.id_acao_editavel}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        response = await fetch(`${apiBase}/${acao.id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
+      }
+
+      addToast(suprimir ? 'Ação marcada como ignorada' : 'Ação restaurada', 'success');
+      setAcoesEditando(prev => {
+        const newState = { ...prev };
+        delete newState[acaoKey];
+        return newState;
+      });
+      await loadPlanoGestao();
+    } catch (err: any) {
+      console.error('Erro ao atualizar supressão da ação:', err);
+      addToast(`Erro ao atualizar ação: ${err.message || 'Erro desconhecido'}`, 'error');
+    } finally {
+      setAcoesSuprimindo(prev => {
+        const newState = { ...prev };
+        delete newState[acaoKey];
+        return newState;
+      });
+    }
+  };
+
+  const handleExcluirAcaoPersonalizada = async (acao: AcaoCompleta) => {
+    if (!acao.id_acao_editavel) {
+      addToast('Ação personalizada inválida', 'error');
+      return;
+    }
+
+    if (!window.confirm('Deseja remover esta ação personalizada?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/organizacoes/${organizacaoId}/plano-gestao/acoes/personalizadas/${acao.id_acao_editavel}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
+      }
+
+      addToast('Ação personalizada removida', 'success');
+      const acaoKey = getAcaoKey(acao);
+      setAcoesEditando(prev => {
+        const newState = { ...prev };
+        delete newState[acaoKey];
+        return newState;
+      });
+      await loadPlanoGestao();
+    } catch (err: any) {
+      console.error('Erro ao remover ação personalizada:', err);
+      addToast(`Erro ao remover: ${err.message || 'Erro desconhecido'}`, 'error');
     }
   };
 
@@ -679,6 +902,16 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
               <button onClick={expandirTodos} className="btn btn-primary">
                 <ChevronsDown size={16} style={{marginRight: '6px'}} />
                 Expandir Todos
+              </button>
+              <button
+                onClick={handleDownloadPlanoPdf}
+                className="btn btn-outline"
+                disabled={gerandoPdfPlano}
+                style={{display: 'flex', alignItems: 'center', gap: '6px'}}
+                title="Baixar PDF do plano de gestão"
+              >
+                <Download size={16} />
+                <span>{gerandoPdfPlano ? 'Gerando PDF...' : 'Baixar PDF'}</span>
               </button>
             </>
           )}
@@ -1076,9 +1309,9 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
         {abaAtiva === 'plano-gestao' && planoGestao && (
           <div className="tab-content">
             {planoGestao.planos.map((plano, planoIndex) => {
-              const totalAcoes = plano.grupos.reduce((t, g) => t + g.acoes.length, 0);
+              const totalAcoes = plano.grupos.reduce((t, g) => t + g.acoes.filter(a => !a.suprimida).length, 0);
               const acoesPreenchidas = plano.grupos.reduce((t, g) => 
-                t + g.acoes.filter(a => a.id_acao_editavel !== undefined).length, 0
+                t + g.acoes.filter(a => !a.suprimida && a.id_acao_editavel !== undefined).length, 0
               );
 
               return (
@@ -1151,6 +1384,18 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                           {/* Conteúdo do Grupo */}
                           <div className={`accordion-content ${grupoAberto || !grupo.nome ? 'open' : ''}`}>
                             <div className="accordion-section" style={{padding: '16px'}}>
+                              {canEdit && (
+                                <div style={{display: 'flex', justifyContent: 'flex-end', marginBottom: '12px'}}>
+                                  <button
+                                    className="btn btn-outline"
+                                    style={{display: 'flex', alignItems: 'center', gap: '6px'}}
+                                    onClick={() => handleAdicionarAcao(plano.tipo, grupo.nome ?? null, `plano-${planoIndex}`, grupoKey)}
+                                  >
+                                    <Plus size={16} />
+                                    <span>Adicionar ação</span>
+                                  </button>
+                                </div>
+                              )}
                               {/* Desktop: Table */}
                               <table className="table-default" style={{width: '100%', display: isMobile ? 'none' : 'table'}}>
                                 <thead>
@@ -1166,12 +1411,15 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                 </thead>
                                 <tbody>
                                   {grupo.acoes.map((acao) => {
-                                    const temEdicao = acoesEditando[acao.id] !== undefined;
+                                    const acaoKey = getAcaoKey(acao);
+                                    const temEdicao = acoesEditando[acaoKey] !== undefined;
+                                    const estaSuprimida = Boolean(acao.suprimida);
+                                    const ehPersonalizada = isAcaoPersonalizada(acao);
                                     const statusInfo = getStatusAcao(acao);
                                     const corFundo = statusInfo.corFundo;
                                     
                                     return (
-                                    <tr key={acao.id} style={{background: corFundo, transition: 'background 0.2s'}}>
+                                    <tr key={acaoKey} style={{background: corFundo, transition: 'background 0.2s', opacity: estaSuprimida ? 0.6 : 1}}>
                                       <td style={{padding: '12px'}}>
                                         <div style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
                                           <div style={{display: 'flex', alignItems: 'flex-start', gap: '8px'}}>
@@ -1197,7 +1445,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                                 <textarea
                                                   value={getAcaoValue(acao, 'acao') || ''}
                                                   onChange={(e) => {
-                                                    handleChangeAcao(acao.id, 'acao', e.target.value);
+                                                    handleChangeAcao(acao, 'acao', e.target.value);
                                                     e.target.style.height = 'auto';
                                                     e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                                   }}
@@ -1206,6 +1454,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                                     e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                                   }}
                                                   title={((acao as any).acao_modelo || acao.acao) || ''}
+                                                  disabled={estaSuprimida}
                                                   style={{
                                                     width: '100%',
                                                     padding: '8px',
@@ -1234,6 +1483,11 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                               {acao.updated_at && <span>Atualizado: {new Date(acao.updated_at).toLocaleString('pt-BR')}</span>}
                                             </div>
                                           )}
+                                        {estaSuprimida && (
+                                          <div style={{fontSize: '11px', color: '#475569', fontStyle: 'italic'}}>
+                                            Ação marcada como ignorada
+                                          </div>
+                                        )}
                                         </div>
                                       </td>
                                       <td style={{padding: '8px', position: 'relative'}}>
@@ -1259,7 +1513,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                             <textarea
                                               value={getAcaoValue(acao, 'responsavel')}
                                               onChange={(e) => {
-                                                handleChangeAcao(acao.id, 'responsavel', e.target.value);
+                                                handleChangeAcao(acao, 'responsavel', e.target.value);
                                                 e.target.style.height = 'auto';
                                                 e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                               }}
@@ -1268,6 +1522,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                                 e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                               }}
                                               title={acao.hint_responsavel || ''}
+                                              disabled={estaSuprimida}
                                               style={{
                                                 width: '100%',
                                                 padding: '12px',
@@ -1310,8 +1565,9 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                             <input
                                               type="date"
                                               value={getAcaoValue(acao, 'data_inicio')}
-                                              onChange={(e) => handleChangeAcao(acao.id, 'data_inicio', e.target.value)}
+                                              onChange={(e) => handleChangeAcao(acao, 'data_inicio', e.target.value)}
                                               title="Data de início"
+                                              disabled={estaSuprimida}
                                               style={{width: '100%', padding: '12px', paddingRight: '32px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '44px', fontSize: '14px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
                                             />
                                           </div>
@@ -1341,8 +1597,9 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                             <input
                                               type="date"
                                               value={getAcaoValue(acao, 'data_termino')}
-                                              onChange={(e) => handleChangeAcao(acao.id, 'data_termino', e.target.value)}
+                                              onChange={(e) => handleChangeAcao(acao, 'data_termino', e.target.value)}
                                               title="Data de término"
+                                              disabled={estaSuprimida}
                                               style={{width: '100%', padding: '12px', paddingRight: '32px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '44px', fontSize: '14px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
                                             />
                                           </div>
@@ -1373,7 +1630,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                             <textarea
                                               value={getAcaoValue(acao, 'como_sera_feito')}
                                               onChange={(e) => {
-                                                handleChangeAcao(acao.id, 'como_sera_feito', e.target.value);
+                                                handleChangeAcao(acao, 'como_sera_feito', e.target.value);
                                                 e.target.style.height = 'auto';
                                                 e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                               }}
@@ -1382,6 +1639,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                                 e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                               }}
                                               title={acao.hint_como_sera_feito || ''}
+                                              disabled={estaSuprimida}
                                               style={{
                                                 width: '100%',
                                                 padding: '12px',
@@ -1427,7 +1685,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                             <textarea
                                               value={getAcaoValue(acao, 'recursos')}
                                               onChange={(e) => {
-                                                handleChangeAcao(acao.id, 'recursos', e.target.value);
+                                                handleChangeAcao(acao, 'recursos', e.target.value);
                                                 e.target.style.height = 'auto';
                                                 e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                               }}
@@ -1436,6 +1694,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                                 e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                               }}
                                               title={acao.hint_recursos || ''}
+                                              disabled={estaSuprimida}
                                               style={{
                                                 width: '100%',
                                                 padding: '12px',
@@ -1472,15 +1731,36 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                           }}>
                                             {statusInfo.label}
                                           </span>
-                                          {canEdit && temEdicao && (
+                                          {canEdit && temEdicao && !estaSuprimida && (
                                             <button
-                                              onClick={() => handleSaveAcao(acao.id, acao)}
+                                              onClick={() => handleSaveAcao(acao)}
                                               className="btn btn-sm btn-primary"
                                               style={{padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'}}
                                               title="Salvar"
+                                              disabled={Boolean(acoesSalvando[acaoKey])}
                                             >
                                               <Save size={16} />
-                                              <span>Salvar</span>
+                                              <span>{acoesSalvando[acaoKey] ? 'Salvando...' : 'Salvar'}</span>
+                                            </button>
+                                          )}
+                                          {canEdit && (
+                                            <button
+                                              onClick={() => handleToggleSuprimir(acao, !estaSuprimida)}
+                                              className="btn btn-sm btn-secondary"
+                                              style={{padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'}}
+                                              disabled={Boolean(acoesSuprimindo[acaoKey])}
+                                            >
+                                              {acoesSuprimindo[acaoKey] ? 'Processando...' : (estaSuprimida ? 'Restaurar' : 'Suprimir')}
+                                            </button>
+                                          )}
+                                          {canEdit && ehPersonalizada && (
+                                            <button
+                                              onClick={() => handleExcluirAcaoPersonalizada(acao)}
+                                              className="btn btn-sm btn-outline"
+                                              style={{padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#dc2626', borderColor: '#dc2626'}}
+                                            >
+                                              <Trash2 size={14} />
+                                              <span>Excluir</span>
                                             </button>
                                           )}
                                         </div>
@@ -1494,7 +1774,10 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                               {/* Mobile/Tablet: Cards */}
                               <div style={{display: isMobile ? 'block' : 'none'}}>
                                 {grupo.acoes.map((acao) => {
-                                  const temEdicao = acoesEditando[acao.id] !== undefined;
+                                  const acaoKey = getAcaoKey(acao);
+                                  const temEdicao = acoesEditando[acaoKey] !== undefined;
+                                  const estaSuprimida = Boolean(acao.suprimida);
+                                  const ehPersonalizada = isAcaoPersonalizada(acao);
                                   const statusInfo = getStatusAcao(acao);
                                   const corFundo = statusInfo.corFundo;
                                   
@@ -1507,13 +1790,14 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                   }
                                   
                                   return (
-                                    <div key={`card-${acao.id}`} style={{
+                                    <div key={`card-${acaoKey}`} style={{
                                       background: corFundo,
                                       border: `2px solid ${corBorda}`,
                                       borderRadius: '8px',
                                       padding: '16px',
                                       marginBottom: '16px',
-                                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                      opacity: estaSuprimida ? 0.6 : 1
                                     }}>
                                       <div style={{
                                         marginBottom: '16px',
@@ -1549,7 +1833,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                               <textarea
                                                 value={getAcaoValue(acao, 'acao') || ''}
                                                 onChange={(e) => {
-                                                  handleChangeAcao(acao.id, 'acao', e.target.value);
+                                                  handleChangeAcao(acao, 'acao', e.target.value);
                                                   e.target.style.height = 'auto';
                                                   e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                                 }}
@@ -1558,6 +1842,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                                   e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                                 }}
                                                 title={((acao as any).acao_modelo || acao.acao) || ''}
+                                                disabled={estaSuprimida}
                                                 style={{
                                                   width: '100%',
                                                   padding: '8px',
@@ -1587,20 +1872,27 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                           )}
                                           
                                           {/* Badge de Status */}
-                                          <span style={{
-                                            fontSize: '9px',
-                                            fontWeight: 600,
-                                            color: statusInfo.corTexto,
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.5px',
-                                            padding: '4px 8px',
-                                            borderRadius: '4px',
-                                            background: 'rgba(255,255,255,0.8)',
-                                            whiteSpace: 'nowrap',
-                                            flexShrink: 0
-                                          }}>
-                                            {statusInfo.label}
-                                          </span>
+                                          <div style={{display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end'}}>
+                                            <span style={{
+                                              fontSize: '9px',
+                                              fontWeight: 600,
+                                              color: statusInfo.corTexto,
+                                              textTransform: 'uppercase',
+                                              letterSpacing: '0.5px',
+                                              padding: '4px 8px',
+                                              borderRadius: '4px',
+                                              background: 'rgba(255,255,255,0.8)',
+                                              whiteSpace: 'nowrap',
+                                              flexShrink: 0
+                                            }}>
+                                              {statusInfo.label}
+                                            </span>
+                                            {ehPersonalizada && (
+                                              <span style={{fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1d4ed8'}}>
+                                                Personalizada
+                                              </span>
+                                            )}
+                                          </div>
                                         </div>
                                         
                                         {(acao.created_at || acao.updated_at) && (
@@ -1631,7 +1923,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                             <textarea
                                               value={getAcaoValue(acao, 'responsavel')}
                                               onChange={(e) => {
-                                                handleChangeAcao(acao.id, 'responsavel', e.target.value);
+                                                handleChangeAcao(acao, 'responsavel', e.target.value);
                                                 e.target.style.height = 'auto';
                                                 e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                               }}
@@ -1659,8 +1951,9 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                             <input
                                               type="date"
                                               value={getAcaoValue(acao, 'data_inicio')}
-                                              onChange={(e) => handleChangeAcao(acao.id, 'data_inicio', e.target.value)}
+                                              onChange={(e) => handleChangeAcao(acao, 'data_inicio', e.target.value)}
                                               title="Data de início"
+                                              disabled={estaSuprimida}
                                               style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '44px', fontSize: '14px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
                                             />
                                           </div>
@@ -1680,8 +1973,9 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                             <input
                                               type="date"
                                               value={getAcaoValue(acao, 'data_termino')}
-                                              onChange={(e) => handleChangeAcao(acao.id, 'data_termino', e.target.value)}
+                                              onChange={(e) => handleChangeAcao(acao, 'data_termino', e.target.value)}
                                               title="Data de término"
+                                              disabled={estaSuprimida}
                                               style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '44px', fontSize: '14px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
                                             />
                                           </div>
@@ -1703,7 +1997,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                             <textarea
                                               value={getAcaoValue(acao, 'como_sera_feito')}
                                               onChange={(e) => {
-                                                handleChangeAcao(acao.id, 'como_sera_feito', e.target.value);
+                                                handleChangeAcao(acao, 'como_sera_feito', e.target.value);
                                                 e.target.style.height = 'auto';
                                                 e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                               }}
@@ -1712,6 +2006,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                                 e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                               }}
                                               title={acao.hint_como_sera_feito || ''}
+                                              disabled={estaSuprimida}
                                               style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '80px', height: getAcaoValue(acao, 'como_sera_feito') ? 'auto' : '80px', fontSize: '14px', lineHeight: '1.6', resize: 'none', overflow: 'hidden', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
                                             />
                                           </div>
@@ -1733,7 +2028,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                             <textarea
                                               value={getAcaoValue(acao, 'recursos')}
                                               onChange={(e) => {
-                                                handleChangeAcao(acao.id, 'recursos', e.target.value);
+                                                handleChangeAcao(acao, 'recursos', e.target.value);
                                                 e.target.style.height = 'auto';
                                                 e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                               }}
@@ -1742,19 +2037,39 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                                 e.target.style.height = Math.max(80, e.target.scrollHeight) + 'px';
                                               }}
                                               title={acao.hint_recursos || ''}
-                                              style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '80px', height: getAcaoValue(acao, 'recursos') ? 'auto' : '80px', fontSize: '14px', lineHeight: '1.5', resize: 'none', overflow: 'hidden', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
+        disabled={estaSuprimida}
+        style={{width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', minHeight: '80px', height: getAcaoValue(acao, 'recursos') ? 'auto' : '80px', fontSize: '14px', lineHeight: '1.5', resize: 'none', overflow: 'hidden', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"}}
                                             />
                                           </div>
 
-                                          {temEdicao && (
+                                          {temEdicao && !estaSuprimida && (
                                             <button
-                                              onClick={() => handleSaveAcao(acao.id, acao)}
+                                              onClick={() => handleSaveAcao(acao)}
                                               className="btn btn-primary"
                                               style={{width: '100%', marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}
                                               title="Salvar"
+                                              disabled={Boolean(acoesSalvando[acaoKey])}
                                             >
                                               <Save size={16} />
-                                              <span>Salvar</span>
+                                              <span>{acoesSalvando[acaoKey] ? 'Salvando...' : 'Salvar'}</span>
+                                            </button>
+                                          )}
+                                          <button
+                                            onClick={() => handleToggleSuprimir(acao, !estaSuprimida)}
+                                            className="btn btn-secondary"
+                                            style={{width: '100%', marginTop: '8px'}}
+                                            disabled={Boolean(acoesSuprimindo[acaoKey])}
+                                          >
+                                            {acoesSuprimindo[acaoKey] ? 'Processando...' : (estaSuprimida ? 'Restaurar' : 'Suprimir')}
+                                          </button>
+                                          {ehPersonalizada && (
+                                            <button
+                                              onClick={() => handleExcluirAcaoPersonalizada(acao)}
+                                              className="btn btn-outline"
+                                              style={{width: '100%', marginTop: '8px', color: '#dc2626', borderColor: '#dc2626'}}
+                                            >
+                                              <Trash2 size={16} />
+                                              <span>Excluir</span>
                                             </button>
                                           )}
                                         </>
@@ -1775,7 +2090,13 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                           <div style={{marginBottom: '12px'}}>
                                             <strong>Recursos:</strong> {acao.recursos || '-'}
                                           </div>
+                                          {estaSuprimida && (
+                                            <div style={{marginBottom: '12px', fontStyle: 'italic', color: '#475569'}}>
+                                              Ação marcada como ignorada
+                                            </div>
+                                          )}
                                           <div style={{marginTop: '12px'}}>
+                                          <div style={{display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center'}}>
                                             <span style={{
                                               fontSize: '9px',
                                               fontWeight: 600,
@@ -1785,10 +2106,22 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                                               padding: '4px 8px',
                                               borderRadius: '4px',
                                               background: 'rgba(255,255,255,0.8)',
-                                              whiteSpace: 'nowrap'
+                                              whiteSpace: 'nowrap',
+                                              display: 'inline-block'
                                             }}>
                                               {statusInfo.label}
                                             </span>
+                                            {ehPersonalizada && (
+                                              <span style={{
+                                                fontSize: '8px',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.5px',
+                                                color: '#1d4ed8'
+                                              }}>
+                                                Personalizada
+                                              </span>
+                                            )}
+                                          </div>
                                           </div>
                                         </>
                                       )}
