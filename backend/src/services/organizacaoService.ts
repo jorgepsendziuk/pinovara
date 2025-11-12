@@ -1,3 +1,16 @@
+const isPermissionDeniedError = (error: any): boolean => {
+  if (!error) return false;
+  if (typeof error.message === 'string' && error.message.includes('permission denied')) {
+    return true;
+  }
+  if (error.meta && typeof error.meta === 'object') {
+    const metaString = JSON.stringify(error.meta);
+    if (metaString.includes('permission denied')) {
+      return true;
+    }
+  }
+  return false;
+};
 import { PrismaClient } from '@prisma/client';
 import { 
   Organizacao, 
@@ -143,12 +156,20 @@ class OrganizacaoService {
     if (aplicarFiltroHibrido && userId) {
       console.log(`🔍 Filtro híbrido ativo para userId ${userId} (${userEmail})`);
       console.log(`   Organizações antes do filtro: ${totalInicial}`);
+      const equipesDoTecnico = await prisma.organizacao_tecnico.findMany({
+        where: { id_tecnico: userId },
+        select: { id_organizacao: true }
+      });
+      const idsEquipe = new Set(equipesDoTecnico.map(item => item.id_organizacao));
       
       organizacoes = organizacoes.filter(org => {
         // Opção 1: id_tecnico já está preenchido e bate com userId
         if (org.id_tecnico === userId) return true;
+
+        // Opção 2: técnico está na equipe compartilhada
+        if (idsEquipe.has(org.id)) return true;
         
-        // Opção 2: email no _creator_uri_user bate com userEmail
+        // Opção 3: email no _creator_uri_user bate com userEmail
         if (org._creator_uri_user && userEmail) {
           const creatorEmail = extractEmailFromCreatorUri(org._creator_uri_user);
           if (creatorEmail === userEmail) return true;
@@ -234,12 +255,32 @@ class OrganizacaoService {
         organizacao = await prisma.organizacao.findUnique({
           where: { id: organizacaoId },
           include: {
-            // Incluir dados do usuário validador (pode ser null se não houver validador)
             users: {
               select: {
                 id: true,
                 name: true,
                 email: true
+              }
+            },
+            organizacao_tecnico: {
+              include: {
+                tecnico: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true
+                  }
+                },
+                criador: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true
+                  }
+                }
+              },
+              orderBy: {
+                created_at: 'asc'
               }
             }
           }
@@ -248,12 +289,45 @@ class OrganizacaoService {
         console.log('📦 Organização encontrada (com include):', organizacao ? 'SIM' : 'NÃO');
       } catch (includeError: any) {
         console.error('❌ Erro ao buscar com include:', includeError);
-        console.warn('⚠️ Tentando buscar sem include do relacionamento users');
-        // Se houver erro no include, usar a organização já encontrada sem include
-        // e buscar o relacionamento separadamente se necessário
-        organizacao = await prisma.organizacao.findUnique({
-          where: { id: organizacaoId }
-        });
+        if (!organizacao) {
+          console.warn('⚠️ Tentando buscar sem include do relacionamento users');
+          organizacao = await prisma.organizacao.findUnique({
+            where: { id: organizacaoId }
+          });
+        }
+
+        if (!organizacao) {
+          throw includeError;
+        }
+
+        if (isPermissionDeniedError(includeError)) {
+          console.warn('⚠️ Permissão negada ao acessar organizacao_tecnico. Continuando sem equipe técnica.');
+          (organizacao as any).organizacao_tecnico = [];
+        } else {
+          const equipeFallback = await prisma.organizacao_tecnico.findMany({
+            where: { id_organizacao: organizacaoId },
+            include: {
+              tecnico: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              },
+              criador: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              }
+            },
+            orderBy: {
+              created_at: 'asc'
+            }
+          });
+          (organizacao as any).organizacao_tecnico = equipeFallback;
+        }
         
         if (organizacao && organizacao.validacao_usuario) {
           try {
@@ -315,15 +389,404 @@ class OrganizacaoService {
       }
 
       // Retornar organização com dados adicionais
+      const equipeTecnicaBruta = ((organizacao as any).organizacao_tecnico || []) as Array<{
+        id: number;
+        id_organizacao: number;
+        id_tecnico: number;
+        created_at: Date;
+        created_by: number | null;
+        tecnico?: { id: number; name: string; email: string | null } | null;
+        criador?: { id: number; name: string; email: string | null } | null;
+      }>;
+
+      const equipeTecnica = equipeTecnicaBruta.map(membro => ({
+        id: membro.id,
+        id_tecnico: membro.id_tecnico,
+        created_at: membro.created_at,
+        created_by: membro.created_by,
+        tecnico: membro.tecnico
+          ? { id: membro.tecnico.id, name: membro.tecnico.name, email: membro.tecnico.email }
+          : null,
+        criador: membro.criador
+          ? { id: membro.criador.id, name: membro.criador.name, email: membro.criador.email }
+          : null
+      }));
+
       return {
         ...organizacao,
         estado_nome: estadoNome,
         municipio_nome: municipioNome,
         tecnico_nome: tecnicoNome,
-        tecnico_email: tecnicoEmail
+        tecnico_email: tecnicoEmail,
+        equipe_tecnica: equipeTecnica
       };
     } catch (error) {
       console.error('Erro ao buscar organização:', error);
+      throw error;
+    }
+  }
+
+  async getEquipeTecnica(organizacaoId: number): Promise<
+    Array<{
+      id: number;
+      id_tecnico: number;
+      created_at: Date;
+      created_by: number | null;
+      tecnico: { id: number; name: string; email: string | null } | null;
+      criador: { id: number; name: string; email: string | null } | null;
+    }>
+  > {
+    const organizacao = await prisma.organizacao.findUnique({
+      where: { id: organizacaoId },
+      select: { id: true }
+    });
+
+    if (!organizacao) {
+      throw new ApiError({
+        message: 'Organização não encontrada',
+        statusCode: HttpStatus.NOT_FOUND,
+        code: ErrorCode.RESOURCE_NOT_FOUND
+      });
+    }
+
+    try {
+      const equipe = await prisma.organizacao_tecnico.findMany({
+        where: { id_organizacao: organizacaoId },
+        include: {
+          tecnico: {
+            select: { id: true, name: true, email: true }
+          },
+          criador: {
+            select: { id: true, name: true, email: true }
+          }
+        },
+        orderBy: {
+          created_at: 'asc'
+        }
+      });
+
+      return equipe.map(membro => ({
+        id: membro.id,
+        id_tecnico: membro.id_tecnico,
+        created_at: membro.created_at,
+        created_by: membro.created_by,
+        tecnico: membro.tecnico
+          ? { id: membro.tecnico.id, name: membro.tecnico.name, email: membro.tecnico.email }
+          : null,
+        criador: membro.criador
+          ? { id: membro.criador.id, name: membro.criador.name, email: membro.criador.email }
+          : null
+      }));
+    } catch (error: any) {
+      if (isPermissionDeniedError(error)) {
+        console.warn('⚠️ Permissão negada ao acessar organizacao_tecnico. Retornando equipe vazia.');
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  async listarTecnicosDisponiveis(
+    organizacaoId: number,
+    search?: string
+  ): Promise<Array<{ id: number; name: string; email: string | null }>> {
+    let organizacao = null as { id: number; id_tecnico: number | null } | null;
+    let equipeRelacionada: Array<{ id_tecnico: number }> = [];
+
+    try {
+      const resultado = await prisma.organizacao.findUnique({
+        where: { id: organizacaoId },
+        select: {
+          id: true,
+          id_tecnico: true,
+          organizacao_tecnico: {
+            select: { id_tecnico: true }
+          }
+        }
+      });
+
+      organizacao = resultado
+        ? { id: resultado.id, id_tecnico: resultado.id_tecnico }
+        : null;
+      equipeRelacionada = resultado?.organizacao_tecnico || [];
+    } catch (error: any) {
+      if (isPermissionDeniedError(error)) {
+        const resultadoBasico = await prisma.organizacao.findUnique({
+          where: { id: organizacaoId },
+          select: { id: true, id_tecnico: true }
+        });
+        organizacao = resultadoBasico
+          ? { id: resultadoBasico.id, id_tecnico: resultadoBasico.id_tecnico }
+          : null;
+        equipeRelacionada = [];
+      } else {
+        throw error;
+      }
+    }
+
+    if (!organizacao) {
+      throw new ApiError({
+        message: 'Organização não encontrada',
+        statusCode: HttpStatus.NOT_FOUND,
+        code: ErrorCode.RESOURCE_NOT_FOUND
+      });
+    }
+
+    const idsOcupados = new Set<number>();
+    if (organizacao.id_tecnico) {
+      idsOcupados.add(organizacao.id_tecnico);
+    }
+    equipeRelacionada.forEach(membro => idsOcupados.add(membro.id_tecnico));
+
+    const tecnicos = await prisma.users.findMany({
+      where: {
+        active: true,
+        user_roles: {
+          some: {
+            roles: {
+              name: 'tecnico',
+              modules: {
+                name: 'organizacoes'
+              }
+            }
+          }
+        },
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } }
+              ]
+            }
+          : {}),
+        ...(idsOcupados.size
+          ? {
+              id: {
+                notIn: Array.from(idsOcupados)
+              }
+            }
+          : {})
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    });
+
+    return tecnicos;
+  }
+
+  async adicionarTecnicoEquipe(
+    organizacaoId: number,
+    tecnicoId: number,
+    criadoPor: number | null
+  ): Promise<{
+    id: number;
+    id_tecnico: number;
+    created_at: Date;
+    created_by: number | null;
+    tecnico: { id: number; name: string; email: string | null } | null;
+    criador: { id: number; name: string; email: string | null } | null;
+  }> {
+    const organizacao = await prisma.organizacao.findUnique({
+      where: { id: organizacaoId },
+      select: {
+        id: true,
+        id_tecnico: true
+      }
+    });
+
+    if (!organizacao) {
+      throw new ApiError({
+        message: 'Organização não encontrada',
+        statusCode: HttpStatus.NOT_FOUND,
+        code: ErrorCode.RESOURCE_NOT_FOUND
+      });
+    }
+
+    if (organizacao.id_tecnico === tecnicoId) {
+      throw new ApiError({
+        message: 'O técnico selecionado já é o responsável principal da organização',
+        statusCode: HttpStatus.CONFLICT,
+        code: ErrorCode.RESOURCE_CONFLICT,
+        details: [
+          {
+            motivo: 'Técnico principal não precisa ser adicionado à equipe separadamente'
+          }
+        ]
+      });
+    }
+
+    const tecnico = await prisma.users.findUnique({
+      where: { id: tecnicoId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        active: true,
+        user_roles: {
+          select: {
+            roles: {
+              select: {
+                name: true,
+                modules: {
+                  select: { name: true }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!tecnico || !tecnico.active) {
+      throw new ApiError({
+        message: 'Técnico não encontrado ou inativo',
+        statusCode: HttpStatus.BAD_REQUEST,
+        code: ErrorCode.VALIDATION_ERROR
+      });
+    }
+
+    const possuiRoleTecnico = tecnico.user_roles.some(
+      ({ roles }) => roles.name === 'tecnico' && roles.modules.name === 'organizacoes'
+    );
+
+    if (!possuiRoleTecnico) {
+      throw new ApiError({
+        message: 'Usuário selecionado não possui role de técnico para organizações',
+        statusCode: HttpStatus.BAD_REQUEST,
+        code: ErrorCode.VALIDATION_ERROR
+      });
+    }
+
+    let jaExiste = null;
+    try {
+      jaExiste = await prisma.organizacao_tecnico.findFirst({
+        where: {
+          id_organizacao: organizacaoId,
+          id_tecnico: tecnicoId
+        }
+      });
+    } catch (error: any) {
+      if (isPermissionDeniedError(error)) {
+        console.warn('⚠️ Permissão negada ao consultar organizacao_tecnico. Pulando verificação de duplicidade.');
+        jaExiste = null;
+      } else {
+        throw error;
+      }
+    }
+
+    if (jaExiste) {
+      throw new ApiError({
+        message: 'Técnico já está associado a esta organização',
+        statusCode: HttpStatus.CONFLICT,
+        code: ErrorCode.RESOURCE_CONFLICT
+      });
+    }
+
+    try {
+      const membro = await prisma.organizacao_tecnico.create({
+        data: {
+          id_organizacao: organizacaoId,
+          id_tecnico: tecnicoId,
+          created_by: criadoPor || null
+        },
+        include: {
+          tecnico: {
+            select: { id: true, name: true, email: true }
+          },
+          criador: {
+            select: { id: true, name: true, email: true }
+          }
+        }
+      });
+
+      return {
+        id: membro.id,
+        id_tecnico: membro.id_tecnico,
+        created_at: membro.created_at,
+        created_by: membro.created_by,
+        tecnico: membro.tecnico
+          ? { id: membro.tecnico.id, name: membro.tecnico.name, email: membro.tecnico.email }
+          : null,
+        criador: membro.criador
+          ? { id: membro.criador.id, name: membro.criador.name, email: membro.criador.email }
+          : null
+      };
+    } catch (error: any) {
+      if (isPermissionDeniedError(error)) {
+        console.warn('⚠️ Permissão negada ao criar registro em organizacao_tecnico.');
+        throw new ApiError({
+          message: 'Não é possível adicionar técnicos porque o banco não permitiu acessar a tabela de equipe técnica.',
+          statusCode: HttpStatus.FORBIDDEN,
+          code: ErrorCode.INSUFFICIENT_PERMISSIONS,
+          details: [
+            {
+              campo: 'organizacao_tecnico',
+              mensagem: 'Peça ao DBA para liberar INSERT/SELECT/UPDATE/DELETE na tabela pinovara.organizacao_tecnico e uso da sequência.'
+            }
+          ]
+        });
+      }
+      throw error;
+    }
+  }
+
+  async removerTecnicoEquipe(organizacaoId: number, tecnicoId: number): Promise<void> {
+    const organizacao = await prisma.organizacao.findUnique({
+      where: { id: organizacaoId },
+      select: { id: true, id_tecnico: true }
+    });
+
+    if (!organizacao) {
+      throw new ApiError({
+        message: 'Organização não encontrada',
+        statusCode: HttpStatus.NOT_FOUND,
+        code: ErrorCode.RESOURCE_NOT_FOUND
+      });
+    }
+
+    if (organizacao.id_tecnico === tecnicoId) {
+      throw new ApiError({
+        message: 'Não é possível remover o técnico responsável principal da organização',
+        statusCode: HttpStatus.BAD_REQUEST,
+        code: ErrorCode.VALIDATION_ERROR
+      });
+    }
+
+    try {
+      const resultado = await prisma.organizacao_tecnico.deleteMany({
+        where: {
+          id_organizacao: organizacaoId,
+          id_tecnico: tecnicoId
+        }
+      });
+      if (resultado.count === 0) {
+        throw new ApiError({
+          message: 'Técnico não está associado a esta organização',
+          statusCode: HttpStatus.NOT_FOUND,
+          code: ErrorCode.RESOURCE_NOT_FOUND
+        });
+      }
+    } catch (error: any) {
+      if (isPermissionDeniedError(error)) {
+        console.warn('⚠️ Permissão negada ao remover registro em organizacao_tecnico.');
+        throw new ApiError({
+          message: 'Não é possível remover técnicos porque o banco não permitiu acessar a tabela de equipe técnica.',
+          statusCode: HttpStatus.FORBIDDEN,
+          code: ErrorCode.INSUFFICIENT_PERMISSIONS,
+          details: [
+            {
+              campo: 'organizacao_tecnico',
+              mensagem: 'Peça ao DBA para liberar DELETE/SELECT na tabela pinovara.organizacao_tecnico.'
+            }
+          ]
+        });
+      }
       throw error;
     }
   }

@@ -30,6 +30,12 @@ router.put('/:id', organizacaoController.update.bind(organizacaoController));
 router.patch('/:id/validacao', organizacaoController.updateValidacao.bind(organizacaoController));
 router.delete('/:id', organizacaoController.delete.bind(organizacaoController));
 
+// Equipe técnica
+router.get('/:id/tecnicos', organizacaoController.listEquipeTecnica.bind(organizacaoController));
+router.get('/:id/tecnicos/disponiveis', organizacaoController.listTecnicosDisponiveis.bind(organizacaoController));
+router.post('/:id/tecnicos', organizacaoController.addTecnicoEquipe.bind(organizacaoController));
+router.delete('/:id/tecnicos/:idTecnico', organizacaoController.removeTecnicoEquipe.bind(organizacaoController));
+
 // Rotas para tabelas auxiliares
 // Abrangência Geográfica (Sócios)
 router.get('/:id/abrangencia-socios', abrangenciaController.list);

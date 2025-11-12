@@ -10,6 +10,7 @@ interface UpdateFotoDTO {
 export declare const fotoService: {
     create(data: CreateFotoDTO): Promise<{
         id: number;
+        id_organizacao: number | null;
         uri: string;
         obs: string | null;
         creator_uri_user: string;
@@ -19,12 +20,12 @@ export declare const fotoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        id_organizacao: number | null;
         foto: string | null;
         grupo: number | null;
     }>;
     listByOrganizacao(organizacaoId: number): Promise<{
         id: number;
+        id_organizacao: number | null;
         uri: string;
         obs: string | null;
         creator_uri_user: string;
@@ -34,12 +35,12 @@ export declare const fotoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        id_organizacao: number | null;
         foto: string | null;
         grupo: number | null;
     }[]>;
     findById(id: number): Promise<{
         id: number;
+        id_organizacao: number | null;
         uri: string;
         obs: string | null;
         creator_uri_user: string;
@@ -49,12 +50,12 @@ export declare const fotoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        id_organizacao: number | null;
         foto: string | null;
         grupo: number | null;
     } | null>;
     update(id: number, data: UpdateFotoDTO): Promise<{
         id: number;
+        id_organizacao: number | null;
         uri: string;
         obs: string | null;
         creator_uri_user: string;
@@ -64,12 +65,12 @@ export declare const fotoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        id_organizacao: number | null;
         foto: string | null;
         grupo: number | null;
     }>;
     delete(id: number): Promise<{
         id: number;
+        id_organizacao: number | null;
         uri: string;
         obs: string | null;
         creator_uri_user: string;
@@ -79,7 +80,6 @@ export declare const fotoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        id_organizacao: number | null;
         foto: string | null;
         grupo: number | null;
     }>;

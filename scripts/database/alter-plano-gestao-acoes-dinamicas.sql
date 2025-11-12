@@ -16,3 +16,17 @@ UPDATE pinovara.plano_gestao_acao
 SET adicionada = COALESCE(adicionada, FALSE),
     suprimida = COALESCE(suprimida, FALSE);
 
+CREATE TABLE IF NOT EXISTS pinovara.organizacao_tecnico (
+    id SERIAL PRIMARY KEY,
+    id_organizacao INT NOT NULL REFERENCES pinovara.organizacao(id) ON DELETE CASCADE,
+    id_tecnico INT NOT NULL REFERENCES pinovara.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ(6) DEFAULT NOW(),
+    created_by INT REFERENCES pinovara.users(id) ON DELETE SET NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_organizacao_tecnico_unique
+    ON pinovara.organizacao_tecnico (id_organizacao, id_tecnico);
+
+CREATE INDEX IF NOT EXISTS idx_organizacao_tecnico_tecnico
+    ON pinovara.organizacao_tecnico (id_tecnico);
+

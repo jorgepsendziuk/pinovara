@@ -10,6 +10,12 @@ declare class OrganizacaoController {
     getDashboard(req: AuthRequest, res: Response): Promise<void>;
     getEstados(req: AuthRequest, res: Response): Promise<void>;
     getMunicipios(req: AuthRequest, res: Response): Promise<void>;
+    listEquipeTecnica(req: AuthRequest, res: Response): Promise<void>;
+    listTecnicosDisponiveis(req: AuthRequest, res: Response): Promise<void>;
+    addTecnicoEquipe(req: AuthRequest, res: Response): Promise<void>;
+    removeTecnicoEquipe(req: AuthRequest, res: Response): Promise<void>;
+    private verificarAcessoTecnico;
+    private podeGerenciarEquipe;
     private handleError;
 }
 export declare const organizacaoController: OrganizacaoController;

@@ -951,6 +951,7 @@ model organizacao {
   organizacao_participante                                           organizacao_participante[]
   organizacao_producao                                               organizacao_producao[]
   plano_gestao_acao                                                  plano_gestao_acao[]
+  organizacao_tecnico                                                organizacao_tecnico[]
   plano_gestao_evidencia                                             plano_gestao_evidencia[]
   users_organizacao_plano_gestao_rascunho_updated_byTousers         users?                          @relation("organizacao_plano_gestao_rascunho_updated_byTousers", fields: [plano_gestao_rascunho_updated_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
   users_organizacao_plano_gestao_relatorio_sintetico_updated_byTousers users?                        @relation("organizacao_plano_gestao_relatorio_sintetico_updated_byTousers", fields: [plano_gestao_relatorio_sintetico_updated_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
@@ -1179,6 +1180,8 @@ model users {
   organizacao_organizacao_plano_gestao_relatorio_sintetico_updated_byTousers organizacao[] @relation("organizacao_plano_gestao_relatorio_sintetico_updated_byTousers")
   plano_gestao_evidencia                                           plano_gestao_evidencia[]
   user_roles                                                        user_roles[]
+  organizacao_tecnico_membro                                        organizacao_tecnico[] @relation("organizacao_tecnico_tecnico")
+  organizacao_tecnico_criados                                       organizacao_tecnico[] @relation("organizacao_tecnico_criador")
 
   @@schema("pinovara")
 }
@@ -1503,6 +1506,22 @@ model plano_gestao_acao {
   @@unique([id_organizacao, id_acao_modelo])
   @@index([id_organizacao])
   @@index([id_acao_modelo])
+  @@schema("pinovara")
+}
+
+model organizacao_tecnico {
+  id             Int          @id @default(autoincrement())
+  id_organizacao Int
+  id_tecnico     Int
+  created_at     DateTime     @default(now()) @db.Timestamp(6)
+  created_by     Int?
+
+  organizacao organizacao @relation(fields: [id_organizacao], references: [id], onDelete: Cascade)
+  tecnico     users        @relation("organizacao_tecnico_tecnico", fields: [id_tecnico], references: [id], onDelete: Cascade)
+  criador     users?       @relation("organizacao_tecnico_criador", fields: [created_by], references: [id], onDelete: SetNull)
+
+  @@unique([id_organizacao, id_tecnico])
+  @@index([id_tecnico])
   @@schema("pinovara")
 }
 

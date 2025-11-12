@@ -166,11 +166,29 @@ export interface RespostaQuestionario {
 
 // ========== TIPOS DE RESPOSTA DA API ==========
 
+export interface MembroEquipeTecnica {
+  id: number;
+  id_tecnico: number;
+  created_at: string | Date;
+  created_by: number | null;
+  tecnico: {
+    id: number;
+    name: string;
+    email: string | null;
+  } | null;
+  criador: {
+    id: number;
+    name: string;
+    email: string | null;
+  } | null;
+}
+
 export interface OrganizacaoCompleta extends Organizacao {
   estado_nome?: string;
   municipio_nome?: string;
   tecnico_nome?: string;
   tecnico_email?: string;
+  equipe_tecnica?: MembroEquipeTecnica[];
 }
 
 export interface ListaOrganizacoesResponse {
@@ -192,6 +210,12 @@ export interface FiltrosOrganizacao {
   estado?: number;
   municipio?: number;
   id_tecnico?: number;
+}
+
+export interface TecnicoResumo {
+  id: number;
+  name: string;
+  email: string | null;
 }
 
 export interface CadastroOrganizacaoForm extends Partial<Organizacao> {

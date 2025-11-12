@@ -27,6 +27,23 @@ export interface OrganizacaoCompleta extends Organizacao {
     organizacao_arquivo: Arquivo[];
     organizacao_foto: Foto[];
     organizacao_producao: Producao[];
+    equipe_tecnica?: OrganizacaoEquipeMembro[];
+}
+export interface OrganizacaoEquipeMembro {
+    id: number;
+    id_tecnico: number;
+    created_at: Date;
+    created_by: number | null;
+    tecnico: {
+        id: number;
+        name: string;
+        email: string | null;
+    } | null;
+    criador: {
+        id: number;
+        name: string;
+        email: string | null;
+    } | null;
 }
 export interface AbrangenciaPj {
     id: number;

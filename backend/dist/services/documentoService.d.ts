@@ -14,6 +14,7 @@ interface UpdateDocumentoDTO {
 export declare const documentoService: {
     create(data: CreateDocumentoDTO): Promise<{
         id: number;
+        id_organizacao: number | null;
         uri: string;
         obs: string | null;
         creator_uri_user: string;
@@ -23,11 +24,11 @@ export declare const documentoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        id_organizacao: number | null;
         arquivo: string | null;
     }>;
     findByOrganizacao(organizacaoId: number): Promise<{
         id: number;
+        id_organizacao: number | null;
         uri: string;
         obs: string | null;
         creator_uri_user: string;
@@ -37,11 +38,11 @@ export declare const documentoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        id_organizacao: number | null;
         arquivo: string | null;
     }[]>;
     findById(id: number): Promise<{
         id: number;
+        id_organizacao: number | null;
         uri: string;
         obs: string | null;
         creator_uri_user: string;
@@ -51,11 +52,11 @@ export declare const documentoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        id_organizacao: number | null;
         arquivo: string | null;
     } | null>;
     update(id: number, data: UpdateDocumentoDTO): Promise<{
         id: number;
+        id_organizacao: number | null;
         uri: string;
         obs: string | null;
         creator_uri_user: string;
@@ -65,11 +66,11 @@ export declare const documentoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        id_organizacao: number | null;
         arquivo: string | null;
     }>;
     delete(id: number): Promise<{
         id: number;
+        id_organizacao: number | null;
         uri: string;
         obs: string | null;
         creator_uri_user: string;
@@ -79,7 +80,6 @@ export declare const documentoService: {
         parent_auri: string | null;
         ordinal_number: number;
         top_level_auri: string | null;
-        id_organizacao: number | null;
         arquivo: string | null;
     }>;
     count(organizacaoId: number): Promise<number>;

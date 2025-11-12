@@ -2,6 +2,44 @@ import { Organizacao, OrganizacaoFilters, OrganizacaoListResponse } from '../typ
 declare class OrganizacaoService {
     list(filters?: OrganizacaoFilters): Promise<OrganizacaoListResponse>;
     getById(organizacaoId: number): Promise<any>;
+    getEquipeTecnica(organizacaoId: number): Promise<Array<{
+        id: number;
+        id_tecnico: number;
+        created_at: Date;
+        created_by: number | null;
+        tecnico: {
+            id: number;
+            name: string;
+            email: string | null;
+        } | null;
+        criador: {
+            id: number;
+            name: string;
+            email: string | null;
+        } | null;
+    }>>;
+    listarTecnicosDisponiveis(organizacaoId: number, search?: string): Promise<Array<{
+        id: number;
+        name: string;
+        email: string | null;
+    }>>;
+    adicionarTecnicoEquipe(organizacaoId: number, tecnicoId: number, criadoPor: number | null): Promise<{
+        id: number;
+        id_tecnico: number;
+        created_at: Date;
+        created_by: number | null;
+        tecnico: {
+            id: number;
+            name: string;
+            email: string | null;
+        } | null;
+        criador: {
+            id: number;
+            name: string;
+            email: string | null;
+        } | null;
+    }>;
+    removerTecnicoEquipe(organizacaoId: number, tecnicoId: number): Promise<void>;
     private _getByIdOLD_BACKUP;
     create(data: Partial<Organizacao>): Promise<Organizacao>;
     update(id: number, data: Partial<Organizacao>): Promise<Organizacao>;

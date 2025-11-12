@@ -5,6 +5,12 @@ export declare const requireTechnician: (req: AuthRequest, res: Response, next: 
 export declare const checkOrganizacaoPermission: (req: AuthRequest, res: Response, next: NextFunction) => void;
 export declare const hasAccessToOrganizacao: (userPermissions: any, organizacao: {
     id_tecnico?: number | null;
+    organizacao_tecnico?: Array<{
+        id_tecnico: number;
+    }>;
+    equipe_tecnica?: Array<{
+        id_tecnico: number;
+    }>;
 }) => boolean;
 declare const _default: {
     requireRole: (moduleName: string, roleName: string) => (req: AuthRequest, res: Response, next: NextFunction) => void;
@@ -12,6 +18,12 @@ declare const _default: {
     checkOrganizacaoPermission: (req: AuthRequest, res: Response, next: NextFunction) => void;
     hasAccessToOrganizacao: (userPermissions: any, organizacao: {
         id_tecnico?: number | null;
+        organizacao_tecnico?: Array<{
+            id_tecnico: number;
+        }>;
+        equipe_tecnica?: Array<{
+            id_tecnico: number;
+        }>;
     }) => boolean;
 };
 export default _default;

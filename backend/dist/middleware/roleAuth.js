@@ -72,7 +72,18 @@ const hasAccessToOrganizacao = (userPermissions, organizacao) => {
         return true;
     }
     if (userPermissions.isTechnician) {
-        return organizacao.id_tecnico === userPermissions.userId;
+        if (organizacao.id_tecnico === userPermissions.userId) {
+            return true;
+        }
+        const equipeOrganizacao = Array.isArray(organizacao.organizacao_tecnico)
+            ? organizacao.organizacao_tecnico
+            : Array.isArray(organizacao.equipe_tecnica)
+                ? organizacao.equipe_tecnica
+                : [];
+        if (equipeOrganizacao.some(membro => membro.id_tecnico === userPermissions.userId)) {
+            return true;
+        }
+        return false;
     }
     return false;
 };

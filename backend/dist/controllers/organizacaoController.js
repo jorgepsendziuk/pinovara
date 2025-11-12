@@ -10,6 +10,7 @@ const api_1 = require("../types/api");
 const odkHelper_1 = require("../utils/odkHelper");
 const auditService_1 = __importDefault(require("../services/auditService"));
 const audit_1 = require("../types/audit");
+const roleAuth_1 = require("../middleware/roleAuth");
 class OrganizacaoController {
     async list(req, res) {
         try {
@@ -62,28 +63,16 @@ class OrganizacaoController {
                 });
                 return;
             }
-            if (userPermissions?.isTechnician && !userPermissions?.canAccessAll) {
-                let temAcesso = false;
-                if (organizacao.id_tecnico === userPermissions.userId) {
-                    temAcesso = true;
-                }
-                if (!temAcesso && organizacao.creator_uri_user) {
-                    const creatorEmail = (0, odkHelper_1.extractEmailFromCreatorUri)(organizacao.creator_uri_user);
-                    if (creatorEmail && creatorEmail === req.user?.email?.toLowerCase()) {
-                        temAcesso = true;
-                    }
-                }
-                if (!temAcesso) {
-                    res.status(api_1.HttpStatus.FORBIDDEN).json({
-                        success: false,
-                        error: {
-                            message: 'Acesso negado. Técnicos só podem acessar organizações criadas por eles.',
-                            statusCode: api_1.HttpStatus.FORBIDDEN
-                        },
-                        timestamp: new Date().toISOString()
-                    });
-                    return;
-                }
+            if (!this.verificarAcessoTecnico(userPermissions, organizacao, req)) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Acesso negado. Técnicos só podem acessar organizações criadas por eles ou onde foram autorizados.',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
             }
             res.status(api_1.HttpStatus.OK).json({
                 success: true,
@@ -181,32 +170,11 @@ class OrganizacaoController {
                     }
                     throw error;
                 }
-                if (!organizacaoExistente) {
-                    res.status(api_1.HttpStatus.NOT_FOUND).json({
-                        success: false,
-                        error: {
-                            message: 'Organização não encontrada',
-                            statusCode: api_1.HttpStatus.NOT_FOUND
-                        },
-                        timestamp: new Date().toISOString()
-                    });
-                    return;
-                }
-                let temAcesso = false;
-                if (organizacaoExistente.id_tecnico === userPermissions.userId) {
-                    temAcesso = true;
-                }
-                if (!temAcesso && organizacaoExistente.creator_uri_user) {
-                    const creatorEmail = (0, odkHelper_1.extractEmailFromCreatorUri)(organizacaoExistente.creator_uri_user);
-                    if (creatorEmail && creatorEmail === req.user?.email?.toLowerCase()) {
-                        temAcesso = true;
-                    }
-                }
-                if (!temAcesso) {
+                if (!this.verificarAcessoTecnico(userPermissions, organizacaoExistente, req)) {
                     res.status(api_1.HttpStatus.FORBIDDEN).json({
                         success: false,
                         error: {
-                            message: 'Acesso negado. Técnicos só podem editar organizações criadas por eles.',
+                            message: 'Acesso negado. Técnicos só podem editar organizações criadas por eles ou onde foram autorizados.',
                             statusCode: api_1.HttpStatus.FORBIDDEN
                         },
                         timestamp: new Date().toISOString()
@@ -377,6 +345,249 @@ class OrganizacaoController {
             console.error('Organizacao Controller Error:', error);
             this.handleError(error, res);
         }
+    }
+    async listEquipeTecnica(req, res) {
+        try {
+            const id = parseInt(req.params.id);
+            const userPermissions = req.userPermissions;
+            if (isNaN(id)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: {
+                        message: 'ID inválido',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const organizacao = await organizacaoService_1.default.getById(id);
+            if (!organizacao) {
+                res.status(api_1.HttpStatus.NOT_FOUND).json({
+                    success: false,
+                    error: {
+                        message: 'Organização não encontrada',
+                        statusCode: api_1.HttpStatus.NOT_FOUND
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (!this.verificarAcessoTecnico(userPermissions, organizacao, req)) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Sem permissão para visualizar a equipe técnica desta organização.',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                data: organizacao.equipe_tecnica || [],
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
+    async listTecnicosDisponiveis(req, res) {
+        try {
+            const id = parseInt(req.params.id);
+            const search = req.query.search;
+            const userPermissions = req.userPermissions;
+            if (isNaN(id)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: {
+                        message: 'ID inválido',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const organizacao = await organizacaoService_1.default.getById(id);
+            if (!organizacao) {
+                res.status(api_1.HttpStatus.NOT_FOUND).json({
+                    success: false,
+                    error: {
+                        message: 'Organização não encontrada',
+                        statusCode: api_1.HttpStatus.NOT_FOUND
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (!this.podeGerenciarEquipe(userPermissions, organizacao)) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Sem permissão para gerenciar a equipe técnica desta organização.',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const tecnicos = await organizacaoService_1.default.listarTecnicosDisponiveis(id, search);
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                data: tecnicos,
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
+    async addTecnicoEquipe(req, res) {
+        try {
+            const id = parseInt(req.params.id);
+            const { id_tecnico, tecnicoId } = req.body || {};
+            const tecnicoIdNumero = parseInt(id_tecnico !== undefined ? id_tecnico : tecnicoId);
+            const userPermissions = req.userPermissions;
+            if (isNaN(id)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: {
+                        message: 'ID da organização é obrigatório',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (isNaN(tecnicoIdNumero)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: {
+                        message: 'ID do técnico é obrigatório',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const organizacao = await organizacaoService_1.default.getById(id);
+            if (!organizacao) {
+                res.status(api_1.HttpStatus.NOT_FOUND).json({
+                    success: false,
+                    error: {
+                        message: 'Organização não encontrada',
+                        statusCode: api_1.HttpStatus.NOT_FOUND
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (!this.podeGerenciarEquipe(userPermissions, organizacao)) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Sem permissão para adicionar técnicos nesta organização.',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const membro = await organizacaoService_1.default.adicionarTecnicoEquipe(id, tecnicoIdNumero, req.user?.id ?? null);
+            res.status(api_1.HttpStatus.CREATED).json({
+                success: true,
+                message: 'Técnico adicionado com sucesso',
+                data: membro,
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
+    async removeTecnicoEquipe(req, res) {
+        try {
+            const id = parseInt(req.params.id);
+            const tecnicoId = parseInt(req.params.idTecnico);
+            const userPermissions = req.userPermissions;
+            if (isNaN(id) || isNaN(tecnicoId)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: {
+                        message: 'IDs inválidos',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const organizacao = await organizacaoService_1.default.getById(id);
+            if (!organizacao) {
+                res.status(api_1.HttpStatus.NOT_FOUND).json({
+                    success: false,
+                    error: {
+                        message: 'Organização não encontrada',
+                        statusCode: api_1.HttpStatus.NOT_FOUND
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            if (!this.podeGerenciarEquipe(userPermissions, organizacao)) {
+                res.status(api_1.HttpStatus.FORBIDDEN).json({
+                    success: false,
+                    error: {
+                        message: 'Sem permissão para remover técnicos desta organização.',
+                        statusCode: api_1.HttpStatus.FORBIDDEN
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            await organizacaoService_1.default.removerTecnicoEquipe(id, tecnicoId);
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                message: 'Técnico removido com sucesso',
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
+    verificarAcessoTecnico(userPermissions, organizacao, req) {
+        if (!userPermissions?.isTechnician || userPermissions?.canAccessAll) {
+            return true;
+        }
+        const equipe = Array.isArray(organizacao.equipe_tecnica)
+            ? organizacao.equipe_tecnica.map((m) => ({ id_tecnico: m.id_tecnico }))
+            : Array.isArray(organizacao.organizacao_tecnico)
+                ? organizacao.organizacao_tecnico.map((m) => ({ id_tecnico: m.id_tecnico }))
+                : [];
+        if ((0, roleAuth_1.hasAccessToOrganizacao)(userPermissions, {
+            id_tecnico: organizacao.id_tecnico,
+            equipe_tecnica: equipe
+        })) {
+            return true;
+        }
+        if (organizacao.creator_uri_user) {
+            const creatorEmail = (0, odkHelper_1.extractEmailFromCreatorUri)(organizacao.creator_uri_user);
+            if (creatorEmail && creatorEmail === req.user?.email?.toLowerCase()) {
+                return true;
+            }
+        }
+        return false;
+    }
+    podeGerenciarEquipe(userPermissions, organizacao) {
+        if (!userPermissions)
+            return false;
+        if (!userPermissions.canEdit)
+            return false;
+        if (userPermissions.isAdmin)
+            return true;
+        return organizacao.id_tecnico === userPermissions.userId;
     }
     handleError(error, res) {
         console.error('Organizacao Controller Error:', error);
