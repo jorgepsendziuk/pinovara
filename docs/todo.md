@@ -225,6 +225,3 @@ php8.2 /var/www/html/legaliza/cmd.php "class=VTituloNovoDocumentGerar&method=onG
 php8.2 /var/www/html/legaliza/cmd.php "class=VTituloNovoDocumentGerar&method=onGenerate&static=1&key=371705"
 php8.2 /var/www/html/legaliza/cmd.php "class=VTituloNovoDocumentGerar&method=onGenerate&static=1&key=371706"
 
-
-atribuicao de varios tecnicos, o tecnico criador da organizacao deve poder selecionar outros tecnicos para ter acesso a editar essa organizacao tambem.
-vamos planejar essa mudanca na arquitetura. pode ser um accordion na primeira aba de edicao da organizacao

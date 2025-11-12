@@ -8,7 +8,9 @@ import {
   Estado,
   Municipio,
   Funcao,
-  RespostaQuestionario
+  RespostaQuestionario,
+  MembroEquipeTecnica,
+  TecnicoResumo
 } from '../types/organizacao';
 
 // ========== CONFIGURAÇÃO DA API ==========
@@ -355,6 +357,62 @@ export const organizacaoAPI = {
     }
 
     return response.data.data!;
+  },
+
+  /**
+   * Listar equipe técnica associada a uma organização
+   */
+  getEquipeTecnica: async (id: number): Promise<MembroEquipeTecnica[]> => {
+    const response = await api.get<ApiResponse<MembroEquipeTecnica[]>>(`/organizacoes/${id}/tecnicos`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao carregar equipe técnica');
+    }
+
+    return response.data.data || [];
+  },
+
+  /**
+   * Buscar técnicos disponíveis para associação
+   */
+  listarTecnicosDisponiveis: async (id: number, search?: string): Promise<TecnicoResumo[]> => {
+    const response = await api.get<ApiResponse<TecnicoResumo[]>>(`/organizacoes/${id}/tecnicos/disponiveis`, {
+      params: search ? { search } : {}
+    });
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao buscar técnicos disponíveis');
+    }
+
+    return response.data.data || [];
+  },
+
+  /**
+   * Adicionar técnico à equipe da organização
+   */
+  adicionarTecnico: async (id: number, idTecnico: number): Promise<string> => {
+    const response = await api.post<ApiResponse<unknown>>(`/organizacoes/${id}/tecnicos`, {
+      id_tecnico: idTecnico
+    });
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao adicionar técnico');
+    }
+
+    return response.data.message || 'Técnico adicionado com sucesso.';
+  },
+
+  /**
+   * Remover técnico da equipe da organização
+   */
+  removerTecnico: async (id: number, idTecnico: number): Promise<string> => {
+    const response = await api.delete<ApiResponse<unknown>>(`/organizacoes/${id}/tecnicos/${idTecnico}`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao remover técnico');
+    }
+
+    return response.data.message || 'Técnico removido com sucesso.';
   }
 };
 

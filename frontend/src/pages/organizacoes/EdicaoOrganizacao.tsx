@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { AbaAtiva } from '../../types/organizacao';
+import { useState, useEffect, useCallback } from 'react';
+import { AbaAtiva, MembroEquipeTecnica } from '../../types/organizacao';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOrganizacaoData } from '../../hooks/useOrganizacaoData';
 import { useRepresentanteData } from '../../hooks/useRepresentanteData';
@@ -22,7 +22,7 @@ import { IndicadoresAtividade } from '../../components/organizacoes/IndicadoresA
 import { ParticipantesAtividade } from '../../components/organizacoes/ParticipantesAtividade';
 import { ObservacoesFinais } from '../../components/organizacoes/ObservacoesFinais';
 import Toast from '../../components/Toast';
-import api from '../../services/api';
+import api, { organizacaoAPI } from '../../services/api';
 import {
   Edit,
   Search,
@@ -49,7 +49,8 @@ import {
   Calendar,
   User,
   Clock,
-  PenTool
+  PenTool,
+  ChevronDown
 } from 'lucide-react';
 import '../../styles/tabs.css';
 
@@ -61,7 +62,7 @@ interface EdicaoOrganizacaoProps {
 function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps) {
   
   // Verificação de permissão
-  const { isCoordinator, isSupervisor } = useAuth();
+  const { isCoordinator, isSupervisor, hasPermission, user } = useAuth();
   
   // Bloquear acesso para supervisores
   if (isSupervisor()) {
@@ -108,15 +109,22 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
   const [toastError, setToastError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [gerandoPDF, setGerandoPDF] = useState(false);
+  type TecnicoDisponivel = { id: number; name: string; email: string | null };
+  const [equipeTecnica, setEquipeTecnica] = useState<MembroEquipeTecnica[]>([]);
+  const [carregandoEquipe, setCarregandoEquipe] = useState(false);
+  const [tecnicosDisponiveis, setTecnicosDisponiveis] = useState<TecnicoDisponivel[]>([]);
+  const [carregandoTecnicosDisponiveis, setCarregandoTecnicosDisponiveis] = useState(false);
+  const [tecnicoSelecionado, setTecnicoSelecionado] = useState<number | ''>('');
+  const [adicionandoTecnico, setAdicionandoTecnico] = useState(false);
+  const [removendoTecnicoId, setRemovendoTecnicoId] = useState<number | null>(null);
 
   // Hooks customizados
-  const {
-    organizacao,
-    loading,
-    updateOrganizacao,
-    loadOrganizacao,
-    setError
-  } = useOrganizacaoData();
+  const organizacaoData = useOrganizacaoData();
+  const organizacao = organizacaoData.organizacao;
+  const loading = organizacaoData.loading;
+  const updateOrganizacao = organizacaoData.updateOrganizacao;
+  const loadOrganizacao = organizacaoData.loadOrganizacao;
+  const setError = organizacaoData.setError;
 
   const {
     dadosRepresentante,
@@ -145,6 +153,17 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     toggleDiagnostico,
     loadFromOrganizacao: loadDiagnosticoFromOrganizacao
   } = useDiagnosticoData();
+
+  const userIdNumber = user ? Number(user.id) : null;
+  const isAdminSistema = hasPermission('sistema', 'admin');
+  const idTecnicoResponsavel = organizacao?.id_tecnico ?? null;
+  const isResponsavelPrincipal = userIdNumber !== null && idTecnicoResponsavel === userIdNumber;
+  const canGerenciarEquipe = Boolean(
+    !isModoCriacao &&
+    organizacaoId &&
+    userIdNumber !== null &&
+    (isResponsavelPrincipal || isAdminSistema)
+  );
 
   // Proteção: coordenador não pode criar organizações
   if (isModoCriacao && isCoordinator()) {
@@ -197,24 +216,6 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     );
   }
 
-  // Carregar dados inicial (apenas em modo edição)
-  useEffect(() => {
-    if (organizacaoId) {
-      loadOrganizacao(organizacaoId);
-    } else if (isModoCriacao) {
-      // Em modo criação, inicializar com objeto vazio
-      updateOrganizacao('nome', '');
-    }
-  }, [organizacaoId, loadOrganizacao, isModoCriacao, updateOrganizacao]);
-
-  // Sincronizar dados quando organização carrega
-  useEffect(() => {
-    if (organizacao && !isModoCriacao) {
-      loadRepresentanteFromOrganizacao(organizacao);
-      loadDiagnosticoFromOrganizacao(organizacao);
-    }
-  }, [organizacao, loadRepresentanteFromOrganizacao, loadDiagnosticoFromOrganizacao, isModoCriacao]);
-
   // Handlers
   const toggleAccordion = (accordion: string) => {
     setAccordionsAbertos(prev => 
@@ -230,6 +231,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
       setAccordionsAbertos([
         'dados-basicos',
         'endereco-localizacao',
+        'equipe-tecnica',
         'arquivos',
         'fotos',
         'assinaturas',
@@ -253,6 +255,111 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     // Fecha todos os accordions
     setAccordionsAbertos([]);
   };
+
+  const carregarEquipe = useCallback(async () => {
+    if (!organizacaoId || isModoCriacao) return;
+    setCarregandoEquipe(true);
+    try {
+      const equipe = await organizacaoAPI.getEquipeTecnica(organizacaoId);
+      setEquipeTecnica(equipe);
+    } catch (err: any) {
+      console.error('Erro ao carregar equipe técnica:', err);
+      setToastError(err?.message || 'Erro ao carregar equipe técnica');
+    } finally {
+      setCarregandoEquipe(false);
+    }
+  }, [organizacaoId, isModoCriacao]);
+
+  const carregarTecnicosDisponiveis = useCallback(async () => {
+    if (!organizacaoId || !canGerenciarEquipe) return;
+    setCarregandoTecnicosDisponiveis(true);
+    try {
+      const tecnicos = await organizacaoAPI.listarTecnicosDisponiveis(organizacaoId);
+      setTecnicosDisponiveis(tecnicos);
+    } catch (err: any) {
+      console.error('Erro ao buscar técnicos disponíveis:', err);
+      setToastError(err?.message || 'Erro ao buscar técnicos disponíveis');
+    } finally {
+      setCarregandoTecnicosDisponiveis(false);
+    }
+  }, [organizacaoId, canGerenciarEquipe]);
+
+  const handleAdicionarTecnico = async () => {
+    if (!organizacaoId || !canGerenciarEquipe || !tecnicoSelecionado || typeof tecnicoSelecionado !== 'number') {
+      return;
+    }
+    setAdicionandoTecnico(true);
+    setSuccess(null);
+    setToastError(null);
+    try {
+      const mensagem = await organizacaoAPI.adicionarTecnico(organizacaoId, tecnicoSelecionado);
+      setSuccess(mensagem);
+      await carregarEquipe();
+      await carregarTecnicosDisponiveis();
+      setTecnicoSelecionado('');
+    } catch (err: any) {
+      console.error('Erro ao adicionar técnico na organização:', err);
+      const detalhe = err?.response?.data?.error?.details?.[0]?.mensagem;
+      setToastError(detalhe || err?.response?.data?.error?.message || err?.message || 'Erro ao adicionar técnico.');
+    } finally {
+      setAdicionandoTecnico(false);
+    }
+  };
+
+  const handleRemoverTecnico = async (idTecnico: number) => {
+    if (!organizacaoId || !canGerenciarEquipe) return;
+    const confirmacao = window.confirm('Tem certeza que deseja remover este técnico da organização?');
+    if (!confirmacao) return;
+    setRemovendoTecnicoId(idTecnico);
+    setSuccess(null);
+    setToastError(null);
+    try {
+      const mensagem = await organizacaoAPI.removerTecnico(organizacaoId, idTecnico);
+      setSuccess(mensagem);
+      await carregarEquipe();
+      await carregarTecnicosDisponiveis();
+    } catch (err: any) {
+      console.error('Erro ao remover técnico da organização:', err);
+      setToastError(err?.message || 'Erro ao remover técnico.');
+    } finally {
+      setRemovendoTecnicoId(null);
+    }
+  };
+
+  // Carregar dados inicial (apenas em modo edição)
+  useEffect(() => {
+    if (organizacaoId) {
+      loadOrganizacao(organizacaoId);
+    } else if (isModoCriacao) {
+      updateOrganizacao('nome', '');
+    }
+  }, [organizacaoId, loadOrganizacao, isModoCriacao, updateOrganizacao]);
+
+  // Sincronizar dados quando organização carrega
+  useEffect(() => {
+    if (organizacao && !isModoCriacao) {
+      loadRepresentanteFromOrganizacao(organizacao);
+      loadDiagnosticoFromOrganizacao(organizacao);
+    }
+  }, [organizacao, loadRepresentanteFromOrganizacao, loadDiagnosticoFromOrganizacao, isModoCriacao]);
+
+  useEffect(() => {
+    if (!isModoCriacao && organizacaoId) {
+      carregarEquipe();
+    }
+  }, [organizacaoId, isModoCriacao, carregarEquipe]);
+
+  useEffect(() => {
+    if (organizacao && Array.isArray((organizacao as any).equipe_tecnica)) {
+      setEquipeTecnica((organizacao as any).equipe_tecnica);
+    }
+  }, [organizacao]);
+
+  useEffect(() => {
+    if (canGerenciarEquipe) {
+      carregarTecnicosDisponiveis();
+    }
+  }, [canGerenciarEquipe, carregarTecnicosDisponiveis]);
 
   const handleGerarRelatorio = async () => {
     if (!organizacao || !organizacaoId) return;
@@ -843,6 +950,214 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
               accordionAberto={accordionsAbertos.includes('endereco-localizacao') ? 'endereco-localizacao' : null}
               onToggleAccordion={toggleAccordion}
             />
+
+            {!isModoCriacao && organizacaoId && (
+              <div className="accordion-item">
+                <button
+                  className="accordion-header"
+                  onClick={() => toggleAccordion('equipe-tecnica')}
+                >
+                  <h3><Users size={18} style={{ marginRight: '0.5rem' }} /> Equipe Técnica Autorizada</h3>
+                  <ChevronDown
+                    size={16}
+                    className={`accordion-icon ${accordionsAbertos.includes('equipe-tecnica') ? 'open' : ''}`}
+                    style={{
+                      marginLeft: '0.5rem',
+                      transition: 'transform 0.2s ease',
+                      transform: accordionsAbertos.includes('equipe-tecnica') ? 'rotate(180deg)' : 'rotate(0deg)'
+                    }}
+                  />
+                </button>
+
+                <div className={`accordion-content ${accordionsAbertos.includes('equipe-tecnica') ? 'open' : ''}`}>
+                  <div className="accordion-section" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '10px',
+                      padding: '14px 16px',
+                      background: '#f8fafc',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}>
+                      <span style={{ fontWeight: 600, color: '#3b2313', fontSize: '15px' }}>Responsável principal</span>
+                      <span style={{ color: '#111827', fontSize: '14px' }}>{organizacao.tecnico_nome || 'Não definido'}</span>
+                      {organizacao.tecnico_email && (
+                        <span style={{ color: '#6b7280', fontSize: '13px' }}>{organizacao.tecnico_email}</span>
+                      )}
+                    </div>
+
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <h4 style={{ margin: 0, color: '#3b2313', fontSize: '15px' }}>Outros técnicos com acesso</h4>
+                        {carregandoEquipe && (
+                          <span style={{ color: '#6b7280', fontSize: '13px' }}>Atualizando...</span>
+                        )}
+                      </div>
+
+                      {!carregandoEquipe && equipeTecnica.length === 0 && (
+                        <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
+                          Nenhum técnico adicional possui acesso a esta organização.
+                        </p>
+                      )}
+
+                      {!carregandoEquipe && equipeTecnica.length > 0 && (
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {equipeTecnica.map((membro) => (
+                            <li
+                              key={membro.id}
+                              style={{
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '10px',
+                                padding: '12px 14px',
+                                background: '#ffffff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '12px',
+                                flexWrap: 'wrap'
+                              }}
+                            >
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <span style={{ fontWeight: 600, color: '#111827', fontSize: '15px' }}>
+                                  {membro.tecnico?.name || 'Técnico sem nome'}
+                                </span>
+                                <span style={{ color: '#6b7280', fontSize: '13px' }}>
+                                  {membro.tecnico?.email || 'Sem e-mail cadastrado'}
+                                </span>
+                                {membro.created_at && (
+                                  <span style={{ color: '#9ca3af', fontSize: '12px' }}>
+                                    Acesso concedido em {new Date(membro.created_at).toLocaleDateString('pt-BR')}
+                                    {membro.criador?.name ? ` por ${membro.criador.name}` : ''}
+                                  </span>
+                                )}
+                              </div>
+
+                              {canGerenciarEquipe ? (
+                                <button
+                                  onClick={() => handleRemoverTecnico(membro.id_tecnico)}
+                                  disabled={removendoTecnicoId === membro.id_tecnico}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #dc2626',
+                                    background: removendoTecnicoId === membro.id_tecnico ? '#fee2e2' : '#ffffff',
+                                    color: '#b91c1c',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    cursor: removendoTecnicoId === membro.id_tecnico ? 'not-allowed' : 'pointer'
+                                  }}
+                                >
+                                  {removendoTecnicoId === membro.id_tecnico ? 'Removendo...' : (
+                                    <>
+                                      <XCircle size={16} />
+                                      Remover
+                                    </>
+                                  )}
+                                </button>
+                              ) : (
+                                <span style={{ color: '#9ca3af', fontSize: '12px' }}>
+                                  Apenas o responsável principal pode remover
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    {canGerenciarEquipe ? (
+                      <div style={{
+                        marginTop: '10px',
+                        border: '1px dashed #d1d5db',
+                        borderRadius: '10px',
+                        padding: '16px',
+                        background: '#f9fafb',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px'
+                      }}>
+                        <div>
+                          <h4 style={{ margin: 0, color: '#3b2313', fontSize: '15px' }}>Adicionar técnico à equipe</h4>
+                          <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '13px' }}>
+                            Selecione um técnico da lista para conceder acesso de edição.
+                          </p>
+                        </div>
+
+                        {carregandoTecnicosDisponiveis ? (
+                          <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>
+                            Carregando lista de técnicos disponíveis...
+                          </p>
+                        ) : tecnicosDisponiveis.length > 0 ? (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+                            <select
+                              value={tecnicoSelecionado}
+                              onChange={(e) => setTecnicoSelecionado(e.target.value ? Number(e.target.value) : '')}
+                              style={{
+                                flex: '1 1 260px',
+                                minWidth: '220px',
+                                borderRadius: '6px',
+                                border: '1px solid #d1d5db',
+                                padding: '10px'
+                              }}
+                            >
+                              <option value="">Selecione um técnico</option>
+                              {tecnicosDisponiveis.map((tecnico) => (
+                                <option key={tecnico.id} value={tecnico.id}>
+                                  {tecnico.name} {tecnico.email ? `(${tecnico.email})` : ''}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={handleAdicionarTecnico}
+                              disabled={!tecnicoSelecionado || adicionandoTecnico}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '10px 16px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: adicionandoTecnico ? '#6b7280' : '#3b2313',
+                                color: '#ffffff',
+                                cursor: !tecnicoSelecionado || adicionandoTecnico ? 'not-allowed' : 'pointer',
+                                fontWeight: 600
+                              }}
+                            >
+                              {adicionandoTecnico ? 'Adicionando...' : (
+                                <>
+                                  <Plus size={16} />
+                                  Adicionar
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        ) : (
+                          <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>
+                            Não há técnicos disponíveis para adicionar no momento.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{
+                        marginTop: '6px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        background: '#fff7ed',
+                        border: '1px solid #fed7aa',
+                        color: '#9a3412',
+                        fontSize: '13px'
+                      }}>
+                        Apenas o técnico responsável principal ou administradores do sistema podem gerenciar a equipe técnica.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Upload de documentos e fotos apenas em modo edição */}
             {!isModoCriacao && organizacaoId && (

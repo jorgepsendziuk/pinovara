@@ -105,7 +105,11 @@ export const checkOrganizacaoPermission = (req: AuthRequest, res: Response, next
  */
 export const hasAccessToOrganizacao = (
   userPermissions: any, 
-  organizacao: { id_tecnico?: number | null }
+  organizacao: { 
+    id_tecnico?: number | null;
+    organizacao_tecnico?: Array<{ id_tecnico: number }>;
+    equipe_tecnica?: Array<{ id_tecnico: number }>;
+  }
 ): boolean => {
   // Admin tem acesso a tudo
   if (userPermissions.canAccessAll) {
@@ -114,7 +118,21 @@ export const hasAccessToOrganizacao = (
 
   // Técnico só tem acesso às organizações que ele criou
   if (userPermissions.isTechnician) {
-    return organizacao.id_tecnico === userPermissions.userId;
+    if (organizacao.id_tecnico === userPermissions.userId) {
+      return true;
+    }
+    const equipeOrganizacao = Array.isArray(organizacao.organizacao_tecnico)
+      ? organizacao.organizacao_tecnico
+      : Array.isArray(organizacao.equipe_tecnica)
+        ? organizacao.equipe_tecnica
+        : [];
+
+    if (equipeOrganizacao.some(
+        membro => membro.id_tecnico === userPermissions.userId
+      )) {
+      return true;
+    }
+    return false;
   }
 
   // Por padrão, não tem acesso

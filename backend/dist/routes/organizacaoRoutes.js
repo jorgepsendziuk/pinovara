@@ -55,6 +55,10 @@ router.get('/:id', organizacaoController_1.organizacaoController.getById.bind(or
 router.put('/:id', organizacaoController_1.organizacaoController.update.bind(organizacaoController_1.organizacaoController));
 router.patch('/:id/validacao', organizacaoController_1.organizacaoController.updateValidacao.bind(organizacaoController_1.organizacaoController));
 router.delete('/:id', organizacaoController_1.organizacaoController.delete.bind(organizacaoController_1.organizacaoController));
+router.get('/:id/tecnicos', organizacaoController_1.organizacaoController.listEquipeTecnica.bind(organizacaoController_1.organizacaoController));
+router.get('/:id/tecnicos/disponiveis', organizacaoController_1.organizacaoController.listTecnicosDisponiveis.bind(organizacaoController_1.organizacaoController));
+router.post('/:id/tecnicos', organizacaoController_1.organizacaoController.addTecnicoEquipe.bind(organizacaoController_1.organizacaoController));
+router.delete('/:id/tecnicos/:idTecnico', organizacaoController_1.organizacaoController.removeTecnicoEquipe.bind(organizacaoController_1.organizacaoController));
 router.get('/:id/abrangencia-socios', abrangenciaController_1.abrangenciaController.list);
 router.post('/:id/abrangencia-socios', abrangenciaController_1.abrangenciaController.create);
 router.put('/:id/abrangencia-socios/:itemId', abrangenciaController_1.abrangenciaController.update);
