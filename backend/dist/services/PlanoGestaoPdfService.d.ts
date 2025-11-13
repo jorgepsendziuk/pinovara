@@ -12,10 +12,10 @@ declare class PlanoGestaoPdfService {
     private drawTableHeader;
     private calculateActionRowHeight;
     private drawActionRow;
-    private renderFooter;
     private addPageWithHeader;
     private drawInfoCard;
     private renderResumo;
+    private checkAndAddFooter;
     private renderTextBlock;
     private renderEvidencias;
     private renderPlano;

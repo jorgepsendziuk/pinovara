@@ -36,10 +36,10 @@ class PlanoGestaoPdfService {
         return 'Pendente';
     }
     renderHeader(doc, nomeOrganizacao) {
-        const headerHeight = 75;
+        const headerHeight = 100;
         doc.rect(0, 0, doc.page.width, headerHeight).fill('#f8f9fa');
         doc.strokeColor('#056839')
-            .lineWidth(1.5)
+            .lineWidth(2)
             .moveTo(0, headerHeight)
             .lineTo(doc.page.width, headerHeight)
             .stroke();
@@ -51,31 +51,31 @@ class PlanoGestaoPdfService {
         for (const logoPath of logoPaths) {
             if (fs_1.default.existsSync(logoPath)) {
                 try {
-                    doc.image(logoPath, 40, 12, { width: 45 });
+                    doc.image(logoPath, 40, 20, { width: 55 });
                     break;
                 }
                 catch (e) {
                 }
             }
         }
-        const textStartX = 100;
+        const textStartX = 110;
         const textWidth = doc.page.width - textStartX - 40;
-        let currentY = 15;
+        let currentY = 25;
         doc.fillColor('#056839')
             .font('Helvetica-Bold')
-            .fontSize(12)
+            .fontSize(14)
             .text('Plano de Gestão - Sistema PINOVARA', textStartX, currentY, { width: textWidth, align: 'center' });
-        currentY += 14;
+        currentY += 16;
         doc.fillColor('#3b2313')
             .font('Helvetica')
-            .fontSize(9)
-            .text(nomeOrganizacao, textStartX, currentY, { width: textWidth, align: 'center', lineGap: 1.5 });
-        const nomeHeight = doc.heightOfString(nomeOrganizacao, { width: textWidth, lineGap: 1.5 });
-        currentY += nomeHeight + 3;
+            .fontSize(10)
+            .text(nomeOrganizacao, textStartX, currentY, { width: textWidth, align: 'center', lineGap: 2 });
+        const nomeHeight = doc.heightOfString(nomeOrganizacao, { width: textWidth, lineGap: 2 });
+        currentY += nomeHeight + 4;
         doc.fillColor('#666')
-            .fontSize(7)
+            .fontSize(8)
             .text(`Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, textStartX, currentY, { width: textWidth, align: 'center' });
-        doc.y = headerHeight - 3;
+        doc.y = headerHeight + 5;
     }
     ensureSpace(doc, neededHeight, onPageBreak) {
         const bottomMargin = doc.page?.margins?.bottom ?? 60;
@@ -149,90 +149,115 @@ class PlanoGestaoPdfService {
         doc.y += headerHeight + 4;
     }
     drawTableHeader(doc, startX, columns) {
-        const headerHeight = 20;
+        const headerHeight = 16;
         const totalWidth = columns.reduce((sum, col) => sum + col.width, 0);
-        doc.save();
-        doc.rect(startX, doc.y, totalWidth, headerHeight).fill('#3b2313');
-        doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(9);
+        const baseY = doc.y;
+        doc.fillColor('#000000').font('Helvetica-Bold').fontSize(9);
         let currentX = startX;
-        columns.forEach(col => {
-            doc.text(col.label, currentX + 6, doc.y + 6, { width: col.width - 12 });
+        columns.forEach((col, index) => {
+            const cellX = currentX + 4;
+            const cellY = baseY + 4;
+            doc.text(col.label, cellX, cellY, {
+                width: col.width - 8,
+                height: 10,
+                ellipsis: true,
+                lineGap: 0,
+                align: 'left'
+            });
+            if (index < columns.length - 1) {
+                doc.strokeColor('#e5e5e5')
+                    .lineWidth(0.3)
+                    .moveTo(currentX + col.width, baseY)
+                    .lineTo(currentX + col.width, baseY + headerHeight)
+                    .stroke();
+            }
             currentX += col.width;
         });
-        doc.restore();
-        doc.fillColor('#1f2937');
-        doc.y += headerHeight;
+        doc.strokeColor('#cccccc')
+            .lineWidth(0.5)
+            .moveTo(startX, baseY + headerHeight)
+            .lineTo(startX + totalWidth, baseY + headerHeight)
+            .stroke();
+        doc.y = baseY + headerHeight + 2;
     }
     calculateActionRowHeight(doc, columns, acao) {
-        const paddingX = 6;
+        const paddingX = 4;
         const paddingY = 4;
         const values = this.buildActionRowValues(acao);
         doc.save();
         doc.font('Helvetica').fontSize(9);
-        const heights = columns.map(col => {
+        let maxHeight = 12;
+        columns.forEach(col => {
             if (col.key === 'status') {
-                return 14;
+                maxHeight = Math.max(maxHeight, 12);
             }
-            const text = values[col.key] || '-';
-            return doc.heightOfString(text, { width: col.width - paddingX * 2, align: 'left', lineGap: 1 });
+            else {
+                const text = values[col.key] || '-';
+                const calculatedHeight = doc.heightOfString(text, {
+                    width: col.width - paddingX * 2,
+                    align: 'left',
+                    lineGap: 1
+                });
+                maxHeight = Math.max(maxHeight, Math.min(calculatedHeight, 25));
+            }
         });
         doc.restore();
-        return Math.max(...heights) + paddingY * 2;
+        return maxHeight + paddingY * 2;
     }
     drawActionRow(doc, startX, columns, acao, rowIndex) {
-        const paddingX = 6;
+        const paddingX = 4;
         const paddingY = 4;
         const totalWidth = columns.reduce((sum, col) => sum + col.width, 0);
         const values = this.buildActionRowValues(acao);
         const rowHeight = this.calculateActionRowHeight(doc, columns, acao);
         const rowTop = doc.y;
-        doc.save();
-        doc.rect(startX, rowTop, totalWidth, rowHeight).fill(rowIndex % 2 === 0 ? '#ffffff' : '#f4f8f5');
-        doc.strokeColor('#d1d5db').lineWidth(0.3).rect(startX, rowTop, totalWidth, rowHeight).stroke();
-        doc.fillColor('#1f2937').font('Helvetica').fontSize(9);
+        const baseY = rowTop + paddingY;
+        doc.fillColor('#000000').font('Helvetica').fontSize(9);
         let currentX = startX;
-        columns.forEach(col => {
-            const textX = currentX + paddingX;
-            const textY = rowTop + paddingY;
+        columns.forEach((col, index) => {
+            const cellX = currentX + paddingX;
+            const cellY = baseY;
             const value = values[col.key] || '-';
             if (col.key === 'status') {
-                const pillWidth = Math.min(col.width - paddingX * 2, doc.widthOfString(value, { font: 'Helvetica-Bold', size: 8 }) + 10);
-                const pillHeight = 14;
-                const pillColor = this.getStatusColor(value);
+                const statusColor = this.getStatusColor(value);
+                const pillWidth = Math.min(col.width - paddingX * 2, doc.widthOfString(value, { font: 'Helvetica-Bold', size: 8 }) + 12);
+                const pillHeight = 16;
+                const pillX = cellX;
+                const pillY = cellY - 2;
                 doc.save();
-                doc.roundedRect(textX, textY, pillWidth, pillHeight, 4).fill(pillColor);
+                doc.roundedRect(pillX, pillY, pillWidth, pillHeight, 3).fill(statusColor);
                 doc.fillColor('#ffffff')
                     .font('Helvetica-Bold')
                     .fontSize(8)
-                    .text(value, textX, textY + 2, { width: pillWidth, align: 'center' });
+                    .text(value, pillX, pillY + 4, { width: pillWidth, align: 'center', height: 10 });
                 doc.restore();
+                doc.font('Helvetica').fontSize(9);
+                doc.fillColor('#000000');
             }
             else {
-                doc.text(value, textX, textY, { width: col.width - paddingX * 2, align: 'left', lineGap: 1 });
+                doc.text(value, cellX, cellY, {
+                    width: col.width - paddingX * 2,
+                    height: rowHeight - paddingY * 2,
+                    align: 'left',
+                    lineGap: 1,
+                    ellipsis: true
+                });
+            }
+            if (index < columns.length - 1) {
+                doc.strokeColor('#e5e5e5')
+                    .lineWidth(0.3)
+                    .moveTo(currentX + col.width, rowTop)
+                    .lineTo(currentX + col.width, rowTop + rowHeight)
+                    .stroke();
             }
             currentX += col.width;
         });
-        doc.restore();
-        doc.fillColor('#1f2937');
-        doc.y = rowTop + rowHeight;
-    }
-    renderFooter(doc, pageNumber, totalPages) {
-        const footerHeight = 30;
-        const footerY = doc.page.height - footerHeight;
-        const currentY = doc.y;
-        doc.save();
-        doc.rect(0, footerY, doc.page.width, footerHeight).fill('#f8f9fa');
-        doc.strokeColor('#056839')
-            .lineWidth(1)
-            .moveTo(0, footerY)
-            .lineTo(doc.page.width, footerY)
+        doc.strokeColor('#e5e5e5')
+            .lineWidth(0.3)
+            .moveTo(startX, rowTop + rowHeight)
+            .lineTo(startX + totalWidth, rowTop + rowHeight)
             .stroke();
-        doc.fillColor('#3b2313')
-            .font('Helvetica')
-            .fontSize(8)
-            .text(`Página ${pageNumber} de ${totalPages}`, doc.page.width / 2, footerY + 10, { align: 'center', width: doc.page.width - 80 });
-        doc.restore();
-        doc.y = currentY;
+        doc.y = rowTop + rowHeight;
     }
     addPageWithHeader(doc, nomeOrganizacao, isFirstPage = false, pageNumber, totalPages) {
         const currentMargins = doc.page?.margins;
@@ -243,28 +268,25 @@ class PlanoGestaoPdfService {
         else {
             doc.y = currentMargins?.top ?? 40;
         }
-        if (pageNumber !== undefined) {
-            const currentTotal = totalPages || pageNumber;
-            this.renderFooter(doc, pageNumber, currentTotal);
-        }
     }
     drawInfoCard(doc, x, y, width, height, options) {
         doc.save();
-        doc.roundedRect(x, y, width, height, 4).fill('#ffffff');
-        doc.strokeColor('#e5e7eb').lineWidth(0.3).roundedRect(x, y, width, height, 4).stroke();
+        doc.roundedRect(x, y, width, height, 6).fill('#ffffff');
+        doc.strokeColor(options.cor).lineWidth(2).roundedRect(x, y, width, height, 6).stroke();
+        doc.rect(x, y, width, 4).fill(options.cor);
         doc.fillColor(options.cor)
             .font('Helvetica-Bold')
-            .fontSize(7)
-            .text(options.titulo, x + 4, y + 4, { width: width - 8, lineGap: 0, ellipsis: true });
-        doc.fillColor('#111827')
+            .fontSize(8)
+            .text(options.titulo, x + 8, y + 8, { width: width - 16, lineGap: 0, ellipsis: true });
+        doc.fillColor('#1f2937')
             .font('Helvetica-Bold')
-            .fontSize(13)
-            .text(options.valor, x + 4, y + 13, { width: width - 8, lineGap: 0, ellipsis: true });
+            .fontSize(16)
+            .text(options.valor, x + 8, y + 20, { width: width - 16, lineGap: 0, ellipsis: true });
         if (options.descricao) {
             doc.fillColor('#6b7280')
                 .font('Helvetica')
-                .fontSize(6)
-                .text(options.descricao, x + 4, y + height - 10, { width: width - 8, lineGap: 0, ellipsis: true });
+                .fontSize(7)
+                .text(options.descricao, x + 8, y + height - 12, { width: width - 16, lineGap: 0, ellipsis: true });
         }
         doc.restore();
     }
@@ -273,28 +295,110 @@ class PlanoGestaoPdfService {
         const marginRight = doc.page?.margins?.right ?? 40;
         const availableWidth = doc.page.width - marginLeft - marginRight;
         const startY = doc.y;
-        doc.fillColor('#3b2313')
-            .font('Helvetica')
-            .fontSize(10);
-        const texto = `Ações Respondidas: ${stats.respondidas}/${stats.total} | Não iniciado: ${stats.status['Não iniciado'] || 0} | Pendente: ${stats.status['Pendente'] || 0} | Concluído: ${stats.status['Concluído'] || 0} | Técnico: ${tecnico?.name || '-'} | Evidências: ${evidencias.filter(ev => ev.tipo === 'foto').length} fotos / ${evidencias.filter(ev => ev.tipo !== 'foto').length} documentos`;
-        doc.text(texto, marginLeft, startY, { width: availableWidth, align: 'left' });
-        doc.y += 15;
+        doc.fillColor('#056839')
+            .font('Helvetica-Bold')
+            .fontSize(14)
+            .text('Resumo do Plano de Gestão', marginLeft, startY, { width: availableWidth });
+        doc.y += 20;
+        const cardHeight = 50;
+        const cardSpacing = 12;
+        const cardsPerRow = 3;
+        const cardWidth = (availableWidth - (cardSpacing * (cardsPerRow - 1))) / cardsPerRow;
+        let currentX = marginLeft;
+        let currentY = doc.y;
+        this.drawInfoCard(doc, currentX, currentY, cardWidth, cardHeight, {
+            titulo: 'Ações Respondidas',
+            valor: `${stats.respondidas} / ${stats.total}`,
+            descricao: `${stats.total > 0 ? Math.round((stats.respondidas / stats.total) * 100) : 0}% do total`,
+            cor: '#056839'
+        });
+        currentX += cardWidth + cardSpacing;
+        this.drawInfoCard(doc, currentX, currentY, cardWidth, cardHeight, {
+            titulo: 'Não Iniciado',
+            valor: `${stats.status['Não iniciado'] || 0}`,
+            descricao: 'Ações não iniciadas',
+            cor: '#fbbf24'
+        });
+        currentX += cardWidth + cardSpacing;
+        this.drawInfoCard(doc, currentX, currentY, cardWidth, cardHeight, {
+            titulo: 'Pendente',
+            valor: `${stats.status['Pendente'] || 0}`,
+            descricao: 'Ações em andamento',
+            cor: '#f97316'
+        });
+        currentX = marginLeft;
+        currentY += cardHeight + cardSpacing;
+        this.drawInfoCard(doc, currentX, currentY, cardWidth, cardHeight, {
+            titulo: 'Concluído',
+            valor: `${stats.status['Concluído'] || 0}`,
+            descricao: 'Ações finalizadas',
+            cor: '#10b981'
+        });
+        currentX += cardWidth + cardSpacing;
+        this.drawInfoCard(doc, currentX, currentY, cardWidth, cardHeight, {
+            titulo: 'Técnico Responsável',
+            valor: tecnico?.name || '-',
+            descricao: tecnico?.email || '',
+            cor: '#3b2313'
+        });
+        currentX += cardWidth + cardSpacing;
+        const fotosCount = evidencias.filter(ev => ev.tipo === 'foto').length;
+        const docsCount = evidencias.filter(ev => ev.tipo !== 'foto').length;
+        this.drawInfoCard(doc, currentX, currentY, cardWidth, cardHeight, {
+            titulo: 'Evidências',
+            valor: `${fotosCount + docsCount}`,
+            descricao: `${fotosCount} fotos / ${docsCount} documentos`,
+            cor: '#6366f1'
+        });
+        doc.y = currentY + cardHeight + 20;
+    }
+    checkAndAddFooter(doc, neededHeight) {
+        const bottomMargin = doc.page?.margins?.bottom ?? 60;
+        const availableSpace = doc.page.height - doc.y - bottomMargin;
+        if (availableSpace < neededHeight) {
+            const currentPage = doc.__pageCount || 1;
+            doc.__pageCount = currentPage + 1;
+            this.addPageWithHeader(doc, '', false, doc.__pageCount, doc.__pageCount);
+            return true;
+        }
+        return false;
     }
     renderTextBlock(doc, title, text) {
         const marginLeft = doc.page?.margins?.left ?? 40;
         const marginRight = doc.page?.margins?.right ?? 40;
         const contentWidth = doc.page.width - marginLeft - marginRight;
+        const padding = 12;
+        const boxPadding = 8;
+        doc.save();
+        doc.font('Helvetica').fontSize(10);
+        const textHeight = doc.heightOfString(text, { width: contentWidth - (padding * 2) - (boxPadding * 2), lineGap: 2 });
+        doc.restore();
+        const estimatedHeight = 20 + textHeight + padding * 2 + boxPadding * 2 + 10;
+        this.checkAndAddFooter(doc, estimatedHeight);
+        const boxY = doc.y;
+        const boxHeight = textHeight + boxPadding * 2 + 20;
+        doc.save();
+        doc.roundedRect(marginLeft, boxY, contentWidth, boxHeight, 4)
+            .fill('#f9fafb');
+        doc.strokeColor('#056839')
+            .lineWidth(1.5)
+            .roundedRect(marginLeft, boxY, contentWidth, boxHeight, 4)
+            .stroke();
+        doc.rect(marginLeft, boxY, contentWidth, 4).fill('#056839');
+        doc.restore();
         doc.fillColor('#056839')
             .font('Helvetica-Bold')
-            .fontSize(10)
-            .text(title, marginLeft, doc.y, { width: contentWidth });
-        doc.y += 12;
+            .fontSize(13)
+            .text(title, marginLeft + padding, boxY + 12, { width: contentWidth - padding * 2 });
         doc.fillColor('#374151')
             .font('Helvetica')
-            .fontSize(9)
-            .text(text, marginLeft, doc.y, { width: contentWidth, align: 'left' });
-        const textHeight = doc.heightOfString(text, { width: contentWidth });
-        doc.y += textHeight + 10;
+            .fontSize(10)
+            .text(text, marginLeft + padding + boxPadding, boxY + 28, {
+            width: contentWidth - (padding * 2) - (boxPadding * 2),
+            align: 'left',
+            lineGap: 2
+        });
+        doc.y = boxY + boxHeight + 10;
     }
     renderEvidencias(doc, evidencias, nomeOrganizacao) {
         if (!evidencias.length) {
@@ -415,11 +519,7 @@ class PlanoGestaoPdfService {
             .font('Helvetica-Bold')
             .fontSize(13)
             .text(plano.titulo, marginLeft, doc.y, { width: contentWidth });
-        doc.fillColor('#3b2313')
-            .font('Helvetica')
-            .fontSize(9)
-            .text(`Categoria: ${plano.tipo}`, marginLeft, doc.y + 14, { width: contentWidth });
-        doc.y += 32;
+        doc.y += 18;
         doc.fillColor('#1f2937').font('Helvetica').fontSize(10);
         plano.grupos.forEach((grupo) => {
             const tituloGrupo = grupo.nome || 'Grupo Sem Nome';
@@ -490,9 +590,6 @@ class PlanoGestaoPdfService {
                 status: statusCounts
             }, { name: tecnico?.name || null, email: tecnico?.email || null }, dadosPlano.evidencias || []);
             console.log('✅ Resumo renderizado, doc.y =', doc.y);
-            const totalPages = doc.__pageCount || 1;
-            this.renderFooter(doc, 1, totalPages);
-            console.log('✅ Rodapé primeira página adicionado, doc.y =', doc.y);
             if (dadosPlano.plano_gestao_rascunho) {
                 this.renderTextBlock(doc, 'Rascunho / Notas Colaborativas', dadosPlano.plano_gestao_rascunho);
                 console.log('✅ Rascunho renderizado, doc.y =', doc.y);
@@ -519,7 +616,7 @@ class PlanoGestaoPdfService {
                 });
             }
             this.renderEvidencias(doc, dadosPlano.evidencias || [], nomeOrganizacao);
-            console.log('✅ Todos os elementos renderizados. Total de páginas:', doc.__pageCount);
+            console.log('✅ Todos os elementos renderizados. Total de páginas:', doc.__pageCount || 1);
             doc.end();
             return stream;
         }
