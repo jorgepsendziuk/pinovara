@@ -257,6 +257,31 @@ class OrganizacaoController {
             this.handleError(error, res);
         }
     }
+    async getHistoricoValidacao(req, res) {
+        try {
+            const id = parseInt(req.params.id);
+            if (isNaN(id)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: {
+                        message: 'ID inválido',
+                        statusCode: api_1.HttpStatus.BAD_REQUEST
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const historico = await organizacaoService_1.default.getHistoricoValidacao(id);
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                data: historico,
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
     async delete(req, res) {
         try {
             const id = parseInt(req.params.id);

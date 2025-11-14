@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, AlertCircle, Clock, Save, User as UserIcon, Calendar, X } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Clock, Save, User as UserIcon, Calendar, X, History } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import Toast from '../Toast';
+import { organizacaoAPI } from '../../services/api';
+import { HistoricoValidacao } from '../../types/organizacao';
+import { formatarDataBR } from '../../utils/dateHelpers';
 import './ModalValidacao.css';
 
 interface ModalValidacaoProps {
@@ -37,6 +40,8 @@ const ModalValidacao: React.FC<ModalValidacaoProps> = ({
   const [novoStatus, setNovoStatus] = useState<number>(1);
   const [novaObs, setNovaObs] = useState<string>('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [historicoValidacao, setHistoricoValidacao] = useState<HistoricoValidacao[]>([]);
+  const [carregandoHistorico, setCarregandoHistorico] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
   
@@ -45,6 +50,7 @@ const ModalValidacao: React.FC<ModalValidacaoProps> = ({
 
   useEffect(() => {
     carregarDados();
+    carregarHistorico();
   }, [organizacaoId]);
 
   const carregarDados = async () => {
@@ -88,6 +94,26 @@ const ModalValidacao: React.FC<ModalValidacaoProps> = ({
     }
   };
 
+  const carregarHistorico = async () => {
+    try {
+      setCarregandoHistorico(true);
+      const historico = await organizacaoAPI.getHistoricoValidacao(organizacaoId);
+      setHistoricoValidacao(historico);
+    } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
+      // Não mostrar erro ao usuário, apenas logar
+      setHistoricoValidacao([]);
+    } finally {
+      setCarregandoHistorico(false);
+    }
+  };
+
+  const getStatusLabel = (status: number | null): string => {
+    if (status === null) return '-';
+    const statusObj = STATUS_VALIDACAO.find(s => s.valor === status);
+    return statusObj?.label || 'Desconhecido';
+  };
+
   const handleSalvar = async () => {
     if (!podeEditar) {
       setToast({ message: 'Você não tem permissão para editar a validação', type: 'error' });
@@ -120,6 +146,9 @@ const ModalValidacao: React.FC<ModalValidacaoProps> = ({
       }
 
       setToast({ message: 'Validação salva com sucesso!', type: 'success' });
+      
+      // Recarregar histórico após salvar
+      await carregarHistorico();
       
       // Aguardar um momento para exibir o toast antes de fechar
       setTimeout(() => {
@@ -220,7 +249,7 @@ const ModalValidacao: React.FC<ModalValidacaoProps> = ({
                   onChange={(e) => setNovaObs(e.target.value)}
                   disabled={!podeEditar}
                   placeholder="Digite observações sobre a validação (opcional)"
-                  rows={4}
+                  rows={3}
                   className="form-textarea"
                   style={{
                     cursor: podeEditar ? 'text' : 'not-allowed',
@@ -233,25 +262,91 @@ const ModalValidacao: React.FC<ModalValidacaoProps> = ({
               <div className="validation-info">
                 <div className="info-row">
                   <div className="info-label">
-                    <Calendar size={16} />
-                    <span>Data de Validação:</span>
+                    <Calendar size={14} />
+                    <span>Data:</span>
                   </div>
                   <div className="info-value">
                     {dados?.validacao_data
-                      ? new Date(dados.validacao_data).toLocaleString('pt-BR')
-                      : 'Ainda não validado'}
+                      ? formatarDataBR(dados.validacao_data)
+                      : 'Não validado'}
                   </div>
                 </div>
 
                 <div className="info-row">
                   <div className="info-label">
-                    <UserIcon size={16} />
+                    <UserIcon size={14} />
                     <span>Validado por:</span>
                   </div>
                   <div className="info-value">
                     {dados?.validacao_usuario_nome || 'N/A'}
                   </div>
                 </div>
+              </div>
+
+              {/* Histórico de Validação */}
+              <div className="historico-section">
+                <div className="historico-header">
+                  <History size={18} />
+                  <h3>Histórico de Validação</h3>
+                </div>
+                {carregandoHistorico ? (
+                  <div className="historico-loading">
+                    <p>Carregando histórico...</p>
+                  </div>
+                ) : historicoValidacao.length > 0 ? (
+                  <div className="historico-list">
+                    {historicoValidacao.map((item, index) => {
+                      const statusAnteriorLabel = getStatusLabel(item.status_anterior);
+                      const statusNovoLabel = getStatusLabel(item.status_novo);
+                      const statusAnteriorObj = STATUS_VALIDACAO.find(s => s.valor === item.status_anterior);
+                      const statusNovoObj = STATUS_VALIDACAO.find(s => s.valor === item.status_novo);
+                      
+                      return (
+                        <div key={item.log_id || index} className="historico-item">
+                          <div className="historico-item-header">
+                            <span className="historico-data">{formatarDataBR(item.data_mudanca)}</span>
+                            {item.usuario_nome && (
+                              <span className="historico-usuario">
+                                <UserIcon size={14} />
+                                {item.usuario_nome}
+                              </span>
+                            )}
+                          </div>
+                          <div className="historico-mudanca">
+                            {item.status_anterior !== null && (
+                              <span 
+                                className="historico-status-anterior"
+                                style={{ color: statusAnteriorObj?.cor || '#666' }}
+                              >
+                                {statusAnteriorLabel}
+                              </span>
+                            )}
+                            {item.status_anterior !== null && item.status_novo !== null && (
+                              <span className="historico-arrow">→</span>
+                            )}
+                            {item.status_novo !== null && (
+                              <span 
+                                className="historico-status-novo"
+                                style={{ color: statusNovoObj?.cor || '#666', fontWeight: '600' }}
+                              >
+                                {statusNovoLabel}
+                              </span>
+                            )}
+                          </div>
+                          {item.observacoes && (
+                            <div className="historico-observacoes">
+                              <strong>Observações:</strong> {item.observacoes}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="historico-empty">
+                    <p>Nenhum histórico de validação encontrado.</p>
+                  </div>
+                )}
               </div>
 
               {/* Botões de Ação */}

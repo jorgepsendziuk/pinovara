@@ -7,6 +7,7 @@ import { StatusValidacaoBadge } from '../../utils/validacaoHelpers';
 import { ModalArquivos } from '../../components/organizacoes/ModalArquivos';
 import ModalValidacao from '../../components/organizacoes/ModalValidacao';
 import { auxiliarAPI } from '../../services/api';
+import { formatarDataBR } from '../../utils/dateHelpers';
 import './ListaOrganizacoes.css';
 import {
   Edit,
@@ -43,6 +44,12 @@ interface Organizacao {
   tecnico_nome?: string | null;
   tecnico_email?: string | null;
   validacao_status?: number | null;
+  // Campos de histórico de validação
+  data_criacao?: string | Date | null;
+  primeira_alteracao_status?: string | Date | null;
+  data_aprovacao?: string | Date | null;
+  validador_nome?: string | null;
+  validador_email?: string | null;
 }
 
 
@@ -851,6 +858,51 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           </div>
         );
       },
+    },
+    {
+      key: 'data_criacao',
+      title: 'Data Criação',
+      dataIndex: 'data_criacao',
+      width: '12%',
+      sortable: true,
+      responsive: {
+        hideOn: 'mobile'
+      },
+      render: (data_criacao: string | Date | null) => (
+        <span style={{ fontSize: '12px', color: '#666' }}>
+          {formatarDataBR(data_criacao)}
+        </span>
+      ),
+    },
+    {
+      key: 'primeira_alteracao_status',
+      title: 'Primeira Validação',
+      dataIndex: 'primeira_alteracao_status',
+      width: '12%',
+      sortable: true,
+      responsive: {
+        hideOn: 'mobile'
+      },
+      render: (primeira_alteracao_status: string | Date | null) => (
+        <span style={{ fontSize: '12px', color: '#666' }}>
+          {formatarDataBR(primeira_alteracao_status)}
+        </span>
+      ),
+    },
+    {
+      key: 'data_aprovacao',
+      title: 'Data Aprovação',
+      dataIndex: 'data_aprovacao',
+      width: '12%',
+      sortable: true,
+      responsive: {
+        hideOn: 'mobile'
+      },
+      render: (data_aprovacao: string | Date | null) => (
+        <span style={{ fontSize: '12px', color: data_aprovacao ? '#10b981' : '#999' }}>
+          {formatarDataBR(data_aprovacao)}
+        </span>
+      ),
     },
     {
       key: 'contato',

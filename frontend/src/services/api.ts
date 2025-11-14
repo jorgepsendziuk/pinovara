@@ -10,7 +10,8 @@ import {
   Funcao,
   RespostaQuestionario,
   MembroEquipeTecnica,
-  TecnicoResumo
+  TecnicoResumo,
+  HistoricoValidacao
 } from '../types/organizacao';
 
 // ========== CONFIGURAÇÃO DA API ==========
@@ -413,6 +414,19 @@ export const organizacaoAPI = {
     }
 
     return response.data.message || 'Técnico removido com sucesso.';
+  },
+
+  /**
+   * Buscar histórico completo de validação de uma organização
+   */
+  getHistoricoValidacao: async (id: number): Promise<HistoricoValidacao[]> => {
+    const response = await api.get<ApiResponse<HistoricoValidacao[]>>(`/organizacoes/${id}/historico-validacao`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao buscar histórico de validação');
+    }
+
+    return response.data.data || [];
   }
 };
 
