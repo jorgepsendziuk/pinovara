@@ -49,6 +49,7 @@ declare class OrganizacaoService {
         validacao_usuario: number | null;
         validacao_data: Date;
     }): Promise<Organizacao>;
+    getHistoricoValidacao(idOrganizacao: number): Promise<any[]>;
     delete(id: number): Promise<void>;
     getDashboardStats(userId?: number): Promise<{
         total: number;

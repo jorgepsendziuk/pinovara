@@ -28,7 +28,7 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 600px;
+  max-width: 1200px;
   width: 100%;
   max-height: 90vh;
   overflow: hidden;
@@ -136,34 +136,34 @@
 
 /* Form Groups */
 .form-group {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .form-group label {
   display: block;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
+  margin-bottom: 0.375rem;
+  font-size: 0.8125rem;
 }
 
 /* Status Buttons */
 .status-buttons {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
 }
 
 .status-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  gap: 0.25rem;
+  padding: 0.375rem 0.5rem;
   border: 2px solid;
-  border-radius: 8px;
+  border-radius: 6px;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   transition: all 0.2s;
 }
 
@@ -179,13 +179,14 @@
 /* Textarea */
 .form-textarea {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 0.875rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
   font-family: inherit;
   resize: vertical;
   transition: border-color 0.2s;
+  min-height: 60px;
 }
 
 .form-textarea:focus {
@@ -203,16 +204,20 @@
 .validation-info {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 0.875rem;
-  margin-bottom: 1.25rem;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0;
+  padding: 0.25rem 0;
+  gap: 0.5rem;
 }
 
 .info-row:not(:last-child) {
@@ -222,15 +227,129 @@
 .info-label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 .info-value {
   color: #056839;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: right;
+  flex: 1;
+}
+
+/* Histórico de Validação */
+.historico-section {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding-top: 1rem;
+  border-top: 2px solid #e5e7eb;
+}
+
+.historico-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: #374151;
+}
+
+.historico-header h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.historico-loading,
+.historico-empty {
+  text-align: center;
+  padding: 1.5rem;
+  color: #6b7280;
   font-size: 0.875rem;
+}
+
+.historico-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.historico-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.625rem;
+  transition: all 0.2s;
+}
+
+.historico-item:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.historico-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.375rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.historico-data {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.historico-usuario {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.historico-mudanca {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.375rem;
+}
+
+.historico-status-anterior,
+.historico-status-novo {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.1875rem 0.375rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.historico-arrow {
+  color: #9ca3af;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.historico-observacoes {
+  margin-top: 0.375rem;
+  padding-top: 0.375rem;
+  border-top: 1px solid #e5e7eb;
+  font-size: 0.75rem;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.historico-observacoes strong {
+  color: #374151;
   font-weight: 600;
 }
 
@@ -282,6 +401,38 @@
 }
 
 /* Responsive */
+@media (max-width: 1280px) {
+  .modal-container {
+    max-width: 95%;
+  }
+  
+  .validation-info {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .modal-container {
+    max-width: 95%;
+  }
+  
+  .status-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-container {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .status-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .modal-container {
     max-width: 100%;

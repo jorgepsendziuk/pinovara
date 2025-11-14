@@ -312,6 +312,38 @@ class OrganizacaoController {
   }
 
   /**
+   * GET /organizacoes/:id/historico-validacao
+   * Buscar histórico completo de validação de uma organização
+   */
+  async getHistoricoValidacao(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+
+      if (isNaN(id)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: {
+            message: 'ID inválido',
+            statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const historico = await organizacaoService.getHistoricoValidacao(id);
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        data: historico,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
    * DELETE /organizacoes/:id
    */
   async delete(req: AuthRequest, res: Response): Promise<void> {

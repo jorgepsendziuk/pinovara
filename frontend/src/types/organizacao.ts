@@ -25,6 +25,13 @@ export interface Organizacao {
   validacao_usuario: number | null;
   validacao_data: Date | string | null;
   validacao_obs: string | null;
+  
+  // Campos de histórico de validação
+  data_criacao?: Date | string | null;
+  primeira_alteracao_status?: Date | string | null;
+  data_aprovacao?: Date | string | null;
+  validador_nome?: string | null;
+  validador_email?: string | null;
 
   // Campos do representante
   representante_nome: string | null;
@@ -235,4 +242,16 @@ export interface DashboardStats {
     municipio: string;
     total: number;
   }>;
+}
+
+export interface HistoricoValidacao {
+  log_id: number;
+  organizacao_id: number;
+  data_mudanca: string | Date;
+  status_anterior: number | null;
+  status_novo: number | null;
+  usuario_nome: string | null;
+  usuario_email: string | null;
+  observacoes: string | null;
+  action?: string | null;
 }

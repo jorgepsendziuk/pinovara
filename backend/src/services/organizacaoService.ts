@@ -112,11 +112,22 @@ class OrganizacaoService {
         o._creator_uri_user,
         o.validacao_status,
         u.name as tecnico_nome,
-        u.email as tecnico_email
+        u.email as tecnico_email,
+        -- Campos de histórico de validação
+        o._creation_date as data_criacao,
+        o.validacao_data as primeira_alteracao_status,
+        CASE 
+          WHEN o.validacao_status = 2 THEN o.validacao_data
+          ELSE NULL
+        END as data_aprovacao,
+        o.validacao_usuario,
+        validador.name as validador_nome,
+        validador.email as validador_email
       FROM pinovara.organizacao o
       LEFT JOIN pinovara_aux.estado e ON o.estado = e.id
       LEFT JOIN pinovara_aux.municipio_ibge m ON o.municipio = m.id
       LEFT JOIN pinovara.users u ON o.id_tecnico = u.id
+      LEFT JOIN pinovara.users validador ON o.validacao_usuario = validador.id
       WHERE o.removido = false
     `;
 
@@ -165,7 +176,7 @@ class OrganizacaoService {
       organizacoes = organizacoes.filter(org => {
         // Opção 1: id_tecnico já está preenchido e bate com userId
         if (org.id_tecnico === userId) return true;
-
+        
         // Opção 2: técnico está na equipe compartilhada
         if (idsEquipe.has(org.id)) return true;
         
@@ -253,14 +264,14 @@ class OrganizacaoService {
       // Usar try-catch para capturar erros do relacionamento
       try {
         organizacao = await prisma.organizacao.findUnique({
-          where: { id: organizacaoId },
-          include: {
-            users: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              }
+        where: { id: organizacaoId },
+        include: {
+          users: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
             },
             organizacao_tecnico: {
               include: {
@@ -282,14 +293,14 @@ class OrganizacaoService {
               orderBy: {
                 created_at: 'asc'
               }
-            }
           }
-        });
+        }
+      });
 
         console.log('📦 Organização encontrada (com include):', organizacao ? 'SIM' : 'NÃO');
       } catch (includeError: any) {
         console.error('❌ Erro ao buscar com include:', includeError);
-        if (!organizacao) {
+      if (!organizacao) {
           console.warn('⚠️ Tentando buscar sem include do relacionamento users');
           organizacao = await prisma.organizacao.findUnique({
             where: { id: organizacaoId }
@@ -1172,6 +1183,7 @@ class OrganizacaoService {
       'organizacao_abrangencia_socio',
       'plano_gestao_evidencia',
       'plano_gestao_acao',
+      'equipe_tecnica',
       
       // Campos do plano de gestão (devem ser atualizados apenas pelos endpoints específicos)
       'plano_gestao_rascunho',
@@ -1214,12 +1226,20 @@ class OrganizacaoService {
       }
     });
     
+    // Lista de campos de foreign key simples que devem ser preservados (não são relacionamentos)
+    const camposForeignKeySimplesPermitidos = ['estado', 'municipio', 'enfase', 'representante_funcao', 'id_tecnico', 'validacao_usuario'];
+    
     // Remover todos os campos de relacionamento que seguem padrões conhecidos
     const camposRemovidosPorPadrao: string[] = [];
     // Padrão 1: resposta_organizacao_*_Toresposta
     // Padrão 2: *_organizacao_*_To*
     // Padrão 3: organizacao_* (arrays de relacionamento)
     Object.keys(dadosLimpos).forEach(key => {
+      // Não remover campos de foreign key simples
+      if (camposForeignKeySimplesPermitidos.includes(key)) {
+        return;
+      }
+      
       let removido = false;
       let motivo = '';
       
@@ -1254,6 +1274,24 @@ class OrganizacaoService {
       if (removido) {
         camposRemovidosPorPadrao.push(`${key} (${motivo})`);
         delete (dadosLimpos as any)[key];
+      }
+    });
+    
+    // Garantir que campos de foreign key simples (estado, municipio, enfase) sejam preservados
+    // Esses campos são Int? e devem ser atualizados diretamente, não através de relacionamentos
+    const camposForeignKeySimples = ['estado', 'municipio', 'enfase', 'representante_funcao', 'id_tecnico'];
+    camposForeignKeySimples.forEach(campo => {
+      if ((dadosLimpos as any)[campo] !== undefined) {
+        // Garantir que seja um número ou null
+        const valor = (dadosLimpos as any)[campo];
+        if (valor === null || valor === '') {
+          (dadosLimpos as any)[campo] = null;
+        } else if (typeof valor === 'string') {
+          const num = parseInt(valor, 10);
+          (dadosLimpos as any)[campo] = isNaN(num) ? null : num;
+        } else if (typeof valor === 'number') {
+          (dadosLimpos as any)[campo] = valor;
+        }
       }
     });
     
@@ -1382,6 +1420,23 @@ class OrganizacaoService {
 
     // Log dos dados que serão enviados ao Prisma
     console.log('📝 Dados limpos para update:', JSON.stringify(dadosLimpos, null, 2));
+    console.log('🔍 Campo estado presente?', 'estado' in dadosLimpos);
+    console.log('🔍 Valor do estado:', (dadosLimpos as any).estado);
+    console.log('🔍 Tipo do estado:', typeof (dadosLimpos as any).estado);
+
+    // Verificar se estado está presente e é válido
+    if ('estado' in dadosLimpos && (dadosLimpos as any).estado !== undefined) {
+      const estadoValue = (dadosLimpos as any).estado;
+      if (estadoValue === null || estadoValue === '' || estadoValue === undefined) {
+        (dadosLimpos as any).estado = null;
+      } else if (typeof estadoValue === 'string') {
+        const num = parseInt(estadoValue, 10);
+        (dadosLimpos as any).estado = isNaN(num) ? null : num;
+      } else if (typeof estadoValue === 'number') {
+        (dadosLimpos as any).estado = estadoValue;
+      }
+      console.log('✅ Estado processado:', (dadosLimpos as any).estado);
+    }
 
     try {
       const organizacao = await prisma.organizacao.update({
@@ -1478,6 +1533,125 @@ class OrganizacaoService {
     });
 
     return organizacao;
+  }
+
+  /**
+   * Buscar histórico completo de validação de uma organização
+   * Busca todas as mudanças de status no audit_logs
+   */
+  async getHistoricoValidacao(idOrganizacao: number): Promise<any[]> {
+    // Verificar se organização existe
+    const organizacao = await prisma.organizacao.findUnique({
+      where: { id: idOrganizacao },
+      select: { id: true, nome: true, removido: true }
+    });
+
+    if (!organizacao || organizacao.removido) {
+      throw new ApiError({
+        message: 'Organização não encontrada',
+        statusCode: HttpStatus.NOT_FOUND,
+        code: ErrorCode.RESOURCE_NOT_FOUND
+      });
+    }
+
+    // Buscar histórico do audit_logs
+    const sqlQuery = `
+      SELECT 
+        al.id AS log_id,
+        al."entityId"::integer AS organizacao_id,
+        al.action,
+        al."createdAt" AS data_mudanca,
+        al."userId",
+        u.name AS usuario_nome,
+        u.email AS usuario_email,
+        al."oldData",
+        al."newData"
+      FROM pinovara.audit_logs al
+      LEFT JOIN pinovara.users u ON al."userId" = u.id
+      WHERE al.entity = 'organizacao' 
+        AND al."entityId"::integer = ${idOrganizacao}
+        AND (
+          al.action LIKE '%validacao%' 
+          OR al.action LIKE '%validation%' 
+          OR al."newData"::text LIKE '%validacao_status%'
+          OR al."oldData"::text LIKE '%validacao_status%'
+        )
+      ORDER BY al."createdAt" DESC
+    `;
+
+    try {
+      const historico = await prisma.$queryRawUnsafe(sqlQuery) as any[];
+      
+      // Processar histórico para extrair status anterior e novo
+      return historico.map(item => {
+        let statusAnterior: number | null = null;
+        let statusNovo: number | null = null;
+        let observacoes: string | null = null;
+
+        // Tentar extrair do newData (JSON)
+        const newData = item.newData || item.new_data;
+        if (newData) {
+          try {
+            const parsedData = typeof newData === 'string' ? JSON.parse(newData) : newData;
+            if (parsedData.validacao_status !== undefined) {
+              statusNovo = parsedData.validacao_status;
+            }
+            if (parsedData.validacao_obs !== undefined) {
+              observacoes = parsedData.validacao_obs;
+            }
+          } catch (e) {
+            // Se não for JSON, tentar extrair como string
+            const newDataStr = typeof newData === 'string' ? newData : JSON.stringify(newData);
+            if (newDataStr.includes('validacao_status')) {
+              const match = newDataStr.match(/validacao_status["\s:]*(\d+)/);
+              if (match) {
+                statusNovo = parseInt(match[1]);
+              }
+            }
+          }
+        }
+
+        // Tentar extrair do oldData (JSON)
+        const oldData = item.oldData || item.old_data;
+        if (oldData) {
+          try {
+            const parsedData = typeof oldData === 'string' ? JSON.parse(oldData) : oldData;
+            if (parsedData.validacao_status !== undefined) {
+              statusAnterior = parsedData.validacao_status;
+            }
+          } catch (e) {
+            // Se não for JSON, tentar extrair como string
+            const oldDataStr = typeof oldData === 'string' ? oldData : JSON.stringify(oldData);
+            if (oldDataStr.includes('validacao_status')) {
+              const match = oldDataStr.match(/validacao_status["\s:]*(\d+)/);
+              if (match) {
+                statusAnterior = parseInt(match[1]);
+              }
+            }
+          }
+        }
+
+        return {
+          log_id: item.log_id,
+          organizacao_id: item.organizacao_id,
+          data_mudanca: item.data_mudanca,
+          status_anterior: statusAnterior,
+          status_novo: statusNovo,
+          usuario_nome: item.usuario_nome,
+          usuario_email: item.usuario_email,
+          observacoes: observacoes,
+          action: item.action
+        };
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar histórico de validação:', error);
+      throw new ApiError({
+        message: 'Erro ao buscar histórico de validação',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR,
+        details: error.message
+      });
+    }
   }
 
   /**

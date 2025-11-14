@@ -81,11 +81,22 @@ class OrganizacaoService {
         o._creator_uri_user,
         o.validacao_status,
         u.name as tecnico_nome,
-        u.email as tecnico_email
+        u.email as tecnico_email,
+        -- Campos de histórico de validação
+        o._creation_date as data_criacao,
+        o.validacao_data as primeira_alteracao_status,
+        CASE 
+          WHEN o.validacao_status = 2 THEN o.validacao_data
+          ELSE NULL
+        END as data_aprovacao,
+        o.validacao_usuario,
+        validador.name as validador_nome,
+        validador.email as validador_email
       FROM pinovara.organizacao o
       LEFT JOIN pinovara_aux.estado e ON o.estado = e.id
       LEFT JOIN pinovara_aux.municipio_ibge m ON o.municipio = m.id
       LEFT JOIN pinovara.users u ON o.id_tecnico = u.id
+      LEFT JOIN pinovara.users validador ON o.validacao_usuario = validador.id
       WHERE o.removido = false
     `;
         const conditions = [];
@@ -963,6 +974,7 @@ class OrganizacaoService {
             'organizacao_abrangencia_socio',
             'plano_gestao_evidencia',
             'plano_gestao_acao',
+            'equipe_tecnica',
             'plano_gestao_rascunho',
             'plano_gestao_rascunho_updated_by',
             'plano_gestao_rascunho_updated_at',
@@ -990,8 +1002,12 @@ class OrganizacaoService {
                 delete dadosLimpos[campo];
             }
         });
+        const camposForeignKeySimplesPermitidos = ['estado', 'municipio', 'enfase', 'representante_funcao', 'id_tecnico', 'validacao_usuario'];
         const camposRemovidosPorPadrao = [];
         Object.keys(dadosLimpos).forEach(key => {
+            if (camposForeignKeySimplesPermitidos.includes(key)) {
+                return;
+            }
             let removido = false;
             let motivo = '';
             if (key.startsWith('resposta_organizacao_') && key.endsWith('Toresposta')) {
@@ -1016,6 +1032,22 @@ class OrganizacaoService {
             if (removido) {
                 camposRemovidosPorPadrao.push(`${key} (${motivo})`);
                 delete dadosLimpos[key];
+            }
+        });
+        const camposForeignKeySimples = ['estado', 'municipio', 'enfase', 'representante_funcao', 'id_tecnico'];
+        camposForeignKeySimples.forEach(campo => {
+            if (dadosLimpos[campo] !== undefined) {
+                const valor = dadosLimpos[campo];
+                if (valor === null || valor === '') {
+                    dadosLimpos[campo] = null;
+                }
+                else if (typeof valor === 'string') {
+                    const num = parseInt(valor, 10);
+                    dadosLimpos[campo] = isNaN(num) ? null : num;
+                }
+                else if (typeof valor === 'number') {
+                    dadosLimpos[campo] = valor;
+                }
             }
         });
         const camposUndefined = [];
@@ -1116,6 +1148,23 @@ class OrganizacaoService {
             }
         }
         console.log('📝 Dados limpos para update:', JSON.stringify(dadosLimpos, null, 2));
+        console.log('🔍 Campo estado presente?', 'estado' in dadosLimpos);
+        console.log('🔍 Valor do estado:', dadosLimpos.estado);
+        console.log('🔍 Tipo do estado:', typeof dadosLimpos.estado);
+        if ('estado' in dadosLimpos && dadosLimpos.estado !== undefined) {
+            const estadoValue = dadosLimpos.estado;
+            if (estadoValue === null || estadoValue === '' || estadoValue === undefined) {
+                dadosLimpos.estado = null;
+            }
+            else if (typeof estadoValue === 'string') {
+                const num = parseInt(estadoValue, 10);
+                dadosLimpos.estado = isNaN(num) ? null : num;
+            }
+            else if (typeof estadoValue === 'number') {
+                dadosLimpos.estado = estadoValue;
+            }
+            console.log('✅ Estado processado:', dadosLimpos.estado);
+        }
         try {
             const organizacao = await prisma.organizacao.update({
                 where: { id },
@@ -1192,6 +1241,109 @@ class OrganizacaoService {
             }
         });
         return organizacao;
+    }
+    async getHistoricoValidacao(idOrganizacao) {
+        const organizacao = await prisma.organizacao.findUnique({
+            where: { id: idOrganizacao },
+            select: { id: true, nome: true, removido: true }
+        });
+        if (!organizacao || organizacao.removido) {
+            throw new ApiError_1.ApiError({
+                message: 'Organização não encontrada',
+                statusCode: api_1.HttpStatus.NOT_FOUND,
+                code: api_1.ErrorCode.RESOURCE_NOT_FOUND
+            });
+        }
+        const sqlQuery = `
+      SELECT 
+        al.id AS log_id,
+        al."entityId"::integer AS organizacao_id,
+        al.action,
+        al."createdAt" AS data_mudanca,
+        al."userId",
+        u.name AS usuario_nome,
+        u.email AS usuario_email,
+        al."oldData",
+        al."newData"
+      FROM pinovara.audit_logs al
+      LEFT JOIN pinovara.users u ON al."userId" = u.id
+      WHERE al.entity = 'organizacao' 
+        AND al."entityId"::integer = ${idOrganizacao}
+        AND (
+          al.action LIKE '%validacao%' 
+          OR al.action LIKE '%validation%' 
+          OR al."newData"::text LIKE '%validacao_status%'
+          OR al."oldData"::text LIKE '%validacao_status%'
+        )
+      ORDER BY al."createdAt" DESC
+    `;
+        try {
+            const historico = await prisma.$queryRawUnsafe(sqlQuery);
+            return historico.map(item => {
+                let statusAnterior = null;
+                let statusNovo = null;
+                let observacoes = null;
+                const newData = item.newData || item.new_data;
+                if (newData) {
+                    try {
+                        const parsedData = typeof newData === 'string' ? JSON.parse(newData) : newData;
+                        if (parsedData.validacao_status !== undefined) {
+                            statusNovo = parsedData.validacao_status;
+                        }
+                        if (parsedData.validacao_obs !== undefined) {
+                            observacoes = parsedData.validacao_obs;
+                        }
+                    }
+                    catch (e) {
+                        const newDataStr = typeof newData === 'string' ? newData : JSON.stringify(newData);
+                        if (newDataStr.includes('validacao_status')) {
+                            const match = newDataStr.match(/validacao_status["\s:]*(\d+)/);
+                            if (match) {
+                                statusNovo = parseInt(match[1]);
+                            }
+                        }
+                    }
+                }
+                const oldData = item.oldData || item.old_data;
+                if (oldData) {
+                    try {
+                        const parsedData = typeof oldData === 'string' ? JSON.parse(oldData) : oldData;
+                        if (parsedData.validacao_status !== undefined) {
+                            statusAnterior = parsedData.validacao_status;
+                        }
+                    }
+                    catch (e) {
+                        const oldDataStr = typeof oldData === 'string' ? oldData : JSON.stringify(oldData);
+                        if (oldDataStr.includes('validacao_status')) {
+                            const match = oldDataStr.match(/validacao_status["\s:]*(\d+)/);
+                            if (match) {
+                                statusAnterior = parseInt(match[1]);
+                            }
+                        }
+                    }
+                }
+                return {
+                    log_id: item.log_id,
+                    organizacao_id: item.organizacao_id,
+                    data_mudanca: item.data_mudanca,
+                    status_anterior: statusAnterior,
+                    status_novo: statusNovo,
+                    usuario_nome: item.usuario_nome,
+                    usuario_email: item.usuario_email,
+                    observacoes: observacoes,
+                    action: item.action
+                };
+            });
+        }
+        catch (error) {
+            console.error('Erro ao buscar histórico de validação:', error);
+            throw new ApiError_1.ApiError({
+                message: 'Erro ao buscar histórico de validação',
+                statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                code: api_1.ErrorCode.DATABASE_ERROR,
+                details: error.message
+            });
+        }
     }
     async delete(id) {
         const existingOrg = await prisma.organizacao.findUnique({
