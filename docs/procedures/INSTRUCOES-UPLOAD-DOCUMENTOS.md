@@ -60,7 +60,7 @@ ls -la /var/pinovara/shared/uploads/
 Após dar as permissões no banco, teste no localhost:
 
 1. **Acesse:** http://localhost:5173
-2. **Login:** jimxxx@gmail.com / [SENHA_REMOVIDA_DO_HISTORICO]
+2. **Login:** jimxxx@gmail.com / [SENHA_DO_USUARIO_TESTE]
 3. **Navegue:** Organizações > Lista > ✏️ Editar
 4. **Abra:** Accordion "Arquivos e Documentos"
 5. **Teste:**

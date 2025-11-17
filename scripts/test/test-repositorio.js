@@ -1,6 +1,16 @@
+require('dotenv').config({ path: require('path').join(__dirname, '.env.test') });
+
 const axios = require('axios');
 
-const API_BASE = 'http://localhost:3001';
+const API_BASE = process.env.TEST_API_URL || 'http://localhost:3001';
+const TEST_EMAIL = process.env.TEST_USER_EMAIL || 'jimxxx@gmail.com';
+const TEST_PASSWORD = process.env.TEST_USER_PASSWORD;
+
+if (!TEST_PASSWORD) {
+  console.error('❌ ERRO: Variável TEST_USER_PASSWORD não definida!');
+  console.error('   Crie um arquivo .env.test baseado em .env.test.example');
+  process.exit(1);
+}
 
 async function testarRepositorio() {
   console.log('🧪 Testando API do Repositório Público...\n');
@@ -26,8 +36,8 @@ async function testarRepositorio() {
     // 3. Testar login para upload
     console.log('3️⃣ Testando login...');
     const loginResponse = await axios.post(`${API_BASE}/auth/login`, {
-      email: 'jimxxx@gmail.com',
-      password: '[SENHA_REMOVIDA_DO_HISTORICO]'
+      email: TEST_EMAIL,
+      password: TEST_PASSWORD
     });
     
     if (loginResponse.data.success) {

@@ -241,7 +241,7 @@ const hasAccess = (item: MenuItem): boolean => {
 
 ```bash
 # Local: http://localhost:5173
-1. Login: jimxxx@gmail.com / [SENHA_REMOVIDA_DO_HISTORICO]
+1. Login: jimxxx@gmail.com / [SENHA_DO_USUARIO_TESTE]
 2. Ir em Organizações > Lista
 3. Editar uma organização
 4. Tentar upload de arquivo 40-80MB

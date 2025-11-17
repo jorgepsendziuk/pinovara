@@ -4,9 +4,22 @@
  */
 
 import axios from 'axios';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-const API_URL = 'http://localhost:3001';
-const ORG_ID = 14;
+// Carregar variáveis de ambiente de teste
+dotenv.config({ path: path.join(__dirname, '../../../.env.test') });
+
+const API_URL = process.env.TEST_API_URL || 'http://localhost:3001';
+const ORG_ID = parseInt(process.env.TEST_ORG_ID || '14', 10);
+const TEST_EMAIL = process.env.TEST_USER_EMAIL || 'jimxxx@gmail.com';
+const TEST_PASSWORD = process.env.TEST_USER_PASSWORD;
+
+if (!TEST_PASSWORD) {
+  console.error('❌ ERRO: Variável TEST_USER_PASSWORD não definida!');
+  console.error('   Crie um arquivo .env.test baseado em .env.test.example');
+  process.exit(1);
+}
 
 async function testarAPIEdicao() {
   console.log('🧪 TESTANDO API DE EDIÇÃO - Organização ID', ORG_ID);
@@ -16,8 +29,8 @@ async function testarAPIEdicao() {
     // 1. Fazer login para obter token
     console.log('1️⃣ Fazendo login...');
     const loginResponse = await axios.post(`${API_URL}/auth/login`, {
-      email: 'jimxxx@gmail.com',
-      password: '[SENHA_REMOVIDA_DO_HISTORICO]'
+      email: TEST_EMAIL,
+      password: TEST_PASSWORD
     });
 
     const token = loginResponse.data.data.token;

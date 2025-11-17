@@ -63,7 +63,7 @@ async function createCoordenadorRole() {
         result.details.roleId = role.id;
         const email = 'mariana.mariana.colaborador@incra.gov.br';
         const nome = 'Mariana Costa';
-        const senha = '[SENHA_REMOVIDA_DO_HISTORICO]';
+        const senha = process.env.COORDENADOR_DEFAULT_PASSWORD || 'TEMPORARIA_ALTERAR_IMEDIATAMENTE';
         let usuario = await prisma.users.findUnique({
             where: { email },
         });

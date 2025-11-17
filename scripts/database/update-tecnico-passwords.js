@@ -5,16 +5,26 @@
  *
  * Este script:
  * 1. Identifica todos os usuários com role "tecnico" no módulo "organizacoes"
- * 2. Atualiza suas senhas para "[SENHA_REMOVIDA_DO_HISTORICO]"
+ * 2. Atualiza suas senhas para o valor definido em TECNICO_DEFAULT_PASSWORD
  * 3. Mantém log das alterações
+ *
+ * IMPORTANTE: Defina a variável de ambiente TECNICO_DEFAULT_PASSWORD antes de executar
  */
+
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env.test') });
 
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 
 async function updateTecnicoPasswords() {
   const prisma = new PrismaClient();
-  const novaSenha = '[SENHA_REMOVIDA_DO_HISTORICO]';
+  const novaSenha = process.env.TECNICO_DEFAULT_PASSWORD;
+  
+  if (!novaSenha) {
+    console.error('❌ ERRO: Variável TECNICO_DEFAULT_PASSWORD não definida!');
+    console.error('   Defina a variável de ambiente antes de executar este script.');
+    process.exit(1);
+  }
 
   try {
     console.log('🔐 Atualizando senhas dos usuários técnicos...\n');

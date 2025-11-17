@@ -33,7 +33,7 @@ npm run dev
 #### A. Fazer Login
 1. Acessar http://localhost:5173
 2. Login: `jimxxx@gmail.com`
-3. Senha: `[SENHA_REMOVIDA_DO_HISTORICO]`
+3. Senha: `[SENHA_DO_USUARIO_TESTE]`
 
 #### B. Editar uma Organização
 1. Ir para "Organizações"

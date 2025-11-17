@@ -81,7 +81,7 @@ const updateOrganizacao = useCallback((field: keyof Organizacao, value: any) => 
 
 ### Passo a Passo:
 1. Recarregar página: http://localhost:5173
-2. Login com `jimxxx@gmail.com` / `[SENHA_REMOVIDA_DO_HISTORICO]`
+2. Login com `jimxxx@gmail.com` / `[SENHA_DO_USUARIO_TESTE]`
 3. Ir em "Organizações → Adicionar Organização"
 4. **Verificar que os campos aparecem vazios!**
 5. Preencher:

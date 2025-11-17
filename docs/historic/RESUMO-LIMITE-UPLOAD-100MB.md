@@ -23,7 +23,7 @@
 O backend já está rodando com os novos limites! Pode testar:
 
 1. **Acesse:** http://localhost:5173
-2. **Login:** `jimxxx@gmail.com` / `[SENHA_REMOVIDA_DO_HISTORICO]`
+2. **Login:** `jimxxx@gmail.com` / `[SENHA_DO_USUARIO_TESTE]`
 3. **Vá em:** Organizações > Editar > Upload de Documentos
 4. **Teste:** Arquivo de 40-80MB
 

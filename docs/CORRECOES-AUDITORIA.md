@@ -146,7 +146,7 @@ console.log(`📝 [AuditService] Creating log:`, {
 # Fazer login
 curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"jimxxx@gmail.com","password":"[SENHA_REMOVIDA_DO_HISTORICO]"}'
+  -d '{"email":"jimxxx@gmail.com","password":"[SENHA_DO_USUARIO_TESTE]"}'
 
 # Usar o token retornado para fazer uma operação
 curl -X PUT http://localhost:3001/organizacoes/14 \

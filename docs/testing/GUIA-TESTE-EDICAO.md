@@ -128,7 +128,7 @@ curl http://localhost:5173         # Frontend deve retornar HTML
 
 ### Passo 2: Login
 1. Acesse: http://localhost:5173
-2. Faça login com: `jimxxx@gmail.com` / `[SENHA_REMOVIDA_DO_HISTORICO]`
+2. Faça login com: `jimxxx@gmail.com` / `[SENHA_DO_USUARIO_TESTE]`
 
 ### Passo 3: Abrir Organização de Teste
 1. Acesse diretamente: http://localhost:5173/organizacoes/edicao/14

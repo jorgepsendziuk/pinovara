@@ -61,7 +61,7 @@ WHERE u.email = 'sabrina.diniz@incra.gov.br';
 ## 🧪 Testes Obrigatórios
 
 ### Teste 1: Criar Organização (como Técnico/Admin)
-1. Login: `jimxxx@gmail.com` / `[SENHA_REMOVIDA_DO_HISTORICO]`
+1. Login: `jimxxx@gmail.com` / `[SENHA_DO_USUARIO_TESTE]`
 2. Recarregar página (F5 ou Cmd+R)
 3. Ir em "Organizações → Adicionar Organização"
 4. **Verificar que campos aparecem vazios**
@@ -185,7 +185,7 @@ pm2 logs backend --lines 20
 
 ### Admin:
 - Email: `jimxxx@gmail.com`
-- Senha: `[SENHA_REMOVIDA_DO_HISTORICO]`
+- Senha: `[SENHA_DO_USUARIO_TESTE]`
 
 ### Supervisão (Sabrina):
 - Email: `sabrina.diniz@incra.gov.br`

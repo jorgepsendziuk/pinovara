@@ -75,7 +75,7 @@ WHERE u.email = 'sabrina.diniz@incra.gov.br';
 
 ### Teste 1: Criar Organização
 1. Acesse http://localhost:5173
-2. Login: `jimxxx@gmail.com` / `[SENHA_REMOVIDA_DO_HISTORICO]`
+2. Login: `jimxxx@gmail.com` / `[SENHA_DO_USUARIO_TESTE]`
 3. Ir em "Organizações → Adicionar Organização"
 4. **IMPORTANTE:** Preencher o campo "Nome da Organização"
 5. Preencher outros dados (Estado, Município, etc)

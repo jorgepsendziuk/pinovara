@@ -85,7 +85,7 @@ npm run backend:start
 
 2. **Testar upload de arquivo grande (>40MB):**
    - Acesse http://localhost:5173
-   - Login com: `jimxxx@gmail.com` / `[SENHA_REMOVIDA_DO_HISTORICO]`
+   - Login com: `jimxxx@gmail.com` / `[SENHA_DO_USUARIO_TESTE]`
    - Vá em Organizações > Editar > Upload de Documentos
    - Teste com arquivo de ~50-80MB
 

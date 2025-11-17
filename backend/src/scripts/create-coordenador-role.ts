@@ -91,7 +91,8 @@ export async function createCoordenadorRole(): Promise<Result> {
     // 3. Buscar ou criar usuário Mariana Costa
     const email = 'mariana.mariana.colaborador@incra.gov.br';
     const nome = 'Mariana Costa';
-    const senha = '[SENHA_REMOVIDA_DO_HISTORICO]';
+    // Senha deve ser definida via variável de ambiente ou gerada automaticamente
+    const senha = process.env.COORDENADOR_DEFAULT_PASSWORD || 'TEMPORARIA_ALTERAR_IMEDIATAMENTE';
 
     let usuario = await prisma.users.findUnique({
       where: { email },

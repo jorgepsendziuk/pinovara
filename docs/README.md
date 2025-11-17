@@ -4,6 +4,47 @@
 
 O **PINOVARA** é um sistema web full-stack desenvolvido com as melhores práticas modernas de desenvolvimento. O projeto combina um backend robusto em Node.js/TypeScript com um frontend responsivo em React/TypeScript, utilizando PostgreSQL como banco de dados.
 
+## 📚 Índice da Documentação
+
+### 🚀 Getting Started
+- [Configuração](./getting-started/configuration.md) - Configurações localhost vs produção
+
+### 🔌 API
+- [Endpoints da API](./api/api-endpoints.md) - Documentação completa dos endpoints
+
+### 🏗️ Arquitetura
+- [Sistema de Autenticação](./architecture/auth-system.md) - Detalhes da implementação de autenticação
+- [Schema do Banco de Dados](./architecture/database-schema.md) - Estrutura detalhada do banco
+- [Estrutura do Frontend](./architecture/frontend-structure.md) - Organização do código frontend
+
+### 🚀 Deploy
+- [Guia de Deploy](./deployment/deployment.md) - Processo de instalação e deploy em produção
+
+### 📝 Procedimentos Operacionais
+- [Instruções Finais](./procedures/INSTRUCOES-FINAIS.md) - Instruções gerais do sistema
+- [Instruções de Upload de Documentos](./procedures/INSTRUCOES-UPLOAD-DOCUMENTOS.md) - Como fazer upload de documentos
+- [Instruções de Limite de Upload](./procedures/INSTRUCOES-LIMITE-UPLOAD.md) - Configuração de limites
+- [Correção de Criação](./procedures/CORRECAO-CRIACAO.md) - Procedimentos de correção
+- [Correção de Permissões - Plano de Gestão](./procedures/CORRECAO-PERMISSOES-PLANO-GESTAO.md)
+- [Correção de Role Supervisão](./procedures/CORRECAO-ROLE-SUPERVISAO.md)
+- [Corrigir Deploy Backend](./procedures/CORRIGIR-DEPLOY-BACKEND.md)
+- [Comandos de Debug Remoto](./procedures/COMANDOS-DEBUG-REMOTO.md)
+- [Executar SQL](./procedures/EXECUTAR-SQL-AGORA.md)
+- [Procedimento de Remapeamento de Diagnóstico](./procedures/PROCEDIMENTO-REMAPEAMENTO-DIAGNOSTICO.md)
+
+### 🧪 Testes
+- [Guia de Teste de Edição](./testing/GUIA-TESTE-EDICAO.md) - Como testar funcionalidades de edição
+- [Executar Teste de Plano de Gestão](./testing/EXECUTAR-TESTE-PLANO-GESTAO.md) - Testes do módulo de plano de gestão
+- [Teste Local de Correções](./testing/TESTE-LOCAL-CORRECOES.md) - Testes locais
+
+### 📜 Documentação Histórica
+Documentação histórica e relatórios antigos estão disponíveis em [docs/historic/](./historic/), incluindo:
+- Relatórios de organizações
+- Resumos de alterações
+- Documentação de design system
+- Relatórios de analytics
+- Outros documentos históricos
+
 ## 🏗️ Arquitetura Geral
 
 ### Arquitetura em Camadas
@@ -52,11 +93,15 @@ pinovara/
 │   │   └── App.tsx           # Componente principal
 │   └── package.json
 └── docs/                      # Documentação técnica
-    ├── README.md             # Esta documentação
-    ├── api-endpoints.md      # Documentação da API
-    ├── database-schema.md    # Schema do banco
-    ├── auth-system.md        # Sistema de autenticação
-    └── deployment.md         # Guia de deploy
+    ├── README.md             # Este arquivo (índice)
+    ├── getting-started/      # Guias de início rápido
+    ├── api/                  # Documentação da API
+    ├── architecture/         # Arquitetura do sistema
+    ├── deployment/           # Deploy e produção
+    ├── procedures/          # Procedimentos operacionais
+    ├── testing/             # Documentação de testes
+    ├── historic/            # Documentação histórica
+    └── resources/           # Recursos e templates
 ```
 
 ## 🛠️ Tecnologias Utilizadas
@@ -170,10 +215,11 @@ npm run build       # Build para produção
 
 ## 📚 Documentação Adicional
 
-- [API Endpoints](./api-endpoints.md) - Documentação completa dos endpoints
-- [Schema do Banco](./database-schema.md) - Estrutura detalhada do banco
-- [Sistema de Autenticação](./auth-system.md) - Detalhes da implementação
-- [Guia de Deploy](./deployment.md) - Processo de instalação e deploy
+Para documentação mais específica, consulte:
+- [API Endpoints](./api/api-endpoints.md) - Documentação completa dos endpoints
+- [Schema do Banco](./architecture/database-schema.md) - Estrutura detalhada do banco
+- [Sistema de Autenticação](./architecture/auth-system.md) - Detalhes da implementação
+- [Guia de Deploy](./deployment/deployment.md) - Processo de instalação e deploy
 
 ## 🎯 Próximos Passos
 
@@ -186,5 +232,5 @@ npm run build       # Build para produção
 
 ---
 
-**Última atualização**: Dezembro 2024
+**Última atualização**: Janeiro 2025
 **Versão**: 1.0.0

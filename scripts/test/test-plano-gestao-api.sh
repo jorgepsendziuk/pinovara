@@ -10,8 +10,21 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-API_URL="http://localhost:3001"
-ORG_ID=14
+# Carregar variáveis de ambiente de teste
+if [ -f "../../.env.test" ]; then
+  export $(cat ../../.env.test | grep -v '^#' | xargs)
+fi
+
+API_URL="${TEST_API_URL:-http://localhost:3001}"
+ORG_ID="${TEST_ORG_ID:-14}"
+TEST_EMAIL="${TEST_USER_EMAIL:-jimxxx@gmail.com}"
+TEST_PASSWORD="${TEST_USER_PASSWORD}"
+
+if [ -z "$TEST_PASSWORD" ]; then
+  echo -e "${RED}❌ ERRO: Variável TEST_USER_PASSWORD não definida!${NC}"
+  echo "   Crie um arquivo .env.test baseado em .env.test.example"
+  exit 1
+fi
 
 echo -e "${BLUE}==========================================${NC}"
 echo -e "${BLUE}   TESTE API - PLANO DE GESTÃO (Org $ORG_ID)${NC}"
@@ -21,10 +34,10 @@ echo -e "${BLUE}==========================================${NC}\n"
 echo -e "${YELLOW}1. Fazendo login...${NC}"
 LOGIN_RESPONSE=$(curl -s -X POST "$API_URL/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "jimxxx@gmail.com",
-    "password": "[SENHA_REMOVIDA_DO_HISTORICO]"
-  }')
+  -d "{
+    \"email\": \"$TEST_EMAIL\",
+    \"password\": \"$TEST_PASSWORD\"
+  }")
 
 TOKEN=$(echo $LOGIN_RESPONSE | grep -o '"token":"[^"]*' | sed 's/"token":"//')
 

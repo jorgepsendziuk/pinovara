@@ -34,7 +34,7 @@ CREATE INDEX _registered_users_lu4 ON odk_prod._registered_users USING btree ("L
 CREATE INDEX _registered_users_lud ON odk_prod._registered_users USING btree ("_LAST_UPDATE_DATE");
 CREATE INDEX _registered_users_oe2 ON odk_prod._registered_users USING btree ("OPENID_EMAIL");
 
-e o meu usuario, com o mesmo email e senha do sistema ( jimxxx@gmail.com / [SENHA_REMOVIDA_DO_HISTORICO] ) para conferir e testar hash e operacoes
+e o meu usuario, com o mesmo email e senha do sistema ( jimxxx@gmail.com / [SENHA_DO_USUARIO_TESTE] ) para conferir e testar hash e operacoes
 uid:jimxxx@gmail.com|2025-10-16T12:18:12.408+0000	uid:odk_admin|2025-09-12T01:37:57.068+0000	2025-10-16 09:18:12.408	uid:odk_admin|2025-09-12T01:37:57.068+0000	2025-10-16 09:18:32.603	jimxxx@gmail.com		jimxxx	b9460523c66a17462eb128f400bcc45c4136b152	b47txs	271122f203c0916ed377f8d688a03598	false
 
 
