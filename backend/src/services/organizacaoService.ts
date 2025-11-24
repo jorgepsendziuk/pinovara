@@ -31,12 +31,12 @@ class OrganizacaoService {
    * filtra por id_tecnico = userId OU email no _creator_uri_user
    */
   async list(filters: OrganizacaoFilters = {}): Promise<OrganizacaoListResponse> {
-    const { page = 1, limit = 10, nome, cnpj, estado, municipio, id_tecnico, userId } = filters;
+    const { page = 1, limit = 10, nome, cnpj, estado, municipio, id_tecnico, userId, incluirRemovidas = false } = filters;
 
     // Construir condições de filtro
     const whereConditions: any = {
-      // Não mostrar organizações removidas por padrão
-      removido: { not: true }
+      // Não mostrar organizações removidas por padrão, a menos que incluirRemovidas seja true
+      ...(incluirRemovidas ? {} : { removido: { not: true } })
     };
 
     // Aplicar filtros específicos

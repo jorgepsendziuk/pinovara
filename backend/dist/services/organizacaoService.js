@@ -21,9 +21,9 @@ const ApiError_1 = require("../utils/ApiError");
 const prisma = new client_1.PrismaClient();
 class OrganizacaoService {
     async list(filters = {}) {
-        const { page = 1, limit = 10, nome, cnpj, estado, municipio, id_tecnico, userId } = filters;
+        const { page = 1, limit = 10, nome, cnpj, estado, municipio, id_tecnico, userId, incluirRemovidas = false } = filters;
         const whereConditions = {
-            removido: { not: true }
+            ...(incluirRemovidas ? {} : { removido: { not: true } })
         };
         if (nome) {
             whereConditions.nome = {

@@ -1,16 +1,24 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
 import routes from './routes';
 import { accessLogger, errorLogger, appLogger, rateLimiter } from './middleware/logging';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables FIRST, before any other imports that might use them
+// Explicitly load .env from backend directory to avoid conflicts with root .env
+import path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+// Import PrismaClient AFTER dotenv.config() to ensure DATABASE_URL is loaded
+import { PrismaClient } from '@prisma/client';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const prisma = new PrismaClient();
+
+// Create PrismaClient AFTER environment variables are loaded
+const prisma = new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+});
 
 // ========== MIDDLEWARE ==========
 
@@ -88,6 +96,12 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
 
 async function startServer() {
   try {
+    // Log DATABASE_URL before connecting (without password)
+    const dbUrl = process.env.DATABASE_URL || 'not set';
+    const dbUrlSafe = dbUrl.replace(/:[^:@]+@/, ':****@'); // Hide password
+    appLogger.info(`Attempting to connect to database: ${dbUrlSafe}`);
+    console.log(`🔍 Tentando conectar ao banco: ${dbUrlSafe}`);
+    
     // Test database connection
     await prisma.$connect();
     appLogger.info('Database connected successfully');

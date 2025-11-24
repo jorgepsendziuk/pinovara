@@ -234,15 +234,22 @@ class PlanoGestaoPdfService {
         maxHeight = Math.max(maxHeight, 12);
       } else {
         const text = (values as any)[col.key] || '-';
+        // Calcular altura necessária para o texto completo sem truncamento
         const calculatedHeight = doc.heightOfString(text, { 
           width: col.width - paddingX * 2, 
           align: 'left', 
           lineGap: 1 
         });
-        // Limitar altura máxima para evitar linhas muito altas
-        maxHeight = Math.max(maxHeight, Math.min(calculatedHeight, 25));
+        // Não limitar altura - permitir que o texto seja exibido completamente
+        // Usar altura calculada sem qualquer limitação
+        maxHeight = Math.max(maxHeight, calculatedHeight);
       }
     });
+    
+    // Garantir altura mínima suficiente para textos longos
+    if (maxHeight < 12) {
+      maxHeight = 12;
+    }
     
     doc.restore();
     return maxHeight + paddingY * 2;
@@ -259,7 +266,26 @@ class PlanoGestaoPdfService {
     const paddingY = 4;
     const totalWidth = columns.reduce((sum, col) => sum + col.width, 0);
     const values = this.buildActionRowValues(acao);
-    const rowHeight = this.calculateActionRowHeight(doc, columns, acao);
+    
+    // Calcular altura real necessária para cada célula
+    doc.save();
+    doc.font('Helvetica').fontSize(9);
+    let maxCellHeight = 0;
+    columns.forEach(col => {
+      if (col.key !== 'status') {
+        const text = (values as any)[col.key] || '-';
+        const textHeight = doc.heightOfString(text, { 
+          width: col.width - paddingX * 2, 
+          align: 'left', 
+          lineGap: 1 
+        });
+        maxCellHeight = Math.max(maxCellHeight, textHeight);
+      }
+    });
+    doc.restore();
+    
+    // Altura da linha baseada no maior texto + padding
+    const rowHeight = Math.max(maxCellHeight + paddingY * 2, 20); // Mínimo 20px
     const rowTop = doc.y;
     const baseY = rowTop + paddingY; // Y base para todas as células da linha
 
@@ -278,7 +304,7 @@ class PlanoGestaoPdfService {
         const pillWidth = Math.min(col.width - paddingX * 2, doc.widthOfString(value, { font: 'Helvetica-Bold', size: 8 }) + 12);
         const pillHeight = 16;
         const pillX = cellX;
-        const pillY = cellY - 2;
+        const pillY = cellY + (rowHeight - paddingY * 2 - pillHeight) / 2; // Centralizar verticalmente
         
         doc.save();
         // Badge com fundo colorido
@@ -293,14 +319,23 @@ class PlanoGestaoPdfService {
         doc.font('Helvetica').fontSize(9);
         doc.fillColor('#000000');
       } else {
-        // Renderizar texto com altura limitada
+        // Renderizar texto completo sem abreviação - permitir quebra de linha
+        // Salvar posição Y atual antes de renderizar
+        const savedY = doc.y;
+        
+        // Renderizar texto sem limitação de altura - PDFKit vai quebrar linhas automaticamente
         doc.text(value, cellX, cellY, { 
           width: col.width - paddingX * 2, 
-          height: rowHeight - paddingY * 2,
           align: 'left', 
           lineGap: 1,
-          ellipsis: true
+          continued: false
+          // Sem height nem ellipsis - texto completo será exibido
+          // PDFKit vai calcular automaticamente quantas linhas são necessárias
         });
+        
+        // Ajustar Y para a próxima linha baseado no texto renderizado
+        // O PDFKit já ajustou doc.y automaticamente após renderizar o texto
+        // Não precisamos fazer nada aqui, o doc.y já está correto
       }
 
       // Desenhar linha vertical entre colunas (exceto última)

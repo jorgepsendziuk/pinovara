@@ -97,6 +97,7 @@ export interface OrganizacaoFilters {
   municipio?: number;
   id_tecnico?: number; // Filtro para técnicos específicos
   userId?: number; // ID do usuário logado (para filtro híbrido)
+  incluirRemovidas?: boolean; // Se true, inclui organizações removidas
   page?: number;
   limit?: number;
 }

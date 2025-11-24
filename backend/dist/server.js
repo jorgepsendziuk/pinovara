@@ -6,13 +6,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const client_1 = require("@prisma/client");
 const routes_1 = __importDefault(require("./routes"));
 const logging_1 = require("./middleware/logging");
-dotenv_1.default.config();
+const path_1 = __importDefault(require("path"));
+dotenv_1.default.config({ path: path_1.default.resolve(__dirname, '../.env') });
+const client_1 = require("@prisma/client");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
-const prisma = new client_1.PrismaClient();
+const prisma = new client_1.PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+});
 app.set('trust proxy', true);
 app.use((0, cors_1.default)({
     origin: [
@@ -61,6 +64,10 @@ app.use((error, req, res, next) => {
 });
 async function startServer() {
     try {
+        const dbUrl = process.env.DATABASE_URL || 'not set';
+        const dbUrlSafe = dbUrl.replace(/:[^:@]+@/, ':****@');
+        logging_1.appLogger.info(`Attempting to connect to database: ${dbUrlSafe}`);
+        console.log(`🔍 Tentando conectar ao banco: ${dbUrlSafe}`);
         await prisma.$connect();
         logging_1.appLogger.info('Database connected successfully');
         app.listen(PORT, () => {

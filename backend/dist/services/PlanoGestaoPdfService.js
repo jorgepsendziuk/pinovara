@@ -198,9 +198,12 @@ class PlanoGestaoPdfService {
                     align: 'left',
                     lineGap: 1
                 });
-                maxHeight = Math.max(maxHeight, Math.min(calculatedHeight, 25));
+                maxHeight = Math.max(maxHeight, calculatedHeight);
             }
         });
+        if (maxHeight < 12) {
+            maxHeight = 12;
+        }
         doc.restore();
         return maxHeight + paddingY * 2;
     }
@@ -209,7 +212,22 @@ class PlanoGestaoPdfService {
         const paddingY = 4;
         const totalWidth = columns.reduce((sum, col) => sum + col.width, 0);
         const values = this.buildActionRowValues(acao);
-        const rowHeight = this.calculateActionRowHeight(doc, columns, acao);
+        doc.save();
+        doc.font('Helvetica').fontSize(9);
+        let maxCellHeight = 0;
+        columns.forEach(col => {
+            if (col.key !== 'status') {
+                const text = values[col.key] || '-';
+                const textHeight = doc.heightOfString(text, {
+                    width: col.width - paddingX * 2,
+                    align: 'left',
+                    lineGap: 1
+                });
+                maxCellHeight = Math.max(maxCellHeight, textHeight);
+            }
+        });
+        doc.restore();
+        const rowHeight = Math.max(maxCellHeight + paddingY * 2, 20);
         const rowTop = doc.y;
         const baseY = rowTop + paddingY;
         doc.fillColor('#000000').font('Helvetica').fontSize(9);
@@ -223,7 +241,7 @@ class PlanoGestaoPdfService {
                 const pillWidth = Math.min(col.width - paddingX * 2, doc.widthOfString(value, { font: 'Helvetica-Bold', size: 8 }) + 12);
                 const pillHeight = 16;
                 const pillX = cellX;
-                const pillY = cellY - 2;
+                const pillY = cellY + (rowHeight - paddingY * 2 - pillHeight) / 2;
                 doc.save();
                 doc.roundedRect(pillX, pillY, pillWidth, pillHeight, 3).fill(statusColor);
                 doc.fillColor('#ffffff')
@@ -235,12 +253,12 @@ class PlanoGestaoPdfService {
                 doc.fillColor('#000000');
             }
             else {
+                const savedY = doc.y;
                 doc.text(value, cellX, cellY, {
                     width: col.width - paddingX * 2,
-                    height: rowHeight - paddingY * 2,
                     align: 'left',
                     lineGap: 1,
-                    ellipsis: true
+                    continued: false
                 });
             }
             if (index < columns.length - 1) {

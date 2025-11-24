@@ -85,6 +85,7 @@ export interface OrganizacaoFilters {
     municipio?: number;
     id_tecnico?: number;
     userId?: number;
+    incluirRemovidas?: boolean;
     page?: number;
     limit?: number;
 }

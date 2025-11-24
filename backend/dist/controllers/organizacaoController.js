@@ -23,7 +23,8 @@ class OrganizacaoController {
                 page: req.query.page ? parseInt(req.query.page) : 1,
                 limit: req.query.limit ? parseInt(req.query.limit) :
                     req.query.pageSize ? parseInt(req.query.pageSize) : 10,
-                userId: userPermissions?.userId
+                userId: userPermissions?.userId,
+                incluirRemovidas: req.query.incluirRemovidas === 'true'
             };
             const result = await organizacaoService_1.default.list(filters);
             res.status(api_1.HttpStatus.OK).json({

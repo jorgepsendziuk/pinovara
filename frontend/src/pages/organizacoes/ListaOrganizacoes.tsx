@@ -24,7 +24,8 @@ import {
   FolderOpen,
   Search,
   Target,
-  MoreVertical
+  MoreVertical,
+  Archive
 } from 'lucide-react';
 
 interface Organizacao {
@@ -44,6 +45,7 @@ interface Organizacao {
   tecnico_nome?: string | null;
   tecnico_email?: string | null;
   validacao_status?: number | null;
+  removido?: boolean | null;
   // Campos de histórico de validação
   data_criacao?: string | Date | null;
   primeira_alteracao_status?: string | Date | null;
@@ -76,6 +78,9 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   
   // Filtro de origem do cadastro
   const [origemFiltro, setOrigemFiltro] = useState<'odk' | 'web' | 'todas'>('todas');
+  
+  // Estado para mostrar organizações removidas
+  const [mostrarRemovidas, setMostrarRemovidas] = useState(false);
 
   // Estados de filtros
   const [filtros, setFiltros] = useState({
@@ -143,7 +148,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   // Buscar organizações quando filtros, página ou tamanho mudarem
   useEffect(() => {
     fetchOrganizacoes();
-  }, [currentPage, pageSize, origemFiltro, filtros]);
+  }, [currentPage, pageSize, origemFiltro, filtros, mostrarRemovidas]);
 
   const gerarRelatorio = async (organizacaoId: number, nomeOrganizacao: string) => {
     setGerandoRelatorio(organizacaoId);
@@ -314,7 +319,8 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       // Buscar TODAS as organizações (sem paginação) para poder filtrar no frontend
       const params = new URLSearchParams({
         page: '1',
-        pageSize: '1000' // Buscar todas
+        pageSize: '1000', // Buscar todas
+        ...(mostrarRemovidas ? { incluirRemovidas: 'true' } : {})
       });
 
       const response = await fetch(`${API_BASE}/organizacoes?${params}`, {
@@ -759,9 +765,18 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       sortable: true,
       render: (nome: string, record: Organizacao) => {
         const isODKCollect = record.meta_instance_id && record.meta_instance_id.trim() !== '';
+        const isRemovida = record.removido === true;
         
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isRemovida && (
+              <Archive 
+                size={16} 
+                color="#dc2626" 
+                title="Organização removida"
+                style={{ flexShrink: 0 }}
+              />
+            )}
             <span 
               title={isODKCollect ? 'Cadastrado via ODK Collect (aplicativo)' : 'Cadastrado via sistema web'}
               style={{ display: 'inline-flex', flexShrink: 0, minWidth: '16px', minHeight: '16px' }}
@@ -1118,14 +1133,26 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
             </select>
           </div>
 
-          {/* Botão Limpar Filtros */}
-          <div className="filters-actions">
+          {/* Botões de Ação */}
+          <div className="filters-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className={`btn btn-sm ${mostrarRemovidas ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => {
+                setMostrarRemovidas(!mostrarRemovidas);
+                setCurrentPage(1);
+              }}
+              title={mostrarRemovidas ? "Ocultar organizações removidas" : "Mostrar organizações removidas"}
+            >
+              <Archive size={16} /> {mostrarRemovidas ? 'Ocultar Removidas' : 'Mostrar Removidas'}
+            </button>
             <button
               type="button"
               className="btn btn-danger btn-sm"
               onClick={() => {
                 setFiltros({ nome: '', estadoId: '', municipioId: '', tecnicoId: '', statusValidacao: '' });
                 setOrigemFiltro('todas');
+                setMostrarRemovidas(false);
                 setCurrentPage(1);
               }}
               title="Limpar todos os filtros"
@@ -1266,7 +1293,12 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
             <div key={org.id} className="organization-card">
               <div className="organization-card-header">
                 <div className="organization-info">
-                  <h4>{org.nome}</h4>
+                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {org.removido && (
+                      <Archive size={18} color="#dc2626" title="Organização removida" />
+                    )}
+                    {org.nome}
+                  </h4>
                   <div className="organization-meta">
                     <span>
                       📍 {org.estado_nome && org.municipio_nome 

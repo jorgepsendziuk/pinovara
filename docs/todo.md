@@ -225,3 +225,4 @@ php8.2 /var/www/html/legaliza/cmd.php "class=VTituloNovoDocumentGerar&method=onG
 php8.2 /var/www/html/legaliza/cmd.php "class=VTituloNovoDocumentGerar&method=onGenerate&static=1&key=371705"
 php8.2 /var/www/html/legaliza/cmd.php "class=VTituloNovoDocumentGerar&method=onGenerate&static=1&key=371706"
 
+    

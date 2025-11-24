@@ -28,7 +28,9 @@ class OrganizacaoController {
         limit: req.query.limit ? parseInt(req.query.limit as string) : 
                req.query.pageSize ? parseInt(req.query.pageSize as string) : 10,
         // Passar userId para filtro híbrido (id_tecnico OU email em _creator_uri_user)
-        userId: userPermissions?.userId
+        userId: userPermissions?.userId,
+        // Incluir organizações removidas se o parâmetro for 'true'
+        incluirRemovidas: req.query.incluirRemovidas === 'true'
       };
 
       const result = await organizacaoService.list(filters);
