@@ -253,12 +253,10 @@ class PlanoGestaoPdfService {
                 doc.fillColor('#000000');
             }
             else {
-                const savedY = doc.y;
                 doc.text(value, cellX, cellY, {
                     width: col.width - paddingX * 2,
                     align: 'left',
-                    lineGap: 1,
-                    continued: false
+                    lineGap: 1
                 });
             }
             if (index < columns.length - 1) {

@@ -16,7 +16,6 @@ sudo nano /etc/postgresql/*/main/pg_hba.conf
 
 Adicionar **ANTES** das regras mais genéricas (ordem importa!):
 
-```conf
 # Permitir conexão do IP local do desenvolvedor
 host    pinovara    pinovara    191.33.71.195/32    md5
 ```

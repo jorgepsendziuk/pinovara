@@ -320,22 +320,12 @@ class PlanoGestaoPdfService {
         doc.fillColor('#000000');
       } else {
         // Renderizar texto completo sem abreviação - permitir quebra de linha
-        // Salvar posição Y atual antes de renderizar
-        const savedY = doc.y;
-        
-        // Renderizar texto sem limitação de altura - PDFKit vai quebrar linhas automaticamente
         doc.text(value, cellX, cellY, { 
           width: col.width - paddingX * 2, 
           align: 'left', 
-          lineGap: 1,
-          continued: false
-          // Sem height nem ellipsis - texto completo será exibido
-          // PDFKit vai calcular automaticamente quantas linhas são necessárias
+          lineGap: 1
+          // Sem height nem ellipsis - texto completo será exibido sem truncamento
         });
-        
-        // Ajustar Y para a próxima linha baseado no texto renderizado
-        // O PDFKit já ajustou doc.y automaticamente após renderizar o texto
-        // Não precisamos fazer nada aqui, o doc.y já está correto
       }
 
       // Desenhar linha vertical entre colunas (exceto última)

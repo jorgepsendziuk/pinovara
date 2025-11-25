@@ -7,6 +7,9 @@
   border-radius: 0;
   padding: 0;
   margin-bottom: 1rem;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .filters-grid {
@@ -14,11 +17,30 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
   margin-bottom: 0.75rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1600px) {
   .filters-grid {
     grid-template-columns: 1fr 1fr 1fr 1fr auto;
+  }
+}
+
+@media (min-width: 1400px) and (max-width: 1599px) {
+  .filters-grid {
+    grid-template-columns: 1fr 1fr 1fr auto;
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1399px) {
+  .filters-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  
+  .filters-actions {
+    grid-column: 1 / -1;
   }
 }
 
@@ -197,6 +219,11 @@
   .filters-grid {
     grid-template-columns: 1fr 1fr;
   }
+  
+  .filters-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
 }
 
 /* Toggle para cards em telas médias */
@@ -218,6 +245,17 @@
   
   .filter-group:first-child {
     grid-column: auto;
+  }
+  
+  .filters-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: stretch;
+  }
+  
+  .filters-actions button {
+    flex: 1;
+    min-width: 0;
   }
   
   .organization-card {

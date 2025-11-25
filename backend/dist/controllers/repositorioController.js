@@ -13,10 +13,24 @@ const UPLOAD_DIR = process.env.NODE_ENV === 'production'
     : '/Users/jorgepsendziuk/Documents/pinovara/uploads/repositorio';
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
-        if (!fs_1.default.existsSync(UPLOAD_DIR)) {
-            fs_1.default.mkdirSync(UPLOAD_DIR, { recursive: true });
+        try {
+            if (!fs_1.default.existsSync(UPLOAD_DIR)) {
+                fs_1.default.mkdirSync(UPLOAD_DIR, { recursive: true, mode: 0o755 });
+            }
+            try {
+                fs_1.default.accessSync(UPLOAD_DIR, fs_1.default.constants.W_OK);
+            }
+            catch (accessError) {
+                console.error(`Erro de permissão no diretório ${UPLOAD_DIR}:`, accessError);
+                cb(new Error(`Sem permissão para escrever no diretório de upload. Contate o administrador do sistema.`), '');
+                return;
+            }
+            cb(null, UPLOAD_DIR);
         }
-        cb(null, UPLOAD_DIR);
+        catch (error) {
+            console.error(`Erro ao configurar diretório de upload ${UPLOAD_DIR}:`, error);
+            cb(error, '');
+        }
     },
     filename: (req, file, cb) => {
         const timestamp = Date.now();
@@ -108,9 +122,22 @@ class RepositorioController {
         }
         catch (error) {
             console.error('Erro ao fazer upload de arquivo:', error);
+            let errorMessage = 'Erro ao fazer upload de arquivo';
+            if (error?.code === 'EACCES' || error?.message?.includes('permission denied')) {
+                errorMessage = 'Erro de permissão: Sem permissão para salvar o arquivo. Contate o administrador do sistema.';
+            }
+            else if (error?.code === 'ENOENT') {
+                errorMessage = 'Erro: Diretório de upload não encontrado. Contate o administrador do sistema.';
+            }
+            else if (error?.message) {
+                errorMessage = error.message;
+            }
             res.status(500).json({
                 success: false,
-                error: { message: 'Erro ao fazer upload de arquivo' }
+                error: {
+                    message: errorMessage,
+                    code: error?.code || 'UPLOAD_ERROR'
+                }
             });
         }
     }
