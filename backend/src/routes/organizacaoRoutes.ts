@@ -29,6 +29,7 @@ router.get('/:id', organizacaoController.getById.bind(organizacaoController));
 router.put('/:id', organizacaoController.update.bind(organizacaoController));
 router.patch('/:id/validacao', organizacaoController.updateValidacao.bind(organizacaoController));
 router.get('/:id/historico-validacao', organizacaoController.getHistoricoValidacao.bind(organizacaoController));
+router.patch('/:id/plano-gestao/validacao', organizacaoController.updatePlanoGestaoValidacao.bind(organizacaoController));
 router.delete('/:id', organizacaoController.delete.bind(organizacaoController));
 
 // Equipe técnica

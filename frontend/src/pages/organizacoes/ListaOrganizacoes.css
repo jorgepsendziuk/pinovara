@@ -1,5 +1,24 @@
 /* Lista de Organizações - Estilos */
 
+/* ===== HEADER RESPONSIVO ===== */
+
+.lista-organizacoes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.lista-organizacoes-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
 /* ===== FILTROS ===== */
 
 .filters-section {
@@ -9,7 +28,8 @@
   margin-bottom: 1rem;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: visible;
+  overflow-y: visible;
 }
 
 .filters-grid {
@@ -20,27 +40,191 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  overflow-x: visible;
+  overflow-y: visible;
+}
+
+/* Por padrão, os botões de ação sempre ficam em linha separada */
+.filters-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 0;
+}
+
+.filters-actions button {
+  flex: 0 1 auto;
+  min-width: 140px;
+  white-space: nowrap;
 }
 
 @media (min-width: 1600px) {
   .filters-grid {
-    grid-template-columns: 1fr 1fr 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+  
+  .filters-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 0;
+  }
+  
+  .filters-actions button {
+    flex: 0 1 auto;
+    min-width: 140px;
+    white-space: nowrap;
   }
 }
 
 @media (min-width: 1400px) and (max-width: 1599px) {
-  .filters-grid {
-    grid-template-columns: 1fr 1fr 1fr auto;
-  }
-}
-
-@media (min-width: 1200px) and (max-width: 1399px) {
   .filters-grid {
     grid-template-columns: 1fr 1fr 1fr;
   }
   
   .filters-actions {
     grid-column: 1 / -1;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 0;
+  }
+  
+  .filters-actions button {
+    flex: 0 1 auto;
+    min-width: 140px;
+    white-space: nowrap;
+  }
+}
+
+/* Notebooks de 14 polegadas (1366px - 1399px) - resolução comum */
+@media (min-width: 1366px) and (max-width: 1399px) {
+  .filters-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.625rem;
+  }
+  
+  .filters-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 0;
+  }
+  
+  .filters-actions button {
+    flex: 0 1 auto;
+    min-width: 140px;
+    white-space: nowrap;
+  }
+  
+  .filter-input,
+  .filter-select {
+    font-size: 0.9rem;
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1365px) {
+  .filters-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  
+  .filters-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  
+  .filters-actions button {
+    flex: 0 1 auto;
+    min-width: 140px;
+  }
+}
+
+/* Telas médias - tablets grandes (992px - 1199px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .lista-organizacoes-header h2 {
+    font-size: 1.375rem;
+  }
+  
+  .lista-organizacoes-header .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+  
+  .filters-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.625rem;
+  }
+  
+  .filters-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .filters-actions button {
+    flex: 1;
+    min-width: 140px;
+  }
+}
+
+/* Telas médias - tablets (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .lista-organizacoes-header {
+    margin-bottom: 1.25rem;
+  }
+  
+  .lista-organizacoes-header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .lista-organizacoes-header .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.875rem;
+  }
+  
+  .filters-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.625rem;
+  }
+  
+  .filter-group {
+    min-width: 0;
+  }
+  
+  .filters-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  
+  .filters-actions button {
+    flex: 1;
+    min-width: 120px;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .filter-label {
+    font-size: 0.8125rem;
+  }
+  
+  .filter-input,
+  .filter-select {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.625rem;
   }
 }
 
@@ -92,6 +276,10 @@
   display: flex;
   align-items: flex-end;
   justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow: visible;
 }
 
 .filters-total {
@@ -214,17 +402,7 @@
 
 /* ===== RESPONSIVE DESIGN ===== */
 
-/* Tablets grandes e médios */
-@media (max-width: 1199px) and (min-width: 769px) {
-  .filters-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  
-  .filters-actions {
-    grid-column: 1 / -1;
-    width: 100%;
-  }
-}
+/* Removido - substituído por breakpoints mais específicos acima */
 
 /* Toggle para cards em telas médias */
 @media (max-width: 1024px) {

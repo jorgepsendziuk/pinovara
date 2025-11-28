@@ -314,6 +314,80 @@ class OrganizacaoController {
   }
 
   /**
+   * PATCH /organizacoes/:id/plano-gestao/validacao
+   * Atualizar apenas campos de validação do plano de gestão (permitido para coordenadores)
+   */
+  async updatePlanoGestaoValidacao(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      console.log('🔍 [updatePlanoGestaoValidacao] Request recebido');
+      console.log('🔍 [updatePlanoGestaoValidacao] Body:', JSON.stringify(req.body, null, 2));
+      console.log('🔍 [updatePlanoGestaoValidacao] Params:', req.params);
+      
+      const id = parseInt(req.params.id);
+      const { plano_gestao_validacao_status, plano_gestao_validacao_obs, plano_gestao_validacao_usuario } = req.body;
+      const userPermissions = (req as any).userPermissions;
+
+      if (isNaN(id)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: {
+            message: 'ID inválido',
+            statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Verificar se usuário é coordenador ou admin (supervisor NÃO pode validar)
+      if (!userPermissions?.isCoordinator && !userPermissions?.isAdmin) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Apenas coordenadores e administradores podem validar planos de gestão',
+            statusCode: HttpStatus.FORBIDDEN
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Atualizar apenas campos de validação do plano de gestão
+      const dadosValidacao = {
+        plano_gestao_validacao_status: plano_gestao_validacao_status || null,
+        plano_gestao_validacao_obs: plano_gestao_validacao_obs || null,
+        plano_gestao_validacao_usuario: plano_gestao_validacao_usuario || req.user?.id || null,
+        plano_gestao_validacao_data: new Date()
+      };
+
+      const organizacao = await organizacaoService.updatePlanoGestaoValidacao(id, dadosValidacao);
+
+      // Registrar auditoria
+      await auditService.createLog({
+        action: AuditAction.UPDATE,
+        entity: 'organizacao',
+        entityId: id.toString(),
+        userId: req.user!.id,
+        newData: dadosValidacao,
+        req
+      });
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        message: 'Validação do plano de gestão atualizada com sucesso',
+        data: organizacao,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('❌ [updatePlanoGestaoValidacao] Erro capturado no controller:', error);
+      console.error('❌ [updatePlanoGestaoValidacao] Erro message:', error?.message);
+      console.error('❌ [updatePlanoGestaoValidacao] Erro code:', error?.code);
+      console.error('❌ [updatePlanoGestaoValidacao] Erro stack:', error?.stack);
+      this.handleError(error, res);
+    }
+  }
+
+  /**
    * GET /organizacoes/:id/historico-validacao
    * Buscar histórico completo de validação de uma organização
    */

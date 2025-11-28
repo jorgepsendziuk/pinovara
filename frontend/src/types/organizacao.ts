@@ -26,6 +26,12 @@ export interface Organizacao {
   validacao_data: Date | string | null;
   validacao_obs: string | null;
   
+  // Campos de validação do plano de gestão
+  plano_gestao_validacao_status: number | null;
+  plano_gestao_validacao_usuario: number | null;
+  plano_gestao_validacao_data: Date | string | null;
+  plano_gestao_validacao_obs: string | null;
+  
   // Campos de histórico de validação
   data_criacao?: Date | string | null;
   primeira_alteracao_status?: Date | string | null;

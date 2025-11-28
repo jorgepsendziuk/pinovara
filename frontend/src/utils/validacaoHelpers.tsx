@@ -45,12 +45,14 @@ interface StatusBadgeProps {
   status: number | null;
   showLabel?: boolean;
   size?: 'small' | 'medium';
+  prefix?: string; // Label prefixo para identificar o tipo (ex: "CADASTRO", "P. DE GESTÃO")
 }
 
 export const StatusValidacaoBadge: React.FC<StatusBadgeProps> = ({ 
   status, 
   showLabel = true,
-  size = 'small'
+  size = 'small',
+  prefix
 }) => {
   const config = getValidacaoConfig(status);
   const Icon = config.icon;
@@ -70,19 +72,33 @@ export const StatusValidacaoBadge: React.FC<StatusBadgeProps> = ({
       style={{
         display: 'inline-flex',
         alignItems: 'center',
+        justifyContent: 'center',
         ...sizeStyles,
         background: config.corFundo,
         color: config.cor,
         borderRadius: '12px',
         fontWeight: '600',
         border: `1px solid ${config.cor}`,
+        minWidth: prefix ? '120px' : 'auto', // Largura mínima quando há prefix para manter uniformidade
+        width: prefix ? '120px' : 'auto', // Largura fixa quando há prefix
       }}
-      title={config.label}
+      title={prefix ? `${prefix} - ${config.label}` : config.label}
     >
       <Icon size={size === 'small' ? 12 : 14} />
+      {prefix && <span style={{ fontSize: '0.7rem', marginRight: '0.25rem' }}>{prefix}</span>}
       {showLabel && <span>{config.label}</span>}
     </div>
   );
+};
+
+export const StatusPlanoGestaoValidacaoBadge: React.FC<StatusBadgeProps> = ({ 
+  status, 
+  showLabel = true,
+  size = 'small',
+  prefix
+}) => {
+  // Reutiliza a mesma lógica do StatusValidacaoBadge já que os status são os mesmos
+  return <StatusValidacaoBadge status={status} showLabel={showLabel} size={size} prefix={prefix} />;
 };
 
 export default StatusValidacaoBadge;

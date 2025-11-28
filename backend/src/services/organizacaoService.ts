@@ -111,6 +111,7 @@ class OrganizacaoService {
         o.id_tecnico,
         o._creator_uri_user,
         o.validacao_status,
+        o.plano_gestao_validacao_status,
         u.name as tecnico_nome,
         u.email as tecnico_email,
         -- Campos de histórico de validação
@@ -272,7 +273,14 @@ class OrganizacaoService {
               name: true,
               email: true
             }
-            },
+          },
+          users_organizacao_plano_gestao_validacao_usuarioTousers: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
             organizacao_tecnico: {
               include: {
                 tecnico: {
@@ -1533,6 +1541,90 @@ class OrganizacaoService {
     });
 
     return organizacao;
+  }
+
+  /**
+   * Atualizar apenas campos de validação do plano de gestão (para coordenadores)
+   */
+  async updatePlanoGestaoValidacao(id: number, dadosValidacao: {
+    plano_gestao_validacao_status: number | null;
+    plano_gestao_validacao_obs: string | null;
+    plano_gestao_validacao_usuario: number | null;
+    plano_gestao_validacao_data: Date;
+  }): Promise<Organizacao> {
+    // Verificar se organização existe
+    const existingOrg = await prisma.organizacao.findUnique({
+      where: { id }
+    });
+
+    if (!existingOrg || existingOrg.removido) {
+      throw new ApiError({
+        message: 'Organização não encontrada',
+        statusCode: HttpStatus.NOT_FOUND,
+        code: ErrorCode.RESOURCE_NOT_FOUND
+      });
+    }
+
+    // Atualizar apenas campos de validação do plano de gestão
+    try {
+      console.log('🔍 [updatePlanoGestaoValidacao] Dados recebidos:', JSON.stringify(dadosValidacao, null, 2));
+      console.log('🔍 [updatePlanoGestaoValidacao] ID organização:', id);
+      
+      const organizacao = await prisma.organizacao.update({
+        where: { id },
+        data: {
+          plano_gestao_validacao_status: dadosValidacao.plano_gestao_validacao_status,
+          plano_gestao_validacao_obs: dadosValidacao.plano_gestao_validacao_obs,
+          plano_gestao_validacao_usuario: dadosValidacao.plano_gestao_validacao_usuario,
+          plano_gestao_validacao_data: dadosValidacao.plano_gestao_validacao_data
+        }
+      });
+
+      console.log('✅ [updatePlanoGestaoValidacao] Organização atualizada com sucesso');
+      return organizacao;
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar validação do plano de gestão:', error);
+      console.error('❌ Código do erro:', error.code);
+      console.error('❌ Mensagem:', error.message);
+      console.error('❌ Meta:', error.meta);
+      console.error('❌ Stack:', error.stack);
+      
+      // Verificar se é erro de campo não encontrado (PostgreSQL)
+      const errorMessage = error.message || '';
+      if (errorMessage.includes('column') && 
+          (errorMessage.includes('does not exist') || 
+           errorMessage.includes('não existe') ||
+           errorMessage.includes('Unknown column'))) {
+        throw new ApiError({
+          message: 'Campos de validação do plano de gestão não encontrados no banco de dados. Execute o script SQL: scripts/database/add-plano-gestao-validacao-fields.sql',
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          code: ErrorCode.DATABASE_ERROR
+        });
+      }
+      
+      // Verificar erros específicos do Prisma
+      if (error.code === 'P2002') {
+        throw new ApiError({
+          message: 'Erro de constraint única',
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: ErrorCode.DATABASE_ERROR
+        });
+      } else if (error.code === 'P2025') {
+        throw new ApiError({
+          message: 'Organização não encontrada',
+          statusCode: HttpStatus.NOT_FOUND,
+          code: ErrorCode.RESOURCE_NOT_FOUND
+        });
+      }
+      
+      // Re-throw outros erros como ApiError
+      throw new ApiError({
+        message: error.message || 'Erro ao atualizar validação do plano de gestão',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR,
+        details: error.meta
+      });
+    }
   }
 
   /**

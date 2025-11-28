@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { PlanoGestaoResponse, AcaoCompleta, Evidencia } from '../../types/planoGestao';
-import { ChevronDown, ChevronsDown, ChevronsUp, Edit, HelpCircle, Save, Upload, Download, Trash2, Image, FileText, ClipboardList, FileText as FileTextIcon, Image as ImageIcon, Target, Plus } from 'lucide-react';
+import { ChevronDown, ChevronsDown, ChevronsUp, Edit, HelpCircle, Save, Upload, Download, Trash2, Image, FileText, ClipboardList, FileText as FileTextIcon, Image as ImageIcon, Target, Plus, CheckCircle } from 'lucide-react';
 import Toast from '../../components/Toast';
+import ValidacaoPlanoGestao from '../../components/organizacoes/ValidacaoPlanoGestao';
+import { organizacaoAPI } from '../../services/api';
 import './PlanoGestaoPage.css';
 
 interface PlanoGestaoPageProps {
@@ -37,8 +39,15 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
   const [legendaVisivel, setLegendaVisivel] = useState(true);
   const [evidencias, setEvidencias] = useState<Evidencia[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [abaAtiva, setAbaAtiva] = useState<'rascunho' | 'relatorio' | 'evidencias' | 'plano-gestao'>('rascunho');
+  const [abaAtiva, setAbaAtiva] = useState<'rascunho' | 'relatorio' | 'evidencias' | 'plano-gestao' | 'validacao'>('rascunho');
   const [gerandoPdfPlano, setGerandoPdfPlano] = useState(false);
+  const [dadosValidacao, setDadosValidacao] = useState<{
+    plano_gestao_validacao_status: number | null;
+    plano_gestao_validacao_usuario: number | null;
+    plano_gestao_validacao_data: Date | string | null;
+    plano_gestao_validacao_obs: string | null;
+    plano_gestao_validacao_usuario_nome?: string | null;
+  } | null>(null);
 
   // Verifica se o usuário tem role com permissão de edição
   const canEdit = user?.roles?.some((role: any) =>
@@ -191,6 +200,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
     if (organizacaoId) {
       loadPlanoGestao();
       loadOrganizacaoInfo();
+      loadDadosValidacao();
     }
   }, [organizacaoId]);
 
@@ -205,6 +215,24 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
       setNomeOrganizacao(data.nome || 'Organização');
     } catch (err: any) {
       console.error('Erro ao carregar organização:', err);
+    }
+  };
+
+  const loadDadosValidacao = async () => {
+    try {
+      const org = await organizacaoAPI.getById(organizacaoId);
+      const orgData = org.data || org;
+      const nomeValidador = orgData.users_organizacao_plano_gestao_validacao_usuarioTousers?.name || null;
+      
+      setDadosValidacao({
+        plano_gestao_validacao_status: orgData.plano_gestao_validacao_status || null,
+        plano_gestao_validacao_usuario: orgData.plano_gestao_validacao_usuario || null,
+        plano_gestao_validacao_data: orgData.plano_gestao_validacao_data || null,
+        plano_gestao_validacao_obs: orgData.plano_gestao_validacao_obs || null,
+        plano_gestao_validacao_usuario_nome: nomeValidador,
+      });
+    } catch (err: any) {
+      console.error('Erro ao carregar dados de validação:', err);
     }
   };
 
@@ -947,6 +975,32 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
         >
           <Target size={16} />
           <span>Plano de Gestão</span>
+        </button>
+        <button
+          className={`tab-button ${abaAtiva === 'validacao' ? 'active' : ''}`}
+          onClick={() => setAbaAtiva('validacao')}
+          style={{
+            background: abaAtiva === 'validacao' 
+              ? '#056839' 
+              : dadosValidacao?.plano_gestao_validacao_status === 2
+                ? '#d1fae5'
+                : dadosValidacao?.plano_gestao_validacao_status === 3
+                  ? '#fef3c7'
+                  : dadosValidacao?.plano_gestao_validacao_status === 4
+                    ? '#fee2e2'
+                    : 'transparent',
+            color: abaAtiva === 'validacao' 
+              ? 'white' 
+              : dadosValidacao?.plano_gestao_validacao_status === 2
+                ? '#065f46'
+                : dadosValidacao?.plano_gestao_validacao_status === 3
+                  ? '#92400e'
+                  : dadosValidacao?.plano_gestao_validacao_status === 4
+                    ? '#991b1b'
+                    : '#374151',
+          }}
+        >
+          <CheckCircle size={16} /> <span>Validação</span>
         </button>
       </div>
 
@@ -2139,6 +2193,20 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {abaAtiva === 'validacao' && dadosValidacao && (
+          <div className="tab-content">
+            <ValidacaoPlanoGestao
+              organizacaoId={organizacaoId}
+              validacaoStatus={dadosValidacao.plano_gestao_validacao_status}
+              validacaoUsuario={dadosValidacao.plano_gestao_validacao_usuario}
+              validacaoData={dadosValidacao.plano_gestao_validacao_data}
+              validacaoObs={dadosValidacao.plano_gestao_validacao_obs}
+              validacaoUsuarioNome={dadosValidacao.plano_gestao_validacao_usuario_nome}
+              onUpdate={loadDadosValidacao}
+            />
           </div>
         )}
       </div>

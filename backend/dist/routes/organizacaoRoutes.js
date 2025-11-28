@@ -55,6 +55,7 @@ router.get('/:id', organizacaoController_1.organizacaoController.getById.bind(or
 router.put('/:id', organizacaoController_1.organizacaoController.update.bind(organizacaoController_1.organizacaoController));
 router.patch('/:id/validacao', organizacaoController_1.organizacaoController.updateValidacao.bind(organizacaoController_1.organizacaoController));
 router.get('/:id/historico-validacao', organizacaoController_1.organizacaoController.getHistoricoValidacao.bind(organizacaoController_1.organizacaoController));
+router.patch('/:id/plano-gestao/validacao', organizacaoController_1.organizacaoController.updatePlanoGestaoValidacao.bind(organizacaoController_1.organizacaoController));
 router.delete('/:id', organizacaoController_1.organizacaoController.delete.bind(organizacaoController_1.organizacaoController));
 router.get('/:id/tecnicos', organizacaoController_1.organizacaoController.listEquipeTecnica.bind(organizacaoController_1.organizacaoController));
 router.get('/:id/tecnicos/disponiveis', organizacaoController_1.organizacaoController.listTecnicosDisponiveis.bind(organizacaoController_1.organizacaoController));

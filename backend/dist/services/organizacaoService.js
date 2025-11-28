@@ -80,6 +80,7 @@ class OrganizacaoService {
         o.id_tecnico,
         o._creator_uri_user,
         o.validacao_status,
+        o.plano_gestao_validacao_status,
         u.name as tecnico_nome,
         u.email as tecnico_email,
         -- Campos de histórico de validação
@@ -197,6 +198,13 @@ class OrganizacaoService {
                     where: { id: organizacaoId },
                     include: {
                         users: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true
+                            }
+                        },
+                        users_organizacao_plano_gestao_validacao_usuarioTousers: {
                             select: {
                                 id: true,
                                 name: true,
@@ -1241,6 +1249,71 @@ class OrganizacaoService {
             }
         });
         return organizacao;
+    }
+    async updatePlanoGestaoValidacao(id, dadosValidacao) {
+        const existingOrg = await prisma.organizacao.findUnique({
+            where: { id }
+        });
+        if (!existingOrg || existingOrg.removido) {
+            throw new ApiError_1.ApiError({
+                message: 'Organização não encontrada',
+                statusCode: api_1.HttpStatus.NOT_FOUND,
+                code: api_1.ErrorCode.RESOURCE_NOT_FOUND
+            });
+        }
+        try {
+            console.log('🔍 [updatePlanoGestaoValidacao] Dados recebidos:', JSON.stringify(dadosValidacao, null, 2));
+            console.log('🔍 [updatePlanoGestaoValidacao] ID organização:', id);
+            const organizacao = await prisma.organizacao.update({
+                where: { id },
+                data: {
+                    plano_gestao_validacao_status: dadosValidacao.plano_gestao_validacao_status,
+                    plano_gestao_validacao_obs: dadosValidacao.plano_gestao_validacao_obs,
+                    plano_gestao_validacao_usuario: dadosValidacao.plano_gestao_validacao_usuario,
+                    plano_gestao_validacao_data: dadosValidacao.plano_gestao_validacao_data
+                }
+            });
+            console.log('✅ [updatePlanoGestaoValidacao] Organização atualizada com sucesso');
+            return organizacao;
+        }
+        catch (error) {
+            console.error('❌ Erro ao atualizar validação do plano de gestão:', error);
+            console.error('❌ Código do erro:', error.code);
+            console.error('❌ Mensagem:', error.message);
+            console.error('❌ Meta:', error.meta);
+            console.error('❌ Stack:', error.stack);
+            const errorMessage = error.message || '';
+            if (errorMessage.includes('column') &&
+                (errorMessage.includes('does not exist') ||
+                    errorMessage.includes('não existe') ||
+                    errorMessage.includes('Unknown column'))) {
+                throw new ApiError_1.ApiError({
+                    message: 'Campos de validação do plano de gestão não encontrados no banco de dados. Execute o script SQL: scripts/database/add-plano-gestao-validacao-fields.sql',
+                    statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                    code: api_1.ErrorCode.DATABASE_ERROR
+                });
+            }
+            if (error.code === 'P2002') {
+                throw new ApiError_1.ApiError({
+                    message: 'Erro de constraint única',
+                    statusCode: api_1.HttpStatus.BAD_REQUEST,
+                    code: api_1.ErrorCode.DATABASE_ERROR
+                });
+            }
+            else if (error.code === 'P2025') {
+                throw new ApiError_1.ApiError({
+                    message: 'Organização não encontrada',
+                    statusCode: api_1.HttpStatus.NOT_FOUND,
+                    code: api_1.ErrorCode.RESOURCE_NOT_FOUND
+                });
+            }
+            throw new ApiError_1.ApiError({
+                message: error.message || 'Erro ao atualizar validação do plano de gestão',
+                statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                code: api_1.ErrorCode.DATABASE_ERROR,
+                details: error.meta
+            });
+        }
     }
     async getHistoricoValidacao(idOrganizacao) {
         const organizacao = await prisma.organizacao.findUnique({

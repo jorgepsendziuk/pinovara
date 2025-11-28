@@ -722,6 +722,10 @@ model organizacao {
   plano_gestao_relatorio_sintetico                                     String?                         @db.Text
   plano_gestao_relatorio_sintetico_updated_by                          Int?
   plano_gestao_relatorio_sintetico_updated_at                          DateTime?                       @db.Timestamp(6)
+  plano_gestao_validacao_status                                        Int?                            @default(1)
+  plano_gestao_validacao_usuario                                      Int?
+  plano_gestao_validacao_data                                          DateTime?                       @db.Timestamp(6)
+  plano_gestao_validacao_obs                                           String?
   participantes_menos_10                                               Int?
   assinatura_rep_legal                                                 String?
   uri                                                                  String?                         @unique @map("_uri") @db.VarChar(80)
@@ -955,8 +959,10 @@ model organizacao {
   plano_gestao_evidencia                                               plano_gestao_evidencia[]
   users_organizacao_plano_gestao_rascunho_updated_byTousers            users?                          @relation("organizacao_plano_gestao_rascunho_updated_byTousers", fields: [plano_gestao_rascunho_updated_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
   users_organizacao_plano_gestao_relatorio_sintetico_updated_byTousers users?                          @relation("organizacao_plano_gestao_relatorio_sintetico_updated_byTousers", fields: [plano_gestao_relatorio_sintetico_updated_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  users_organizacao_plano_gestao_validacao_usuarioTousers              users?                          @relation("organizacao_plano_gestao_validacao_usuarioTousers", fields: [plano_gestao_validacao_usuario], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_plano_gestao_validacao_usuario")
 
   @@index([validacao_status], map: "idx_organizacao_validacao_status")
+  @@index([plano_gestao_validacao_status], map: "idx_organizacao_plano_gestao_validacao_status")
   @@schema("pinovara")
 }
 
@@ -1178,6 +1184,7 @@ model users {
   organizacao                                                                organizacao[]
   organizacao_organizacao_plano_gestao_rascunho_updated_byTousers            organizacao[]            @relation("organizacao_plano_gestao_rascunho_updated_byTousers")
   organizacao_organizacao_plano_gestao_relatorio_sintetico_updated_byTousers organizacao[]            @relation("organizacao_plano_gestao_relatorio_sintetico_updated_byTousers")
+  organizacao_organizacao_plano_gestao_validacao_usuarioTousers               organizacao[]            @relation("organizacao_plano_gestao_validacao_usuarioTousers")
   plano_gestao_evidencia                                                     plano_gestao_evidencia[]
   user_roles                                                                 user_roles[]
   organizacao_tecnico_membro                                                 organizacao_tecnico[]    @relation("organizacao_tecnico_tecnico")

@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { PDFService, OrganizacaoData } from '../../services/pdfService';
 import { DataGrid, DataGridColumn } from '../../components/DataGrid';
-import { StatusValidacaoBadge } from '../../utils/validacaoHelpers';
+import { StatusValidacaoBadge, StatusPlanoGestaoValidacaoBadge } from '../../utils/validacaoHelpers';
 import { ModalArquivos } from '../../components/organizacoes/ModalArquivos';
 import ModalValidacao from '../../components/organizacoes/ModalValidacao';
+import ModalValidacaoPlanoGestao from '../../components/organizacoes/ModalValidacaoPlanoGestao';
 import { auxiliarAPI } from '../../services/api';
 import { formatarDataBR } from '../../utils/dateHelpers';
 import './ListaOrganizacoes.css';
@@ -45,6 +46,7 @@ interface Organizacao {
   tecnico_nome?: string | null;
   tecnico_email?: string | null;
   validacao_status?: number | null;
+  plano_gestao_validacao_status?: number | null;
   removido?: boolean | null;
   // Campos de histórico de validação
   data_criacao?: string | Date | null;
@@ -67,6 +69,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const [gerandoRelatorio, setGerandoRelatorio] = useState<number | null>(null);
   const [modalArquivosAberto, setModalArquivosAberto] = useState(false);
   const [modalValidacaoAberto, setModalValidacaoAberto] = useState(false);
+  const [modalValidacaoPlanoGestaoAberto, setModalValidacaoPlanoGestaoAberto] = useState(false);
   const [organizacaoSelecionada, setOrganizacaoSelecionada] = useState<{ id: number; nome: string } | null>(null);
   const [menuAcoesAberto, setMenuAcoesAberto] = useState<number | null>(null); // ID da organização com menu aberto
 
@@ -287,6 +290,23 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
 
   const fecharModalValidacao = () => {
     setModalValidacaoAberto(false);
+    setOrganizacaoSelecionada(null);
+    // Recarregar a lista para atualizar os badges de validação
+    fetchOrganizacoes();
+  };
+
+  const abrirModalValidacaoPlanoGestao = (organizacaoId: number, nomeOrganizacao: string) => {
+    // Verificar se é coordenador ou admin
+    const podeAcessar = isCoordinator() || hasPermission('sistema', 'admin');
+    if (!podeAcessar) {
+      return; // Apenas coordenadores e admins podem acessar
+    }
+    setOrganizacaoSelecionada({ id: organizacaoId, nome: nomeOrganizacao });
+    setModalValidacaoPlanoGestaoAberto(true);
+  };
+
+  const fecharModalValidacaoPlanoGestao = () => {
+    setModalValidacaoPlanoGestaoAberto(false);
     setOrganizacaoSelecionada(null);
     // Recarregar a lista para atualizar os badges de validação
     fetchOrganizacoes();
@@ -885,29 +905,58 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       key: 'validacao',
       title: 'Validação',
       dataIndex: 'validacao_status',
-      width: '10%',
+      width: '12%',
       align: 'center',
       render: (validacao_status: number | null, record: Organizacao) => {
         const podeAcessar = isCoordinator() || hasPermission('sistema', 'admin');
         return (
           <div
-            onClick={() => abrirModalValidacao(record.id, record.nome)}
             style={{
-              cursor: podeAcessar ? 'pointer' : 'default',
-              display: 'inline-block',
-              transition: 'transform 0.2s',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+              justifyContent: 'center',
+              alignItems: 'center',
             }}
-            onMouseEnter={(e) => {
-              if (podeAcessar) {
-                e.currentTarget.style.transform = 'scale(1.1)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-            title={podeAcessar ? 'Clique para gerenciar validação' : 'Validação (apenas coordenadores e admins podem editar)'}
           >
-            <StatusValidacaoBadge status={validacao_status} showLabel={false} />
+            <div
+              onClick={() => abrirModalValidacao(record.id, record.nome)}
+              style={{
+                cursor: podeAcessar ? 'pointer' : 'default',
+                display: 'inline-block',
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                if (podeAcessar) {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+              title={podeAcessar ? 'Clique para gerenciar validação do cadastro' : 'Validação do cadastro (apenas coordenadores e admins podem editar)'}
+            >
+              <StatusValidacaoBadge status={validacao_status} showLabel={false} prefix="CADASTRO" />
+            </div>
+            <div
+              onClick={() => abrirModalValidacaoPlanoGestao(record.id, record.nome)}
+              style={{
+                cursor: podeAcessar ? 'pointer' : 'default',
+                display: 'inline-block',
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                if (podeAcessar) {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+              title={podeAcessar ? 'Clique para gerenciar validação do plano de gestão' : 'Validação do plano de gestão (apenas coordenadores e admins podem editar)'}
+            >
+              <StatusPlanoGestaoValidacaoBadge status={record.plano_gestao_validacao_status ?? null} showLabel={false} prefix="P. GESTÃO" />
+            </div>
           </div>
         );
       },
@@ -1025,15 +1074,10 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   }
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '100%' }}>
+    <div style={{ padding: '1.5rem', maxWidth: '100%', overflowX: 'visible', overflowY: 'visible' }}>
       {/* Header simples e compacto */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '1.5rem'
-      }}>
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.5rem' }}>
+      <div className="lista-organizacoes-header">
+        <h2>
           <Building2 size={24} /> Lista de Organizações
         </h2>
         {!isCoordinator() && (
@@ -1172,7 +1216,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           </div>
 
           {/* Botões de Ação */}
-          <div className="filters-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div className="filters-actions">
             <button
               type="button"
               className={`btn btn-sm ${mostrarRemovidas ? 'btn-primary' : 'btn-outline'}`}
@@ -1351,8 +1395,9 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                     <span>
                       {org.meta_instance_id ? '📋 ODK Collect' : '💻 Sistema Web'}
                     </span>
-                    <div>
-                      <StatusValidacaoBadge status={org.validacao_status ?? null} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                      <StatusValidacaoBadge status={org.validacao_status ?? null} prefix="CADASTRO" />
+                      <StatusPlanoGestaoValidacaoBadge status={org.plano_gestao_validacao_status ?? null} prefix="P. GESTÃO" />
                     </div>
                   </div>
                 </div>
@@ -1708,6 +1753,14 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           organizacaoId={organizacaoSelecionada.id}
           organizacaoNome={organizacaoSelecionada.nome}
           onClose={fecharModalValidacao}
+        />
+      )}
+
+      {modalValidacaoPlanoGestaoAberto && organizacaoSelecionada && (
+        <ModalValidacaoPlanoGestao
+          organizacaoId={organizacaoSelecionada.id}
+          organizacaoNome={organizacaoSelecionada.nome}
+          onClose={fecharModalValidacaoPlanoGestao}
         />
       )}
     </div>

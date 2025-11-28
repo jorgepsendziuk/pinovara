@@ -427,6 +427,23 @@ export const organizacaoAPI = {
     }
 
     return response.data.data || [];
+  },
+
+  /**
+   * Atualizar validação do plano de gestão de uma organização
+   */
+  updatePlanoGestaoValidacao: async (id: number, dados: {
+    plano_gestao_validacao_status: number | null;
+    plano_gestao_validacao_obs: string | null;
+    plano_gestao_validacao_usuario?: number | null;
+  }): Promise<Organizacao> => {
+    const response = await api.patch<ApiResponse<Organizacao>>(`/organizacoes/${id}/plano-gestao/validacao`, dados);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao atualizar validação do plano de gestão');
+    }
+
+    return response.data.data!;
   }
 };
 
