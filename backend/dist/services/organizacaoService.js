@@ -994,14 +994,28 @@ class OrganizacaoService {
             'users_organizacao_plano_gestao_rascunho_updated_byTousers',
             'users_organizacao_plano_gestao_relatorio_sintetico_updated_byTousers',
             'meta_instance_id',
+            'meta_instance_name',
             'creator_uri_user',
             '_uri',
+            'uri',
             '_creation_date',
+            'creation_date',
             '_last_update_date',
+            'last_update_date',
             '_last_update_uri_user',
+            'last_update_uri_user',
             '_parent_auri',
             '_ordinal_number',
             '_top_level_auri',
+            'model_version',
+            'ui_version',
+            'is_complete',
+            'submission_date',
+            'marked_as_complete_date',
+            'complementado',
+            'deviceid',
+            'assinatura_rep_legal',
+            'users_organizacao_plano_gestao_validacao_usuarioTousers',
         ];
         const camposRemovidosExplicitos = [];
         camposParaRemover.forEach(campo => {
@@ -1155,13 +1169,15 @@ class OrganizacaoService {
                 }
             }
         }
-        console.log('📝 Dados limpos para update:', JSON.stringify(dadosLimpos, null, 2));
+        console.log('📝 Dados limpos para update:', Object.keys(dadosLimpos).length, 'campos');
         console.log('🔍 Campo estado presente?', 'estado' in dadosLimpos);
-        console.log('🔍 Valor do estado:', dadosLimpos.estado);
-        console.log('🔍 Tipo do estado:', typeof dadosLimpos.estado);
+        if ('estado' in dadosLimpos) {
+            console.log('🔍 Valor do estado:', dadosLimpos.estado);
+            console.log('🔍 Tipo do estado:', typeof dadosLimpos.estado);
+        }
         if ('estado' in dadosLimpos && dadosLimpos.estado !== undefined) {
             const estadoValue = dadosLimpos.estado;
-            if (estadoValue === null || estadoValue === '' || estadoValue === undefined) {
+            if (estadoValue === null || estadoValue === '') {
                 dadosLimpos.estado = null;
             }
             else if (typeof estadoValue === 'string') {
@@ -1173,10 +1189,18 @@ class OrganizacaoService {
             }
             console.log('✅ Estado processado:', dadosLimpos.estado);
         }
+        const dadosFinais = {};
+        Object.keys(dadosLimpos).forEach(key => {
+            const value = dadosLimpos[key];
+            if (value !== undefined) {
+                dadosFinais[key] = value;
+            }
+        });
+        console.log('📦 Dados finais para Prisma:', Object.keys(dadosFinais).length, 'campos');
         try {
             const organizacao = await prisma.organizacao.update({
                 where: { id },
-                data: dadosLimpos
+                data: dadosFinais
             });
             console.log('✅ Organização atualizada com sucesso:', id);
             return organizacao;

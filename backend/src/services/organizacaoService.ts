@@ -1209,14 +1209,28 @@ class OrganizacaoService {
       
       // Campos de metadados do ODK que não devem ser atualizados diretamente
       'meta_instance_id',
+      'meta_instance_name',
       'creator_uri_user',
       '_uri',
+      'uri', // Versão sem underscore
       '_creation_date',
+      'creation_date', // Versão sem underscore
       '_last_update_date',
+      'last_update_date', // Versão sem underscore
       '_last_update_uri_user',
+      'last_update_uri_user', // Versão sem underscore
       '_parent_auri',
       '_ordinal_number',
       '_top_level_auri',
+      'model_version',
+      'ui_version',
+      'is_complete',
+      'submission_date',
+      'marked_as_complete_date',
+      'complementado',
+      'deviceid', // Campo do ODK que não deve ser atualizado diretamente
+      'assinatura_rep_legal', // Assinatura não deve ser atualizada via API
+      'users_organizacao_plano_gestao_validacao_usuarioTousers', // Relacionamento que não deve ser atualizado
       
       // Campos de validação (devem ser atualizados apenas pelo endpoint específico)
       // Nota: validacao_status, validacao_usuario, validacao_data, validacao_obs
@@ -1427,15 +1441,17 @@ class OrganizacaoService {
     }
 
     // Log dos dados que serão enviados ao Prisma
-    console.log('📝 Dados limpos para update:', JSON.stringify(dadosLimpos, null, 2));
+    console.log('📝 Dados limpos para update:', Object.keys(dadosLimpos).length, 'campos');
     console.log('🔍 Campo estado presente?', 'estado' in dadosLimpos);
-    console.log('🔍 Valor do estado:', (dadosLimpos as any).estado);
-    console.log('🔍 Tipo do estado:', typeof (dadosLimpos as any).estado);
+    if ('estado' in dadosLimpos) {
+      console.log('🔍 Valor do estado:', (dadosLimpos as any).estado);
+      console.log('🔍 Tipo do estado:', typeof (dadosLimpos as any).estado);
+    }
 
     // Verificar se estado está presente e é válido
     if ('estado' in dadosLimpos && (dadosLimpos as any).estado !== undefined) {
       const estadoValue = (dadosLimpos as any).estado;
-      if (estadoValue === null || estadoValue === '' || estadoValue === undefined) {
+      if (estadoValue === null || estadoValue === '') {
         (dadosLimpos as any).estado = null;
       } else if (typeof estadoValue === 'string') {
         const num = parseInt(estadoValue, 10);
@@ -1446,10 +1462,23 @@ class OrganizacaoService {
       console.log('✅ Estado processado:', (dadosLimpos as any).estado);
     }
 
+    // Remover campos que podem estar causando problemas
+    // Garantir que não há campos undefined ou inválidos
+    const dadosFinais: any = {};
+    Object.keys(dadosLimpos).forEach(key => {
+      const value = (dadosLimpos as any)[key];
+      // Apenas incluir se não for undefined
+      if (value !== undefined) {
+        dadosFinais[key] = value;
+      }
+    });
+
+    console.log('📦 Dados finais para Prisma:', Object.keys(dadosFinais).length, 'campos');
+
     try {
       const organizacao = await prisma.organizacao.update({
         where: { id },
-        data: dadosLimpos
+        data: dadosFinais
       });
 
       console.log('✅ Organização atualizada com sucesso:', id);
