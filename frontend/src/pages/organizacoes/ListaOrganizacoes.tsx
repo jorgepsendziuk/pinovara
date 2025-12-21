@@ -63,7 +63,6 @@ interface ListaOrganizacoesProps {
 
 function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const { isCoordinator, isSupervisor, hasPermission } = useAuth();
-  const [organizacoes, setOrganizacoes] = useState<Organizacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [gerandoPDF, setGerandoPDF] = useState<number | null>(null);
   const [gerandoRelatorio, setGerandoRelatorio] = useState<number | null>(null);
@@ -73,11 +72,14 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const [organizacaoSelecionada, setOrganizacaoSelecionada] = useState<{ id: number; nome: string } | null>(null);
   const [menuAcoesAberto, setMenuAcoesAberto] = useState<number | null>(null); // ID da organização com menu aberto
 
-  // Estados para DataGrid
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  // Estados para scroll infinito
+  const [todasOrganizacoesFiltradas, setTodasOrganizacoesFiltradas] = useState<Organizacao[]>([]);
+  const [organizacoesExibidas, setOrganizacoesExibidas] = useState<Organizacao[]>([]);
+  const [itemsPorPagina] = useState(10);
   const [totalOrganizacoes, setTotalOrganizacoes] = useState(0);
   const [legendaVisivel, setLegendaVisivel] = useState(true);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'id', direction: 'desc' });
+  const [carregandoMais, setCarregandoMais] = useState(false);
   
   // Filtro de origem do cadastro
   const [origemFiltro, setOrigemFiltro] = useState<'odk' | 'web' | 'todas'>('todas');
@@ -183,13 +185,121 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   // Função para executar a busca
   const executarBusca = () => {
     setFiltros(prev => ({ ...prev, nome: nomeInput }));
-    setCurrentPage(1); // Resetar para primeira página ao buscar
+    // Scroll infinito será resetado automaticamente quando filtros mudarem
   };
   
-  // Buscar organizações quando filtros, página ou tamanho mudarem
+  // Função para aplicar ordenação
+  const aplicarOrdenacao = (organizacoes: Organizacao[]): Organizacao[] => {
+    if (!sortConfig) return organizacoes;
+
+    const sorted = [...organizacoes].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortConfig.key) {
+        case 'id':
+          aValue = a.id;
+          bValue = b.id;
+          break;
+        case 'nome':
+          aValue = a.nome?.toLowerCase() || '';
+          bValue = b.nome?.toLowerCase() || '';
+          break;
+        case 'estado_nome':
+          aValue = a.estado_nome?.toLowerCase() || '';
+          bValue = b.estado_nome?.toLowerCase() || '';
+          break;
+        case 'municipio_nome':
+          aValue = a.municipio_nome?.toLowerCase() || '';
+          bValue = b.municipio_nome?.toLowerCase() || '';
+          break;
+        case 'tecnico_nome':
+          aValue = a.tecnico_nome?.toLowerCase() || '';
+          bValue = b.tecnico_nome?.toLowerCase() || '';
+          break;
+        case 'data_criacao':
+          aValue = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
+          bValue = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
+          break;
+        case 'primeira_alteracao_status':
+          aValue = a.primeira_alteracao_status ? new Date(a.primeira_alteracao_status).getTime() : 0;
+          bValue = b.primeira_alteracao_status ? new Date(b.primeira_alteracao_status).getTime() : 0;
+          break;
+        case 'data_aprovacao':
+          aValue = a.data_aprovacao ? new Date(a.data_aprovacao).getTime() : 0;
+          bValue = b.data_aprovacao ? new Date(b.data_aprovacao).getTime() : 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+
+      const aStr = String(aValue).toLowerCase();
+      const bStr = String(bValue).toLowerCase();
+      
+      if (sortConfig.direction === 'asc') {
+        return aStr.localeCompare(bStr);
+      } else {
+        return bStr.localeCompare(aStr);
+      }
+    });
+
+    return sorted;
+  };
+
+  // Função para carregar mais itens (scroll infinito)
+  const carregarMaisItens = () => {
+    if (!sortConfig || carregandoMais) return;
+    
+    setCarregandoMais(true);
+    
+    // Reordenar todas as organizações filtradas antes de carregar mais
+    const organizacoesOrdenadas = aplicarOrdenacao(todasOrganizacoesFiltradas);
+    const proximosItens = organizacoesOrdenadas.slice(
+      organizacoesExibidas.length,
+      organizacoesExibidas.length + itemsPorPagina
+    );
+    
+    setTimeout(() => {
+      setOrganizacoesExibidas(prev => [...prev, ...proximosItens]);
+      setCarregandoMais(false);
+    }, 300);
+  };
+
+  // Buscar organizações quando filtros mudarem (reseta scroll infinito)
   useEffect(() => {
     fetchOrganizacoes();
-  }, [currentPage, pageSize, origemFiltro, filtros, mostrarRemovidas]);
+  }, [origemFiltro, filtros, mostrarRemovidas]);
+
+  // Aplicar ordenação quando sortConfig mudar
+  useEffect(() => {
+    if (todasOrganizacoesFiltradas.length > 0 && sortConfig) {
+      const organizacoesOrdenadas = aplicarOrdenacao(todasOrganizacoesFiltradas);
+      // Resetar e carregar apenas os primeiros itens ordenados
+      setOrganizacoesExibidas(organizacoesOrdenadas.slice(0, itemsPorPagina));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortConfig]);
+
+  // Detectar scroll para carregar mais itens
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 500) {
+        if (organizacoesExibidas.length < todasOrganizacoesFiltradas.length && !loading && !carregandoMais) {
+          carregarMaisItens();
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [organizacoesExibidas.length, todasOrganizacoesFiltradas.length, loading, carregandoMais]);
 
   const gerarRelatorio = async (organizacaoId: number, nomeOrganizacao: string) => {
     setGerandoRelatorio(organizacaoId);
@@ -453,18 +563,13 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         console.log(`   Após filtro Web: ${todasOrganizacoes.length}`);
       }
       
-      // 3. ORDENAR DESC POR ID (mais recente primeiro)
-      todasOrganizacoes = todasOrganizacoes.sort((a: Organizacao, b: Organizacao) => b.id - a.id);
-      
-      // 4. Aplicar paginação no frontend
-      const startIndex = (currentPage - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const organizacoesPaginadas = todasOrganizacoes.slice(startIndex, endIndex);
-      
-      console.log(`   Paginação: página ${currentPage}, mostrando ${organizacoesPaginadas.length} de ${todasOrganizacoes.length}`);
-      
-      setOrganizacoes(organizacoesPaginadas);
+      // 3. Guardar todas as organizações filtradas (sem ordenar ainda, será ordenado pelo useEffect)
+      setTodasOrganizacoesFiltradas(todasOrganizacoes);
       setTotalOrganizacoes(todasOrganizacoes.length);
+      
+      // 4. Aplicar ordenação e carregar apenas os primeiros itens (scroll infinito)
+      const organizacoesOrdenadas = aplicarOrdenacao(todasOrganizacoes);
+      setOrganizacoesExibidas(organizacoesOrdenadas.slice(0, itemsPorPagina));
     } catch (err) {
       console.error('Erro ao carregar organizações:', err);
     } finally {
@@ -498,11 +603,8 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     }
   };
 
-  // Handlers para DataGrid
-  const handlePaginationChange = (page: number, pageSize: number) => {
-    setCurrentPage(page);
-    setPageSize(pageSize);
-  };
+  // Handler para ordenação no DataGrid (desabilitado - fazemos ordenação externa)
+  // Não precisamos deste handler, a ordenação é feita externamente via sortConfig
 
 
   // Definição das colunas da DataGrid
@@ -828,12 +930,9 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {isRemovida && (
-              <Archive 
-                size={16} 
-                color="#dc2626" 
-                title="Organização removida"
-                style={{ flexShrink: 0 }}
-              />
+              <span title="Organização removida" style={{ flexShrink: 0, display: 'inline-flex' }}>
+                <Archive size={16} color="#dc2626" />
+              </span>
             )}
             <span 
               title={isODKCollect ? 'Cadastrado via ODK Collect (aplicativo)' : 'Cadastrado via sistema web'}
@@ -1141,7 +1240,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               value={filtros.estadoId}
               onChange={(e) => {
                 setFiltros({ ...filtros, estadoId: e.target.value });
-                setCurrentPage(1);
               }}
             >
               <option value="">Todos os estados</option>
@@ -1162,7 +1260,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               value={filtros.municipioId}
               onChange={(e) => {
                 setFiltros({ ...filtros, municipioId: e.target.value });
-                setCurrentPage(1);
               }}
             >
               <option value="">Todos os municípios</option>
@@ -1183,7 +1280,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               value={filtros.tecnicoId}
               onChange={(e) => {
                 setFiltros({ ...filtros, tecnicoId: e.target.value });
-                setCurrentPage(1);
               }}
             >
               <option value="">Todos os técnicos</option>
@@ -1204,7 +1300,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               value={filtros.statusValidacao}
               onChange={(e) => {
                 setFiltros({ ...filtros, statusValidacao: e.target.value });
-                setCurrentPage(1);
               }}
             >
               <option value="">Todos os status</option>
@@ -1222,7 +1317,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               className={`btn btn-sm ${mostrarRemovidas ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => {
                 setMostrarRemovidas(!mostrarRemovidas);
-                setCurrentPage(1);
               }}
               title={mostrarRemovidas ? "Ocultar organizações removidas" : "Mostrar organizações removidas"}
             >
@@ -1235,7 +1329,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                 setFiltros({ nome: '', estadoId: '', municipioId: '', tecnicoId: '', statusValidacao: '' });
                 setOrigemFiltro('todas');
                 setMostrarRemovidas(false);
-                setCurrentPage(1);
               }}
               title="Limpar todos os filtros"
             >
@@ -1315,16 +1408,9 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       }}>
         <DataGrid<Organizacao>
             columns={columns}
-            dataSource={organizacoes}
+            dataSource={organizacoesExibidas}
             rowKey="id"
             loading={loading}
-            pagination={{
-              current: currentPage,
-              pageSize: pageSize,
-              total: totalOrganizacoes,
-              showSizeChanger: true,
-              onChange: handlePaginationChange,
-            }}
             emptyState={{
               title: 'Nenhuma organização encontrada',
               description: 'Não foram encontradas organizações que correspondam aos filtros selecionados.',
@@ -1336,7 +1422,39 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
             responsive={true}
             size="small"
             className="organizacoes-datagrid"
+            externalSort={true}
+            externalSortConfig={sortConfig}
+            onSortChange={(key, direction) => {
+              setSortConfig({ key, direction });
+              // Resetar scroll ao ordenar
+              window.scrollTo(0, 0);
+            }}
           />
+          {/* Indicador de scroll infinito */}
+          {organizacoesExibidas.length < totalOrganizacoes && (
+            <div style={{ 
+              padding: '1rem', 
+              textAlign: 'center', 
+              color: '#6b7280',
+              fontSize: '0.875rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem'
+            }}>
+              {carregandoMais && (
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  border: '2px solid #3b2313',
+                  borderTop: '2px solid transparent',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }} />
+              )}
+              <span>Mostrando {organizacoesExibidas.length} de {totalOrganizacoes} organizações. Role para carregar mais...</span>
+            </div>
+          )}
       </div>
 
       {/* Layout Mobile/Tablet - Cards */}
@@ -1346,7 +1464,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
             <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
               Carregando organizações...
             </div>
-          ) : organizacoes.length === 0 ? (
+          ) : organizacoesExibidas.length === 0 ? (
             <div style={{ 
               padding: '3rem 1rem', 
               textAlign: 'center', 
@@ -1371,13 +1489,15 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               )}
             </div>
           ) : (
-            organizacoes.map((org) => (
+            organizacoesExibidas.map((org) => (
             <div key={org.id} className="organization-card">
               <div className="organization-card-header">
                 <div className="organization-info">
                   <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {org.removido && (
-                      <Archive size={18} color="#dc2626" title="Organização removida" />
+                      <span title="Organização removida">
+                        <Archive size={18} color="#dc2626" />
+                      </span>
                     )}
                     {org.nome}
                   </h4>
@@ -1591,149 +1711,17 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         </div>
       </div>
       
-      {/* Paginação Mobile */}
+      {/* Indicador de scroll infinito Mobile */}
       <div className="mobile-only">
-        {!loading && organizacoes.length > 0 && (
+        {!loading && organizacoesExibidas.length > 0 && organizacoesExibidas.length < totalOrganizacoes && (
           <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '1rem',
-            marginTop: '1.5rem',
             padding: '1rem',
-            background: 'white',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            textAlign: 'center',
+            color: '#6b7280',
+            fontSize: '0.875rem',
+            marginTop: '1rem'
           }}>
-            {/* Informações de paginação */}
-            <div style={{ 
-              fontSize: '0.875rem', 
-              color: '#6b7280',
-              textAlign: 'center'
-            }}>
-              Mostrando {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalOrganizacoes)} de {totalOrganizacoes} organização(ões)
-            </div>
-            
-            {/* Botões de navegação */}
-            <div style={{
-              display: 'flex',
-              gap: '0.5rem',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              justifyContent: 'center'
-            }}>
-              <button
-                onClick={() => handlePaginationChange(1, pageSize)}
-                disabled={currentPage === 1}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  background: currentPage === 1 ? '#f3f4f6' : 'white',
-                  color: currentPage === 1 ? '#9ca3af' : '#374151',
-                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Primeira
-              </button>
-              
-              <button
-                onClick={() => handlePaginationChange(currentPage - 1, pageSize)}
-                disabled={currentPage === 1}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  background: currentPage === 1 ? '#f3f4f6' : 'white',
-                  color: currentPage === 1 ? '#9ca3af' : '#374151',
-                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  transition: 'all 0.2s'
-                }}
-              >
-                ← Anterior
-              </button>
-              
-              <span style={{
-                padding: '0.5rem 1rem',
-                background: '#3b82f6',
-                color: 'white',
-                borderRadius: '6px',
-                fontSize: '0.875rem',
-                fontWeight: '600'
-              }}>
-                {currentPage} / {Math.ceil(totalOrganizacoes / pageSize)}
-              </span>
-              
-              <button
-                onClick={() => handlePaginationChange(currentPage + 1, pageSize)}
-                disabled={currentPage >= Math.ceil(totalOrganizacoes / pageSize)}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  background: currentPage >= Math.ceil(totalOrganizacoes / pageSize) ? '#f3f4f6' : 'white',
-                  color: currentPage >= Math.ceil(totalOrganizacoes / pageSize) ? '#9ca3af' : '#374151',
-                  cursor: currentPage >= Math.ceil(totalOrganizacoes / pageSize) ? 'not-allowed' : 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Próxima →
-              </button>
-              
-              <button
-                onClick={() => handlePaginationChange(Math.ceil(totalOrganizacoes / pageSize), pageSize)}
-                disabled={currentPage >= Math.ceil(totalOrganizacoes / pageSize)}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  background: currentPage >= Math.ceil(totalOrganizacoes / pageSize) ? '#f3f4f6' : 'white',
-                  color: currentPage >= Math.ceil(totalOrganizacoes / pageSize) ? '#9ca3af' : '#374151',
-                  cursor: currentPage >= Math.ceil(totalOrganizacoes / pageSize) ? 'not-allowed' : 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Última
-              </button>
-            </div>
-            
-            {/* Seletor de itens por página */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '0.875rem',
-              color: '#6b7280'
-            }}>
-              <span>Itens por página:</span>
-              <select
-                value={pageSize}
-                onChange={(e) => handlePaginationChange(1, parseInt(e.target.value))}
-                style={{
-                  padding: '0.375rem 0.5rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  background: 'white',
-                  color: '#374151',
-                  fontSize: '0.875rem',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-              </select>
-            </div>
+            Mostrando {organizacoesExibidas.length} de {totalOrganizacoes} organizações. Role para carregar mais...
           </div>
         )}
       </div>

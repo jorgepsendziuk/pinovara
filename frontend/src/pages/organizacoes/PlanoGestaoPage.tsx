@@ -236,8 +236,11 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
     }
   };
 
-  const loadPlanoGestao = async () => {
+  const loadPlanoGestao = async (preserveScroll: boolean = false) => {
     try {
+      // Preservar posição do scroll se solicitado
+      const scrollPosition = preserveScroll ? window.scrollY : undefined;
+      
       setIsLoading(true);
       setError(null);
       const token = localStorage.getItem('@pinovara:token');
@@ -255,6 +258,10 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
       // Ajustar altura dos textareas após carregar dados
       setTimeout(() => {
         adjustAllTextareas();
+        // Restaurar posição do scroll se foi preservada
+        if (preserveScroll && scrollPosition !== undefined) {
+          window.scrollTo(0, scrollPosition);
+        }
       }, 100);
     } catch (err: any) {
       console.error('Erro ao carregar plano de gestão:', err);
@@ -649,7 +656,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
           : (valorModelo || 'Ação'));
 
       addToast(`Ação "${tituloAcaoSalva}" salva com sucesso!`, 'success');
-      await loadPlanoGestao();
+      await loadPlanoGestao(true); // Preservar scroll
     } catch (err: any) {
       console.error('Erro ao salvar ação:', err);
       addToast(`Erro ao salvar ação: ${err.message || 'Erro desconhecido'}`, 'error');
@@ -702,7 +709,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
       setAccordionsAbertos(prev => prev.includes(planoKey) ? prev : [...prev, planoKey]);
       setGruposAbertos(prev => prev.includes(grupoKey) ? prev : [...prev, grupoKey]);
 
-      await loadPlanoGestao();
+      await loadPlanoGestao(true); // Preservar scroll
 
       addToast('Ação personalizada adicionada com sucesso!', 'success');
     } catch (err: any) {
@@ -760,7 +767,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
         delete newState[acaoKey];
         return newState;
       });
-      await loadPlanoGestao();
+      await loadPlanoGestao(true); // Preservar scroll
     } catch (err: any) {
       console.error('Erro ao atualizar supressão da ação:', err);
       addToast(`Erro ao atualizar ação: ${err.message || 'Erro desconhecido'}`, 'error');
@@ -807,7 +814,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
         delete newState[acaoKey];
         return newState;
       });
-      await loadPlanoGestao();
+      await loadPlanoGestao(true); // Preservar scroll
     } catch (err: any) {
       console.error('Erro ao remover ação personalizada:', err);
       addToast(`Erro ao remover: ${err.message || 'Erro desconhecido'}`, 'error');

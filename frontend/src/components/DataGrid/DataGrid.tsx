@@ -66,6 +66,9 @@ export interface DataGridProps<T = any> {
   size?: 'small' | 'medium' | 'large';
   className?: string;
   style?: React.CSSProperties;
+  onSortChange?: (key: string, direction: 'asc' | 'desc') => void;
+  externalSort?: boolean; // Se true, não ordena internamente, apenas chama onSortChange
+  externalSortConfig?: { key: string; direction: 'asc' | 'desc' } | null; // Estado de ordenação externa
 }
 
 function DataGrid<T = any>({
@@ -81,13 +84,19 @@ function DataGrid<T = any>({
   responsive = true,
   size = 'medium',
   className = '',
-  style
+  style,
+  onSortChange,
+  externalSort = false,
+  externalSortConfig = null
 }: DataGridProps<T>) {
   const [searchValue, setSearchValue] = useState('');
-  const [sortConfig, setSortConfig] = useState<{
+  const [internalSortConfig, setInternalSortConfig] = useState<{
     key: string;
     direction: 'asc' | 'desc';
   } | null>(null);
+  
+  // Usar sortConfig externo se fornecido, senão usar interno
+  const sortConfig = externalSort ? externalSortConfig : internalSortConfig;
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>(
     selection?.selectedRowKeys || []
   );
@@ -158,17 +167,26 @@ function DataGrid<T = any>({
 
   // Ordenação
   const handleSort = (columnKey: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    
-    if (sortConfig && sortConfig.key === columnKey && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    if (externalSort && onSortChange) {
+      // Se ordenação externa, determinar direção baseado no estado atual
+      let direction: 'asc' | 'desc' = 'asc';
+      if (externalSortConfig && externalSortConfig.key === columnKey && externalSortConfig.direction === 'asc') {
+        direction = 'desc';
+      }
+      onSortChange(columnKey, direction);
+    } else {
+      // Ordenação interna (comportamento padrão)
+      let direction: 'asc' | 'desc' = 'asc';
+      if (internalSortConfig && internalSortConfig.key === columnKey && internalSortConfig.direction === 'asc') {
+        direction = 'desc';
+      }
+      setInternalSortConfig({ key: columnKey, direction });
     }
-    
-    setSortConfig({ key: columnKey, direction });
   };
 
   // Aplicar ordenação aos dados
   const sortedData = useMemo(() => {
+    if (externalSort) return dataSource; // Se ordenação externa, não ordena internamente
     if (!sortConfig) return dataSource;
 
     const column = columns.find(col => col.key === sortConfig.key);

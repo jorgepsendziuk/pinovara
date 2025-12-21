@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
-      port: 5173,
+      port: 3000,
       host: true, // Permitir acesso externo em desenvolvimento
       proxy: isDevelopment ? {
         // Proxy apenas em desenvolvimento

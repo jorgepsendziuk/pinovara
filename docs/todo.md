@@ -225,4 +225,65 @@ php8.2 /var/www/html/legaliza/cmd.php "class=VTituloNovoDocumentGerar&method=onG
 php8.2 /var/www/html/legaliza/cmd.php "class=VTituloNovoDocumentGerar&method=onGenerate&static=1&key=371705"
 php8.2 /var/www/html/legaliza/cmd.php "class=VTituloNovoDocumentGerar&method=onGenerate&static=1&key=371706"
 
-    
+
+Objetivo: criar módulo de Qualificações e Capacitações dentro do sistema para gerenciar planos de curso, inscrições, presença, avaliações de impacto, repositório de material e evidências (fotos, lista de presença).
+Escopo inicial: cada empreendimento terá 1 qualificação específica; além disso, existem 3 qualificações “em rede” que serão ofertadas simultaneamente a várias organizações.
+Elementos mínimos por qualificação/curso: plano de curso (título, objetivos geral e específicos, conteúdo programático, metodologia, recursos didáticos, estratégia de avaliação, referências, instrutor responsável), lista de inscritos, lista de presença (assinada e fotografada), relatório sintético, evidências (fotos/PDFs), avaliação de impacto padronizada, repositório de material didático.
+Fluxos sugeridos: geração automática de QR code/link no momento da criação do plano para inscrição e avaliação; opção de inscrição manual pelo técnico de campo; impressão da lista de inscritos que vira lista de presença; upload de foto da lista assinada como prova.
+Integração com AVA (Moodle) foi debatida, mas decidiram inicialmente manter repositório interno leve no sistema (integração futura opcional).
+
+Requisitos funcionais (mínimos)
+
+RF1: CRUD de Qualificações/Capacitações (criar, editar, excluir, listar).
+RF2: Modelo de Plano de Curso com campos: título, objetivos (geral/específicos), conteúdo programático (texto livre), metodologia, recursos didáticos, estratégia de avaliação, referências, instrutor responsável, local/data/turno, repositório de material (upload).
+RF3: Geração automática de QR code / link ao criar o plano, para inscrição pública.
+RF4: Formulário de inscrição (nome, instituição, e-mail, telefone, documento (CPF ou RG)) acessível via QR/link e por cadastro manual pelo técnico de campo.
+RF5: Lista de inscritos imprimível e conversível em lista de presença (com linhas extras para assinaturas avulsas).
+RF6: Upload de lista de presença assinada (foto/PDF) e armazenamento como evidência.
+RF7: Relatório fotográfico (upload de fotos com metadados: data, local) ligado ao curso.
+RF8: Avaliação de impacto padronizada (questionário), linkável por QR e registrada no sistema.
+RF9: Vínculo entre qualificações e uma ou várias organizações (many-to-many).
+RF10: Repositório de materiais por curso (arquivos PDF, PPT, vídeos) com permissão de download.
+RF11: Logs de auditoria para alterações em planos e uploads de evidências.
+RF12: Exportação/geração de pacote final (relatório sintético + evidências) em PDF.
+Acesso dos inscritos: 
+
+Requisitos não funcionais
+
+RNF3: Segurança: uploads armazenados com controle de acesso por função; dados pessoais (CPF) criptografados em repouso.
+RNF4: Usabilidade: gerar QR e formulários responsivos para dispositivos móveis; interface de impressão amigável.
+RNF5: Escalabilidade: suportar criação simultânea de 28+ turmas e múltiplas turmas em rede.
+RNF6: Interoperabilidade: API REST para futura integração com Moodle/AVA (endpoints para exportar/importar participantes, materiais e resultados).
+RNF7: Backup e retenção de evidências (política de retenção definida pelo projeto).
+RNF8: Conformidade: manter logs para auditoria e conformidade com regras da extensão universitária.
+Instruções claras para a IA/IDE implementar o novo módulo (passo a passo técnico)
+
+Modelagem de dados: criar entidades principais - Qualification (course), CoursePlan (fields do plano), Enrollment, AttendanceRecord, Evidence (photos/PDF), EvaluationResponse, Organization, Instructor, Material. Relacionamentos: Qualification <-> Organization (M:N); Qualification -> CoursePlan (1:1); CoursePlan -> Material (1:N); Enrollment -> AttendanceRecord (1:N).
+Endpoints API sugeridos (REST):
+/qualifications [GET,POST,PUT,DELETE]
+/qualifications/{id}/qrcode [GET] -> retorna QR link
+/qualifications/{id}/enrollments [GET,POST]
+/qualifications/{id}/enrollments/{eid}/attendance [POST] (upload assinatura/photo)
+/qualifications/{id}/evidences [POST]
+/qualifications/{id}/evaluation [GET,POST]
+/organizations [GET,POST]
+/materials [POST,GET]
+/export/{qualificationId}/final-report [GET] -> gera PDF contendo plano, lista de inscritos, presença, fotos, resultados da avaliação
+Front-end: telas principais
+Tela de listagem de qualificações (filtro por organização, status).
+Formulário de criação/edição do plano de curso (WYSIWYG para conteúdo programático).
+Página pública do curso com botão de inscrição (QR/link) e avaliação.
+Painel do instrutor/técnico: imprimir lista de inscritos (formato A4), marcar presenças, upload de fotos/listas assinadas, ver resultados da avaliação.
+QR code e formulário público: ao criar o plano gerar UUID e endpoint público para inscrição + avaliação; permitir inscrição via web móvel.
+Offline: implementar um modo PWA ou módulo mobile-lite que permita salvar inscrições e registros localmente (IndexedDB ou SQLite) e sincronizar via fila quando online.
+Upload e armazenamento: usar objeto de storage (S3 ou equivalente) com nomes padronizados (qualificationId/yyyy-mm-dd/type/filename) e armazenar metadados no banco. Validar tamanho e tipos MIME.
+Segurança e privacidade: autenticação por roles (admin, gestor, instrutor, técnico de campo); criptografar campos sensíveis; limitar downloads de evidências por papel.
+Export/PDF: biblioteca server-side para montagem do relatório final (plano + lista + fotos + respostas da avaliação).
+Testes: criar casos para fluxo completo (criar curso, gerar QR, inscrever 10 participantes, imprimir lista, simular presenças offline e sync, upload evidências, gerar relatório).
+Documentação e API: documentar endpoints e payloads (OpenAPI/Swagger) e exemplo de integração com Moodle (export de lista e materiais).
+Observações rápidas
+
+Priorizar offline + impressão e upload de lista assinada (é requisito de campo crítico).
+Iniciar com repositório interno leve; deixar integração com Moodle como tarefa futura com endpoints definidos.
+Padronizar a avaliação de impacto (modelo único por projeto) para facilitar relatórios agregados.
+Se quiser, eu posso: gerar o diagrama de entidades (ER), escrever os contratos de API (OpenAPI) ou montar as telas wireframe para o esqueleto do módulo.
