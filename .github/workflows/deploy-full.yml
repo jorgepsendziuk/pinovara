@@ -1,7 +1,7 @@
 name: Deploy Full (with Prisma)
 
-# 🚀 PINOVARA Deploy FULL - COMPLETE REGENERATION
-# ⚡ REGENERATES PRISMA - For schema changes (8 minutes)
+# 🚀 PINOVARA Deploy FULL - WITH PRISMA CLIENT FROM DOCKER
+# ⚡ PRISMA GENERATED IN DOCKER - No server-side generation (fast & reliable)
 # 📋 BACKUP SYSTEM - Timestamp-based backups
 # 🔧 MANUAL ONLY - Use when Prisma schema changed
 
@@ -58,6 +58,47 @@ jobs:
         npm run build
         echo "✅ Backend built successfully"
 
+    - name: 🐳 Build Docker Image & Extract Prisma Client
+      working-directory: ./backend
+      run: |
+        echo "🐳 Building Docker image to generate Prisma Client..."
+        echo "⚡ This replaces server-side prisma generate (faster & more reliable)"
+        
+        # Build Docker image (multi-stage, para até o stage builder)
+        docker build --target builder -t pinovara-backend:builder .
+        
+        echo "📦 Extracting Prisma Client from Docker image..."
+        
+        # Criar container temporário para extrair Prisma Client
+        CONTAINER_ID=$(docker create pinovara-backend:builder)
+        
+        # Criar diretório para Prisma Client
+        mkdir -p ../prisma-client
+        
+        # Extrair Prisma Client do container
+        # Copiar toda a estrutura @prisma
+        echo "📦 Extracting @prisma directory..."
+        docker cp $CONTAINER_ID:/app/node_modules/@prisma ../prisma-client/@prisma || {
+          echo "⚠️ Failed to extract @prisma, trying alternative..."
+          # Tentar extrair apenas o client se a estrutura for diferente
+          docker cp $CONTAINER_ID:/app/node_modules/@prisma/client ../prisma-client/@prisma-client 2>/dev/null || {
+            echo "❌ Failed to extract Prisma Client"
+            docker rm $CONTAINER_ID
+            exit 1
+          }
+        }
+        
+        # Extrair cache .prisma se existir (opcional)
+        echo "📦 Extracting .prisma cache (optional)..."
+        docker cp $CONTAINER_ID:/app/node_modules/.prisma ../prisma-client/.prisma 2>/dev/null || echo "ℹ️ .prisma cache not found (this is optional)"
+        
+        # Remover container temporário
+        docker rm $CONTAINER_ID
+        
+        echo "✅ Prisma Client extracted successfully from Docker image"
+        echo "📁 Prisma Client location: ../prisma-client/"
+        ls -la ../prisma-client/ | head -10
+
     - name: 🎨 Build Frontend
       working-directory: ./frontend
       run: |
@@ -91,6 +132,14 @@ jobs:
         cp backend/package-lock.json $DEPLOY_DIR/package-lock.json
         cp -r backend/dist $DEPLOY_DIR/dist
         cp -r backend/prisma $DEPLOY_DIR/prisma
+        
+        # Copy Prisma Client generated from Docker image
+        if [ -d "prisma-client" ]; then
+          cp -r prisma-client $DEPLOY_DIR/prisma-client
+          echo "✅ Prisma Client from Docker image copied"
+        else
+          echo "⚠️ Prisma Client not found (will use existing on server or fail)"
+        fi
         
         # Copy frontend
         cp -r frontend/dist $DEPLOY_DIR/frontend-dist
@@ -271,11 +320,42 @@ jobs:
         cd /var/www/pinovara/backend && npm ci --production --omit=dev
         echo "✅ Dependencies installed successfully"
 
-        # FULL PRISMA REGENERATION (The main difference!)
-        echo "🗄️ FULL Prisma client generation (this will take ~8 minutes)..."
-        echo "⚡ REGENERATING from schema (not using cache)..."
-        cd /var/www/pinovara/backend && sudo npx prisma generate
-        echo "✅ Prisma client generated successfully (COMPLETE!)"
+        # PRISMA CLIENT FROM DOCKER IMAGE (No server-side generation!)
+        echo "🗄️ Using Prisma Client from Docker image (pre-generated in CI)..."
+        echo "⚡ FAST MODE - No server-side generation needed!"
+        
+        # Check if Prisma Client was provided from CI
+        if [ -d "$DEPLOY_SOURCE/prisma-client" ]; then
+          echo "⚡ Restoring Prisma Client from Docker image..."
+          sudo mkdir -p /var/www/pinovara/backend/node_modules/@prisma
+          sudo mkdir -p /var/www/pinovara/backend/node_modules/.prisma
+          sudo chown -R $USER:$USER /var/www/pinovara/backend/node_modules/@prisma
+          sudo chown -R $USER:$USER /var/www/pinovara/backend/node_modules/.prisma
+          
+          # Copiar Prisma Client
+          if [ -d "$DEPLOY_SOURCE/prisma-client/@prisma" ]; then
+            # Estrutura completa @prisma
+            cp -r "$DEPLOY_SOURCE/prisma-client/@prisma" /var/www/pinovara/backend/node_modules/
+          elif [ -d "$DEPLOY_SOURCE/prisma-client/@prisma-client" ]; then
+            # Estrutura alternativa (apenas client)
+            mkdir -p /var/www/pinovara/backend/node_modules/@prisma
+            cp -r "$DEPLOY_SOURCE/prisma-client/@prisma-client" /var/www/pinovara/backend/node_modules/@prisma/client
+          fi
+          
+          # Copiar cache .prisma se existir
+          if [ -d "$DEPLOY_SOURCE/prisma-client/.prisma" ]; then
+            cp -r "$DEPLOY_SOURCE/prisma-client/.prisma" /var/www/pinovara/backend/node_modules/ 2>/dev/null || true
+          fi
+          
+          echo "✅ Prisma Client restored from Docker image (FAST!)"
+        else
+          echo "⚠️ Prisma Client not found in deploy package"
+          echo "🔄 Falling back to existing client on server..."
+          if [ ! -d "/var/www/pinovara/backend/node_modules/@prisma/client" ]; then
+            echo "❌ No Prisma Client available - deployment may fail"
+            echo "💡 Try running regular deploy first to establish client"
+          fi
+        fi
         
         # NOTE: Database schema is NEVER modified by deploy
         # System adapts to existing database structure
