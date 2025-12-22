@@ -36,6 +36,8 @@ const rateLimitMax = process.env.NODE_ENV === 'production' ? 500 : 1000;
 app.use((0, logging_1.rateLimiter)(rateLimitWindow, rateLimitMax));
 const repositorioRoutes = require('./routes/repositorioRoutes');
 app.use('/repositorio', repositorioRoutes.default);
+const capacitacaoPublicRoutes = require('./routes/capacitacaoPublicRoutes');
+app.use('/capacitacoes/public', capacitacaoPublicRoutes.default);
 app.use('/', routes_1.default);
 app.use('*', (req, res) => {
     res.status(404).json({

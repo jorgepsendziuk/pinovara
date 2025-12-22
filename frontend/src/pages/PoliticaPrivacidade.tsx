@@ -96,6 +96,10 @@ function PoliticaPrivacidade() {
               <li>Coleta de informações socioeconômicas e ambientais</li>
               <li>Georreferenciamento de perímetros e territórios</li>
               <li>Elaboração de diagnósticos e relatórios técnicos</li>
+              <li>Gestão de capacitações, qualificações e formações</li>
+              <li>Cadastro e gestão de participantes em capacitações</li>
+              <li>Registro de presença e avaliações de participantes</li>
+              <li>Geração de certificados e relatórios de capacitações</li>
               <li>Autenticação e controle de acesso ao sistema</li>
               <li>Comunicação institucional relacionada ao projeto</li>
               <li>Cumprimento de obrigações legais e regulatórias</li>
@@ -144,7 +148,22 @@ function PoliticaPrivacidade() {
             </ul>
 
             <p style={{ marginBottom: '10px' }}>
-              <strong>3.4. Dados Coletados Automaticamente:</strong>
+              <strong>3.4. Dados de Participantes de Capacitações:</strong>
+            </p>
+            <ul style={{ marginLeft: '20px', marginBottom: '15px' }}>
+              <li>Nome completo</li>
+              <li>E-mail</li>
+              <li>Telefone (com DDD)</li>
+              <li>Instituição/Organização vinculada</li>
+              <li>CPF</li>
+              <li>RG (opcional)</li>
+              <li>Data de inscrição</li>
+              <li>Registros de presença nas atividades</li>
+              <li>Avaliações e feedback sobre as capacitações</li>
+            </ul>
+
+            <p style={{ marginBottom: '10px' }}>
+              <strong>3.5. Dados Coletados Automaticamente:</strong>
             </p>
             <ul style={{ marginLeft: '20px' }}>
               <li>Endereço IP</li>
@@ -216,6 +235,7 @@ function PoliticaPrivacidade() {
             <ul style={{ marginLeft: '20px' }}>
               <li><strong>Dados de usuários:</strong> Até exclusão da conta ou 5 anos de inatividade</li>
               <li><strong>Dados das organizações:</strong> Durante a vigência do projeto e por 5 anos após o encerramento, conforme exigências legais</li>
+              <li><strong>Dados de participantes de capacitações:</strong> Durante a vigência do projeto e por 5 anos após o encerramento, para fins de certificação e comprovação de participação</li>
               <li><strong>Logs de acesso:</strong> 6 meses</li>
               <li><strong>Dados para cumprimento legal:</strong> Conforme prazo estabelecido em lei</li>
             </ul>

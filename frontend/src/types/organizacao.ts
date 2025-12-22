@@ -142,7 +142,8 @@ export type AbaAtiva =
   | 'diagnostico' 
   | 'planoGestao'
   | 'validacao'
-  | 'complementos';
+  | 'complementos'
+  | 'qualificacoes';
 export type AccordionAberto = string | null;
 
 // ========== TIPOS AUXILIARES ==========

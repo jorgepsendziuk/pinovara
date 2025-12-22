@@ -56,7 +56,12 @@ app.use(rateLimiter(rateLimitWindow, rateLimitMax));
 const repositorioRoutes = require('./routes/repositorioRoutes');
 app.use('/repositorio', repositorioRoutes.default);
 
-// API routes
+// IMPORTANTE: Rotas públicas de capacitações DEVEM ser registradas ANTES das rotas gerais
+// para garantir que o Express faça match com a rota mais específica primeiro
+const capacitacaoPublicRoutes = require('./routes/capacitacaoPublicRoutes');
+app.use('/capacitacoes/public', capacitacaoPublicRoutes.default);
+
+// API routes (inclui rotas autenticadas de capacitações)
 app.use('/', routes);
 
 // 404 handler

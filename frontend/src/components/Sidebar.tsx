@@ -31,7 +31,9 @@ import {
   ChevronLeft,
   ChevronRight as ChevronExpand,
   Database,
-  Archive
+  Archive,
+  GraduationCap,
+  Calendar
 } from 'lucide-react';
 
 // Hook personalizado para detectar breakpoints responsivos
@@ -71,7 +73,7 @@ interface MenuItem {
   label: string;
   icon: string | React.ComponentType<any>; // Suporte para emoji ou componente Lucide
   path: string;
-  module: string;
+  module?: string;
   permission?: string;
   hideForRoles?: string[]; // Ocultar para roles específicos
   children?: MenuItem[];
@@ -86,7 +88,7 @@ const Sidebar: React.FC = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
-  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['organizacoes']));
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['administracao']));
   const sidebarRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<HTMLDivElement>(null);
   const userExpandedRef = useRef<boolean>(false); // Track if user manually expanded
@@ -96,11 +98,6 @@ const Sidebar: React.FC = () => {
     if (isCollapsed && !isMobile) {
       setIsCollapsed(false);
       userExpandedRef.current = true; // Mark as user-expanded
-    }
-    
-    // Manter o menu "organizacoes" sempre aberto
-    if (menuId === 'organizacoes') {
-      return;
     }
     
     const newExpanded = new Set(expandedMenus);
@@ -195,56 +192,39 @@ const Sidebar: React.FC = () => {
 
   const menuItems: MenuItem[] = [
     {
-      id: 'dashboard-usuario',
-      label: 'Dashboard do Usuário',
-      icon: BarChart,
-      path: '/pinovara',
-      module: 'dashboard'
-    },
-    {
       id: 'organizacoes',
       label: 'Organizações',
       icon: Building,
-      path: '/organizacoes',
-      module: 'organizacoes',
-      children: [
-        {
-          id: 'organizacoes-dashboard',
-          label: 'Dashboard',
-          icon: BarChart,
-          path: '/organizacoes/dashboard',
-          module: 'organizacoes'
-        },
-        {
-          id: 'organizacoes-list',
-          label: 'Lista de Organizações',
-          icon: Clipboard,
-          path: '/organizacoes/lista',
-          module: 'organizacoes'
-        },
-        {
-          id: 'organizacoes-add',
-          label: 'Adicionar Organização',
-          icon: Plus,
-          path: '/organizacoes/cadastro',
-          module: 'organizacoes',
-          hideForRoles: ['coordenador', 'supervisao']
-        },
-        {
-          id: 'organizacoes-mapa',
-          label: 'Mapa',
-          icon: Map,
-          path: '/organizacoes/mapa',
-          module: 'organizacoes'
-        }
-      ]
+      path: '/organizacoes/lista',
+      module: 'organizacoes'
+    },
+    {
+      id: 'organizacoes-mapa',
+      label: 'Mapa de Organizações',
+      icon: Map,
+      path: '/organizacoes/mapa',
+      module: 'organizacoes'
     },
     {
       id: 'repositorio',
-      label: 'Repositório Público',
+      label: 'Repositório',
       icon: Archive,
       path: '/repositorio',
       // Sem module definido para que todos possam ver (permissão é controlada dentro do componente)
+    },
+    {
+      id: 'qualificacoes',
+      label: 'Qualificações',
+      icon: GraduationCap,
+      path: '/qualificacoes',
+      module: 'qualificacoes'
+    },
+    {
+      id: 'capacitacoes',
+      label: 'Capacitações',
+      icon: Calendar,
+      path: '/capacitacoes',
+      module: 'qualificacoes'
     },
     
     // 🚧 ===== MÓDULOS EM DESENVOLVIMENTO - OCULTOS =====
@@ -479,22 +459,6 @@ const Sidebar: React.FC = () => {
       ]
     },
     {
-      id: 'visualizacao-formulario',
-      label: 'Visualização do Formulário',
-      icon: FileText,
-      path: '/formulario-enketo',
-      module: 'configuracao',
-      children: [
-        {
-          id: 'visualizacao-formulario-main',
-          label: 'Formulário Enketo',
-          icon: FormInput,
-          path: '/formulario-enketo',
-          module: 'configuracao'
-        }
-      ]
-    },
-    {
       id: 'administracao',
       label: 'Administração',
       icon: Settings,
@@ -503,10 +467,18 @@ const Sidebar: React.FC = () => {
       permission: 'admin',
       children: [
         {
-          id: 'admin-dashboard',
-          label: 'Painel Admin',
-          icon: Sliders,
-          path: '/admin',
+          id: 'usuarios',
+          label: 'Usuários',
+          icon: Users,
+          path: '/admin/users',
+          module: 'sistema',
+          permission: 'admin'
+        },
+        {
+          id: 'audit-logs',
+          label: 'Auditoria',
+          icon: FileCheck,
+          path: '/admin/audit-logs',
           module: 'sistema',
           permission: 'admin'
         },
@@ -523,70 +495,6 @@ const Sidebar: React.FC = () => {
           label: 'Sincronização ODK',
           icon: Database,
           path: '/admin/sync-odk',
-          module: 'sistema',
-          permission: 'admin'
-        },
-        {
-          id: 'usuarios',
-          label: 'Usuários',
-          icon: Users,
-          path: '/admin/users',
-          module: 'sistema',
-          permission: 'admin'
-        },
-        {
-          id: 'modulos',
-          label: 'Módulos',
-          icon: Package,
-          path: '/admin/modules',
-          module: 'sistema',
-          permission: 'admin'
-        },
-        {
-          id: 'roles',
-          label: 'Papéis',
-          icon: Tag,
-          path: '/admin/roles',
-          module: 'sistema',
-          permission: 'admin'
-        },
-        {
-          id: 'configuracoes',
-          label: 'Configurações',
-          icon: Wrench,
-          path: '/admin/settings',
-          module: 'sistema',
-          permission: 'admin'
-        },
-        {
-          id: 'backup',
-          label: 'Backup',
-          icon: HardDrive,
-          path: '/admin/backup',
-          module: 'sistema',
-          permission: 'admin'
-        },
-        {
-          id: 'monitor',
-          label: 'Monitor do Sistema',
-          icon: Search,
-          path: '/admin/monitor',
-          module: 'sistema',
-          permission: 'admin'
-        },
-        {
-          id: 'audit-logs',
-          label: 'Logs de Auditoria',
-          icon: FileCheck,
-          path: '/admin/audit-logs',
-          module: 'sistema',
-          permission: 'admin'
-        },
-        {
-          id: 'system-info',
-          label: 'Informações do Sistema',
-          icon: Monitor,
-          path: '/admin/system-info',
           module: 'sistema',
           permission: 'admin'
         }
@@ -607,6 +515,7 @@ const Sidebar: React.FC = () => {
     
     // Verificação de permissão padrão
     if (!item.permission) return true;
+    if (!item.module) return true; // Se não tem module, permite acesso (permissão controlada dentro do componente)
     return hasPermission(item.module, item.permission);
   };
 

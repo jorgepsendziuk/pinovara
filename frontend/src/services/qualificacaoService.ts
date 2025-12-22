@@ -1,0 +1,99 @@
+import api from './api';
+import { Qualificacao, QualificacaoFilters, QualificacaoListResponse } from '../types/qualificacao';
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: {
+    message: string;
+    statusCode: number;
+  };
+  timestamp?: string;
+}
+
+export const qualificacaoAPI = {
+  /**
+   * Listar qualificações com filtros
+   */
+  list: async (filters: QualificacaoFilters = {}): Promise<QualificacaoListResponse> => {
+    const params = new URLSearchParams();
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') {
+        params.append(key, value.toString());
+      }
+    });
+
+    const response = await api.get<ApiResponse<QualificacaoListResponse>>(`/qualificacoes?${params}`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar qualificações');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
+   * Buscar qualificação por ID
+   */
+  getById: async (id: number): Promise<Qualificacao> => {
+    const response = await api.get<ApiResponse<Qualificacao>>(`/qualificacoes/${id}`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao buscar qualificação');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
+   * Criar nova qualificação
+   */
+  create: async (data: Partial<Qualificacao>): Promise<Qualificacao> => {
+    const response = await api.post<ApiResponse<Qualificacao>>('/qualificacoes', data);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao criar qualificação');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
+   * Atualizar qualificação existente
+   */
+  update: async (id: number, data: Partial<Qualificacao>): Promise<Qualificacao> => {
+    const response = await api.put<ApiResponse<Qualificacao>>(`/qualificacoes/${id}`, data);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao atualizar qualificação');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
+   * Excluir qualificação
+   */
+  delete: async (id: number): Promise<void> => {
+    const response = await api.delete<ApiResponse>(`/qualificacoes/${id}`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao excluir qualificação');
+    }
+  },
+
+  /**
+   * Listar materiais de uma qualificação
+   */
+  listMateriais: async (idQualificacao: number): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>(`/qualificacoes/${idQualificacao}/materiais`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar materiais');
+    }
+
+    return response.data.data!;
+  }
+};
+

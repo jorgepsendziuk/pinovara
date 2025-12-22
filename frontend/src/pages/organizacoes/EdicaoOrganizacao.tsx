@@ -21,6 +21,7 @@ import { OrientacoesTecnicas } from '../../components/organizacoes/OrientacoesTe
 import { IndicadoresAtividade } from '../../components/organizacoes/IndicadoresAtividade';
 import { ParticipantesAtividade } from '../../components/organizacoes/ParticipantesAtividade';
 import { ObservacoesFinais } from '../../components/organizacoes/ObservacoesFinais';
+import QualificacoesOrganizacao from './QualificacoesOrganizacao';
 import Toast from '../../components/Toast';
 import api, { organizacaoAPI } from '../../services/api';
 import {
@@ -50,7 +51,8 @@ import {
   User,
   Clock,
   PenTool,
-  ChevronDown
+  ChevronDown,
+  BookOpen
 } from 'lucide-react';
 import '../../styles/tabs.css';
 
@@ -1479,6 +1481,18 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
     </div>
   );
 
+  const renderAbaQualificacoes = () => (
+    <div className="aba-content">
+      {organizacaoId ? (
+        <QualificacoesOrganizacao idOrganizacao={organizacaoId} />
+      ) : (
+        <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+          <p>Salve a organização primeiro para visualizar qualificações e capacitações vinculadas.</p>
+        </div>
+      )}
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -1811,6 +1825,13 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
           >
             <CheckCircle size={16} /> <span>Validação</span>
           </button>
+          <button
+            className={`tab-button ${abaAtiva === 'qualificacoes' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('qualificacoes')}
+            title="Qualificações e Capacitações"
+          >
+            <BookOpen size={16} /> <span>Qualificações</span>
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -1823,6 +1844,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
           {abaAtiva === 'diagnostico' && renderAbaDiagnostico()}
           {abaAtiva === 'validacao' && renderAbaValidacao()}
           {abaAtiva === 'complementos' && renderAbaComplementos()}
+          {abaAtiva === 'qualificacoes' && renderAbaQualificacoes()}
 
           {/* Form Actions - Botão Flutuante */}
           <div style={{

@@ -327,12 +327,30 @@
 
 /* ========== RESPONSIVE BEHAVIOR ========== */
 
+/* Tablet (até 1024px) */
+@media (max-width: 1024px) {
+  .data-grid-table th,
+  .data-grid-table td {
+    padding: 0.875rem 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .data-grid-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .data-grid-pagination {
+    padding: 1.25rem 1.5rem;
+  }
+}
+
 /* Mobile (até 768px) */
 @media (max-width: 768px) {
   .data-grid-header {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
+    padding: 1rem;
   }
 
   .data-grid-filters,
@@ -343,15 +361,36 @@
   .search-input-container {
     min-width: unset;
     max-width: unset;
+    width: 100%;
   }
 
   .data-grid-table {
     font-size: 0.85rem;
+    min-width: 100%;
   }
 
   .data-grid-table th,
   .data-grid-table td {
     padding: 0.75rem 1rem;
+  }
+
+  /* Ocultar colunas menos importantes em telas médias */
+  .data-grid-table th[data-column-key]:not([data-column-key="actions"]):not([data-column-key="acoes"]):not([data-column-key="nome"]):not([data-column-key="titulo"]):nth-child(n+4),
+  .data-grid-table td[data-column-key]:not([data-column-key="actions"]):not([data-column-key="acoes"]):not([data-column-key="nome"]):not([data-column-key="titulo"]):nth-child(n+4) {
+    display: none;
+  }
+
+  /* Garantir que coluna de ações seja sempre visível */
+  .data-grid-table th[data-column-key="actions"],
+  .data-grid-table td[data-column-key="actions"],
+  .data-grid-table th[data-column-key="acoes"],
+  .data-grid-table td[data-column-key="acoes"] {
+    display: table-cell !important;
+    position: sticky;
+    left: 0;
+    background: var(--bg-primary);
+    z-index: 5;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
   }
 
   .data-grid-table-container {
@@ -363,6 +402,7 @@
     flex-direction: column;
     align-items: center;
     gap: 1rem;
+    padding: 1rem;
   }
 
   .pagination-controls {
@@ -391,13 +431,33 @@
 
   .data-grid-header,
   .data-grid-pagination {
-    padding: 1rem;
+    padding: 0.75rem;
   }
 
   .data-grid-table th,
   .data-grid-table td {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
+    padding: 0.5rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  /* Em telas muito pequenas, mostrar apenas ações e nome/título */
+  .data-grid-table th[data-column-key]:not([data-column-key="actions"]):not([data-column-key="acoes"]):not([data-column-key="nome"]):not([data-column-key="titulo"]),
+  .data-grid-table td[data-column-key]:not([data-column-key="actions"]):not([data-column-key="acoes"]):not([data-column-key="nome"]):not([data-column-key="titulo"]) {
+    display: none;
+  }
+
+  /* Garantir que coluna de ações seja sempre visível */
+  .data-grid-table th[data-column-key="actions"],
+  .data-grid-table td[data-column-key="actions"],
+  .data-grid-table th[data-column-key="acoes"],
+  .data-grid-table td[data-column-key="acoes"] {
+    display: table-cell !important;
+    position: sticky;
+    left: 0;
+    background: var(--bg-primary);
+    z-index: 5;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+    min-width: 80px;
   }
 
   .empty-icon {
@@ -410,6 +470,19 @@
 
   .data-grid-empty p {
     font-size: 0.9rem;
+  }
+
+  /* Ajustar botões de ação para serem menores */
+  .data-grid-table td[data-column-key="actions"] button,
+  .data-grid-table td[data-column-key="acoes"] button {
+    padding: 4px 6px;
+    font-size: 0.7rem;
+  }
+
+  .data-grid-table td[data-column-key="actions"] svg,
+  .data-grid-table td[data-column-key="acoes"] svg {
+    width: 12px;
+    height: 12px;
   }
 }
 

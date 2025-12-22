@@ -15,6 +15,10 @@ const fotoSyncRoutes_1 = __importDefault(require("./fotoSyncRoutes"));
 const arquivoSyncRoutes_1 = __importDefault(require("./arquivoSyncRoutes"));
 const assinaturaSyncRoutes_1 = __importDefault(require("./assinaturaSyncRoutes"));
 const relatorioRoutes_1 = __importDefault(require("./relatorioRoutes"));
+const repositorioRoutes_1 = __importDefault(require("./repositorioRoutes"));
+const qualificacaoRoutes_1 = __importDefault(require("./qualificacaoRoutes"));
+const capacitacaoRoutes_1 = __importDefault(require("./capacitacaoRoutes"));
+const avaliacaoRoutes_1 = __importDefault(require("./avaliacaoRoutes"));
 const router = (0, express_1.Router)();
 router.get('/', (req, res) => {
     res.json({
@@ -85,5 +89,9 @@ router.use('/', arquivoSyncRoutes_1.default);
 router.use('/', assinaturaSyncRoutes_1.default);
 router.use('/', relatorioRoutes_1.default);
 router.use('/organizacoes', organizacaoRoutes_1.default);
+router.use('/qualificacoes', qualificacaoRoutes_1.default);
+router.use('/capacitacoes', capacitacaoRoutes_1.default);
+router.use('/avaliacoes', avaliacaoRoutes_1.default);
+router.use('/repositorio', repositorioRoutes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map

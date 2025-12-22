@@ -11,6 +11,10 @@ import arquivoSyncRoutes from './arquivoSyncRoutes';
 import assinaturaSyncRoutes from './assinaturaSyncRoutes';
 import relatorioRoutes from './relatorioRoutes';
 import repositorioRoutes from './repositorioRoutes';
+import qualificacaoRoutes from './qualificacaoRoutes';
+import capacitacaoRoutes from './capacitacaoRoutes';
+import capacitacaoPublicRoutes from './capacitacaoPublicRoutes';
+import avaliacaoRoutes from './avaliacaoRoutes';
 
 const router = Router();
 
@@ -91,5 +95,16 @@ router.use('/', arquivoSyncRoutes);  // Arquivo sync ODK routes - usa /organizac
 router.use('/', assinaturaSyncRoutes);  // Assinatura sync ODK routes - usa /organizacoes/:id/assinaturas/sync
 router.use('/', relatorioRoutes);  // Relatorio routes - usa /organizacoes/:id/relatorio/pdf
 router.use('/organizacoes', organizacaoRoutes);  // Organizacao routes - usa auth global
+
+// Rotas de Qualificações e Capacitações
+router.use('/qualificacoes', qualificacaoRoutes);
+
+// NOTA: Rotas públicas de capacitações são registradas no server.ts ANTES das rotas gerais
+// para garantir que o Express faça match com a rota mais específica primeiro
+// router.use('/capacitacoes/public', capacitacaoPublicRoutes);  // Movido para server.ts
+router.use('/capacitacoes', capacitacaoRoutes);  // Rotas autenticadas
+
+router.use('/avaliacoes', avaliacaoRoutes);
+router.use('/repositorio', repositorioRoutes);
 
 export default router;

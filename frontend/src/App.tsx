@@ -19,7 +19,10 @@ import SyncODKGeral from './pages/admin/SyncODKGeral';
 // Module Pages
 import OrganizacoesModule from './pages/modules/OrganizacoesModule';
 import PerfilModule from './pages/modules/PerfilModule';
+import QualificacoesModule from './pages/modules/QualificacoesModule';
 import RepositorioPublico from './pages/RepositorioPublico';
+import CapacitacaoPublica from './pages/qualificacoes/CapacitacaoPublica';
+import FormAvaliacao from './pages/qualificacoes/FormAvaliacao';
 
 // 🚧 Imports dos módulos em desenvolvimento - comentados
 /*
@@ -50,6 +53,8 @@ function AppRoutes() {
       <Route path="/" element={<Landing />} />
       <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
       <Route path="/repositorio" element={<RepositorioPublico />} />
+      <Route path="/capacitacao/:linkInscricao" element={<CapacitacaoPublica />} />
+      <Route path="/capacitacao/:linkAvaliacao/avaliacao" element={<FormAvaliacao />} />
 
       <Route
         path="/login"
@@ -93,6 +98,24 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <OrganizacoesModule />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/qualificacoes/*"
+        element={
+          <ProtectedRoute>
+            <QualificacoesModule />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/capacitacoes/*"
+        element={
+          <ProtectedRoute>
+            <QualificacoesModule />
           </ProtectedRoute>
         }
       />

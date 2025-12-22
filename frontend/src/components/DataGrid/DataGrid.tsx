@@ -387,6 +387,7 @@ function DataGrid<T = any>({
                 {visibleColumns.map(column => (
                   <th
                     key={column.key}
+                    data-column-key={column.key}
                     className={`${column.align || 'left'} ${column.sortable ? 'sortable' : ''}`}
                     style={{ width: column.width }}
                     onClick={column.sortable ? () => handleSort(column.key) : undefined}
@@ -430,6 +431,7 @@ function DataGrid<T = any>({
                     {visibleColumns.map(column => (
                       <td
                         key={`${key}-${column.key}`}
+                        data-column-key={column.key}
                         className={column.align || 'left'}
                         style={{ width: column.width }}
                       >
