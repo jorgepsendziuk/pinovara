@@ -195,15 +195,19 @@ export async function gerarPDFQRCodeInscricao(capacitacao: Capacitacao) {
   
   yPos += qrWidth + 10;
   
-  // Link abaixo do QR code (centralizado corretamente)
+  // Link abaixo do QR code (centralizado corretamente e clicável)
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139); // #64748b
   const linkTexto = linkInscricao.replace(/^https?:\/\//, ''); // Remover protocolo
   // Usar splitTextToSize para garantir que o texto caiba e depois centralizar
   const linkLinhas = doc.splitTextToSize(linkTexto, pageWidth - 2 * margin);
   let linkY = yPos;
-  linkLinhas.forEach((linha: string) => {
-    doc.text(linha, pageWidth / 2, linkY, { align: 'center' });
+  linkLinhas.forEach((linha: string, index: number) => {
+    const textWidth = doc.getTextWidth(linha);
+    const textX = (pageWidth - textWidth) / 2;
+    doc.text(linha, textX, linkY, { align: 'left' });
+    // Tornar o link clicável
+    doc.link(textX, linkY - 3, textWidth, 4, { url: linkInscricao });
     linkY += 4;
   });
   yPos = linkY + 8;

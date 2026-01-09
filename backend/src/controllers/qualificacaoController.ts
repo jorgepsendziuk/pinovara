@@ -12,6 +12,15 @@ class QualificacaoController {
    */
   async list(req: AuthRequest, res: Response): Promise<void> {
     try {
+      // Verificar se é admin ou supervisor
+      const isAdmin = req.user?.roles?.some(role => 
+        role.name === 'admin' && role.module.name === 'sistema'
+      );
+      const isSupervisor = req.user?.roles?.some(role => 
+        role.name === 'supervisao' && role.module.name === 'organizacoes'
+      );
+      const canSeeAll = isAdmin || isSupervisor;
+
       const filters: QualificacaoFilters = {
         titulo: req.query.titulo as string,
         ativo: req.query.ativo === 'true' ? true : req.query.ativo === 'false' ? false : undefined,
@@ -22,6 +31,14 @@ class QualificacaoController {
         limit: req.query.limit ? parseInt(req.query.limit as string) : 
                req.query.pageSize ? parseInt(req.query.pageSize as string) : 10
       };
+
+      // Se não for admin/supervisor, filtrar para mostrar apenas as que criou + as padrão (1, 2, 3)
+      if (!canSeeAll && req.user?.id) {
+        // Não aplicar filtro de created_by aqui, vamos filtrar no service
+        // Passar informação de que precisa filtrar
+        (filters as any).userId = req.user.id;
+        (filters as any).filterByUser = true;
+      }
 
       const result = await qualificacaoService.list(filters);
 
@@ -61,6 +78,29 @@ class QualificacaoController {
           error: {
             message: 'Qualificação não encontrada',
             statusCode: HttpStatus.NOT_FOUND
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Verificar permissões de acesso
+      const isAdmin = req.user?.roles?.some(role => 
+        role.name === 'admin' && role.module.name === 'sistema'
+      );
+      const isSupervisor = req.user?.roles?.some(role => 
+        role.name === 'supervisao' && role.module.name === 'organizacoes'
+      );
+      const canSeeAll = isAdmin || isSupervisor;
+      const isPadrao = id === 1 || id === 2 || id === 3;
+
+      // Se não for admin/supervisor, verificar se pode ver esta qualificação
+      if (!canSeeAll && !isPadrao && qualificacao.created_by !== req.user?.id) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Acesso negado. Você só pode visualizar qualificações que criou ou as qualificações padrão do sistema.',
+            statusCode: HttpStatus.FORBIDDEN
           },
           timestamp: new Date().toISOString()
         });
@@ -161,6 +201,27 @@ class QualificacaoController {
         return;
       }
 
+      // Verificar permissões para edição de qualificações padrão (1, 2, 3)
+      const isAdmin = req.user.roles?.some(role => 
+        role.name === 'admin' && role.module.name === 'sistema'
+      );
+      const isSupervisor = req.user.roles?.some(role => 
+        role.name === 'supervisao' && role.module.name === 'organizacoes'
+      );
+
+      // Qualificações padrão só podem ser editadas por admin ou supervisor
+      if ((id === 1 || id === 2 || id === 3) && !isAdmin && !isSupervisor) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Acesso negado. Apenas administradores e supervisores podem editar qualificações padrão do sistema.',
+            statusCode: HttpStatus.FORBIDDEN
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
       const qualificacao = await qualificacaoService.update(id, req.body, req.user.id);
 
       // Registrar log de auditoria
@@ -223,6 +284,19 @@ class QualificacaoController {
           error: {
             message: 'Qualificação não encontrada',
             statusCode: HttpStatus.NOT_FOUND
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Qualificações padrão (1, 2, 3) não podem ser excluídas
+      if (id === 1 || id === 2 || id === 3) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Não é possível excluir qualificações padrão do sistema.',
+            statusCode: HttpStatus.FORBIDDEN
           },
           timestamp: new Date().toISOString()
         });

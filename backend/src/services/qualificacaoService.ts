@@ -17,6 +17,8 @@ class QualificacaoService {
    */
   async list(filters: QualificacaoFilters = {}): Promise<QualificacaoListResponse> {
     const { page = 1, limit = 10, titulo, ativo, id_organizacao, id_instrutor, created_by } = filters;
+    const filterByUser = (filters as any).filterByUser;
+    const userId = (filters as any).userId;
 
     const whereConditions: any = {};
 
@@ -31,7 +33,13 @@ class QualificacaoService {
       whereConditions.ativo = ativo;
     }
 
-    if (created_by) {
+    // Se precisa filtrar por usuário (não admin/supervisor), mostrar apenas as que criou + as padrão (1, 2, 3)
+    if (filterByUser && userId) {
+      whereConditions.OR = [
+        { created_by: userId }, // Qualificações que o usuário criou
+        { id: { in: [1, 2, 3] } } // Qualificações padrão do sistema
+      ];
+    } else if (created_by) {
       whereConditions.created_by = created_by;
     }
 
@@ -77,12 +85,37 @@ class QualificacaoService {
       prisma.qualificacao.count({ where: whereConditions })
     ]);
 
+    // Buscar informações dos criadores
+    const criadoresIds = qualificacoes
+      .filter(q => q.created_by)
+      .map(q => q.created_by!)
+      .filter((id, index, self) => self.indexOf(id) === index); // Remove duplicatas
+
+    const criadores = criadoresIds.length > 0 ? await prisma.users.findMany({
+      where: {
+        id: { in: criadoresIds }
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true
+      }
+    }) : [];
+
     // Formatar resposta
-    const formattedQualificacoes = qualificacoes.map(q => ({
-      ...q,
-      organizacoes: q.qualificacao_organizacao.map(ro => ro.id_organizacao),
-      instrutores: q.qualificacao_instrutor.map(ri => ri.id_instrutor)
-    }));
+    const formattedQualificacoes = qualificacoes.map(q => {
+      const criador = q.created_by ? criadores.find(cr => cr.id === q.created_by) : null;
+      return {
+        ...q,
+        organizacoes: q.qualificacao_organizacao.map(ro => ro.id_organizacao),
+        instrutores: q.qualificacao_instrutor.map(ri => ri.id_instrutor),
+        criador: criador ? {
+          id: criador.id,
+          name: criador.name,
+          email: criador.email
+        } : null
+      };
+    });
 
     return {
       qualificacoes: formattedQualificacoes as any,

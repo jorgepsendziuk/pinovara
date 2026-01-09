@@ -34,6 +34,7 @@ interface AuthContextData {
   // Utilitários
   hasPermission: (moduleName: string, roleName?: string) => boolean;
   hasAnyPermission: (permissions: { module: string; role?: string }[]) => boolean;
+  isAdmin: () => boolean;
   isCoordinator: () => boolean;
   isSupervisor: () => boolean;
   refreshUser: () => Promise<void>;
@@ -204,6 +205,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   /**
+   * Verificar se usuário é administrador
+   */
+  const isAdmin = (): boolean => {
+    return user?.roles?.some(role => 
+      role.module.name === 'sistema' && role.name === 'admin'
+    ) || false;
+  };
+
+  /**
    * Verificar se usuário é coordenador
    */
   const isCoordinator = (): boolean => {
@@ -309,6 +319,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Utilitários
     hasPermission: checkPermission,
     hasAnyPermission: checkAnyPermission,
+    isAdmin,
     isCoordinator,
     isSupervisor,
     refreshUser,

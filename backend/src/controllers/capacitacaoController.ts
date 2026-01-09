@@ -12,6 +12,15 @@ class CapacitacaoController {
    */
   async list(req: AuthRequest, res: Response): Promise<void> {
     try {
+      // Verificar se é admin ou supervisor
+      const isAdmin = req.user?.roles?.some(role => 
+        role.name === 'admin' && role.module.name === 'sistema'
+      );
+      const isSupervisor = req.user?.roles?.some(role => 
+        role.name === 'supervisao' && role.module.name === 'organizacoes'
+      );
+      const canSeeAll = isAdmin || isSupervisor;
+
       const filters: CapacitacaoFilters = {
         id_qualificacao: req.query.id_qualificacao ? parseInt(req.query.id_qualificacao as string) : undefined,
         status: req.query.status as any,
@@ -23,6 +32,12 @@ class CapacitacaoController {
         limit: req.query.limit ? parseInt(req.query.limit as string) : 
                req.query.pageSize ? parseInt(req.query.pageSize as string) : 10
       };
+
+      // Se não for admin/supervisor, filtrar para mostrar apenas as que criou
+      if (!canSeeAll && req.user?.id) {
+        (filters as any).userId = req.user.id;
+        (filters as any).filterByUser = true;
+      }
 
       const result = await capacitacaoService.list(filters);
 
@@ -62,6 +77,28 @@ class CapacitacaoController {
           error: {
             message: 'Capacitação não encontrada',
             statusCode: HttpStatus.NOT_FOUND
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Verificar permissões de acesso
+      const isAdmin = req.user?.roles?.some(role => 
+        role.name === 'admin' && role.module.name === 'sistema'
+      );
+      const isSupervisor = req.user?.roles?.some(role => 
+        role.name === 'supervisao' && role.module.name === 'organizacoes'
+      );
+      const canSeeAll = isAdmin || isSupervisor;
+
+      // Se não for admin/supervisor, verificar se pode ver esta capacitação
+      if (!canSeeAll && capacitacao.created_by !== req.user?.id) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Acesso negado. Você só pode visualizar capacitações que criou.',
+            statusCode: HttpStatus.FORBIDDEN
           },
           timestamp: new Date().toISOString()
         });

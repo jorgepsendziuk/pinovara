@@ -14,6 +14,11 @@ export interface Qualificacao {
   created_by?: number;
   organizacoes?: number[];
   instrutores?: number[];
+  criador?: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
 }
 
 export interface QualificacaoFilters {

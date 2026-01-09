@@ -69,6 +69,7 @@ export interface DataGridProps<T = any> {
   onSortChange?: (key: string, direction: 'asc' | 'desc') => void;
   externalSort?: boolean; // Se true, não ordena internamente, apenas chama onSortChange
   externalSortConfig?: { key: string; direction: 'asc' | 'desc' } | null; // Estado de ordenação externa
+  getRowStyle?: (record: T, index: number) => React.CSSProperties; // Função para obter estilo da linha
 }
 
 function DataGrid<T = any>({
@@ -87,7 +88,8 @@ function DataGrid<T = any>({
   style,
   onSortChange,
   externalSort = false,
-  externalSortConfig = null
+  externalSortConfig = null,
+  getRowStyle
 }: DataGridProps<T>) {
   const [searchValue, setSearchValue] = useState('');
   const [internalSortConfig, setInternalSortConfig] = useState<{
@@ -412,10 +414,13 @@ function DataGrid<T = any>({
                 const key = getRowKey(record, index);
                 const isSelected = selectedRowKeys.includes(key);
                 
+                const rowStyle = getRowStyle ? getRowStyle(record, index) : {};
+                
                 return (
                   <tr 
                     key={key}
                     className={`${isSelected ? 'selected' : ''}`}
+                    style={rowStyle}
                   >
                     {hasSelection && (
                       <td className="selection-column">

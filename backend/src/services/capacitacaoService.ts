@@ -22,6 +22,8 @@ class CapacitacaoService {
    */
   async list(filters: CapacitacaoFilters = {}): Promise<CapacitacaoListResponse> {
     const { page = 1, limit = 10, id_qualificacao, status, id_organizacao, created_by, data_inicio, data_fim } = filters;
+    const filterByUser = (filters as any).filterByUser;
+    const userId = (filters as any).userId;
 
     const whereConditions: any = {};
 
@@ -33,7 +35,10 @@ class CapacitacaoService {
       whereConditions.status = status;
     }
 
-    if (created_by) {
+    // Se precisa filtrar por usuário (não admin/supervisor), mostrar apenas as que criou
+    if (filterByUser && userId) {
+      whereConditions.created_by = userId;
+    } else if (created_by) {
       whereConditions.created_by = created_by;
     }
 

@@ -5,6 +5,7 @@ import { Qualificacao, QualificacaoListResponse } from '../../types/qualificacao
 import { Edit, Trash2, FileText, Users, BookOpen, Plus, Search, Loader2, User } from 'lucide-react';
 import api from '../../services/api';
 import ModalMateriais from '../../components/qualificacoes/ModalMateriais';
+import { useAuth } from '../../contexts/AuthContext';
 import './QualificacoesModule.css';
 
 interface ListaQualificacoesProps {
@@ -18,6 +19,7 @@ interface UserInfo {
 }
 
 function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
+  const { isAdmin, isSupervisor } = useAuth();
   const [qualificacoes, setQualificacoes] = useState<Qualificacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroTitulo, setFiltroTitulo] = useState('');
@@ -30,6 +32,17 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
     titulo: ''
   });
   const pageSize = 20;
+
+  // Verificar se é qualificação padrão do sistema
+  const isQualificacaoPadrao = (id?: number): boolean => {
+    return id === 1 || id === 2 || id === 3;
+  };
+
+  // Verificar se pode editar qualificação padrão
+  const podeEditarPadrao = (id?: number): boolean => {
+    if (!isQualificacaoPadrao(id)) return true;
+    return isAdmin() || isSupervisor();
+  };
 
   useEffect(() => {
     carregarQualificacoes();
@@ -109,94 +122,107 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
       title: 'Ações',
       width: '15%',
       align: 'left',
-      render: (_, record: Qualificacao) => (
-        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-start', alignItems: 'center' }}>
-          <button
-            onClick={() => onNavigate('edicao-qualificacao', record.id)}
-            title="Editar qualificação"
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #3b2313',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: '#3b2313',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#3b2313';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#3b2313';
-            }}
-          >
-            <Edit size={16} />
-          </button>
-          <button
-            onClick={() => {
-              setModalMateriais({
-                isOpen: true,
-                idQualificacao: record.id!,
-                titulo: record.titulo
-              });
-            }}
-            title="Gerenciar materiais"
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #056839',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: '#056839',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#056839';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#056839';
-            }}
-          >
-            <FileText size={16} />
-          </button>
-          <button
-            onClick={() => handleExcluir(record.id!)}
-            title="Excluir qualificação"
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #dc2626',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: '#dc2626',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#dc2626';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#dc2626';
-            }}
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      )
+      render: (_, record: Qualificacao) => {
+        const isPadrao = isQualificacaoPadrao(record.id);
+        const podeEditar = podeEditarPadrao(record.id);
+        
+        return (
+          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-start', alignItems: 'center' }}>
+            <button
+              onClick={() => onNavigate('edicao-qualificacao', record.id)}
+              title={podeEditar ? "Editar qualificação" : "Apenas administradores e supervisores podem editar qualificações padrão"}
+              disabled={!podeEditar}
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #3b2313',
+                background: podeEditar ? 'white' : '#f3f4f6',
+                borderRadius: '4px',
+                cursor: podeEditar ? 'pointer' : 'not-allowed',
+                color: podeEditar ? '#3b2313' : '#9ca3af',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                opacity: podeEditar ? 1 : 0.6
+              }}
+              onMouseOver={(e) => {
+                if (podeEditar) {
+                  e.currentTarget.style.background = '#3b2313';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (podeEditar) {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#3b2313';
+                }
+              }}
+            >
+              <Edit size={16} />
+            </button>
+            <button
+              onClick={() => {
+                setModalMateriais({
+                  isOpen: true,
+                  idQualificacao: record.id!,
+                  titulo: record.titulo
+                });
+              }}
+              title="Gerenciar materiais"
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #056839',
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#056839',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#056839';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#056839';
+              }}
+            >
+              <FileText size={16} />
+            </button>
+            {!isPadrao && (
+              <button
+                onClick={() => handleExcluir(record.id!)}
+                title="Excluir qualificação"
+                style={{
+                  padding: '6px 8px',
+                  border: '1px solid #dc2626',
+                  background: 'white',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  color: '#dc2626',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#dc2626';
+                  e.currentTarget.style.color = 'white';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#dc2626';
+                }}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        );
+      }
     },
     {
       key: 'id',
@@ -250,7 +276,8 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
       title: 'Criado por',
       width: '18%',
       render: (_, record: Qualificacao) => {
-        const criador = record.created_by ? criadores.get(record.created_by) : null;
+        // Usar criador do backend se disponível, senão tentar carregar
+        const criador = record.criador || (record.created_by ? criadores.get(record.created_by) : null);
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
             {criador ? (
@@ -423,6 +450,15 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
           dataSource={qualificacoes}
           loading={loading}
           rowKey="id"
+          getRowStyle={(record: Qualificacao) => {
+            if (isQualificacaoPadrao(record.id)) {
+              return {
+                backgroundColor: '#f0fdf4', // Verde suave
+                borderLeft: '3px solid #056839'
+              };
+            }
+            return {};
+          }}
           pagination={{
             current: page,
             pageSize,

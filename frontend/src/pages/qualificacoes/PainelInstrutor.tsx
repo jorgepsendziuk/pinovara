@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { capacitacaoAPI } from '../../services/capacitacaoService';
+import { qualificacaoAPI } from '../../services/qualificacaoService';
+import { organizacaoAPI } from '../../services/api';
 import { Capacitacao, CapacitacaoInscricao, CapacitacaoPresenca, CreateInscricaoData, CapacitacaoEvidencia, CreateEvidenciaData } from '../../types/capacitacao';
+import { Qualificacao } from '../../types/qualificacao';
+import { Organizacao } from '../../types/organizacao';
 import QRCodeDisplay from '../../components/qualificacoes/QRCodeDisplay';
 import DataGrid, { DataGridColumn } from '../../components/DataGrid/DataGrid';
 import { gerarPdfListaInscricoes } from '../../utils/pdfListaInscricoes';
@@ -60,10 +64,25 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
   const [erros, setErros] = useState<Record<string, string>>({});
   const [accordionLinksAberto, setAccordionLinksAberto] = useState(false);
   const [presencasSelecionadas, setPresencasSelecionadas] = useState<Set<number>>(new Set());
-  const [abaAtiva, setAbaAtiva] = useState<'inscricoes' | 'presencas' | 'evidencias'>('inscricoes');
+  const [abaAtiva, setAbaAtiva] = useState<'editar' | 'inscricoes' | 'presencas' | 'evidencias'>('editar');
   const [evidencias, setEvidencias] = useState<CapacitacaoEvidencia[]>([]);
   const [uploading, setUploading] = useState(false);
   const [filtroTipoEvidencia, setFiltroTipoEvidencia] = useState<string>('');
+  
+  // Estados para formulário de edição
+  const [qualificacoes, setQualificacoes] = useState<Qualificacao[]>([]);
+  const [organizacoes, setOrganizacoes] = useState<Organizacao[]>([]);
+  const [organizacoesSelecionadas, setOrganizacoesSelecionadas] = useState<number[]>([]);
+  const [formDataEdicao, setFormDataEdicao] = useState<Partial<Capacitacao>>({
+    id_qualificacao: 0,
+    titulo: '',
+    data_inicio: '',
+    data_fim: '',
+    local: '',
+    turno: '',
+    status: 'planejada'
+  });
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -72,8 +91,17 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
   useEffect(() => {
     if (abaAtiva === 'evidencias') {
       carregarEvidencias();
+    } else if (abaAtiva === 'editar') {
+      carregarQualificacoes();
+      carregarOrganizacoes();
     }
   }, [abaAtiva, idCapacitacao, filtroTipoEvidencia]);
+
+  useEffect(() => {
+    if (abaAtiva === 'editar' && capacitacao) {
+      inicializarFormularioEdicao();
+    }
+  }, [abaAtiva, capacitacao]);
 
   const carregarDados = async () => {
     try {
@@ -99,6 +127,92 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
       alert('Erro ao carregar dados da capacitação');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const carregarQualificacoes = async () => {
+    try {
+      const response = await qualificacaoAPI.list({ ativo: true, limit: 1000 });
+      setQualificacoes(response.qualificacoes);
+    } catch (error) {
+      console.error('Erro ao carregar qualificações:', error);
+    }
+  };
+
+  const carregarOrganizacoes = async () => {
+    try {
+      const response = await organizacaoAPI.list({ limit: 1000 });
+      setOrganizacoes(response.organizacoes || []);
+    } catch (error) {
+      console.error('Erro ao carregar organizações:', error);
+    }
+  };
+
+  const inicializarFormularioEdicao = () => {
+    if (capacitacao) {
+      setFormDataEdicao({
+        id_qualificacao: capacitacao.id_qualificacao,
+        titulo: capacitacao.titulo || '',
+        data_inicio: capacitacao.data_inicio ? capacitacao.data_inicio.split('T')[0] : '',
+        data_fim: capacitacao.data_fim ? capacitacao.data_fim.split('T')[0] : '',
+        local: capacitacao.local || '',
+        turno: capacitacao.turno || '',
+        status: capacitacao.status || 'planejada'
+      });
+      setOrganizacoesSelecionadas(capacitacao.organizacoes || []);
+    }
+  };
+
+  const handleToggleOrganizacao = (organizacaoId: number) => {
+    setOrganizacoesSelecionadas(prev => {
+      if (prev.includes(organizacaoId)) {
+        return prev.filter(id => id !== organizacaoId);
+      } else {
+        return [...prev, organizacaoId];
+      }
+    });
+  };
+
+  const handleSalvarEdicao = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formDataEdicao.id_qualificacao) {
+      alert('Selecione uma qualificação');
+      return;
+    }
+
+    if (organizacoesSelecionadas.length === 0) {
+      alert('Selecione pelo menos uma organização');
+      return;
+    }
+    
+    try {
+      setSalvandoEdicao(true);
+      
+      const dadosComOrganizacoes: any = {
+        id_qualificacao: formDataEdicao.id_qualificacao,
+        titulo: formDataEdicao.titulo || undefined,
+        local: formDataEdicao.local || undefined,
+        turno: formDataEdicao.turno || undefined,
+        status: formDataEdicao.status || 'planejada',
+        organizacoes: organizacoesSelecionadas
+      };
+
+      if (formDataEdicao.data_inicio) {
+        dadosComOrganizacoes.data_inicio = new Date(formDataEdicao.data_inicio);
+      }
+      if (formDataEdicao.data_fim) {
+        dadosComOrganizacoes.data_fim = new Date(formDataEdicao.data_fim);
+      }
+
+      await capacitacaoAPI.update(idCapacitacao, dadosComOrganizacoes);
+      alert('Capacitação atualizada com sucesso!');
+      await carregarDados();
+    } catch (error: any) {
+      console.error('Erro ao salvar capacitação:', error);
+      alert(error.message || 'Erro ao salvar capacitação');
+    } finally {
+      setSalvandoEdicao(false);
     }
   };
 
@@ -1011,6 +1125,28 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
             backgroundColor: '#f8fafc'
           }}>
             <button
+              onClick={() => setAbaAtiva('editar')}
+              style={{
+                flex: 1,
+                padding: '16px 24px',
+                background: abaAtiva === 'editar' ? 'white' : 'transparent',
+                color: abaAtiva === 'editar' ? '#056839' : '#64748b',
+                border: 'none',
+                borderBottom: abaAtiva === 'editar' ? '3px solid #056839' : '3px solid transparent',
+                cursor: 'pointer',
+                fontWeight: abaAtiva === 'editar' ? '600' : '500',
+                fontSize: '15px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Edit size={18} />
+              Editar
+            </button>
+            <button
               onClick={() => setAbaAtiva('inscricoes')}
               style={{
                 flex: 1,
@@ -1082,6 +1218,250 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
         </div>
 
         {/* Conteúdo das Abas */}
+        {abaAtiva === 'editar' && (
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          padding: '24px',
+          marginBottom: '24px',
+          border: '1px solid #e2e8f0'
+        }}>
+          <h2 style={{ margin: '0 0 24px 0', color: '#3b2313', fontSize: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Edit size={20} />
+            Editar Capacitação
+          </h2>
+          <form onSubmit={handleSalvarEdicao}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#3b2313' }}>
+                Qualificação *
+              </label>
+              <select
+                value={formDataEdicao.id_qualificacao || ''}
+                onChange={(e) => setFormDataEdicao({ ...formDataEdicao, id_qualificacao: parseInt(e.target.value) })}
+                required
+                style={{ 
+                  width: '100%', 
+                  padding: '12px', 
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="">Selecione uma qualificação</option>
+                {qualificacoes.map((q) => (
+                  <option key={q.id} value={q.id}>
+                    {q.titulo}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#3b2313' }}>
+                Organizações *
+              </label>
+              <div style={{ 
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                padding: '16px',
+                maxHeight: '300px',
+                overflowY: 'auto',
+                backgroundColor: '#f8fafc'
+              }}>
+                {organizacoes.length === 0 ? (
+                  <p style={{ color: '#64748b', textAlign: 'center', padding: '20px' }}>
+                    Carregando organizações...
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {organizacoes.map((org) => (
+                      <label
+                        key={org.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          backgroundColor: organizacoesSelecionadas.includes(org.id!) ? '#f0fdf4' : '#fff',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.borderColor = '#056839'}
+                        onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={organizacoesSelecionadas.includes(org.id!)}
+                          onChange={() => handleToggleOrganizacao(org.id!)}
+                          style={{ marginRight: '10px', width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        <span style={{ flex: 1, fontSize: '14px', color: '#334155' }}>
+                          {org.nome || 'Sem nome'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p style={{ marginTop: '8px', fontSize: '12px', color: '#64748b' }}>
+                {organizacoesSelecionadas.length} organização(ões) selecionada(s)
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#3b2313' }}>
+                Título da capacitação
+              </label>
+              <input
+                type="text"
+                value={formDataEdicao.titulo || ''}
+                onChange={(e) => setFormDataEdicao({ ...formDataEdicao, titulo: e.target.value })}
+                placeholder="Título da capacitação (opcional, usará o título da qualificação se não informado)"
+                style={{ 
+                  width: '100%', 
+                  padding: '12px',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#3b2313' }}>
+                  Data Início
+                </label>
+                <input
+                  type="date"
+                  value={formDataEdicao.data_inicio || ''}
+                  onChange={(e) => setFormDataEdicao({ ...formDataEdicao, data_inicio: e.target.value })}
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#3b2313' }}>
+                  Data Fim
+                </label>
+                <input
+                  type="date"
+                  value={formDataEdicao.data_fim || ''}
+                  onChange={(e) => setFormDataEdicao({ ...formDataEdicao, data_fim: e.target.value })}
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#3b2313' }}>
+                  Local
+                </label>
+                <input
+                  type="text"
+                  value={formDataEdicao.local || ''}
+                  onChange={(e) => setFormDataEdicao({ ...formDataEdicao, local: e.target.value })}
+                  placeholder="Local da capacitação"
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#3b2313' }}>
+                  Turno
+                </label>
+                <input
+                  type="text"
+                  value={formDataEdicao.turno || ''}
+                  onChange={(e) => setFormDataEdicao({ ...formDataEdicao, turno: e.target.value })}
+                  placeholder="Ex: Manhã, Tarde, Noite"
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '30px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#3b2313' }}>
+                Status
+              </label>
+              <select
+                value={formDataEdicao.status || 'planejada'}
+                onChange={(e) => setFormDataEdicao({ ...formDataEdicao, status: e.target.value as any })}
+                style={{ 
+                  width: '100%', 
+                  padding: '12px',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="planejada">Planejada</option>
+                <option value="em_andamento">Em Andamento</option>
+                <option value="concluida">Concluída</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                type="submit"
+                disabled={salvandoEdicao}
+                style={{
+                  padding: '12px 24px',
+                  background: salvandoEdicao ? '#9ca3af' : '#056839',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: '500',
+                  cursor: salvandoEdicao ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {salvandoEdicao ? (
+                  <>
+                    <Loader2 size={16} className="spinning" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    Salvar Alterações
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+        )}
         {abaAtiva === 'inscricoes' && (
         <div style={{
           backgroundColor: 'white',
