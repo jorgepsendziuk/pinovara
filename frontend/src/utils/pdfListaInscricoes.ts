@@ -23,7 +23,7 @@ export async function gerarPdfListaInscricoes(
   inscricoes: CapacitacaoInscricao[]
 ) {
   const doc = new jsPDF({
-    orientation: 'portrait',
+    orientation: 'landscape',
     unit: 'mm',
     format: 'a4'
   });
@@ -193,13 +193,13 @@ export async function gerarPdfListaInscricoes(
   doc.setFont(undefined, 'bold');
   doc.setTextColor(100, 116, 139); // #64748b
   
-  // Colunas: Nº, Nome, Email, Telefone, Documento
+  // Colunas: Nº, Nome, Email, Telefone, Documento (ajustadas para landscape)
   const colX = [
     margin,           // Nº (20mm)
-    margin + 10,      // Nome (30mm)
-    margin + 60,      // Email (80mm)
-    margin + 115,     // Telefone (135mm)
-    margin + 155      // Documento (175mm)
+    margin + 15,      // Nome (35mm)
+    margin + 80,      // Email (100mm)
+    margin + 150,     // Telefone (170mm)
+    margin + 210      // Documento (230mm)
   ];
   
   doc.text('Nº', colX[0], yPos);
@@ -266,17 +266,17 @@ export async function gerarPdfListaInscricoes(
     const documento = documentos.length > 0 ? documentos.join(' / ') : '-';
 
     doc.text(numero.toString(), colX[0], yPos);
-    doc.text(nome, colX[1], yPos, { maxWidth: 45 });
+    doc.text(nome, colX[1], yPos, { maxWidth: 60 });
     
     // Email (pode ser longo, truncar se necessário)
-    const emailTruncado = email.length > 25 ? email.substring(0, 22) + '...' : email;
-    doc.text(emailTruncado, colX[2], yPos, { maxWidth: 30 });
+    const emailTruncado = email.length > 35 ? email.substring(0, 32) + '...' : email;
+    doc.text(emailTruncado, colX[2], yPos, { maxWidth: 65 });
     
-    doc.text(telefone, colX[3], yPos, { maxWidth: 15 });
+    doc.text(telefone, colX[3], yPos, { maxWidth: 50 });
     
     // Documento pode ter múltiplas linhas
     doc.setFontSize(8);
-    const documentoLinhas = doc.splitTextToSize(documento, 30);
+    const documentoLinhas = doc.splitTextToSize(documento, 50);
     doc.text(documentoLinhas, colX[4], yPos, { lineHeightFactor: 1.2 });
     doc.setFontSize(9);
 

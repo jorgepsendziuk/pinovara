@@ -24,6 +24,14 @@ export interface Capacitacao {
       email: string;
     } | null;
   }>;
+  equipe_tecnica?: Array<{
+    id_tecnico: number;
+    tecnico: {
+      id: number;
+      name: string;
+      email: string;
+    };
+  }>;
   qualificacao?: {
     id: number;
     titulo: string;

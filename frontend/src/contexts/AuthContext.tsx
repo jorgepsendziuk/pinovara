@@ -38,7 +38,9 @@ interface AuthContextData {
   isCoordinator: () => boolean;
   isSupervisor: () => boolean;
   refreshUser: () => Promise<void>;
+  refreshToken: () => Promise<void>;
   stopImpersonation: () => void;
+  expiresIn: number | null;
 }
 
 // ========== CONTEXTO ==========
@@ -57,6 +59,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [originalUser, setOriginalUser] = useState<AuthUser | null>(null);
+  const [expiresIn, setExpiresIn] = useState<number | null>(null);
 
   // ========== UTILITÁRIOS ==========
 
@@ -76,10 +79,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Atualizar estado
       setUser(response.user);
       setToken(response.token);
+      setExpiresIn(response.expiresIn);
 
       // Salvar no localStorage
       localStorage.setItem('@pinovara:token', response.token);
       localStorage.setItem('@pinovara:user', JSON.stringify(response.user));
+      localStorage.setItem('@pinovara:tokenCreatedAt', Date.now().toString());
+      localStorage.setItem('@pinovara:expiresIn', response.expiresIn.toString());
 
       console.log('✅ Login realizado com sucesso');
     } catch (error) {
@@ -102,10 +108,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Atualizar estado
       setUser(response.user);
       setToken(response.token);
+      setExpiresIn(response.expiresIn);
 
       // Salvar no localStorage
       localStorage.setItem('@pinovara:token', response.token);
       localStorage.setItem('@pinovara:user', JSON.stringify(response.user));
+      localStorage.setItem('@pinovara:tokenCreatedAt', Date.now().toString());
+      localStorage.setItem('@pinovara:expiresIn', response.expiresIn.toString());
 
       console.log('✅ Registro realizado com sucesso');
     } catch (error) {
@@ -136,6 +145,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     localStorage.removeItem('@pinovara:token');
     localStorage.removeItem('@pinovara:user');
     localStorage.removeItem('@pinovara:originalUser');
+    localStorage.removeItem('@pinovara:tokenCreatedAt');
+    localStorage.removeItem('@pinovara:expiresIn');
+    setExpiresIn(null);
 
     console.log('👋 Logout realizado');
   };
@@ -185,6 +197,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
       )) {
         logout();
       }
+    }
+  };
+
+  /**
+   * Renovar token de autenticação
+   */
+  const refreshToken = async (): Promise<void> => {
+    try {
+      if (!token) {
+        throw new Error('Token não disponível');
+      }
+
+      const response = await authAPI.refresh();
+
+      // Atualizar estado
+      setUser(response.user);
+      setToken(response.token);
+      setExpiresIn(response.expiresIn);
+
+      // Atualizar localStorage
+      localStorage.setItem('@pinovara:token', response.token);
+      localStorage.setItem('@pinovara:user', JSON.stringify(response.user));
+      localStorage.setItem('@pinovara:tokenCreatedAt', Date.now().toString());
+      localStorage.setItem('@pinovara:expiresIn', response.expiresIn.toString());
+
+      console.log('🔄 Token renovado com sucesso');
+    } catch (error) {
+      console.error('❌ Erro ao renovar token:', error);
+      throw error;
     }
   };
 
@@ -248,6 +289,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           const parsedUser = JSON.parse(storedUser);
           setUser(parsedUser);
 
+          // Carregar expiresIn se disponível (pode não estar em sessões antigas)
+          const storedExpiresIn = localStorage.getItem('@pinovara:expiresIn');
+          if (storedExpiresIn) {
+            setExpiresIn(parseInt(storedExpiresIn));
+          } else {
+            // Se não existe, usar padrão de 7 dias
+            setExpiresIn(7 * 24 * 60 * 60);
+          }
+
           // Verificar se está em modo de personificação
           if (storedOriginalUser) {
             setIsImpersonating(true);
@@ -310,6 +360,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAuthenticated,
     isImpersonating,
     originalUser,
+    expiresIn,
 
     // Ações
     login,
@@ -323,6 +374,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isCoordinator,
     isSupervisor,
     refreshUser,
+    refreshToken,
     stopImpersonation,
   };
 

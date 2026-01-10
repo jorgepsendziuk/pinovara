@@ -94,6 +94,47 @@ export const qualificacaoAPI = {
     }
 
     return response.data.data!;
+  },
+
+  /**
+   * Adicionar técnico à equipe da qualificação
+   */
+  adicionarTecnico: async (id: number, idTecnico: number): Promise<string> => {
+    const response = await api.post<ApiResponse<unknown>>(`/qualificacoes/${id}/tecnicos`, {
+      id_tecnico: idTecnico
+    });
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao adicionar técnico');
+    }
+
+    return response.data.message || 'Técnico adicionado com sucesso.';
+  },
+
+  /**
+   * Remover técnico da equipe da qualificação
+   */
+  removerTecnico: async (id: number, idTecnico: number): Promise<string> => {
+    const response = await api.delete<ApiResponse<unknown>>(`/qualificacoes/${id}/tecnicos/${idTecnico}`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao remover técnico');
+    }
+
+    return response.data.message || 'Técnico removido com sucesso.';
+  },
+
+  /**
+   * Listar técnicos da equipe da qualificação
+   */
+  listTecnicos: async (id: number): Promise<Array<{ id_tecnico: number; tecnico: { id: number; name: string; email: string } }>> => {
+    const response = await api.get<ApiResponse<Array<{ id_tecnico: number; tecnico: { id: number; name: string; email: string } }>>>(`/qualificacoes/${id}/tecnicos`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar técnicos');
+    }
+
+    return response.data.data!;
   }
 };
 

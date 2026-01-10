@@ -14,6 +14,14 @@ export interface Qualificacao {
   created_by?: number;
   organizacoes?: number[];
   instrutores?: number[];
+  equipe_tecnica?: Array<{
+    id_tecnico: number;
+    tecnico: {
+      id: number;
+      name: string;
+      email: string;
+    };
+  }>;
   criador?: {
     id: number;
     name: string;

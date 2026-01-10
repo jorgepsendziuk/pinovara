@@ -53,7 +53,7 @@ function Dashboard() {
         />
       )}
 
-      {/* Indicador de versão discreto */}
+      {/* Indicador de versão com informações da sessão integradas */}
       <VersionIndicator position="top-right" theme="auto" />
       
       <Sidebar />

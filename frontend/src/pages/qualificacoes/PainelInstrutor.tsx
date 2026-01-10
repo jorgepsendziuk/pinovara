@@ -7,6 +7,7 @@ import { Qualificacao } from '../../types/qualificacao';
 import { Organizacao } from '../../types/organizacao';
 import QRCodeDisplay from '../../components/qualificacoes/QRCodeDisplay';
 import DataGrid, { DataGridColumn } from '../../components/DataGrid/DataGrid';
+import GerenciarEquipeCapacitacao from '../../components/capacitacoes/GerenciarEquipeCapacitacao';
 import { gerarPdfListaInscricoes } from '../../utils/pdfListaInscricoes';
 import { gerarPDFListaPresenca } from '../../utils/pdfListaPresenca';
 import { gerarPDFQRCodeInscricao } from '../../utils/pdfQRCodeInscricao';
@@ -1426,6 +1427,21 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
                 <option value="concluida">Concluída</option>
                 <option value="cancelada">Cancelada</option>
               </select>
+            </div>
+
+            {/* Seção de Equipe Técnica */}
+            <div style={{ 
+              marginBottom: '30px', 
+              padding: '20px', 
+              border: '1px solid #e2e8f0', 
+              borderRadius: '8px',
+              backgroundColor: '#f8fafc'
+            }}>
+              <h3 style={{ margin: '0 0 16px 0', color: '#3b2313', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Users size={18} />
+                Equipe Técnica
+              </h3>
+              <GerenciarEquipeCapacitacao capacitacaoId={idCapacitacao} capacitacao={capacitacao} />
             </div>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>

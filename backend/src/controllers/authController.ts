@@ -192,6 +192,51 @@ class AuthController {
   }
 
   /**
+   * POST /auth/refresh
+   */
+  async refresh(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(HttpStatus.UNAUTHORIZED).json({
+          success: false,
+          error: {
+            message: 'Usuário não autenticado',
+            statusCode: HttpStatus.UNAUTHORIZED
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.split(' ')[1];
+
+      if (!token) {
+        res.status(HttpStatus.UNAUTHORIZED).json({
+          success: false,
+          error: {
+            message: 'Token não fornecido',
+            statusCode: HttpStatus.UNAUTHORIZED
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const result = await authService.refreshToken(token);
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        message: 'Token renovado com sucesso',
+        data: result,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
    * Tratar erros de forma padronizada
    */
   private handleError(error: any, res: Response): void {

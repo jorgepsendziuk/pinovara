@@ -391,6 +391,47 @@ export const capacitacaoAPI = {
     if (!response.data.success) {
       throw new Error(response.data.error?.message || 'Erro ao excluir evidência');
     }
+  },
+
+  /**
+   * Adicionar técnico à equipe da capacitação
+   */
+  adicionarTecnico: async (id: number, idTecnico: number): Promise<string> => {
+    const response = await api.post<ApiResponse<unknown>>(`/capacitacoes/${id}/tecnicos`, {
+      id_tecnico: idTecnico
+    });
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao adicionar técnico');
+    }
+
+    return response.data.message || 'Técnico adicionado com sucesso.';
+  },
+
+  /**
+   * Remover técnico da equipe da capacitação
+   */
+  removerTecnico: async (id: number, idTecnico: number): Promise<string> => {
+    const response = await api.delete<ApiResponse<unknown>>(`/capacitacoes/${id}/tecnicos/${idTecnico}`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao remover técnico');
+    }
+
+    return response.data.message || 'Técnico removido com sucesso.';
+  },
+
+  /**
+   * Listar técnicos da equipe da capacitação
+   */
+  listTecnicos: async (id: number): Promise<Array<{ id_tecnico: number; tecnico: { id: number; name: string; email: string } }>> => {
+    const response = await api.get<ApiResponse<Array<{ id_tecnico: number; tecnico: { id: number; name: string; email: string } }>>>(`/capacitacoes/${id}/tecnicos`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar técnicos');
+    }
+
+    return response.data.data!;
   }
 };
 

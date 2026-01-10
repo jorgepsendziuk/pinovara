@@ -25,10 +25,10 @@ interface PDFListaInscricoesVaziaProps {
 
 export async function gerarPDFListaInscricoesVazia({
   capacitacao,
-  numLinhas = 15
+  numLinhas = 30
 }: PDFListaInscricoesVaziaProps) {
   const doc = new jsPDF({
-    orientation: 'portrait',
+    orientation: 'landscape',
     unit: 'mm',
     format: 'a4'
   });
@@ -192,12 +192,13 @@ export async function gerarPDFListaInscricoesVazia({
   doc.setTextColor(100, 116, 139); // #64748b
   
   // Colunas: Nº, Nome, Email, Telefone, Documento
+  // Ajustadas para formato landscape (297mm de largura)
   const colX = [
     margin,           // Nº (20mm)
-    margin + 10,      // Nome (30mm)
-    margin + 60,      // Email (80mm)
-    margin + 115,     // Telefone (135mm)
-    margin + 155      // Documento (175mm)
+    margin + 12,      // Nome (32mm)
+    margin + 75,      // Email (95mm)
+    margin + 155,     // Telefone (175mm)
+    margin + 210      // Documento (230mm)
   ];
   
   doc.text('Nº', colX[0], yPos);

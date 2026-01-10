@@ -169,7 +169,7 @@ class AuthService {
 
     // Gerar token
     const token = this.generateToken({ userId: user.id, email: user.email });
-    const expiresIn = 7 * 24 * 60 * 60; // 7 dias
+    const expiresIn = this.getExpiresInSeconds();
 
     // Formatar resposta
     const userWithRoles: UserWithRoles = {
@@ -278,6 +278,24 @@ class AuthService {
   }
 
   /**
+   * Renovar token (refresh)
+   */
+  async refreshToken(token: string): Promise<LoginResponse> {
+    // Verificar se token é válido (mesmo que esteja próximo de expirar)
+    const user = await this.verifyToken(token);
+
+    // Gerar novo token
+    const newToken = this.generateToken({ userId: user.id, email: user.email });
+    const expiresIn = this.getExpiresInSeconds();
+
+    return {
+      user,
+      token: newToken,
+      expiresIn
+    };
+  }
+
+  /**
    * Atualizar perfil do usuário
    */
   async updateProfile(userId: number, data: { name: string; email: string }): Promise<UserWithRoles> {
@@ -374,6 +392,31 @@ class AuthService {
   }
 
   /**
+   * Obter tempo de expiração em segundos
+   */
+  private getExpiresInSeconds(): number {
+    const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+    
+    // Converter formato de tempo para segundos
+    const match = expiresIn.match(/^(\d+)([smhd])$/);
+    if (!match) {
+      // Se formato inválido, usar 7 dias como padrão
+      return 7 * 24 * 60 * 60;
+    }
+    
+    const value = parseInt(match[1]);
+    const unit = match[2];
+    
+    switch (unit) {
+      case 's': return value;
+      case 'm': return value * 60;
+      case 'h': return value * 60 * 60;
+      case 'd': return value * 24 * 60 * 60;
+      default: return 7 * 24 * 60 * 60;
+    }
+  }
+
+  /**
    * Gerar token JWT
    */
   private generateToken(payload: JWTPayload): string {
@@ -381,8 +424,10 @@ class AuthService {
       throw new Error('JWT_SECRET não configurado');
     }
 
+    const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+
     return jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: '7d',
+      expiresIn,
       issuer: 'pinovara-api',
       audience: 'pinovara-frontend'
     });

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import VersionIndicator from '../components/VersionIndicator';
 import ImageModal from '../components/ImageModal';
 
 function Landing() {
@@ -68,9 +67,6 @@ function Landing() {
 
   return (
     <div className="landing">
-      {/* Indicador de versão discreto */}
-      <VersionIndicator position="top-right" theme="auto" />
-      
       <header className={`landing-header ${isScrolled ? 'scrolled' : ''}`}>
         <div className="container">
           <div className="brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ cursor: 'pointer' }}>

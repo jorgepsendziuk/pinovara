@@ -1189,6 +1189,11 @@ model users {
   user_roles                                                                 user_roles[]
   organizacao_tecnico_membro                                                 organizacao_tecnico[]    @relation("organizacao_tecnico_tecnico")
   organizacao_tecnico_criados                                                organizacao_tecnico[]    @relation("organizacao_tecnico_criador")
+  qualificacao_tecnico_membro                                                qualificacao_tecnico[]  @relation("qualificacao_tecnico_tecnico")
+  qualificacao_tecnico_criados                                               qualificacao_tecnico[]  @relation("qualificacao_tecnico_criador")
+  qualificacao_created_by                                                    qualificacao[]         @relation("qualificacao_created_by")
+  capacitacao_tecnico_membro                                                 capacitacao_tecnico[]   @relation("capacitacao_tecnico_tecnico")
+  capacitacao_tecnico_criados                                                capacitacao_tecnico[]   @relation("capacitacao_tecnico_criador")
 
   @@schema("pinovara")
 }
@@ -1572,8 +1577,10 @@ model qualificacao {
 
   qualificacao_organizacao qualificacao_organizacao[]
   qualificacao_instrutor   qualificacao_instrutor[]
+  qualificacao_tecnico     qualificacao_tecnico[]
   capacitacao              capacitacao[]
   capacitacao_material     capacitacao_material[]
+  created_by_user          users?                 @relation("qualificacao_created_by", fields: [created_by], references: [id], onDelete: SetNull)
 
   @@index([created_by])
   @@index([ativo])
@@ -1602,6 +1609,23 @@ model qualificacao_instrutor {
   @@schema("capacitacao")
 }
 
+model qualificacao_tecnico {
+  id             Int      @id @default(autoincrement())
+  id_qualificacao Int
+  id_tecnico     Int
+  created_at     DateTime @default(now()) @db.Timestamp(6)
+  created_by     Int?
+
+  qualificacao qualificacao @relation(fields: [id_qualificacao], references: [id], onDelete: Cascade)
+  tecnico     users       @relation("qualificacao_tecnico_tecnico", fields: [id_tecnico], references: [id], onDelete: Cascade)
+  criador     users?      @relation("qualificacao_tecnico_criador", fields: [created_by], references: [id], onDelete: SetNull)
+
+  @@unique([id_qualificacao, id_tecnico])
+  @@index([id_tecnico])
+  @@index([id_qualificacao])
+  @@schema("capacitacao")
+}
+
 model capacitacao {
   id              Int       @id @default(autoincrement())
   id_qualificacao Int
@@ -1623,6 +1647,7 @@ model capacitacao {
   capacitacao_presenca         capacitacao_presenca[]
   capacitacao_avaliacao        capacitacao_avaliacao[]
   capacitacao_evidencia        capacitacao_evidencia[]
+  capacitacao_tecnico          capacitacao_tecnico[]
 
   @@index([id_qualificacao])
   @@index([status])
@@ -1639,6 +1664,23 @@ model capacitacao_organizacao {
 
   @@id([id_capacitacao, id_organizacao])
   @@index([id_organizacao])
+  @@schema("capacitacao")
+}
+
+model capacitacao_tecnico {
+  id             Int      @id @default(autoincrement())
+  id_capacitacao Int
+  id_tecnico     Int
+  created_at     DateTime @default(now()) @db.Timestamp(6)
+  created_by     Int?
+
+  capacitacao capacitacao @relation(fields: [id_capacitacao], references: [id], onDelete: Cascade)
+  tecnico     users       @relation("capacitacao_tecnico_tecnico", fields: [id_tecnico], references: [id], onDelete: Cascade)
+  criador     users?      @relation("capacitacao_tecnico_criador", fields: [created_by], references: [id], onDelete: SetNull)
+
+  @@unique([id_capacitacao, id_tecnico])
+  @@index([id_tecnico])
+  @@index([id_capacitacao])
   @@schema("capacitacao")
 }
 

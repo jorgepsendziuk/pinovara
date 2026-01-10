@@ -33,11 +33,25 @@ class QualificacaoService {
       whereConditions.ativo = ativo;
     }
 
-    // Se precisa filtrar por usuário (não admin/supervisor), mostrar apenas as que criou + as padrão (1, 2, 3)
+    // Se precisa filtrar por usuário (não admin/supervisor), mostrar apenas as que criou + as padrão (1, 2, 3) + as compartilhadas
     if (filterByUser && userId) {
+      // Buscar IDs de qualificações compartilhadas com o usuário (se a tabela existir)
+      let idsCompartilhadas: number[] = [];
+      try {
+        const qualificacoesCompartilhadas = await prisma.qualificacao_tecnico.findMany({
+          where: { id_tecnico: userId },
+          select: { id_qualificacao: true }
+        });
+        idsCompartilhadas = qualificacoesCompartilhadas.map(qt => qt.id_qualificacao);
+      } catch (error: any) {
+        // Se a tabela não existir ainda, ignorar e continuar sem filtro de compartilhamento
+        console.warn('Tabela qualificacao_tecnico ainda não existe ou erro ao buscar compartilhamentos:', error.message);
+      }
+
       whereConditions.OR = [
         { created_by: userId }, // Qualificações que o usuário criou
-        { id: { in: [1, 2, 3] } } // Qualificações padrão do sistema
+        { id: { in: [1, 2, 3] } }, // Qualificações padrão do sistema
+        ...(idsCompartilhadas.length > 0 ? [{ id: { in: idsCompartilhadas } }] : []) // Qualificações compartilhadas com o usuário
       ];
     } else if (created_by) {
       whereConditions.created_by = created_by;
@@ -79,7 +93,26 @@ class QualificacaoService {
             select: {
               id_instrutor: true
             }
-          }
+          },
+          qualificacao_tecnico: {
+            select: {
+              id_tecnico: true,
+              tecnico: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              }
+            }
+          },
+          created_by_user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         }
       }),
       prisma.qualificacao.count({ where: whereConditions })
@@ -104,11 +137,15 @@ class QualificacaoService {
 
     // Formatar resposta
     const formattedQualificacoes = qualificacoes.map(q => {
-      const criador = q.created_by ? criadores.find(cr => cr.id === q.created_by) : null;
+      const criador = q.created_by_user || (q.created_by ? criadores.find(cr => cr.id === q.created_by) : null);
       return {
         ...q,
         organizacoes: q.qualificacao_organizacao.map(ro => ro.id_organizacao),
         instrutores: q.qualificacao_instrutor.map(ri => ri.id_instrutor),
+        equipe_tecnica: (q.qualificacao_tecnico || []).map(qt => ({
+          id_tecnico: qt.id_tecnico,
+          tecnico: qt.tecnico
+        })),
         criador: criador ? {
           id: criador.id,
           name: criador.name,
@@ -142,7 +179,26 @@ class QualificacaoService {
           select: {
             id_instrutor: true
           }
-        }
+        },
+        qualificacao_tecnico: {
+          select: {
+            id_tecnico: true,
+            tecnico: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
+        created_by_user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       }
     });
 
@@ -153,7 +209,16 @@ class QualificacaoService {
     return {
       ...qualificacao,
       organizacoes: qualificacao.qualificacao_organizacao.map(ro => ro.id_organizacao),
-      instrutores: qualificacao.qualificacao_instrutor.map(ri => ri.id_instrutor)
+      instrutores: qualificacao.qualificacao_instrutor.map(ri => ri.id_instrutor),
+      equipe_tecnica: qualificacao.qualificacao_tecnico.map(qt => ({
+        id_tecnico: qt.id_tecnico,
+        tecnico: qt.tecnico
+      })),
+      criador: qualificacao.created_by_user ? {
+        id: qualificacao.created_by_user.id,
+        name: qualificacao.created_by_user.name,
+        email: qualificacao.created_by_user.email
+      } : null
     } as any;
   }
 
@@ -284,6 +349,80 @@ class QualificacaoService {
     }
 
     return this.getById(id) as Promise<Qualificacao>;
+  }
+
+  /**
+   * Adicionar técnico à equipe de uma qualificação
+   */
+  async addTecnico(idQualificacao: number, idTecnico: number, userId: number): Promise<void> {
+    // Verificar se qualificação existe
+    const qualificacao = await prisma.qualificacao.findUnique({
+      where: { id: idQualificacao }
+    });
+
+    if (!qualificacao) {
+      throw new Error('Qualificação não encontrada');
+    }
+
+    // Verificar se já existe
+    const existing = await prisma.qualificacao_tecnico.findUnique({
+      where: {
+        id_qualificacao_id_tecnico: {
+          id_qualificacao: idQualificacao,
+          id_tecnico: idTecnico
+        }
+      }
+    });
+
+    if (existing) {
+      throw new Error('Técnico já está na equipe desta qualificação');
+    }
+
+    // Adicionar técnico
+    await prisma.qualificacao_tecnico.create({
+      data: {
+        id_qualificacao: idQualificacao,
+        id_tecnico: idTecnico,
+        created_by: userId
+      }
+    });
+  }
+
+  /**
+   * Remover técnico da equipe de uma qualificação
+   */
+  async removeTecnico(idQualificacao: number, idTecnico: number): Promise<void> {
+    await prisma.qualificacao_tecnico.delete({
+      where: {
+        id_qualificacao_id_tecnico: {
+          id_qualificacao: idQualificacao,
+          id_tecnico: idTecnico
+        }
+      }
+    });
+  }
+
+  /**
+   * Listar técnicos da equipe de uma qualificação
+   */
+  async listTecnicos(idQualificacao: number): Promise<Array<{ id_tecnico: number; tecnico: { id: number; name: string; email: string } }>> {
+    const tecnicos = await prisma.qualificacao_tecnico.findMany({
+      where: { id_qualificacao: idQualificacao },
+      include: {
+        tecnico: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    return tecnicos.map(t => ({
+      id_tecnico: t.id_tecnico,
+      tecnico: t.tecnico
+    }));
   }
 
   /**

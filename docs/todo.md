@@ -120,22 +120,3 @@ CREATE TABLE odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" ( "_URI" varchar
 CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_da9" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" USING hash ("_DOM_AURI");
 CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_lud" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" USING btree ("_LAST_UPDATE_DATE");
 
-
-em /qualificacoes criado por sempre esta mostrnado Não informado
-
-em /capacitacoes/painel falta opcoes pra editar dados da capacitacao, crie uma aba antes da aba de inscricoes dentro dessa pagina para editar os dados como na criacao:
-Qualificação *
-Organizações *
-Título da capacitação (opcional, usará o título da qualificação se não informado)
-Data Início
-Data Fim
-Local
-Turno
-Status
-
-nos pdfs de qrcode de inscricao e de avaliacao o texto do link deve ser clicavel link
-
-
-em /qualificacoes a 1 2 e 3 nao podem ser excluida e sao padrao do sistema, acessiveis a todos para visualizar os materiais e criar capacitacoes com ela, entao coloque um fundo verde suave para diferenciar, remova o botao de excluir, e permita a edicao delas por somente administradores e supervisores
-
-qualificacoes e capacitacoes criadas por usuarios podem ser vistas somente por eles mesmos e pelos adminsitradores e supervisores. 

@@ -165,6 +165,19 @@ export const authAPI = {
   },
 
   /**
+   * Renovar token
+   */
+  refresh: async (): Promise<LoginResponse> => {
+    const response = await api.post<ApiResponse<LoginResponse>>('/auth/refresh');
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao renovar token');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
    * Fazer login
    */
   login: async (data: LoginData): Promise<LoginResponse> => {

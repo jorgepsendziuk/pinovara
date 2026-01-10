@@ -41,6 +41,8 @@ import FormularioEnketo from './pages/FormularioEnketo';
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade';
 import AvisoCookies from './components/AvisoCookies';
 import GoogleAnalytics from './components/GoogleAnalytics';
+import SessionExpiryAlert from './components/SessionExpiryAlert';
+import { useAuth } from './contexts/AuthContext';
 import { usePageTitle } from './hooks/usePageTitle';
 import './App.css';
 
@@ -245,12 +247,31 @@ function App() {
     <Router>
       <AuthProvider>
         <GoogleAnalytics />
-        <div className="App">
-          <AppRoutes />
-          <AvisoCookies />
-        </div>
+        <AppWithSession />
       </AuthProvider>
     </Router>
+  );
+}
+
+function AppWithSession() {
+  const { isAuthenticated, expiresIn, refreshToken, logout } = useAuth();
+
+  const handleExpire = () => {
+    logout();
+  };
+
+  return (
+    <div className="App">
+      <AppRoutes />
+      <AvisoCookies />
+      {isAuthenticated && expiresIn && (
+        <SessionExpiryAlert
+          expiresIn={expiresIn}
+          onRefresh={refreshToken}
+          onExpire={handleExpire}
+        />
+      )}
+    </div>
   );
 }
 

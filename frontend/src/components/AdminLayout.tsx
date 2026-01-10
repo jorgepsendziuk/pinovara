@@ -31,7 +31,7 @@ function AdminLayout() {
 
   return (
     <div className="dashboard-layout">
-      {/* Indicador de versão discreto */}
+      {/* Indicador de versão com informações da sessão integradas */}
       <VersionIndicator position="top-right" theme="auto" />
       
       <Sidebar />

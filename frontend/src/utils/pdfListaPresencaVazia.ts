@@ -27,10 +27,10 @@ interface PDFListaPresencaVaziaProps {
 export async function gerarPDFListaPresencaVazia({
   capacitacao,
   data,
-  numLinhas = 15
+  numLinhas = 30
 }: PDFListaPresencaVaziaProps) {
   const doc = new jsPDF({
-    orientation: 'portrait',
+    orientation: 'landscape',
     unit: 'mm',
     format: 'a4'
   });
@@ -194,12 +194,13 @@ export async function gerarPDFListaPresencaVazia({
   doc.setTextColor(100, 116, 139); // #64748b
   
   // Colunas: Nº, Nome, Email, Telefone, Documento
+  // Ajustadas para formato landscape (297mm de largura)
   const colX = [
     margin,           // Nº (20mm)
-    margin + 10,      // Nome (30mm)
-    margin + 60,      // Email (80mm)
-    margin + 110,     // Telefone (130mm)
-    pageWidth - 20    // Documento
+    margin + 12,      // Nome (32mm)
+    margin + 75,      // Email (95mm)
+    margin + 155,     // Telefone (175mm)
+    margin + 210      // Documento (230mm)
   ];
   
   doc.text('Nº', colX[0], yPos);

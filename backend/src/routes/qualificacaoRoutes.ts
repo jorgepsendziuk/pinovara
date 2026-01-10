@@ -24,5 +24,10 @@ router.get('/:id/materiais', capacitacaoMaterialController.listMateriais.bind(ca
 router.get('/:id/materiais/:materialId/download', capacitacaoMaterialController.downloadMaterial.bind(capacitacaoMaterialController));
 router.delete('/:id/materiais/:materialId', capacitacaoMaterialController.deleteMaterial.bind(capacitacaoMaterialController));
 
+// Rotas de gerenciamento de equipe técnica
+router.post('/:id/tecnicos', qualificacaoController.addTecnico.bind(qualificacaoController));
+router.delete('/:id/tecnicos/:idTecnico', qualificacaoController.removeTecnico.bind(qualificacaoController));
+router.get('/:id/tecnicos', qualificacaoController.listTecnicos.bind(qualificacaoController));
+
 export default router;
 

@@ -3,6 +3,7 @@ import { qualificacaoAPI } from '../../services/qualificacaoService';
 import api from '../../services/api';
 import { Qualificacao } from '../../types/qualificacao';
 import RepositorioMateriais from '../../components/qualificacoes/RepositorioMateriais';
+import GerenciarEquipeQualificacao from '../../components/qualificacoes/GerenciarEquipeQualificacao';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -10,12 +11,13 @@ import {
   FileText, 
   Save,
   Calendar,
-  User
+  User,
+  Users
 } from 'lucide-react';
 import '../../styles/tabs.css';
 import './QualificacoesModule.css';
 
-type AbaAtiva = 'informacoes' | 'materiais';
+type AbaAtiva = 'informacoes' | 'materiais' | 'equipe';
 
 interface FormQualificacaoProps {
   id?: number;
@@ -244,6 +246,15 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
         >
           <FileText size={16} /> <span>Materiais</span>
         </button>
+        <button
+          className={`tab-button ${abaAtiva === 'equipe' ? 'active' : ''}`}
+          onClick={() => setAbaAtiva('equipe')}
+          title="Equipe Técnica"
+          disabled={!id}
+          style={{ opacity: !id ? 0.5 : 1, cursor: !id ? 'not-allowed' : 'pointer' }}
+        >
+          <Users size={16} /> <span>Equipe Técnica</span>
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -459,6 +470,26 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
                 </h3>
                 <p style={{ color: '#64748b', margin: 0 }}>
                   Salve a qualificação primeiro para gerenciar os materiais.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        {abaAtiva === 'equipe' && (
+          <>
+            {id ? (
+              <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+                <GerenciarEquipeQualificacao qualificacaoId={id} qualificacao={formData as Qualificacao} />
+              </div>
+            ) : (
+              <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', padding: '40px' }}>
+                <Users size={48} color="#cbd5e1" style={{ marginBottom: '16px' }} />
+                <h3 style={{ marginTop: 0, marginBottom: '12px', color: '#3b2313', fontSize: '18px' }}>
+                  Equipe Técnica da Qualificação
+                </h3>
+                <p style={{ color: '#64748b', margin: 0 }}>
+                  Salve a qualificação primeiro para gerenciar a equipe técnica.
                 </p>
               </div>
             )}

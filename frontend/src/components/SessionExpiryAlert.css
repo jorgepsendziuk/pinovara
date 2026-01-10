@@ -1,0 +1,157 @@
+.session-alert-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.session-alert-modal {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  width: 90%;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.session-alert-modal.warning {
+  border-top: 4px solid #f59e0b;
+}
+
+.session-alert-modal.expired {
+  border-top: 4px solid #dc2626;
+}
+
+.session-alert-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 20px 0 20px;
+  position: relative;
+}
+
+.session-alert-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #3b2313;
+  flex: 1;
+}
+
+.session-alert-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: color 0.2s;
+}
+
+.session-alert-close:hover {
+  color: #3b2313;
+}
+
+.session-alert-body {
+  padding: 20px;
+}
+
+.session-alert-body p {
+  margin: 0 0 12px 0;
+  color: #3b2313;
+  line-height: 1.6;
+}
+
+.session-alert-body p:last-child {
+  margin-bottom: 0;
+}
+
+.session-alert-body strong {
+  color: #056839;
+  font-weight: 600;
+}
+
+.session-alert-actions {
+  display: flex;
+  gap: 12px;
+  padding: 0 20px 20px 20px;
+  justify-content: flex-end;
+}
+
+.session-alert-btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  border: none;
+}
+
+.session-alert-btn.primary {
+  background: #056839;
+  color: white;
+}
+
+.session-alert-btn.primary:hover:not(:disabled) {
+  background: #04502d;
+}
+
+.session-alert-btn.secondary {
+  background: #f3f4f6;
+  color: #3b2313;
+}
+
+.session-alert-btn.secondary:hover {
+  background: #e5e7eb;
+}
+
+.session-alert-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

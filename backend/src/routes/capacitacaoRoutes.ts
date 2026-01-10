@@ -35,6 +35,11 @@ router.post('/:id/evidencias', uploadEvidencia, capacitacaoEvidenciaController.u
 router.get('/:id/evidencias', capacitacaoEvidenciaController.listEvidencias.bind(capacitacaoEvidenciaController));
 router.delete('/:id/evidencias/:evidenciaId', capacitacaoEvidenciaController.deleteEvidencia.bind(capacitacaoEvidenciaController));
 
+// Rotas de gerenciamento de equipe técnica
+router.post('/:id/tecnicos', capacitacaoController.addTecnico.bind(capacitacaoController));
+router.delete('/:id/tecnicos/:idTecnico', capacitacaoController.removeTecnico.bind(capacitacaoController));
+router.get('/:id/tecnicos', capacitacaoController.listTecnicos.bind(capacitacaoController));
+
 // Rotas genéricas de capacitações (devem vir por último)
 router.get('/:id', capacitacaoController.getById.bind(capacitacaoController));
 router.put('/:id', capacitacaoController.update.bind(capacitacaoController));

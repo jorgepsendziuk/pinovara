@@ -35,9 +35,25 @@ class CapacitacaoService {
       whereConditions.status = status;
     }
 
-    // Se precisa filtrar por usuário (não admin/supervisor), mostrar apenas as que criou
+    // Se precisa filtrar por usuário (não admin/supervisor), mostrar apenas as que criou + as compartilhadas
     if (filterByUser && userId) {
-      whereConditions.created_by = userId;
+      // Buscar IDs de capacitações compartilhadas com o usuário (se a tabela existir)
+      let idsCompartilhadas: number[] = [];
+      try {
+        const capacitacoesCompartilhadas = await prisma.capacitacao_tecnico.findMany({
+          where: { id_tecnico: userId },
+          select: { id_capacitacao: true }
+        });
+        idsCompartilhadas = capacitacoesCompartilhadas.map(ct => ct.id_capacitacao);
+      } catch (error: any) {
+        // Se a tabela não existir ainda, ignorar e continuar sem filtro de compartilhamento
+        console.warn('Tabela capacitacao_tecnico ainda não existe ou erro ao buscar compartilhamentos:', error.message);
+      }
+
+      whereConditions.OR = [
+        { created_by: userId }, // Capacitações que o usuário criou
+        ...(idsCompartilhadas.length > 0 ? [{ id: { in: idsCompartilhadas } }] : []) // Capacitações compartilhadas com o usuário
+      ];
     } else if (created_by) {
       whereConditions.created_by = created_by;
     }
@@ -82,6 +98,18 @@ class CapacitacaoService {
             select: {
               id_organizacao: true
             }
+          },
+          capacitacao_tecnico: {
+            select: {
+              id_tecnico: true,
+              tecnico: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              }
+            }
           }
         }
       }),
@@ -111,6 +139,10 @@ class CapacitacaoService {
       return {
         ...c,
         organizacoes: c.capacitacao_organizacao.map(co => co.id_organizacao),
+        equipe_tecnica: (c.capacitacao_tecnico || []).map(ct => ({
+          id_tecnico: ct.id_tecnico,
+          tecnico: ct.tecnico
+        })),
         tecnico_criador: criador ? {
           id: criador.id,
           name: criador.name,
@@ -129,6 +161,80 @@ class CapacitacaoService {
   }
 
   /**
+   * Adicionar técnico à equipe de uma capacitação
+   */
+  async addTecnico(idCapacitacao: number, idTecnico: number, userId: number): Promise<void> {
+    // Verificar se capacitação existe
+    const capacitacao = await prisma.capacitacao.findUnique({
+      where: { id: idCapacitacao }
+    });
+
+    if (!capacitacao) {
+      throw new Error('Capacitação não encontrada');
+    }
+
+    // Verificar se já existe
+    const existing = await prisma.capacitacao_tecnico.findUnique({
+      where: {
+        id_capacitacao_id_tecnico: {
+          id_capacitacao: idCapacitacao,
+          id_tecnico: idTecnico
+        }
+      }
+    });
+
+    if (existing) {
+      throw new Error('Técnico já está na equipe desta capacitação');
+    }
+
+    // Adicionar técnico
+    await prisma.capacitacao_tecnico.create({
+      data: {
+        id_capacitacao: idCapacitacao,
+        id_tecnico: idTecnico,
+        created_by: userId
+      }
+    });
+  }
+
+  /**
+   * Remover técnico da equipe de uma capacitação
+   */
+  async removeTecnico(idCapacitacao: number, idTecnico: number): Promise<void> {
+    await prisma.capacitacao_tecnico.delete({
+      where: {
+        id_capacitacao_id_tecnico: {
+          id_capacitacao: idCapacitacao,
+          id_tecnico: idTecnico
+        }
+      }
+    });
+  }
+
+  /**
+   * Listar técnicos da equipe de uma capacitação
+   */
+  async listTecnicos(idCapacitacao: number): Promise<Array<{ id_tecnico: number; tecnico: { id: number; name: string; email: string } }>> {
+    const tecnicos = await prisma.capacitacao_tecnico.findMany({
+      where: { id_capacitacao: idCapacitacao },
+      include: {
+        tecnico: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    return tecnicos.map(t => ({
+      id_tecnico: t.id_tecnico,
+      tecnico: t.tecnico
+    }));
+  }
+
+  /**
    * Buscar capacitação por ID
    */
   async getById(id: number): Promise<Capacitacao | null> {
@@ -144,6 +250,18 @@ class CapacitacaoService {
         capacitacao_organizacao: {
           select: {
             id_organizacao: true
+          }
+        },
+        capacitacao_tecnico: {
+          select: {
+            id_tecnico: true,
+            tecnico: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
           }
         }
       }
@@ -208,6 +326,10 @@ class CapacitacaoService {
       ...capacitacao,
       organizacoes: organizacoesIds,
       organizacoes_completas: organizacoesComTecnicos,
+      equipe_tecnica: (capacitacao.capacitacao_tecnico || []).map(ct => ({
+        id_tecnico: ct.id_tecnico,
+        tecnico: ct.tecnico
+      })),
       tecnico_criador: tecnicoCriador
     } as any;
   }

@@ -13,5 +13,6 @@ router.get('/verify', authController.verify.bind(authController));
 router.get('/me', authenticateToken, authController.me.bind(authController));
 router.put('/profile', authenticateToken, authController.updateProfile.bind(authController));
 router.post('/logout', authenticateToken, authController.logout.bind(authController));
+router.post('/refresh', authenticateToken, authController.refresh.bind(authController));
 
 export default router;

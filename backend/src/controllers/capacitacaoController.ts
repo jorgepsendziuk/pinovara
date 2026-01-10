@@ -577,6 +577,113 @@ class CapacitacaoController {
     }
   }
 
+  /**
+   * POST /capacitacoes/:id/tecnicos
+   */
+  async addTecnico(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user?.id) {
+        res.status(HttpStatus.UNAUTHORIZED).json({
+          success: false,
+          error: {
+            message: 'Usuário não autenticado',
+            statusCode: HttpStatus.UNAUTHORIZED
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const id = parseInt(req.params.id);
+      const { id_tecnico } = req.body;
+
+      if (isNaN(id) || !id_tecnico) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: {
+            message: 'ID da capacitação e ID do técnico são obrigatórios',
+            statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      await capacitacaoService.addTecnico(id, id_tecnico, req.user.id);
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        message: 'Técnico adicionado à equipe com sucesso',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
+   * DELETE /capacitacoes/:id/tecnicos/:idTecnico
+   */
+  async removeTecnico(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const idTecnico = parseInt(req.params.idTecnico);
+
+      if (isNaN(id) || isNaN(idTecnico)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: {
+            message: 'IDs inválidos',
+            statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      await capacitacaoService.removeTecnico(id, idTecnico);
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        message: 'Técnico removido da equipe com sucesso',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
+   * GET /capacitacoes/:id/tecnicos
+   */
+  async listTecnicos(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+
+      if (isNaN(id)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: {
+            message: 'ID inválido',
+            statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const tecnicos = await capacitacaoService.listTecnicos(id);
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        data: tecnicos,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
   private handleError(error: any, res: Response): void {
     console.error('❌ [CapacitacaoController] Error:', error);
     
