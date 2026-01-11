@@ -7,6 +7,7 @@ declare class AuthController {
     verify(req: Request, res: Response): Promise<void>;
     logout(req: Request, res: Response): Promise<void>;
     updateProfile(req: AuthRequest, res: Response): Promise<void>;
+    refresh(req: AuthRequest, res: Response): Promise<void>;
     private handleError;
 }
 export declare const authController: AuthController;

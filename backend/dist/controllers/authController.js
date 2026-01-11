@@ -158,6 +158,45 @@ class AuthController {
             this.handleError(error, res);
         }
     }
+    async refresh(req, res) {
+        try {
+            if (!req.user) {
+                res.status(api_1.HttpStatus.UNAUTHORIZED).json({
+                    success: false,
+                    error: {
+                        message: 'Usuário não autenticado',
+                        statusCode: api_1.HttpStatus.UNAUTHORIZED
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const authHeader = req.headers.authorization;
+            const token = authHeader?.split(' ')[1];
+            if (!token) {
+                res.status(api_1.HttpStatus.UNAUTHORIZED).json({
+                    success: false,
+                    error: {
+                        message: 'Token não fornecido',
+                        statusCode: api_1.HttpStatus.UNAUTHORIZED
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            res.status(501).json({
+                success: false,
+                error: {
+                    message: 'Funcionalidade de refresh token temporariamente indisponível',
+                    statusCode: 501
+                },
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
     handleError(error, res) {
         console.error('Auth Controller Error:', error);
         if (error instanceof authService_1.ApiError) {

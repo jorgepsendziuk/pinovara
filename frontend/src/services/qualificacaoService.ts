@@ -135,6 +135,19 @@ export const qualificacaoAPI = {
     }
 
     return response.data.data!;
+  },
+
+  /**
+   * Listar técnicos disponíveis para adicionar em equipes
+   */
+  listTecnicosDisponiveis: async (): Promise<Array<{ id: number; name: string; email: string }>> => {
+    const response = await api.get<ApiResponse<Array<{ id: number; name: string; email: string }>>>('/qualificacoes/tecnicos-disponiveis');
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar técnicos disponíveis');
+    }
+
+    return response.data.data!;
   }
 };
 

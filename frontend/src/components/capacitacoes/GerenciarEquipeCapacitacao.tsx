@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { capacitacaoAPI } from '../../services/capacitacaoService';
+import { qualificacaoAPI } from '../../services/qualificacaoService';
 import { organizacaoAPI } from '../../services/api';
 import api from '../../services/api';
 import { Capacitacao } from '../../types/capacitacao';
@@ -22,7 +23,7 @@ function GerenciarEquipeCapacitacao({ capacitacaoId, capacitacao }: GerenciarEqu
   const [removendoTecnicoId, setRemovendoTecnicoId] = useState<number | null>(null);
 
   // Verificar se pode gerenciar equipe (criador, admin ou supervisor)
-  const canGerenciarEquipe = isAdmin() || isSupervisor() || (capacitacao && capacitacao.created_by === user?.id);
+  const canGerenciarEquipe = isAdmin() || isSupervisor() || (capacitacao && capacitacao.created_by === Number(user?.id));
 
   const carregarEquipe = useCallback(async () => {
     if (!capacitacaoId) return;
@@ -42,32 +43,19 @@ function GerenciarEquipeCapacitacao({ capacitacaoId, capacitacao }: GerenciarEqu
     if (!capacitacaoId || !canGerenciarEquipe) return;
     setCarregandoTecnicosDisponiveis(true);
     try {
-      // Buscar todos os usuários do sistema via API admin usando axios (com token)
-      const response = await api.get('/admin/users');
-      if (response.data.success && response.data.data?.users) {
+      // Buscar técnicos disponíveis via API de qualificações (mesma lista)
+      const response = await qualificacaoAPI.listTecnicosDisponiveis();
+      if (response && Array.isArray(response)) {
         // Filtrar técnicos que já estão na equipe
         const idsNaEquipe = new Set(equipeTecnica.map(m => m.id_tecnico));
-        // Filtrar apenas técnicos (role 'tecnico' no módulo 'organizacoes'), ativos e que não estão na equipe
-        const disponiveis = response.data.data.users
-          .filter((u: any) => {
-            if (!u.active || idsNaEquipe.has(u.id)) {
-              return false;
-            }
-            // Verificar se é técnico (tem role 'tecnico' no módulo 'organizacoes')
-            if (!u.roles || !Array.isArray(u.roles)) {
-              return false;
-            }
-            const isTecnico = u.roles.some((r: any) => 
-              r && r.name === 'tecnico' && r.module && r.module.name === 'organizacoes'
-            );
-            return isTecnico;
-          })
-          .map((u: any) => ({
-            id: u.id,
-            name: u.name || 'Sem nome',
-            email: u.email || 'Sem e-mail'
+        const disponiveis = response
+          .filter((tecnico) => !idsNaEquipe.has(tecnico.id))
+          .map((tecnico) => ({
+            id: tecnico.id,
+            name: tecnico.name || 'Sem nome',
+            email: tecnico.email || 'Sem e-mail'
           }));
-        console.log(`✅ Técnicos disponíveis encontrados: ${disponiveis.length} de ${response.data.data.users.length} usuários`);
+        console.log(`✅ Técnicos disponíveis encontrados: ${disponiveis.length} de ${response.length} técnicos`);
         setTecnicosDisponiveis(disponiveis);
       } else {
         setTecnicosDisponiveis([]);

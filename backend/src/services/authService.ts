@@ -280,20 +280,6 @@ class AuthService {
   /**
    * Renovar token (refresh)
    */
-  async refreshToken(token: string): Promise<LoginResponse> {
-    // Verificar se token é válido (mesmo que esteja próximo de expirar)
-    const user = await this.verifyToken(token);
-
-    // Gerar novo token
-    const newToken = this.generateToken({ userId: user.id, email: user.email });
-    const expiresIn = this.getExpiresInSeconds();
-
-    return {
-      user,
-      token: newToken,
-      expiresIn
-    };
-  }
 
   /**
    * Atualizar perfil do usuário
@@ -424,13 +410,9 @@ class AuthService {
       throw new Error('JWT_SECRET não configurado');
     }
 
-    const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-
-    return jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn,
-      issuer: 'pinovara-api',
-      audience: 'pinovara-frontend'
-    });
+    // Simplificado para evitar problemas de tipagem
+    const token = jwt.sign(payload, process.env.JWT_SECRET);
+    return token;
   }
 }
 

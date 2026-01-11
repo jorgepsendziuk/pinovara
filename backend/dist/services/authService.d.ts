@@ -8,6 +8,7 @@ declare class AuthService {
         name: string;
         email: string;
     }): Promise<UserWithRoles>;
+    private getExpiresInSeconds;
     private generateToken;
 }
 declare class ApiError extends Error {

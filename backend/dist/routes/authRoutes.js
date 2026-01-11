@@ -10,5 +10,6 @@ router.get('/verify', authController_1.authController.verify.bind(authController
 router.get('/me', auth_1.authenticateToken, authController_1.authController.me.bind(authController_1.authController));
 router.put('/profile', auth_1.authenticateToken, authController_1.authController.updateProfile.bind(authController_1.authController));
 router.post('/logout', auth_1.authenticateToken, authController_1.authController.logout.bind(authController_1.authController));
+router.post('/refresh', auth_1.authenticateToken, authController_1.authController.refresh.bind(authController_1.authController));
 exports.default = router;
 //# sourceMappingURL=authRoutes.js.map

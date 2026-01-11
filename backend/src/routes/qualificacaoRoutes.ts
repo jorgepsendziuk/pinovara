@@ -11,6 +11,10 @@ router.use(authenticateToken);
 
 // Rotas públicas (autenticadas)
 router.get('/', qualificacaoController.list.bind(qualificacaoController));
+
+// Rota para listar técnicos disponíveis (acessível por técnicos) - deve vir ANTES das rotas com parâmetros
+router.get('/tecnicos-disponiveis', qualificacaoController.listTecnicosDisponiveis.bind(qualificacaoController));
+
 router.get('/:id', qualificacaoController.getById.bind(qualificacaoController));
 
 // Rotas que precisam de permissão (admin ou técnico pode criar/editar)

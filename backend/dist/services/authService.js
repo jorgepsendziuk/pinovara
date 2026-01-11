@@ -134,7 +134,7 @@ class AuthService {
             },
         });
         const token = this.generateToken({ userId: user.id, email: user.email });
-        const expiresIn = 7 * 24 * 60 * 60;
+        const expiresIn = this.getExpiresInSeconds();
         const userWithRoles = {
             id: user.id,
             email: user.email,
@@ -309,15 +309,28 @@ class AuthService {
             })) : []
         };
     }
+    getExpiresInSeconds() {
+        const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+        const match = expiresIn.match(/^(\d+)([smhd])$/);
+        if (!match) {
+            return 7 * 24 * 60 * 60;
+        }
+        const value = parseInt(match[1]);
+        const unit = match[2];
+        switch (unit) {
+            case 's': return value;
+            case 'm': return value * 60;
+            case 'h': return value * 60 * 60;
+            case 'd': return value * 24 * 60 * 60;
+            default: return 7 * 24 * 60 * 60;
+        }
+    }
     generateToken(payload) {
         if (!process.env.JWT_SECRET) {
             throw new Error('JWT_SECRET não configurado');
         }
-        return jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET, {
-            expiresIn: '7d',
-            issuer: 'pinovara-api',
-            audience: 'pinovara-frontend'
-        });
+        const token = jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET);
+        return token;
     }
 }
 class ApiError extends Error {

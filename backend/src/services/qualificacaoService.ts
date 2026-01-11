@@ -459,6 +459,37 @@ class QualificacaoService {
       where: { id }
     });
   }
+
+  /**
+   * Listar técnicos disponíveis para adicionar em equipes
+   */
+  async listTecnicosDisponiveis(): Promise<Array<{ id: number; name: string; email: string }>> {
+    const tecnicos = await prisma.users.findMany({
+      where: {
+        active: true,
+        user_roles: {
+          some: {
+            roles: {
+              name: 'tecnico',
+              modules: {
+                name: 'organizacoes'
+              }
+            }
+          }
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    });
+
+    return tecnicos;
+  }
 }
 
 export default new QualificacaoService();

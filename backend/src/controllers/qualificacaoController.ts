@@ -453,6 +453,48 @@ class QualificacaoController {
     }
   }
 
+  /**
+   * GET /qualificacoes/tecnicos-disponiveis
+   * Listar técnicos disponíveis para adicionar em equipes (acessível por técnicos)
+   */
+  async listTecnicosDisponiveis(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      // Verificar se o usuário tem permissão (deve ser técnico, admin ou supervisor)
+      const isAdmin = req.user?.roles?.some(role =>
+        role.name === 'admin' && role.module.name === 'sistema'
+      );
+      const isSupervisor = req.user?.roles?.some(role =>
+        role.name === 'supervisor' && role.module.name === 'organizacoes'
+      );
+      const isTecnico = req.user?.roles?.some(role =>
+        role.name === 'tecnico' && role.module.name === 'organizacoes'
+      );
+
+      if (!isAdmin && !isSupervisor && !isTecnico) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Acesso negado. Apenas técnicos, supervisores ou administradores podem acessar esta funcionalidade.',
+            statusCode: HttpStatus.FORBIDDEN
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Buscar todos os usuários ativos com role 'tecnico' no módulo 'organizacoes'
+      const tecnicos = await qualificacaoService.listTecnicosDisponiveis();
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        data: tecnicos,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
   private handleError(error: any, res: Response): void {
     console.error('❌ [QualificacaoController] Error:', error);
     

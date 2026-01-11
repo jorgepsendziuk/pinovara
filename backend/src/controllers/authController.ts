@@ -223,12 +223,14 @@ class AuthController {
         return;
       }
 
-      const result = await authService.refreshToken(token);
 
-      res.status(HttpStatus.OK).json({
-        success: true,
-        message: 'Token renovado com sucesso',
-        data: result,
+      // Temporariamente removido - funcionalidade será implementada posteriormente
+      res.status(501).json({
+        success: false,
+        error: {
+          message: 'Funcionalidade de refresh token temporariamente indisponível',
+          statusCode: 501
+        },
         timestamp: new Date().toISOString()
       });
     } catch (error) {
