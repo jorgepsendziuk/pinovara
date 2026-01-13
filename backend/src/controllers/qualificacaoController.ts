@@ -201,7 +201,7 @@ class QualificacaoController {
         return;
       }
 
-      // Verificar permissões para edição de qualificações padrão (1, 2, 3)
+      // Verificar permissões para edição
       const isAdmin = req.user.roles?.some(role => 
         role.name === 'admin' && role.module.name === 'sistema'
       );
@@ -209,7 +209,7 @@ class QualificacaoController {
         role.name === 'supervisao' && role.module.name === 'organizacoes'
       );
 
-      // Qualificações padrão só podem ser editadas por admin ou supervisor
+      // Qualificações padrão (1, 2, 3) só podem ser editadas por admin ou supervisor
       if ((id === 1 || id === 2 || id === 3) && !isAdmin && !isSupervisor) {
         res.status(HttpStatus.FORBIDDEN).json({
           success: false,
@@ -220,6 +220,27 @@ class QualificacaoController {
           timestamp: new Date().toISOString()
         });
         return;
+      }
+
+      // Para outras qualificações, verificar se é criador ou membro da equipe técnica
+      if (!isAdmin && !isSupervisor && (id !== 1 && id !== 2 && id !== 3)) {
+        const isCriador = oldData.created_by === req.user?.id;
+        const qualificacaoData = oldData as any;
+        const isMembroEquipe = qualificacaoData.equipe_tecnica?.some(
+          (membro: any) => membro.id_tecnico === req.user?.id
+        ) || false;
+
+        if (!isCriador && !isMembroEquipe) {
+          res.status(HttpStatus.FORBIDDEN).json({
+            success: false,
+            error: {
+              message: 'Acesso negado. Apenas o criador e a equipe técnica podem editar esta qualificação.',
+              statusCode: HttpStatus.FORBIDDEN
+            },
+            timestamp: new Date().toISOString()
+          });
+          return;
+        }
       }
 
       const qualificacao = await qualificacaoService.update(id, req.body, req.user.id);
@@ -303,19 +324,27 @@ class QualificacaoController {
         return;
       }
 
-      // Verificar permissões: admin pode excluir qualquer qualificação,
-      // técnico só pode excluir qualificações que criou
+      // Verificar permissões: admin/supervisor podem excluir qualquer qualificação,
+      // outros só podem excluir se forem criador ou membro da equipe técnica
       const isAdmin = req.user.roles?.some(role => 
         role.name === 'admin' && role.module.name === 'sistema'
       );
+      const isSupervisor = req.user.roles?.some(role => 
+        role.name === 'supervisao' && role.module.name === 'organizacoes'
+      );
 
-      if (!isAdmin) {
-        // Se não é admin, verificar se é o criador da qualificação
-        if (oldData.created_by !== req.user.id) {
+      if (!isAdmin && !isSupervisor) {
+        const isCriador = oldData.created_by === req.user?.id;
+        const qualificacaoData = oldData as any;
+        const isMembroEquipe = qualificacaoData.equipe_tecnica?.some(
+          (membro: any) => membro.id_tecnico === req.user?.id
+        ) || false;
+
+        if (!isCriador && !isMembroEquipe) {
           res.status(HttpStatus.FORBIDDEN).json({
             success: false,
             error: {
-              message: 'Acesso negado. Você só pode excluir qualificações que criou.',
+              message: 'Acesso negado. Apenas o criador e a equipe técnica podem excluir esta qualificação.',
               statusCode: HttpStatus.FORBIDDEN
             },
             timestamp: new Date().toISOString()

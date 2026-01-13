@@ -4,15 +4,17 @@ import api from '../../services/api';
 import { Qualificacao } from '../../types/qualificacao';
 import RepositorioMateriais from '../../components/qualificacoes/RepositorioMateriais';
 import GerenciarEquipeQualificacao from '../../components/qualificacoes/GerenciarEquipeQualificacao';
-import { 
-  ArrowLeft, 
-  Loader2, 
-  BookOpen, 
-  FileText, 
+import { gerarPdfConteudoQualificacao } from '../../utils/pdfConteudoQualificacao';
+import {
+  ArrowLeft,
+  Loader2,
+  BookOpen,
+  FileText,
   Save,
   Calendar,
   User,
-  Users
+  Users,
+  Download
 } from 'lucide-react';
 import '../../styles/tabs.css';
 import './QualificacoesModule.css';
@@ -129,6 +131,19 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
     }
   };
 
+  const handleImprimirConteudoQualificacao = async () => {
+    if (!formData.titulo) {
+      alert('A qualificação deve ter pelo menos um título para gerar o PDF.');
+      return;
+    }
+
+    try {
+      await gerarPdfConteudoQualificacao(formData as Qualificacao);
+    } catch (error: any) {
+      console.error('Erro ao gerar PDF:', error);
+      alert(error.message || 'Erro ao gerar PDF do conteúdo da qualificação');
+    }
+  };
 
   if (carregandoDados && id) {
     return (
@@ -181,6 +196,35 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
             <ArrowLeft size={16} />
             Voltar
           </button>
+          {id && (
+            <button
+              onClick={handleImprimirConteudoQualificacao}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 16px',
+                background: '#8b5cf6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                fontSize: '14px',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#7c3aed';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = '#8b5cf6';
+              }}
+              title="Gerar PDF com o conteúdo detalhado da qualificação"
+            >
+              <Download size={16} />
+              Conteúdo da Qualificação
+            </button>
+          )}
           <div>
             <h1 style={{ 
               margin: '0 0 8px 0', 
@@ -199,7 +243,14 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
                 {formData.created_at && (
                   <p style={{ margin: 0, color: '#64748b', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Calendar size={14} />
-                    Criada em {new Date(formData.created_at).toLocaleDateString('pt-BR')}
+                    Criada em {formData.created_at ? (() => {
+                      const partes = formData.created_at.split('T')[0].split('-');
+                      if (partes.length === 3) {
+                        const data = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+                        return data.toLocaleDateString('pt-BR');
+                      }
+                      return new Date(formData.created_at).toLocaleDateString('pt-BR');
+                    })() : '-'}
                   </p>
                 )}
                 {criadorNome && (

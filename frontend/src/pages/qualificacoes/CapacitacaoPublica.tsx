@@ -167,9 +167,31 @@ function CapacitacaoPublica() {
     );
   };
 
-  const formatarData = (data: string | Date | null | undefined): string => {
-    if (!data) return '-';
-    return new Date(data).toLocaleDateString('pt-BR', {
+  // Função helper para formatar data corretamente (evita problemas de timezone)
+  const formatarData = (dataString: string | Date | null | undefined): string => {
+    if (!dataString) return '-';
+    
+    // Se for Date, converter para string primeiro
+    let dataStr: string;
+    if (dataString instanceof Date) {
+      dataStr = dataString.toISOString().split('T')[0];
+    } else {
+      dataStr = String(dataString);
+    }
+    
+    // Se a data vem como string no formato YYYY-MM-DD, criar Date corretamente
+    const partes = dataStr.split('T')[0].split('-');
+    if (partes.length === 3) {
+      // Criar data no timezone local (ano, mês-1, dia)
+      const data = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+      return data.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+    // Fallback para o método padrão
+    return new Date(dataString).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -1376,13 +1398,13 @@ function CapacitacaoPublica() {
               </button>
               <button
                 onClick={() => {
-                  setView('info');
+                  setView('inscricao');
                   setEmailEntrada('');
                 }}
                 style={{
                   backgroundColor: 'white',
-                  color: '#3b2313',
-                  border: '1px solid #e2e8f0',
+                  color: '#056839',
+                  border: '1px solid #056839',
                   padding: '14px 28px',
                   borderRadius: '8px',
                   fontSize: '15px',
@@ -1391,15 +1413,15 @@ function CapacitacaoPublica() {
                   transition: 'all 0.2s'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#056839';
-                  e.currentTarget.style.color = '#056839';
+                  e.currentTarget.style.backgroundColor = '#056839';
+                  e.currentTarget.style.color = 'white';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#e2e8f0';
-                  e.currentTarget.style.color = '#3b2313';
+                  e.currentTarget.style.backgroundColor = 'white';
+                  e.currentTarget.style.color = '#056839';
                 }}
               >
-                Cancelar
+                Inscreva-se
               </button>
             </div>
           </div>

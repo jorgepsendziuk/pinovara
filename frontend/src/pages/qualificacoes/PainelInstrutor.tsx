@@ -14,6 +14,8 @@ import { gerarPDFQRCodeInscricao } from '../../utils/pdfQRCodeInscricao';
 import { gerarPDFQRCodeAvaliacao } from '../../utils/pdfQRCodeAvaliacao';
 import { gerarPDFListaPresencaVazia } from '../../utils/pdfListaPresencaVazia';
 import { gerarPDFListaInscricoesVazia } from '../../utils/pdfListaInscricoesVazia';
+import { gerarPdfConteudoCapacitacao } from '../../utils/pdfConteudoCapacitacao';
+import { gerarPdfRelatorioCapacitacao } from '../../utils/pdfRelatorioCapacitacao';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -35,7 +37,8 @@ import {
   Upload,
   Download,
   Image,
-  FileText
+  FileText,
+  BarChart3
 } from 'lucide-react';
 import './QualificacoesModule.css';
 
@@ -322,10 +325,26 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
       alert('Dados da capacitação não disponíveis para gerar PDF.');
       return;
     }
-    await gerarPDFListaPresencaVazia({ 
-      capacitacao, 
-      data: dataSelecionadaPresenca || undefined 
+    await gerarPDFListaPresencaVazia({
+      capacitacao,
+      data: dataSelecionadaPresenca || undefined
     });
+  };
+
+  const handleImprimirConteudoCapacitacao = async () => {
+    if (!capacitacao) {
+      alert('Dados da capacitação não disponíveis para gerar PDF.');
+      return;
+    }
+    await gerarPdfConteudoCapacitacao(capacitacao);
+  };
+
+  const handleImprimirRelatorioCapacitacao = async () => {
+    if (!capacitacao) {
+      alert('Dados da capacitação não disponíveis para gerar PDF.');
+      return;
+    }
+    await gerarPdfRelatorioCapacitacao(capacitacao, inscricoes, presencas);
   };
 
   const handleCopiarLink = (link: string) => {
@@ -475,9 +494,31 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
     }
   };
 
-  const formatarData = (data: string | Date | null | undefined): string => {
-    if (!data) return '-';
-    return new Date(data).toLocaleDateString('pt-BR', {
+  // Função helper para formatar data corretamente (evita problemas de timezone)
+  const formatarData = (dataString: string | Date | null | undefined): string => {
+    if (!dataString) return '-';
+    
+    // Se for Date, converter para string primeiro
+    let dataStr: string;
+    if (dataString instanceof Date) {
+      dataStr = dataString.toISOString().split('T')[0];
+    } else {
+      dataStr = String(dataString);
+    }
+    
+    // Se a data vem como string no formato YYYY-MM-DD, criar Date corretamente
+    const partes = dataStr.split('T')[0].split('-');
+    if (partes.length === 3) {
+      // Criar data no timezone local (ano, mês-1, dia)
+      const data = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+      return data.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+    // Fallback para o método padrão
+    return new Date(dataString).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -857,6 +898,65 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
               </span>
             </div>
           </div>
+
+          {/* Botões de PDF */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+            <button
+              onClick={handleImprimirConteudoCapacitacao}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                background: '#8b5cf6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                fontSize: '13px',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#7c3aed';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = '#8b5cf6';
+              }}
+              title="Gerar PDF com o conteúdo detalhado da capacitação"
+            >
+              <FileText size={14} />
+              Conteúdo da Capacitação
+            </button>
+            <button
+              onClick={handleImprimirRelatorioCapacitacao}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                background: '#f59e0b',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                fontSize: '13px',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#d97706';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = '#f59e0b';
+              }}
+              title="Gerar relatório completo da capacitação com estatísticas"
+            >
+              <BarChart3 size={14} />
+              Relatório da Capacitação
+            </button>
+          </div>
+
           <button
             onClick={handleExcluirCapacitacao}
             disabled={salvando}
@@ -2218,7 +2318,7 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
                     <div style={{fontSize: '13px', color: '#6b7280'}}>
                       Tipo: {evidencia.tipo === 'foto' ? 'Foto' : evidencia.tipo === 'lista_presenca' ? 'Lista de Presença' : 'Outro'}
                       {' • '}
-                      {new Date(evidencia.created_at).toLocaleString('pt-BR')}
+                      {formatarDataHora(evidencia.created_at)}
                     </div>
                     {evidencia.descricao && (
                       <div style={{fontSize: '13px', color: '#6b7280', marginTop: '4px'}}>
@@ -2227,7 +2327,7 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
                     )}
                     {evidencia.data_evidencia && (
                       <div style={{fontSize: '13px', color: '#6b7280', marginTop: '4px'}}>
-                        Data: {new Date(evidencia.data_evidencia).toLocaleDateString('pt-BR')}
+                        Data: {formatarData(evidencia.data_evidencia)}
                       </div>
                     )}
                     {evidencia.local_evidencia && (

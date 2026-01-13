@@ -199,6 +199,35 @@ class CapacitacaoController {
         return;
       }
 
+      // Verificar permissões: admin/supervisor podem editar qualquer capacitação,
+      // outros só podem editar se forem criador ou membro da equipe técnica
+      const isAdmin = req.user.roles?.some(role => 
+        role.name === 'admin' && role.module.name === 'sistema'
+      );
+      const isSupervisor = req.user.roles?.some(role => 
+        role.name === 'supervisao' && role.module.name === 'organizacoes'
+      );
+
+      if (!isAdmin && !isSupervisor) {
+        const isCriador = oldData.created_by === req.user?.id;
+        const capacitacaoData = oldData as any;
+        const isMembroEquipe = capacitacaoData.equipe_tecnica?.some(
+          (membro: any) => membro.id_tecnico === req.user?.id
+        ) || false;
+
+        if (!isCriador && !isMembroEquipe) {
+          res.status(HttpStatus.FORBIDDEN).json({
+            success: false,
+            error: {
+              message: 'Acesso negado. Apenas o criador e a equipe técnica podem editar esta capacitação.',
+              statusCode: HttpStatus.FORBIDDEN
+            },
+            timestamp: new Date().toISOString()
+          });
+          return;
+        }
+      }
+
       const capacitacao = await capacitacaoService.update(id, req.body, req.user.id);
 
       // Registrar log de auditoria
@@ -265,6 +294,35 @@ class CapacitacaoController {
           timestamp: new Date().toISOString()
         });
         return;
+      }
+
+      // Verificar permissões: admin/supervisor podem excluir qualquer capacitação,
+      // outros só podem excluir se forem criador ou membro da equipe técnica
+      const isAdmin = req.user.roles?.some(role => 
+        role.name === 'admin' && role.module.name === 'sistema'
+      );
+      const isSupervisor = req.user.roles?.some(role => 
+        role.name === 'supervisao' && role.module.name === 'organizacoes'
+      );
+
+      if (!isAdmin && !isSupervisor) {
+        const isCriador = oldData.created_by === req.user?.id;
+        const capacitacaoData = oldData as any;
+        const isMembroEquipe = capacitacaoData.equipe_tecnica?.some(
+          (membro: any) => membro.id_tecnico === req.user?.id
+        ) || false;
+
+        if (!isCriador && !isMembroEquipe) {
+          res.status(HttpStatus.FORBIDDEN).json({
+            success: false,
+            error: {
+              message: 'Acesso negado. Apenas o criador e a equipe técnica podem excluir esta capacitação.',
+              statusCode: HttpStatus.FORBIDDEN
+            },
+            timestamp: new Date().toISOString()
+          });
+          return;
+        }
       }
 
       await capacitacaoService.delete(id);

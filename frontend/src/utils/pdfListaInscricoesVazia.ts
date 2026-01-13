@@ -105,12 +105,19 @@ export async function gerarPDFListaInscricoesVazia({
     doc.setFontSize(11);
     doc.text('Período:', margin, yPos);
     doc.setFont(undefined, 'normal');
-    const dataInicio = capacitacao.data_inicio 
-      ? new Date(capacitacao.data_inicio).toLocaleDateString('pt-BR')
-      : 'Não informado';
-    const dataFim = capacitacao.data_fim 
-      ? new Date(capacitacao.data_fim).toLocaleDateString('pt-BR')
-      : 'Não informado';
+    // Função helper para formatar data corretamente (evita problemas de timezone)
+    const formatarDataPDF = (dataString: string | undefined): string => {
+      if (!dataString) return 'Não informado';
+      const partes = String(dataString).split('T')[0].split('-');
+      if (partes.length === 3) {
+        const data = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+        return data.toLocaleDateString('pt-BR');
+      }
+      return new Date(dataString).toLocaleDateString('pt-BR');
+    };
+    
+    const dataInicio = formatarDataPDF(capacitacao.data_inicio);
+    const dataFim = formatarDataPDF(capacitacao.data_fim);
     doc.text(`${dataInicio} a ${dataFim}`, margin + 25, yPos);
     yPos += 7;
   }

@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import DataGrid, { DataGridColumn } from '../../components/DataGrid/DataGrid';
 import { qualificacaoAPI } from '../../services/qualificacaoService';
 import { Qualificacao, QualificacaoListResponse } from '../../types/qualificacao';
-import { Edit, Trash2, FileText, Users, BookOpen, Plus, Search, Loader2, User } from 'lucide-react';
+import { Edit, Trash2, FileText, BookOpen, Plus, Search, Loader2, User, Download, Clock } from 'lucide-react';
 import api from '../../services/api';
 import ModalMateriais from '../../components/qualificacoes/ModalMateriais';
 import { useAuth } from '../../contexts/AuthContext';
+import { gerarPdfConteudoQualificacao } from '../../utils/pdfConteudoQualificacao';
 import './QualificacoesModule.css';
 
 interface ListaQualificacoesProps {
@@ -32,6 +33,17 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
     titulo: ''
   });
   const pageSize = 20;
+
+  // Função helper para formatar data corretamente (evita problemas de timezone)
+  const formatarDataHora = (dataString: string | undefined): string => {
+    if (!dataString) return '';
+    try {
+      const data = new Date(dataString);
+      return data.toLocaleDateString('pt-BR');
+    } catch {
+      return '';
+    }
+  };
 
   // Verificar se é qualificação padrão do sistema
   const isQualificacaoPadrao = (id?: number): boolean => {
@@ -127,7 +139,7 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
         const podeEditar = podeEditarPadrao(record.id);
         
         return (
-          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-start', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-start', alignItems: 'center' }}>
             <button
               onClick={() => onNavigate('edicao-qualificacao', record.id)}
               title={podeEditar ? "Editar qualificação" : "Apenas administradores e supervisores podem editar qualificações padrão"}
@@ -192,6 +204,40 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
             >
               <FileText size={16} />
             </button>
+            <button
+              onClick={async () => {
+                try {
+                  const qualificacaoCompleta = await qualificacaoAPI.getById(record.id!);
+                  await gerarPdfConteudoQualificacao(qualificacaoCompleta);
+                } catch (error) {
+                  console.error('Erro ao gerar PDF:', error);
+                  alert('Erro ao gerar PDF da qualificação');
+                }
+              }}
+              title="Gerar PDF do conteúdo"
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #3b82f6',
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#3b82f6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#3b82f6';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#3b82f6';
+              }}
+            >
+              <Download size={16} />
+            </button>
             {!isPadrao && (
               <button
                 onClick={() => handleExcluir(record.id!)}
@@ -225,23 +271,15 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
       }
     },
     {
-      key: 'id',
-      title: 'ID',
-      dataIndex: 'id',
-      width: '6%',
-      align: 'center',
-      render: (id: number) => (
-        <span style={{ fontWeight: '600', color: '#3b2313' }}>#{id}</span>
-      )
-    },
-    {
       key: 'titulo',
-      title: 'Título',
+      title: 'Qualificação',
       dataIndex: 'titulo',
-      width: '28%',
+      width: '45%',
       render: (titulo: string, record: Qualificacao) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <span style={{ fontWeight: '600', color: '#3b2313' }}>{titulo}</span>
+          <span style={{ fontWeight: '600', color: '#3b2313' }}>
+            #{record.id} - {titulo}
+          </span>
           {record.objetivo_geral && (
             <span style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.4' }}>
               {record.objetivo_geral.substring(0, 100)}...
@@ -251,42 +289,23 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
       )
     },
     {
-      key: 'status',
-      title: 'Status',
-      dataIndex: 'ativo',
-      width: '8%',
-      align: 'center',
-      render: (ativo: boolean) => (
-        <span
-          style={{
-            padding: '4px 12px',
-            borderRadius: '12px',
-            fontSize: '12px',
-            fontWeight: '500',
-            backgroundColor: ativo ? '#d4edda' : '#f8d7da',
-            color: ativo ? '#155724' : '#721c24'
-          }}
-        >
-          {ativo ? 'Ativa' : 'Inativa'}
-        </span>
-      )
-    },
-    {
       key: 'criador',
       title: 'Criado por',
-      width: '18%',
+      width: '20%',
+      align: 'left',
       render: (_, record: Qualificacao) => {
-        // Usar criador do backend se disponível, senão tentar carregar
         const criador = record.criador || (record.created_by ? criadores.get(record.created_by) : null);
         return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', alignItems: 'center' }}>
             {criador ? (
-              <>
-                <User size={14} color="#056839" />
-                <span style={{ color: '#3b2313', fontWeight: '500' }}>{criador.name}</span>
-              </>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '600', color: '#3b2313' }}>
+                <User size={12} />
+                <span>{criador.name}</span>
+              </div>
             ) : (
-              <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Não informado</span>
+              <div style={{ fontSize: '11px', fontStyle: 'italic', color: '#64748b' }}>
+                Não informado
+              </div>
             )}
           </div>
         );
@@ -295,19 +314,33 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
     {
       key: 'metadados',
       title: 'Informações',
-      width: '25%',
+      width: '20%',
+      align: 'left',
       render: (_, record: Qualificacao) => {
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: '#64748b' }}>
-            {record.created_at && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span>📅 Criada em {new Date(record.created_at).toLocaleDateString('pt-BR')}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', alignItems: 'center' }}>
+            {/* Status */}
+            {record.ativo !== undefined && (
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <span
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    backgroundColor: record.ativo ? '#d4edda' : '#f8d7da',
+                    color: record.ativo ? '#155724' : '#721c24'
+                  }}
+                >
+                  {record.ativo ? 'Ativa' : 'Inativa'}
+                </span>
               </div>
             )}
-            {record.qualificacao_organizacao && record.qualificacao_organizacao.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Users size={12} />
-                <span>{record.qualificacao_organizacao.length} organização(ões)</span>
+            {/* Criado em */}
+            {record.created_at && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '12px' }}>
+                <Clock size={12} />
+                <span>Criada em {formatarDataHora(record.created_at)}</span>
               </div>
             )}
           </div>

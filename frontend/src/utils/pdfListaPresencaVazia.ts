@@ -107,12 +107,27 @@ export async function gerarPDFListaPresencaVazia({
     doc.setFontSize(11);
     doc.text('Data:', margin, yPos);
     doc.setFont(undefined, 'normal');
-    const dataFormatada = new Date(data).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      weekday: 'long'
-    });
+    // Função helper para formatar data corretamente (evita problemas de timezone)
+    const formatarDataPDF = (dataString: string): string => {
+      const partes = String(dataString).split('T')[0].split('-');
+      if (partes.length === 3) {
+        const data = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+        return data.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          weekday: 'long'
+        });
+      }
+      return new Date(dataString).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        weekday: 'long'
+      });
+    };
+    
+    const dataFormatada = formatarDataPDF(data);
     doc.text(dataFormatada, margin + 20, yPos);
     yPos += 7;
   }

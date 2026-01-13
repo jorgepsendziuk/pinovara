@@ -82,7 +82,7 @@ class QualificacaoService {
         where: whereConditions,
         skip,
         take: limit,
-        orderBy: { created_at: 'desc' },
+        orderBy: { id: 'desc' },
         include: {
           qualificacao_organizacao: {
             select: {

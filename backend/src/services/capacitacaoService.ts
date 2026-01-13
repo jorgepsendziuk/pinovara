@@ -21,7 +21,7 @@ class CapacitacaoService {
    * Listar capacitações com filtros e paginação
    */
   async list(filters: CapacitacaoFilters = {}): Promise<CapacitacaoListResponse> {
-    const { page = 1, limit = 10, id_qualificacao, status, id_organizacao, created_by, data_inicio, data_fim } = filters;
+    const { page = 1, limit = 10, id_qualificacao, status, id_organizacao, created_by, data_inicio, data_fim, titulo } = filters;
     const filterByUser = (filters as any).filterByUser;
     const userId = (filters as any).userId;
 
@@ -36,6 +36,7 @@ class CapacitacaoService {
     }
 
     // Se precisa filtrar por usuário (não admin/supervisor), mostrar apenas as que criou + as compartilhadas
+    let userFilter: any = null;
     if (filterByUser && userId) {
       // Buscar IDs de capacitações compartilhadas com o usuário (se a tabela existir)
       let idsCompartilhadas: number[] = [];
@@ -50,12 +51,34 @@ class CapacitacaoService {
         console.warn('Tabela capacitacao_tecnico ainda não existe ou erro ao buscar compartilhamentos:', error.message);
       }
 
-      whereConditions.OR = [
-        { created_by: userId }, // Capacitações que o usuário criou
-        ...(idsCompartilhadas.length > 0 ? [{ id: { in: idsCompartilhadas } }] : []) // Capacitações compartilhadas com o usuário
-      ];
+      userFilter = {
+        OR: [
+          { created_by: userId }, // Capacitações que o usuário criou
+          ...(idsCompartilhadas.length > 0 ? [{ id: { in: idsCompartilhadas } }] : []) // Capacitações compartilhadas com o usuário
+        ]
+      };
     } else if (created_by) {
       whereConditions.created_by = created_by;
+    }
+
+    // Filtro por título (busca no título da capacitação ou no título da qualificação vinculada)
+    let tituloFilter: any = null;
+    if (titulo) {
+      tituloFilter = {
+        OR: [
+          { titulo: { contains: titulo, mode: 'insensitive' } },
+          { qualificacao: { titulo: { contains: titulo, mode: 'insensitive' } } }
+        ]
+      };
+    }
+
+    // Combinar filtros de título e usuário usando AND
+    if (tituloFilter && userFilter) {
+      whereConditions.AND = [tituloFilter, userFilter];
+    } else if (tituloFilter) {
+      Object.assign(whereConditions, tituloFilter);
+    } else if (userFilter) {
+      Object.assign(whereConditions, userFilter);
     }
 
     if (data_inicio) {
@@ -86,7 +109,7 @@ class CapacitacaoService {
         where: whereConditions,
         skip,
         take: limit,
-        orderBy: { data_inicio: 'desc' },
+        orderBy: { id: 'desc' },
         include: {
           qualificacao: {
             select: {

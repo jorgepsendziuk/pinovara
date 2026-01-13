@@ -28,6 +28,7 @@ export interface CapacitacaoFilters {
   created_by?: number;
   data_inicio?: Date;
   data_fim?: Date;
+  titulo?: string;
   page?: number;
   limit?: number;
 }

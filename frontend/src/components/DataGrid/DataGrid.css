@@ -6,8 +6,11 @@
   background: var(--bg-primary);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* ========== HEADER ========== */
@@ -95,7 +98,11 @@
 .data-grid-table-container {
   flex: 1;
   overflow-x: auto;
+  overflow-y: visible;
   min-height: 200px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .data-grid-table {

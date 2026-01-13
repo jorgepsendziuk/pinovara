@@ -3,6 +3,13 @@
 .qualificacoes-module {
   min-height: 100vh;
   background: #f8fafc;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  position: relative;
+  margin: 0;
+  padding: 0;
 }
 
 /* ========== CONTENT LAYOUTS ========== */
@@ -43,8 +50,12 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  margin: 24px;
-  overflow: hidden;
+  margin: 16px;
+  overflow-x: auto;
+  overflow-y: visible;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ========== LOADING STATES ========== */
@@ -199,6 +210,95 @@
   .lista-content {
     margin: 12px;
     padding: 16px !important;
+  }
+}
+
+/* ========== CALENDAR STYLES ========== */
+
+.rbc-calendar {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+}
+
+.rbc-header {
+  overflow: visible !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+}
+
+.rbc-time-view,
+.rbc-month-view,
+.rbc-agenda-view {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+}
+
+.rbc-time-content {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
+
+.rbc-month-view {
+  table-layout: auto !important;
+}
+
+.rbc-month-view table {
+  width: 100% !important;
+  min-width: 600px !important;
+}
+
+.rbc-day-bg,
+.rbc-date-cell {
+  min-width: 80px !important;
+}
+
+.rbc-event {
+  overflow: visible !important;
+}
+
+.rbc-event-content {
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+@media (max-width: 1024px) {
+  .lista-content {
+    margin: 12px;
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .rbc-month-view table {
+    min-width: 500px !important;
+  }
+  
+  .rbc-day-bg,
+  .rbc-date-cell {
+    min-width: 60px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .qualificacoes-module {
+    padding: 0;
+  }
+  
+  .lista-content {
+    margin: 8px;
+    max-width: 100%;
+    width: 100%;
+    padding: 12px !important;
+  }
+  
+  .rbc-month-view table {
+    min-width: 400px !important;
+  }
+  
+  .rbc-day-bg,
+  .rbc-date-cell {
+    min-width: 50px !important;
   }
 }
 

@@ -37,10 +37,16 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: calc(100% - 250px);
+  max-width: calc(100% - 250px);
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .dashboard-layout .sidebar.collapsed + .main-content {
   margin-left: 70px;
+  width: calc(100% - 70px);
+  max-width: calc(100% - 70px);
 }
 
 .dashboard-main {
@@ -396,6 +402,8 @@
 @media (max-width: 1024px) {
   .main-content {
     margin-left: 70px;
+    width: calc(100% - 70px);
+    max-width: calc(100% - 70px);
   }
 
   .mapa-main-container {
@@ -434,6 +442,8 @@
 
   .main-content {
     margin-left: 0;
+    width: 100%;
+    max-width: 100%;
   }
 
   .info-grid,

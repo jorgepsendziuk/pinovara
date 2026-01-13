@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import DataGrid, { DataGridColumn } from '../../components/DataGrid/DataGrid';
 import { capacitacaoAPI } from '../../services/capacitacaoService';
 import { Capacitacao, CapacitacaoListResponse } from '../../types/capacitacao';
-import { Edit, Calendar, FileText, Printer, QrCode, Eye, Plus, Search, Loader2, MapPin, Clock, ExternalLink, CalendarDays, List, CheckCircle } from 'lucide-react';
+import { Edit, Calendar, FileText, Printer, QrCode, Eye, Plus, Search, Loader2, MapPin, Clock, ExternalLink, CalendarDays, List, CheckCircle, Download, BarChart3, User } from 'lucide-react';
 import { gerarPDFQRCodeInscricao } from '../../utils/pdfQRCodeInscricao';
 import { gerarPDFQRCodeAvaliacao } from '../../utils/pdfQRCodeAvaliacao';
+import { gerarPdfConteudoCapacitacao } from '../../utils/pdfConteudoCapacitacao';
+import { gerarPdfRelatorioCapacitacao } from '../../utils/pdfRelatorioCapacitacao';
 import { Calendar as BigCalendar, dateFnsLocalizer, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -37,7 +39,34 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [currentView, setCurrentView] = useState<View>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [tooltipEvent, setTooltipEvent] = useState<any>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const pageSize = 20;
+
+  // Função helper para formatar data corretamente (evita problemas de timezone)
+  const formatarData = (dataString: string | undefined): string => {
+    if (!dataString) return '';
+    // Se a data vem como string no formato YYYY-MM-DD, criar Date corretamente
+    const partes = dataString.split('T')[0].split('-');
+    if (partes.length === 3) {
+      // Criar data no timezone local (ano, mês-1, dia)
+      const data = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+      return data.toLocaleDateString('pt-BR');
+    }
+    // Fallback para o método padrão
+    return new Date(dataString).toLocaleDateString('pt-BR');
+  };
+
+  // Função helper para formatar data/hora (para created_at)
+  const formatarDataHora = (dataString: string | undefined): string => {
+    if (!dataString) return '';
+    try {
+      const data = new Date(dataString);
+      return data.toLocaleDateString('pt-BR');
+    } catch {
+      return formatarData(dataString);
+    }
+  };
 
   useEffect(() => {
     carregarCapacitacoes();
@@ -97,10 +126,10 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
     {
       key: 'actions',
       title: 'Ações',
-      width: '20%',
+      width: '10%',
       align: 'left',
       render: (_, record: Capacitacao) => (
-        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-start', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-start', alignItems: 'center' }}>
           <button
             onClick={() => window.open(`/capacitacao/${record.link_inscricao}`, '_blank')}
             title="Ver Página Pública do Curso"
@@ -219,6 +248,76 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
           >
             <QrCode size={16} />
           </button>
+          <button
+            onClick={async () => {
+              try {
+                const capacitacaoCompleta = await capacitacaoAPI.getById(record.id!);
+                await gerarPdfConteudoCapacitacao(capacitacaoCompleta);
+              } catch (error) {
+                console.error('Erro ao gerar PDF:', error);
+                alert('Erro ao gerar PDF do conteúdo da capacitação');
+              }
+            }}
+            title="Gerar PDF do conteúdo"
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #3b82f6',
+              background: 'white',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              color: '#3b82f6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#3b82f6';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.color = '#3b82f6';
+            }}
+          >
+            <Download size={16} />
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                const capacitacaoCompleta = await capacitacaoAPI.getById(record.id!);
+                const inscricoes = await capacitacaoAPI.listInscricoes(record.id!);
+                const presencas = await capacitacaoAPI.listPresencas(record.id!);
+                await gerarPdfRelatorioCapacitacao(capacitacaoCompleta, inscricoes, presencas);
+              } catch (error) {
+                console.error('Erro ao gerar PDF:', error);
+                alert('Erro ao gerar PDF do relatório da capacitação');
+              }
+            }}
+            title="Gerar PDF do relatório"
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #10b981',
+              background: 'white',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              color: '#10b981',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#10b981';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.color = '#10b981';
+            }}
+          >
+            <BarChart3 size={16} />
+          </button>
         </div>
       )
     },
@@ -230,7 +329,7 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
       render: (titulo: string, record: Capacitacao) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <span style={{ fontWeight: '600', color: '#3b2313' }}>
-            {titulo || record.qualificacao?.titulo || 'Sem título'}
+            #{record.id} - {titulo || record.qualificacao?.titulo || 'Sem título'}
           </span>
           {record.qualificacao && (
             <span style={{ fontSize: '12px', color: '#64748b' }}>
@@ -243,19 +342,25 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
     {
       key: 'datas',
       title: 'Período',
-      width: '16%',
+      width: '18%',
       render: (_, record: Capacitacao) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
           {record.data_inicio && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
               <Calendar size={14} />
-              <span>Início: {new Date(record.data_inicio).toLocaleDateString('pt-BR')}</span>
+              <span>Início: {formatarData(record.data_inicio)}</span>
             </div>
           )}
           {record.data_fim && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
               <Calendar size={14} />
-              <span>Término: {new Date(record.data_fim).toLocaleDateString('pt-BR')}</span>
+              <span>Término: {formatarData(record.data_fim)}</span>
+            </div>
+          )}
+          {record.turno && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
+              <Clock size={14} />
+              <span>Turno: {record.turno}</span>
             </div>
           )}
         </div>
@@ -279,78 +384,62 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
       )
     },
     {
-      key: 'status',
-      title: 'Status',
-      dataIndex: 'status',
-      width: '10%',
-      align: 'center',
-      render: (status: string) => {
-        const colors = getStatusColor(status);
-        return (
-          <span
-            style={{
-              padding: '4px 12px',
-              borderRadius: '12px',
-              fontSize: '12px',
-              fontWeight: '500',
-              backgroundColor: colors.bg,
-              color: colors.color
-            }}
-          >
-            {status === 'planejada' ? 'Planejada' :
-             status === 'em_andamento' ? 'Em Andamento' :
-             status === 'concluida' ? 'Concluída' :
-             status === 'cancelada' ? 'Cancelada' : status}
-          </span>
-        );
-      }
-    },
-    {
-      key: 'criado_por',
-      title: 'Criado por',
-      width: '12%',
-      render: (_, record: Capacitacao) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
-          {record.tecnico_criador ? (
-            <>
-              <span style={{ fontWeight: '500', color: '#3b2313' }}>
-                {record.tecnico_criador.name}
-              </span>
-              <span style={{ fontSize: '12px', color: '#64748b' }}>
-                {record.tecnico_criador.email}
-              </span>
-            </>
-          ) : (
-            <span style={{ fontStyle: 'italic', color: '#64748b' }}>Não informado</span>
-          )}
-        </div>
-      )
-    },
-    {
       key: 'metadados',
       title: 'Informações',
-      width: '6%',
-      render: (_, record: Capacitacao) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: '#64748b' }}>
-          {record.created_at && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Clock size={12} />
-              <span>Criada em {new Date(record.created_at).toLocaleDateString('pt-BR')}</span>
-            </div>
-          )}
-          {record.turno && (
-            <div>
-              <span>Turno: {record.turno}</span>
-            </div>
-          )}
-        </div>
-      )
+      width: '18%',
+      align: 'left',
+      render: (_, record: Capacitacao) => {
+        const colors = getStatusColor(record.status || '');
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', alignItems: 'center' }}>
+            {/* Status */}
+            {record.status && (
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <span
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    backgroundColor: colors.bg,
+                    color: colors.color
+                  }}
+                >
+                  {record.status === 'planejada' ? 'Planejada' :
+                   record.status === 'em_andamento' ? 'Em Andamento' :
+                   record.status === 'concluida' ? 'Concluída' :
+                   record.status === 'cancelada' ? 'Cancelada' : record.status}
+                </span>
+              </div>
+            )}
+            {/* Criado em e por */}
+            {record.created_at && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '12px' }}>
+                  <Clock size={12} />
+                  <span>Criada em {formatarDataHora(record.created_at)} por:</span>
+                </div>
+                {record.tecnico_criador ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '600', color: '#3b2313', marginLeft: '16px' }}>
+                    <User size={12} />
+                    <span>{record.tecnico_criador.name}</span>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '11px', fontStyle: 'italic', color: '#64748b', marginLeft: '16px' }}>
+                    Não informado
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      }
     }
   ];
 
   if (loading && capacitacoes.length === 0) {
     return (
-      <div className="qualificacoes-module">
+      <div className="qualificacoes-module" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
         <div className="loading-container">
           <Loader2 size={32} className="spinning" />
           <p>Carregando capacitações...</p>
@@ -360,16 +449,19 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
   }
 
   return (
-    <div className="qualificacoes-module">
+    <div className="qualificacoes-module" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
       <div style={{ 
-        padding: '24px 32px', 
+        padding: '16px', 
         background: 'white',
         borderBottom: '1px solid #e2e8f0',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
-        gap: '16px'
+        gap: '12px',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box'
       }}>
         <div>
           <h1 style={{ 
@@ -461,9 +553,10 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
         </div>
       </div>
 
-      <div className="lista-content" style={{ padding: '24px' }}>
+      <div className="lista-content" style={{ padding: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'auto', overflowY: 'visible' }}>
         {viewMode === 'calendar' ? (
-          <div style={{ height: '600px', marginTop: '20px' }}>
+          <div style={{ width: '100%', marginTop: '0', boxSizing: 'border-box', maxWidth: '100%', overflowX: 'auto' }}>
+            <div style={{ width: '100%', overflowX: 'auto', boxSizing: 'border-box', maxWidth: '100%', minWidth: '0' }}>
             <BigCalendar
               localizer={localizer}
               events={capacitacoes
@@ -520,17 +613,26 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
                     titulo = `${titulo}\n${partes.join(' | ')}`;
                   }
                   
+                  // Criar datas corretamente para o calendário (evita problemas de timezone)
+                  const criarDataLocal = (dataString: string): Date => {
+                    const partes = dataString.split('T')[0].split('-');
+                    if (partes.length === 3) {
+                      return new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+                    }
+                    return new Date(dataString);
+                  };
+                  
                   return {
                     title: titulo,
-                    start: new Date(c.data_inicio!),
-                    end: c.data_fim ? new Date(c.data_fim) : new Date(c.data_inicio!),
+                    start: criarDataLocal(c.data_inicio!),
+                    end: c.data_fim ? criarDataLocal(c.data_fim) : criarDataLocal(c.data_inicio!),
                     resource: c,
                     allDay: false
                   };
                 })}
               startAccessor="start"
               endAccessor="end"
-              style={{ height: '100%' }}
+              style={{ height: '600px', minHeight: '600px', width: '100%' }}
               view={currentView}
               onView={setCurrentView}
               date={currentDate}
@@ -583,12 +685,120 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
                 event: 'Evento',
                 noEventsInRange: 'Não há capacitações neste período.'
               }}
+              components={{
+                event: ({ event }: any) => {
+                  const capacitacao = event.resource;
+                  return (
+                    <div
+                      onMouseEnter={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTooltipEvent(capacitacao);
+                        setTooltipPosition({ x: rect.left + rect.width / 2, y: rect.top });
+                      }}
+                      onMouseLeave={() => setTooltipEvent(null)}
+                      style={{ cursor: 'pointer', width: '100%', height: '100%' }}
+                    >
+                      <div style={{ padding: '2px 4px', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {event.title.split('\n')[0]}
+                      </div>
+                    </div>
+                  );
+                }
+              }}
             />
+            </div>
+            {/* Tooltip */}
+            {tooltipEvent && (
+              <div
+                style={{
+                  position: 'fixed',
+                  left: `${Math.min(tooltipPosition.x, window.innerWidth - 180)}px`,
+                  top: `${tooltipPosition.y - 10}px`,
+                  transform: 'translateX(-50%) translateY(-100%)',
+                  background: 'white',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  zIndex: 1000,
+                  minWidth: '200px',
+                  maxWidth: '300px',
+                  width: 'auto',
+                  fontSize: '12px',
+                  pointerEvents: 'none',
+                  maxHeight: '80vh',
+                  overflowY: 'auto',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <div style={{ fontWeight: '600', color: '#3b2313', marginBottom: '8px', fontSize: '13px' }}>
+                  {tooltipEvent.titulo || tooltipEvent.qualificacao?.titulo || 'Capacitação'}
+                </div>
+                {tooltipEvent.data_inicio && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', marginBottom: '4px' }}>
+                    <Calendar size={12} />
+                    <span>Início: {formatarData(tooltipEvent.data_inicio)}</span>
+                  </div>
+                )}
+                {tooltipEvent.data_fim && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', marginBottom: '4px' }}>
+                    <Calendar size={12} />
+                    <span>Término: {formatarData(tooltipEvent.data_fim)}</span>
+                  </div>
+                )}
+                {tooltipEvent.local && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', marginBottom: '4px' }}>
+                    <MapPin size={12} />
+                    <span>{tooltipEvent.local}</span>
+                  </div>
+                )}
+                {tooltipEvent.turno && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', marginBottom: '4px' }}>
+                    <Clock size={12} />
+                    <span>Turno: {tooltipEvent.turno}</span>
+                  </div>
+                )}
+                {tooltipEvent.status && (
+                  <div style={{ marginTop: '6px' }}>
+                    <span
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        backgroundColor: getStatusColor(tooltipEvent.status).bg,
+                        color: getStatusColor(tooltipEvent.status).color
+                      }}
+                    >
+                      {tooltipEvent.status === 'planejada' ? 'Planejada' :
+                       tooltipEvent.status === 'em_andamento' ? 'Em Andamento' :
+                       tooltipEvent.status === 'concluida' ? 'Concluída' :
+                       tooltipEvent.status === 'cancelada' ? 'Cancelada' : tooltipEvent.status}
+                    </span>
+                  </div>
+                )}
+                {tooltipEvent.organizacoes_completas && tooltipEvent.organizacoes_completas.length > 0 && (
+                  <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #e2e8f0' }}>
+                    <div style={{ fontWeight: '500', color: '#3b2313', marginBottom: '4px', fontSize: '11px' }}>Organizações:</div>
+                    {tooltipEvent.organizacoes_completas.slice(0, 3).map((org: any, idx: number) => (
+                      <div key={idx} style={{ fontSize: '11px', color: '#64748b', marginBottom: '2px' }}>
+                        • {org.nome}
+                      </div>
+                    ))}
+                    {tooltipEvent.organizacoes_completas.length > 3 && (
+                      <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic' }}>
+                        +{tooltipEvent.organizacoes_completas.length - 3} mais
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <>
-            <div style={{ marginBottom: '20px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ position: 'relative', flex: '1', minWidth: '300px' }}>
+            <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+              <div style={{ position: 'relative', flex: '1', minWidth: '150px', maxWidth: '100%', width: '100%' }}>
                 <Search
                   size={18}
                   style={{
@@ -631,8 +841,10 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
                   border: '1px solid #e2e8f0',
                   borderRadius: '8px',
                   fontSize: '14px',
-                  minWidth: '180px',
-                  cursor: 'pointer'
+                  minWidth: '150px',
+                  maxWidth: '100%',
+                  cursor: 'pointer',
+                  boxSizing: 'border-box'
                 }}
               >
                 <option value="">Todos os status</option>
@@ -662,29 +874,31 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
               </button>
             </div>
 
-            <DataGrid
-              columns={columns}
-              dataSource={capacitacoes}
-              loading={loading}
-              rowKey="id"
-              pagination={{
-                current: page,
-                pageSize,
-                total,
-                onChange: (newPage) => setPage(newPage)
-              }}
-              emptyState={{
-                title: 'Nenhuma capacitação encontrada',
-                description: filtroTitulo || filtroStatus
-                  ? 'Tente ajustar os filtros de busca'
-                  : 'Comece criando sua primeira capacitação',
-                icon: <Calendar size={48} color="#cbd5e1" />,
-                action: {
-                  label: 'Criar Capacitação',
-                  onClick: () => onNavigate('cadastro-capacitacao')
-                }
-              }}
-            />
+            <div style={{ width: '100%', maxWidth: '100%', overflowX: 'auto', boxSizing: 'border-box' }}>
+              <DataGrid
+                columns={columns}
+                dataSource={capacitacoes}
+                loading={loading}
+                rowKey="id"
+                pagination={{
+                  current: page,
+                  pageSize,
+                  total,
+                  onChange: (newPage) => setPage(newPage)
+                }}
+                emptyState={{
+                  title: 'Nenhuma capacitação encontrada',
+                  description: filtroTitulo || filtroStatus
+                    ? 'Tente ajustar os filtros de busca'
+                    : 'Comece criando sua primeira capacitação',
+                  icon: <Calendar size={48} color="#cbd5e1" />,
+                  action: {
+                    label: 'Criar Capacitação',
+                    onClick: () => onNavigate('cadastro-capacitacao')
+                  }
+                }}
+              />
+            </div>
           </>
         )}
       </div>

@@ -124,62 +124,70 @@ export async function gerarPDFQRCodeInscricao(capacitacao: Capacitacao) {
 
   // Título da página
   doc.setTextColor(59, 35, 19); // #3b2313
+  doc.setFontSize(14);
+  doc.setFont(undefined, 'bold');
+  doc.text('CAPACITAÇÃO:', pageWidth / 2, yPos, { align: 'center' });
+  yPos += 8;
+  
+  // Título da capacitação em destaque
+  const titulo = capacitacao.titulo || capacitacao.qualificacao?.titulo || 'Não informado';
   doc.setFontSize(16);
   doc.setFont(undefined, 'bold');
-  doc.text('INSCRIÇÃO NA CAPACITAÇÃO', pageWidth / 2, yPos, { align: 'center' });
-  yPos += 12;
-
-  // Informações destacadas da Capacitação
-  doc.setFillColor(245, 247, 250); // Fundo cinza claro para destacar
-  doc.rect(margin, yPos, pageWidth - 2 * margin, 40, 'F');
-  
-  doc.setTextColor(59, 35, 19); // #3b2313
-  doc.setFontSize(13);
-  doc.setFont(undefined, 'bold');
-  doc.text('Capacitação:', margin + 3, yPos + 7);
-  
-  doc.setFont(undefined, 'normal');
-  doc.setFontSize(12);
-  const titulo = capacitacao.titulo || capacitacao.qualificacao?.titulo || 'Não informado';
-  const tituloLinhas = doc.splitTextToSize(titulo, pageWidth - 2 * margin - 6);
-  doc.text(tituloLinhas, margin + 3, yPos + 14);
-  
-  yPos += 20;
+  const tituloLinhas = doc.splitTextToSize(titulo, pageWidth - 2 * margin);
+  tituloLinhas.forEach((linha: string) => {
+    doc.text(linha, pageWidth / 2, yPos, { align: 'center' });
+    yPos += 6;
+  });
+  yPos += 4; // Espaçamento adicional após o título
   
   // Organização
   if (capacitacao.organizacoes_completas && capacitacao.organizacoes_completas.length > 0) {
     const orgs = capacitacao.organizacoes_completas.map(org => org.nome).join(', ');
     doc.setFontSize(11);
-    doc.text(`Organização: ${orgs}`, margin + 3, yPos);
+    doc.text(`Organização: ${orgs}`, margin, yPos);
     yPos += 6;
   }
   
   // Local
   if (capacitacao.local) {
-    doc.text(`Local: ${capacitacao.local}`, margin + 3, yPos);
+    doc.text(`Local: ${capacitacao.local}`, margin, yPos);
     yPos += 6;
   }
   
+  // Função helper para formatar data corretamente (evita problemas de timezone)
+  const formatarData = (dataString: string | undefined): string => {
+    if (!dataString) return '';
+    // Se a data vem como string no formato YYYY-MM-DD, criar Date corretamente
+    const partes = dataString.split('T')[0].split('-');
+    if (partes.length === 3) {
+      // Criar data no timezone local (ano, mês-1, dia)
+      const data = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+      return data.toLocaleDateString('pt-BR');
+    }
+    // Fallback para o método padrão
+    return new Date(dataString).toLocaleDateString('pt-BR');
+  };
+
   // Datas e Horário
   if (capacitacao.data_inicio || capacitacao.data_fim) {
     let periodo = '';
     if (capacitacao.data_inicio) {
-      periodo = new Date(capacitacao.data_inicio).toLocaleDateString('pt-BR');
+      periodo = formatarData(capacitacao.data_inicio);
     }
     if (capacitacao.data_fim) {
       periodo += periodo ? ' a ' : '';
-      periodo += new Date(capacitacao.data_fim).toLocaleDateString('pt-BR');
+      periodo += formatarData(capacitacao.data_fim);
     }
     if (capacitacao.turno) {
       periodo += ` - ${capacitacao.turno}`;
     }
-    doc.text(`Período: ${periodo}`, margin + 3, yPos);
+    doc.text(`Período: ${periodo}`, margin, yPos);
     yPos += 6;
   }
   
   // Técnico criador
   if (capacitacao.tecnico_criador) {
-    doc.text(`Instrutor: ${capacitacao.tecnico_criador.name}`, margin + 3, yPos);
+    doc.text(`Instrutor: ${capacitacao.tecnico_criador.name}`, margin, yPos);
   }
 
   yPos += 18;
@@ -232,7 +240,7 @@ export async function gerarPDFQRCodeInscricao(capacitacao: Capacitacao) {
     if (yPos > pageHeight - 15) {
       yPos = pageHeight - 15;
     }
-    doc.text(instrucao, margin + 3, yPos);
+    doc.text(instrucao, margin, yPos);
     yPos += 5;
   });
   

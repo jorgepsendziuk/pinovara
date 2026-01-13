@@ -135,9 +135,31 @@ function GestaoPresenca({ idCapacitacao, onNavigate }: GestaoPresencaProps) {
     });
   };
 
-  const formatarData = (data: string | Date | null | undefined): string => {
-    if (!data) return '-';
-    return new Date(data).toLocaleDateString('pt-BR', {
+  // Função helper para formatar data corretamente (evita problemas de timezone)
+  const formatarData = (dataString: string | Date | null | undefined): string => {
+    if (!dataString) return '-';
+    
+    // Se for Date, converter para string primeiro
+    let dataStr: string;
+    if (dataString instanceof Date) {
+      dataStr = dataString.toISOString().split('T')[0];
+    } else {
+      dataStr = String(dataString);
+    }
+    
+    // Se a data vem como string no formato YYYY-MM-DD, criar Date corretamente
+    const partes = dataStr.split('T')[0].split('-');
+    if (partes.length === 3) {
+      // Criar data no timezone local (ano, mês-1, dia)
+      const data = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+      return data.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+    // Fallback para o método padrão
+    return new Date(dataString).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
