@@ -325,7 +325,7 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
       key: 'titulo',
       title: 'Capacitação',
       dataIndex: 'titulo',
-      width: '22%',
+      width: '20%',
       render: (titulo: string, record: Capacitacao) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <span style={{ fontWeight: '600', color: '#3b2313' }}>
@@ -342,7 +342,7 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
     {
       key: 'datas',
       title: 'Período',
-      width: '18%',
+      width: '16%',
       render: (_, record: Capacitacao) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
           {record.data_inicio && (
@@ -368,17 +368,46 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
     },
     {
       key: 'local',
-      title: 'Local',
-      width: '14%',
+      title: 'Organização(s) / Local',
+      width: '20%',
       render: (_, record: Capacitacao) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b' }}>
-          {record.local ? (
-            <>
-              <MapPin size={14} />
-              <span>{record.local}</span>
-            </>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
+          {/* Organizações */}
+          {record.organizacoes_completas && record.organizacoes_completas.length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
+              {record.organizacoes_completas.slice(0, 2).map((org, idx) => (
+                <span 
+                  key={idx}
+                  style={{ 
+                    padding: '2px 6px',
+                    backgroundColor: '#f0f9ff',
+                    color: '#056839',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '500'
+                  }}
+                >
+                  {org.nome}
+                </span>
+              ))}
+              {record.organizacoes_completas.length > 2 && (
+                <span style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic' }}>
+                  +{record.organizacoes_completas.length - 2}
+                </span>
+              )}
+            </div>
           ) : (
-            <span style={{ fontStyle: 'italic' }}>Não informado</span>
+            <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>Sem organizações</span>
+          )}
+          
+          {/* Local */}
+          {record.local ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '12px' }}>
+              <MapPin size={12} />
+              <span>{record.local}</span>
+            </div>
+          ) : (
+            <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>Local não informado</span>
           )}
         </div>
       )
@@ -386,7 +415,7 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
     {
       key: 'metadados',
       title: 'Informações',
-      width: '18%',
+      width: '16%',
       align: 'left',
       render: (_, record: Capacitacao) => {
         const colors = getStatusColor(record.status || '');

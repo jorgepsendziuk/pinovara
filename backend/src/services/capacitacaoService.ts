@@ -156,12 +156,63 @@ class CapacitacaoService {
       }
     }) : [];
 
+    // Buscar todas as organizações vinculadas
+    const todasOrganizacoesIds = capacitacoes
+      .flatMap(c => c.capacitacao_organizacao.map(co => co.id_organizacao))
+      .filter((id, index, self) => self.indexOf(id) === index); // Remove duplicatas
+
+    const organizacoesCompletas = todasOrganizacoesIds.length > 0 ? await prisma.organizacao.findMany({
+      where: {
+        id: { in: todasOrganizacoesIds }
+      },
+      select: {
+        id: true,
+        nome: true,
+        id_tecnico: true
+      }
+    }) : [];
+
+    // Buscar informações dos técnicos das organizações
+    const tecnicosIds = organizacoesCompletas
+      .filter(org => org.id_tecnico)
+      .map(org => org.id_tecnico!)
+      .filter((id, index, self) => self.indexOf(id) === index); // Remove duplicatas
+
+    const tecnicos = tecnicosIds.length > 0 ? await prisma.users.findMany({
+      where: {
+        id: { in: tecnicosIds }
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true
+      }
+    }) : [];
+
+    // Mapear organizações com seus técnicos
+    const organizacoesComTecnicosMap = new Map(
+      organizacoesCompletas.map(org => [
+        org.id,
+        {
+          id: org.id,
+          nome: org.nome,
+          tecnico: org.id_tecnico ? tecnicos.find(t => t.id === org.id_tecnico) : null
+        }
+      ])
+    );
+
     // Formatar resposta
     const formattedCapacitacoes = capacitacoes.map(c => {
       const criador = c.created_by ? criadores.find(cr => cr.id === c.created_by) : null;
+      const organizacoesIds = c.capacitacao_organizacao.map(co => co.id_organizacao);
+      const organizacoesCompletasParaCapacitacao = organizacoesIds
+        .map(id => organizacoesComTecnicosMap.get(id))
+        .filter((org): org is NonNullable<typeof org> => org !== undefined);
+      
       return {
         ...c,
-        organizacoes: c.capacitacao_organizacao.map(co => co.id_organizacao),
+        organizacoes: organizacoesIds,
+        organizacoes_completas: organizacoesCompletasParaCapacitacao,
         equipe_tecnica: (c.capacitacao_tecnico || []).map(ct => ({
           id_tecnico: ct.id_tecnico,
           tecnico: ct.tecnico
