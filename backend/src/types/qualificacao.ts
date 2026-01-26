@@ -14,6 +14,10 @@ export interface Qualificacao {
   created_by?: number;
   organizacoes?: number[];
   instrutores?: number[];
+  validacao_status?: number | null;
+  validacao_usuario?: number | null;
+  validacao_data?: Date | null;
+  validacao_obs?: string | null;
 }
 
 export interface QualificacaoFilters {

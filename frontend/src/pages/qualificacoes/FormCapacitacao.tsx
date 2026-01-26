@@ -5,8 +5,14 @@ import { organizacaoAPI } from '../../services/api';
 import { Capacitacao } from '../../types/capacitacao';
 import { Qualificacao } from '../../types/qualificacao';
 import { Organizacao } from '../../types/organizacao';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import Validacao from '../../components/capacitacoes/Validacao';
+import api from '../../services/api';
+import { ArrowLeft, Save, Loader2, CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import '../../pages/organizacoes/OrganizacoesModule.css';
+import '../../styles/tabs.css';
+
+type AbaAtiva = 'informacoes' | 'validacao';
 
 interface FormCapacitacaoProps {
   id?: number;
@@ -14,11 +20,14 @@ interface FormCapacitacaoProps {
 }
 
 function FormCapacitacao({ id, onNavigate }: FormCapacitacaoProps) {
+  const { isCoordinator, isSupervisor } = useAuth();
   const [loading, setLoading] = useState(false);
   const [carregandoDados, setCarregandoDados] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('informacoes');
   const [qualificacoes, setQualificacoes] = useState<Qualificacao[]>([]);
   const [organizacoes, setOrganizacoes] = useState<Organizacao[]>([]);
   const [organizacoesSelecionadas, setOrganizacoesSelecionadas] = useState<number[]>([]);
+  const [validacaoUsuarioNome, setValidacaoUsuarioNome] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Capacitacao>>({
     id_qualificacao: 0,
     titulo: '',
@@ -30,12 +39,19 @@ function FormCapacitacao({ id, onNavigate }: FormCapacitacaoProps) {
   });
 
   useEffect(() => {
+    // Bloquear acesso de coordenadores e supervisores à edição
+    if (id && (isCoordinator() || isSupervisor())) {
+      alert('Você não tem permissão para editar capacitações. Use as ações na lista para gerar relatórios.');
+      onNavigate('capacitacoes');
+      return;
+    }
+    
     carregarQualificacoes();
     carregarOrganizacoes();
     if (id) {
       carregarCapacitacao();
     }
-  }, [id]);
+  }, [id, isCoordinator, isSupervisor, onNavigate]);
 
   const carregarQualificacoes = async () => {
     try {
@@ -68,9 +84,22 @@ function FormCapacitacao({ id, onNavigate }: FormCapacitacaoProps) {
       });
 
       // Carregar organizações vinculadas
-      if (capacitacao.capacitacao_organizacao) {
-        const ids = capacitacao.capacitacao_organizacao.map(co => co.id_organizacao);
-        setOrganizacoesSelecionadas(ids);
+      if (capacitacao.organizacoes && capacitacao.organizacoes.length > 0) {
+        setOrganizacoesSelecionadas(capacitacao.organizacoes);
+      }
+
+      // Carregar informações do usuário validador
+      if (capacitacao.validacao_usuario) {
+        try {
+          const response = await api.get(`/admin/users/${capacitacao.validacao_usuario}`);
+          if (response.data.success && response.data.data?.user) {
+            setValidacaoUsuarioNome(response.data.data.user.name);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar usuário validador:', error);
+        }
+      } else {
+        setValidacaoUsuarioNome(null);
       }
     } catch (error) {
       console.error('Erro ao carregar capacitação:', error);
@@ -140,6 +169,69 @@ function FormCapacitacao({ id, onNavigate }: FormCapacitacaoProps) {
     }
   };
 
+  const handleUpdateValidacao = async (campo: string, valor: any): Promise<void> => {
+    if (!id) return;
+
+    try {
+      const dados: any = {};
+      
+      if (campo === 'validacao_status') {
+        dados.validacao_status = valor;
+      } else if (campo === 'validacao_obs') {
+        dados.validacao_obs = valor;
+      } else if (campo === 'validacao_usuario') {
+        dados.validacao_usuario = valor;
+      } else if (campo === 'validacao_data') {
+        // A data será definida no backend
+        return;
+      }
+
+      const capacitacaoAtualizada = await capacitacaoAPI.updateValidacao(id, dados);
+      
+      // Atualizar formData com os novos dados
+      setFormData({
+        ...formData,
+        validacao_status: capacitacaoAtualizada.validacao_status,
+        validacao_usuario: capacitacaoAtualizada.validacao_usuario,
+        validacao_data: capacitacaoAtualizada.validacao_data,
+        validacao_obs: capacitacaoAtualizada.validacao_obs
+      });
+
+      // Se atualizou o usuário validador, recarregar o nome
+      if (capacitacaoAtualizada.validacao_usuario && capacitacaoAtualizada.validacao_usuario !== formData.validacao_usuario) {
+        try {
+          const response = await api.get(`/admin/users/${capacitacaoAtualizada.validacao_usuario}`);
+          if (response.data.success && response.data.data?.user) {
+            setValidacaoUsuarioNome(response.data.data.user.name);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar usuário validador:', error);
+        }
+      }
+    } catch (error: any) {
+      console.error('Erro ao atualizar validação:', error);
+      throw error;
+    }
+  };
+
+  const getStatusBadgeColor = (status: number | null | undefined) => {
+    switch (status) {
+      case 2: return '#10b981'; // Verde - VALIDADO
+      case 3: return '#f59e0b'; // Amarelo - PENDÊNCIA
+      case 4: return '#ef4444'; // Vermelho - REPROVADO
+      default: return '#9ca3af'; // Cinza - NÃO VALIDADO
+    }
+  };
+
+  const getStatusIcon = (status: number | null | undefined) => {
+    switch (status) {
+      case 2: return CheckCircle;
+      case 3: return AlertCircle;
+      case 4: return XCircle;
+      default: return Clock;
+    }
+  };
+
   if (carregandoDados && id) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
@@ -198,8 +290,57 @@ function FormCapacitacao({ id, onNavigate }: FormCapacitacaoProps) {
         </button>
       </div>
 
-      <div className="lista-content" style={{ padding: '24px', maxWidth: '900px', margin: '24px auto' }}>
-        <form onSubmit={handleSubmit}>
+      {/* Tabs Navigation */}
+      {id && (
+        <div className="tabs-navigation" style={{ margin: '24px 32px 0' }}>
+          <button
+            className={`tab-button ${abaAtiva === 'informacoes' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('informacoes')}
+            title="Informações da Capacitação"
+          >
+            <span>Informações</span>
+          </button>
+          {!isCoordinator() && (
+            <button
+              className={`tab-button ${abaAtiva === 'validacao' ? 'active' : ''}`}
+              onClick={() => setAbaAtiva('validacao')}
+              title="Validação"
+              style={{
+                background: abaAtiva === 'validacao' 
+                  ? '#056839'
+                  : formData.validacao_status === 2
+                    ? '#d4edda'
+                    : formData.validacao_status === 3
+                      ? '#fff3cd'
+                      : formData.validacao_status === 4
+                        ? '#f8d7da'
+                        : '#f3f4f6',
+                color: abaAtiva === 'validacao' 
+                  ? 'white'
+                  : formData.validacao_status === 2
+                    ? '#155724'
+                    : formData.validacao_status === 3
+                      ? '#856404'
+                      : formData.validacao_status === 4
+                        ? '#721c24'
+                        : '#6b7280'
+              }}
+            >
+              {(() => {
+                const StatusIcon = getStatusIcon(formData.validacao_status);
+                return <StatusIcon size={16} />;
+              })()}
+              <span>Validação</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Tab Content */}
+      <div className="tab-content" style={{ padding: '24px 32px' }}>
+        {abaAtiva === 'informacoes' && (
+          <div className="lista-content" style={{ padding: '24px', maxWidth: '900px', margin: '0 auto' }}>
+            <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#3b2313' }}>
               Qualificação *
@@ -445,6 +586,47 @@ function FormCapacitacao({ id, onNavigate }: FormCapacitacaoProps) {
             </button>
           </div>
         </form>
+        </div>
+        )}
+
+        {abaAtiva === 'validacao' && id && (
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+            <Validacao
+              capacitacaoId={id}
+              validacaoStatus={formData.validacao_status || null}
+              validacaoUsuario={formData.validacao_usuario || null}
+              validacaoData={formData.validacao_data ? new Date(formData.validacao_data) : null}
+              validacaoObs={formData.validacao_obs || null}
+              validacaoUsuarioNome={validacaoUsuarioNome}
+              onUpdate={handleUpdateValidacao}
+              onUpdateAll={async (dados) => {
+                if (!id) return;
+                try {
+                  const capacitacaoAtualizada = await capacitacaoAPI.updateValidacao(id, dados);
+                  setFormData({
+                    ...formData,
+                    validacao_status: capacitacaoAtualizada.validacao_status,
+                    validacao_usuario: capacitacaoAtualizada.validacao_usuario,
+                    validacao_data: capacitacaoAtualizada.validacao_data,
+                    validacao_obs: capacitacaoAtualizada.validacao_obs
+                  });
+                  if (capacitacaoAtualizada.validacao_usuario && capacitacaoAtualizada.validacao_usuario !== formData.validacao_usuario) {
+                    try {
+                      const response = await api.get(`/admin/users/${capacitacaoAtualizada.validacao_usuario}`);
+                      if (response.data.success && response.data.data?.user) {
+                        setValidacaoUsuarioNome(response.data.data.user.name);
+                      }
+                    } catch (error) {
+                      console.error('Erro ao carregar usuário validador:', error);
+                    }
+                  }
+                } catch (error: any) {
+                  throw error;
+                }
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

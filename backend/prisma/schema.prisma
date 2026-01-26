@@ -1192,8 +1192,10 @@ model users {
   qualificacao_tecnico_membro                                                qualificacao_tecnico[]  @relation("qualificacao_tecnico_tecnico")
   qualificacao_tecnico_criados                                               qualificacao_tecnico[]  @relation("qualificacao_tecnico_criador")
   qualificacao_created_by                                                    qualificacao[]         @relation("qualificacao_created_by")
+  qualificacao_validacao_usuario                                             qualificacao[]         @relation("qualificacao_validacao_usuario")
   capacitacao_tecnico_membro                                                 capacitacao_tecnico[]   @relation("capacitacao_tecnico_tecnico")
   capacitacao_tecnico_criados                                                capacitacao_tecnico[]   @relation("capacitacao_tecnico_criador")
+  capacitacao_validacao_usuario                                              capacitacao[]          @relation("capacitacao_validacao_usuario")
 
   @@schema("pinovara")
 }
@@ -1574,6 +1576,10 @@ model qualificacao {
   created_at            DateTime @default(now()) @db.Timestamp(6)
   updated_at            DateTime @default(now()) @db.Timestamp(6)
   created_by            Int?
+  validacao_status      Int?     @default(1)
+  validacao_usuario     Int?
+  validacao_data        DateTime? @db.Timestamp(6)
+  validacao_obs         String?  @db.Text
 
   qualificacao_organizacao qualificacao_organizacao[]
   qualificacao_instrutor   qualificacao_instrutor[]
@@ -1581,9 +1587,11 @@ model qualificacao {
   capacitacao              capacitacao[]
   capacitacao_material     capacitacao_material[]
   created_by_user          users?                 @relation("qualificacao_created_by", fields: [created_by], references: [id], onDelete: SetNull)
+  validacao_usuario_user   users?                 @relation("qualificacao_validacao_usuario", fields: [validacao_usuario], references: [id], onDelete: SetNull)
 
   @@index([created_by])
   @@index([ativo])
+  @@index([validacao_status])
   @@schema("capacitacao")
 }
 
@@ -1640,6 +1648,10 @@ model capacitacao {
   created_at      DateTime  @default(now()) @db.Timestamp(6)
   updated_at      DateTime  @default(now()) @db.Timestamp(6)
   created_by      Int?
+  validacao_status      Int?     @default(1)
+  validacao_usuario     Int?
+  validacao_data        DateTime? @db.Timestamp(6)
+  validacao_obs         String?  @db.Text
 
   qualificacao                qualificacao                @relation(fields: [id_qualificacao], references: [id], onDelete: Restrict)
   capacitacao_organizacao      capacitacao_organizacao[]
@@ -1648,11 +1660,13 @@ model capacitacao {
   capacitacao_avaliacao        capacitacao_avaliacao[]
   capacitacao_evidencia        capacitacao_evidencia[]
   capacitacao_tecnico          capacitacao_tecnico[]
+  validacao_usuario_user       users?                      @relation("capacitacao_validacao_usuario", fields: [validacao_usuario], references: [id], onDelete: SetNull)
 
   @@index([id_qualificacao])
   @@index([status])
   @@index([created_by])
   @@index([data_inicio])
+  @@index([validacao_status])
   @@schema("capacitacao")
 }
 

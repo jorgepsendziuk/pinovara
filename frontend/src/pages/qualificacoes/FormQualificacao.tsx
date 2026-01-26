@@ -4,7 +4,9 @@ import api from '../../services/api';
 import { Qualificacao } from '../../types/qualificacao';
 import RepositorioMateriais from '../../components/qualificacoes/RepositorioMateriais';
 import GerenciarEquipeQualificacao from '../../components/qualificacoes/GerenciarEquipeQualificacao';
+import Validacao from '../../components/qualificacoes/Validacao';
 import { gerarPdfConteudoQualificacao } from '../../utils/pdfConteudoQualificacao';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   ArrowLeft,
   Loader2,
@@ -14,12 +16,16 @@ import {
   Calendar,
   User,
   Users,
-  Download
+  Download,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Clock
 } from 'lucide-react';
 import '../../styles/tabs.css';
 import './QualificacoesModule.css';
 
-type AbaAtiva = 'informacoes' | 'materiais' | 'equipe';
+type AbaAtiva = 'informacoes' | 'materiais' | 'equipe' | 'validacao';
 
 interface FormQualificacaoProps {
   id?: number;
@@ -27,10 +33,12 @@ interface FormQualificacaoProps {
 }
 
 function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
+  const { isCoordinator, isSupervisor, hasPermission } = useAuth();
   const [loading, setLoading] = useState(false);
   const [carregandoDados, setCarregandoDados] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('informacoes');
   const [criadorNome, setCriadorNome] = useState<string | null>(null);
+  const [validacaoUsuarioNome, setValidacaoUsuarioNome] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Qualificacao>>({
     titulo: '',
     objetivo_geral: '',
@@ -44,6 +52,13 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
   });
 
   useEffect(() => {
+    // Bloquear acesso de coordenadores e supervisores à edição
+    if (id && (isCoordinator() || isSupervisor())) {
+      alert('Você não tem permissão para editar qualificações. Use as ações na lista para gerar relatórios.');
+      onNavigate('qualificacoes');
+      return;
+    }
+    
     if (id) {
       carregarQualificacao();
     }
@@ -52,7 +67,7 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
     if (window.location.hash === '#materiais') {
       setAbaAtiva('materiais');
     }
-  }, [id]);
+  }, [id, isCoordinator, isSupervisor, onNavigate]);
   
   // Escutar mudanças no hash
   useEffect(() => {
@@ -84,6 +99,20 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
         } catch (error) {
           console.error('Erro ao carregar criador:', error);
         }
+      }
+
+      // Carregar informações do usuário validador
+      if (qualificacao.validacao_usuario) {
+        try {
+          const response = await api.get(`/admin/users/${qualificacao.validacao_usuario}`);
+          if (response.data.success && response.data.data?.user) {
+            setValidacaoUsuarioNome(response.data.data.user.name);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar usuário validador:', error);
+        }
+      } else {
+        setValidacaoUsuarioNome(null);
       }
     } catch (error) {
       console.error('Erro ao carregar qualificação:', error);
@@ -142,6 +171,69 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
     } catch (error: any) {
       console.error('Erro ao gerar PDF:', error);
       alert(error.message || 'Erro ao gerar PDF do conteúdo da qualificação');
+    }
+  };
+
+  const handleUpdateValidacao = async (campo: string, valor: any): Promise<void> => {
+    if (!id) return;
+
+    try {
+      const dados: any = {};
+      
+      if (campo === 'validacao_status') {
+        dados.validacao_status = valor;
+      } else if (campo === 'validacao_obs') {
+        dados.validacao_obs = valor;
+      } else if (campo === 'validacao_usuario') {
+        dados.validacao_usuario = valor;
+      } else if (campo === 'validacao_data') {
+        // A data será definida no backend
+        return;
+      }
+
+      const qualificacaoAtualizada = await qualificacaoAPI.updateValidacao(id, dados);
+      
+      // Atualizar formData com os novos dados
+      setFormData({
+        ...formData,
+        validacao_status: qualificacaoAtualizada.validacao_status,
+        validacao_usuario: qualificacaoAtualizada.validacao_usuario,
+        validacao_data: qualificacaoAtualizada.validacao_data,
+        validacao_obs: qualificacaoAtualizada.validacao_obs
+      });
+
+      // Se atualizou o usuário validador, recarregar o nome
+      if (qualificacaoAtualizada.validacao_usuario && qualificacaoAtualizada.validacao_usuario !== formData.validacao_usuario) {
+        try {
+          const response = await api.get(`/admin/users/${qualificacaoAtualizada.validacao_usuario}`);
+          if (response.data.success && response.data.data?.user) {
+            setValidacaoUsuarioNome(response.data.data.user.name);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar usuário validador:', error);
+        }
+      }
+    } catch (error: any) {
+      console.error('Erro ao atualizar validação:', error);
+      throw error;
+    }
+  };
+
+  const getStatusBadgeColor = (status: number | null | undefined) => {
+    switch (status) {
+      case 2: return '#10b981'; // Verde - VALIDADO
+      case 3: return '#f59e0b'; // Amarelo - PENDÊNCIA
+      case 4: return '#ef4444'; // Vermelho - REPROVADO
+      default: return '#9ca3af'; // Cinza - NÃO VALIDADO
+    }
+  };
+
+  const getStatusIcon = (status: number | null | undefined) => {
+    switch (status) {
+      case 2: return CheckCircle;
+      case 3: return AlertCircle;
+      case 4: return XCircle;
+      default: return Clock;
     }
   };
 
@@ -306,6 +398,39 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
         >
           <Users size={16} /> <span>Equipe Técnica</span>
         </button>
+        {id && !isCoordinator() && (
+          <button
+            className={`tab-button ${abaAtiva === 'validacao' ? 'active' : ''}`}
+            onClick={() => setAbaAtiva('validacao')}
+            title="Validação"
+            style={{
+              background: abaAtiva === 'validacao' 
+                ? '#056839'
+                : formData.validacao_status === 2
+                  ? '#d4edda'
+                  : formData.validacao_status === 3
+                    ? '#fff3cd'
+                    : formData.validacao_status === 4
+                      ? '#f8d7da'
+                      : '#f3f4f6',
+              color: abaAtiva === 'validacao' 
+                ? 'white'
+                : formData.validacao_status === 2
+                  ? '#155724'
+                  : formData.validacao_status === 3
+                    ? '#856404'
+                    : formData.validacao_status === 4
+                      ? '#721c24'
+                      : '#6b7280'
+            }}
+          >
+            {(() => {
+              const StatusIcon = getStatusIcon(formData.validacao_status);
+              return <StatusIcon size={16} />;
+            })()}
+            <span>Validação</span>
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}
@@ -545,6 +670,45 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
               </div>
             )}
           </>
+        )}
+
+        {abaAtiva === 'validacao' && id && (
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+            <Validacao
+              qualificacaoId={id}
+              validacaoStatus={formData.validacao_status || null}
+              validacaoUsuario={formData.validacao_usuario || null}
+              validacaoData={formData.validacao_data ? new Date(formData.validacao_data) : null}
+              validacaoObs={formData.validacao_obs || null}
+              validacaoUsuarioNome={validacaoUsuarioNome}
+              onUpdate={handleUpdateValidacao}
+              onUpdateAll={async (dados) => {
+                if (!id) return;
+                try {
+                  const qualificacaoAtualizada = await qualificacaoAPI.updateValidacao(id, dados);
+                  setFormData({
+                    ...formData,
+                    validacao_status: qualificacaoAtualizada.validacao_status,
+                    validacao_usuario: qualificacaoAtualizada.validacao_usuario,
+                    validacao_data: qualificacaoAtualizada.validacao_data,
+                    validacao_obs: qualificacaoAtualizada.validacao_obs
+                  });
+                  if (qualificacaoAtualizada.validacao_usuario && qualificacaoAtualizada.validacao_usuario !== formData.validacao_usuario) {
+                    try {
+                      const response = await api.get(`/admin/users/${qualificacaoAtualizada.validacao_usuario}`);
+                      if (response.data.success && response.data.data?.user) {
+                        setValidacaoUsuarioNome(response.data.data.user.name);
+                      }
+                    } catch (error) {
+                      console.error('Erro ao carregar usuário validador:', error);
+                    }
+                  }
+                } catch (error: any) {
+                  throw error;
+                }
+              }}
+            />
+          </div>
         )}
       </div>
     </div>

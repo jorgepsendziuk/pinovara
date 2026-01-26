@@ -12,14 +12,9 @@ class CapacitacaoController {
    */
   async list(req: AuthRequest, res: Response): Promise<void> {
     try {
-      // Verificar se é admin ou supervisor
-      const isAdmin = req.user?.roles?.some(role => 
-        role.name === 'admin' && role.module.name === 'sistema'
-      );
-      const isSupervisor = req.user?.roles?.some(role => 
-        role.name === 'supervisao' && role.module.name === 'organizacoes'
-      );
-      const canSeeAll = isAdmin || isSupervisor;
+      // Verificar se é admin, coordenador ou supervisor (todos veem tudo)
+      const userPermissions = (req as any).userPermissions;
+      const canSeeAll = userPermissions?.canAccessAll || false;
 
       const filters: CapacitacaoFilters = {
         id_qualificacao: req.query.id_qualificacao ? parseInt(req.query.id_qualificacao as string) : undefined,
@@ -33,7 +28,7 @@ class CapacitacaoController {
                req.query.pageSize ? parseInt(req.query.pageSize as string) : 10
       };
 
-      // Se não for admin/supervisor, filtrar para mostrar apenas as que criou
+      // Se não for admin/supervisor/coordenador, filtrar para mostrar apenas as que criou
       if (!canSeeAll && req.user?.id) {
         (filters as any).userId = req.user.id;
         (filters as any).filterByUser = true;
@@ -84,25 +79,29 @@ class CapacitacaoController {
       }
 
       // Verificar permissões de acesso
-      const isAdmin = req.user?.roles?.some(role => 
-        role.name === 'admin' && role.module.name === 'sistema'
-      );
-      const isSupervisor = req.user?.roles?.some(role => 
-        role.name === 'supervisao' && role.module.name === 'organizacoes'
-      );
-      const canSeeAll = isAdmin || isSupervisor;
+      const userPermissions = (req as any).userPermissions;
+      const canSeeAll = userPermissions?.canAccessAll || false;
 
-      // Se não for admin/supervisor, verificar se pode ver esta capacitação
-      if (!canSeeAll && capacitacao.created_by !== req.user?.id) {
-        res.status(HttpStatus.FORBIDDEN).json({
-          success: false,
-          error: {
-            message: 'Acesso negado. Você só pode visualizar capacitações que criou.',
-            statusCode: HttpStatus.FORBIDDEN
-          },
-          timestamp: new Date().toISOString()
-        });
-        return;
+      // Se não for admin/supervisor/coordenador, verificar se pode ver esta capacitação
+      if (!canSeeAll) {
+        const isCriador = capacitacao.created_by === req.user?.id;
+        const capacitacaoData = capacitacao as any;
+        const isMembroEquipe = capacitacaoData.equipe_tecnica?.some(
+          (membro: any) => membro.id_tecnico === req.user?.id
+        ) || false;
+
+        // Pode ver se: é criador OU membro da equipe técnica
+        if (!isCriador && !isMembroEquipe) {
+          res.status(HttpStatus.FORBIDDEN).json({
+            success: false,
+            error: {
+              message: 'Acesso negado. Você só pode visualizar capacitações que criou ou está vinculado.',
+              statusCode: HttpStatus.FORBIDDEN
+            },
+            timestamp: new Date().toISOString()
+          });
+          return;
+        }
       }
 
       res.status(HttpStatus.OK).json({
@@ -199,16 +198,12 @@ class CapacitacaoController {
         return;
       }
 
-      // Verificar permissões: admin/supervisor podem editar qualquer capacitação,
+      // Verificar permissões: apenas admin pode editar qualquer capacitação,
       // outros só podem editar se forem criador ou membro da equipe técnica
-      const isAdmin = req.user.roles?.some(role => 
-        role.name === 'admin' && role.module.name === 'sistema'
-      );
-      const isSupervisor = req.user.roles?.some(role => 
-        role.name === 'supervisao' && role.module.name === 'organizacoes'
-      );
+      const userPermissions = (req as any).userPermissions;
+      const isAdmin = userPermissions?.isAdmin || false;
 
-      if (!isAdmin && !isSupervisor) {
+      if (!isAdmin) {
         const isCriador = oldData.created_by === req.user?.id;
         const capacitacaoData = oldData as any;
         const isMembroEquipe = capacitacaoData.equipe_tecnica?.some(
@@ -219,7 +214,7 @@ class CapacitacaoController {
           res.status(HttpStatus.FORBIDDEN).json({
             success: false,
             error: {
-              message: 'Acesso negado. Apenas o criador e a equipe técnica podem editar esta capacitação.',
+              message: 'Acesso negado. Apenas administradores, o criador e a equipe técnica podem editar esta capacitação.',
               statusCode: HttpStatus.FORBIDDEN
             },
             timestamp: new Date().toISOString()
@@ -296,16 +291,12 @@ class CapacitacaoController {
         return;
       }
 
-      // Verificar permissões: admin/supervisor podem excluir qualquer capacitação,
+      // Verificar permissões: apenas admin pode excluir qualquer capacitação,
       // outros só podem excluir se forem criador ou membro da equipe técnica
-      const isAdmin = req.user.roles?.some(role => 
-        role.name === 'admin' && role.module.name === 'sistema'
-      );
-      const isSupervisor = req.user.roles?.some(role => 
-        role.name === 'supervisao' && role.module.name === 'organizacoes'
-      );
+      const userPermissions = (req as any).userPermissions;
+      const isAdmin = userPermissions?.isAdmin || false;
 
-      if (!isAdmin && !isSupervisor) {
+      if (!isAdmin) {
         const isCriador = oldData.created_by === req.user?.id;
         const capacitacaoData = oldData as any;
         const isMembroEquipe = capacitacaoData.equipe_tecnica?.some(
@@ -316,7 +307,7 @@ class CapacitacaoController {
           res.status(HttpStatus.FORBIDDEN).json({
             success: false,
             error: {
-              message: 'Acesso negado. Apenas o criador e a equipe técnica podem excluir esta capacitação.',
+              message: 'Acesso negado. Apenas administradores, o criador e a equipe técnica podem excluir esta capacitação.',
               statusCode: HttpStatus.FORBIDDEN
             },
             timestamp: new Date().toISOString()
@@ -765,6 +756,104 @@ class CapacitacaoController {
         },
         timestamp: new Date().toISOString()
       });
+    }
+  }
+
+  /**
+   * PATCH /capacitacoes/:id/validacao
+   * Atualizar apenas campos de validação (permitido para coordenadores)
+   */
+  async updateValidacao(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const { validacao_status, validacao_obs, validacao_usuario } = req.body;
+      const userPermissions = (req as any).userPermissions;
+
+      if (isNaN(id)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: {
+            message: 'ID inválido',
+            statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Verificar se usuário é coordenador ou admin (supervisor NÃO pode validar)
+      if (!userPermissions?.isCoordinator && !userPermissions?.isAdmin) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Apenas coordenadores e administradores podem validar capacitações',
+            statusCode: HttpStatus.FORBIDDEN
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Atualizar apenas campos de validação
+      const dadosValidacao = {
+        validacao_status: validacao_status || null,
+        validacao_obs: validacao_obs || null,
+        validacao_usuario: validacao_usuario || req.user?.id || null,
+        validacao_data: new Date()
+      };
+
+      const capacitacao = await capacitacaoService.updateValidacao(id, dadosValidacao);
+
+      // Registrar auditoria
+      await auditService.createLog({
+        action: AuditAction.UPDATE,
+        entity: 'capacitacao',
+        entityId: id.toString(),
+        userId: req.user!.id,
+        newData: dadosValidacao,
+        req
+      });
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        message: 'Validação atualizada com sucesso',
+        data: capacitacao,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
+   * GET /capacitacoes/:id/historico-validacao
+   * Buscar histórico completo de validação de uma capacitação
+   */
+  async getHistoricoValidacao(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+
+      if (isNaN(id)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: {
+            message: 'ID inválido',
+            statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const historico = await capacitacaoService.getHistoricoValidacao(id);
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        data: historico,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      this.handleError(error, res);
     }
   }
 }

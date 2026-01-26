@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { 
   OrganizacaoCompleta, 
   ListaOrganizacoesResponse, 
@@ -13,6 +13,7 @@ import {
   TecnicoResumo,
   HistoricoValidacao
 } from '../types/organizacao';
+import { sessionManager, SESSION_EXPIRED_EVENT_NAME } from './sessionManager';
 
 // ========== CONFIGURAÇÃO DA API ==========
 

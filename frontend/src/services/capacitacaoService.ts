@@ -432,6 +432,36 @@ export const capacitacaoAPI = {
     }
 
     return response.data.data!;
+  },
+
+  /**
+   * Atualizar validação de uma capacitação
+   */
+  updateValidacao: async (id: number, dados: {
+    validacao_status: number | null;
+    validacao_obs?: string | null;
+    validacao_usuario?: number | null;
+  }): Promise<Capacitacao> => {
+    const response = await api.patch<ApiResponse<Capacitacao>>(`/capacitacoes/${id}/validacao`, dados);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao atualizar validação');
+    }
+
+    return response.data.data!;
+  },
+
+  /**
+   * Buscar histórico de validação de uma capacitação
+   */
+  getHistoricoValidacao: async (id: number): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>(`/capacitacoes/${id}/historico-validacao`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao buscar histórico de validação');
+    }
+
+    return response.data.data!;
   }
 };
 

@@ -3,11 +3,14 @@ import { capacitacaoController } from '../controllers/capacitacaoController';
 import { avaliacaoController } from '../controllers/avaliacaoController';
 import { capacitacaoEvidenciaController, uploadEvidencia } from '../controllers/capacitacaoEvidenciaController';
 import { authenticateToken } from '../middleware/auth';
+import { checkQualificacaoCapacitacaoPermission } from '../middleware/qualificacaoCapacitacaoAuth';
 
 const router = Router();
 
 // Todas as rotas precisam de autenticação
 router.use(authenticateToken);
+// Middleware para definir permissões de qualificações/capacitações
+router.use(checkQualificacaoCapacitacaoPermission);
 
 // Rotas de capacitações (rotas específicas devem vir antes das genéricas)
 router.get('/', capacitacaoController.list.bind(capacitacaoController));
@@ -39,6 +42,10 @@ router.delete('/:id/evidencias/:evidenciaId', capacitacaoEvidenciaController.del
 router.post('/:id/tecnicos', capacitacaoController.addTecnico.bind(capacitacaoController));
 router.delete('/:id/tecnicos/:idTecnico', capacitacaoController.removeTecnico.bind(capacitacaoController));
 router.get('/:id/tecnicos', capacitacaoController.listTecnicos.bind(capacitacaoController));
+
+// Rota de validação (deve vir antes de /:id para evitar conflito)
+router.patch('/:id/validacao', capacitacaoController.updateValidacao.bind(capacitacaoController));
+router.get('/:id/historico-validacao', capacitacaoController.getHistoricoValidacao.bind(capacitacaoController));
 
 // Rotas genéricas de capacitações (devem vir por último)
 router.get('/:id', capacitacaoController.getById.bind(capacitacaoController));

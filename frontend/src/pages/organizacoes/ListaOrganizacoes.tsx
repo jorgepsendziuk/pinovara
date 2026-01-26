@@ -9,6 +9,7 @@ import ModalValidacao from '../../components/organizacoes/ModalValidacao';
 import ModalValidacaoPlanoGestao from '../../components/organizacoes/ModalValidacaoPlanoGestao';
 import { auxiliarAPI } from '../../services/api';
 import { formatarDataBR } from '../../utils/dateHelpers';
+import Tooltip from '../../components/Tooltip';
 import './ListaOrganizacoes.css';
 import {
   Edit,
@@ -623,16 +624,81 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
           <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
             {/* Link Editar */}
             {podeEditar && (
-            <Link
-              to={`/organizacoes/edicao/${record.id}`}
-              title="Editar organização"
-              style={{ 
-                padding: '6px 8px', 
-                border: '1px solid #3b2313', 
+            <Tooltip text="Editar organização" backgroundColor="#3b2313" delay={0}>
+              <Link
+                to={`/organizacoes/edicao/${record.id}`}
+                style={{ 
+                  padding: '6px 8px', 
+                  border: '1px solid #3b2313', 
+                  background: 'white',
+                  borderRadius: '4px',
+                  cursor: 'pointer', 
+                  color: '#3b2313',
+                  display: 'flex',
+                  alignItems: 'center',
+                    justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  textDecoration: 'none'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#3b2313';
+                  e.currentTarget.style.color = 'white';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#3b2313';
+                }}
+              >
+                  <Edit size={16} />
+              </Link>
+            </Tooltip>
+          )}
+            
+            {/* Botão Relatório */}
+          <Tooltip text="Gerar Relatório Completo" backgroundColor="#056839" delay={0}>
+            <button
+              onClick={() => gerarRelatorio(record.id, record.nome)}
+              disabled={gerandoRelatorio === record.id}
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #056839',
                 background: 'white',
                 borderRadius: '4px',
-                cursor: 'pointer', 
-                color: '#3b2313',
+                cursor: gerandoRelatorio === record.id ? 'not-allowed' : 'pointer',
+                color: gerandoRelatorio === record.id ? '#ccc' : '#056839',
+                display: 'flex',
+                alignItems: 'center',
+                  justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                if (gerandoRelatorio !== record.id) {
+                  e.currentTarget.style.background = '#056839';
+                  e.currentTarget.style.color = 'white';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (gerandoRelatorio !== record.id) {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#056839';
+                }
+              }}
+            >
+                <FileText size={16} />
+            </button>
+          </Tooltip>
+            
+            {/* Link Plano de Gestão */}
+          <Tooltip text="Plano de Gestão e Estratégias" backgroundColor="#8b5cf6" delay={0}>
+            <Link
+                to={`/organizacoes/plano-gestao/${record.id}`}
+              style={{
+                padding: '6px 8px',
+                  border: '1px solid #8b5cf6',
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                  color: '#8b5cf6',
                 display: 'flex',
                 alignItems: 'center',
                   justifyContent: 'center',
@@ -640,118 +706,57 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                 textDecoration: 'none'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = '#3b2313';
+                  e.currentTarget.style.background = '#8b5cf6';
                 e.currentTarget.style.color = 'white';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#3b2313';
+                  e.currentTarget.style.color = '#8b5cf6';
               }}
             >
-                <Edit size={16} />
+                <Target size={16} />
             </Link>
-          )}
-            
-            {/* Botão Relatório */}
-          <button
-            onClick={() => gerarRelatorio(record.id, record.nome)}
-            title="Gerar Relatório Completo"
-            disabled={gerandoRelatorio === record.id}
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #056839',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: gerandoRelatorio === record.id ? 'not-allowed' : 'pointer',
-              color: gerandoRelatorio === record.id ? '#ccc' : '#056839',
-              display: 'flex',
-              alignItems: 'center',
-                justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              if (gerandoRelatorio !== record.id) {
-                e.currentTarget.style.background = '#056839';
-                e.currentTarget.style.color = 'white';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (gerandoRelatorio !== record.id) {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#056839';
-              }
-            }}
-          >
-              <FileText size={16} />
-          </button>
-            
-            {/* Link Plano de Gestão */}
-          <Link
-              to={`/organizacoes/plano-gestao/${record.id}`}
-              title="Plano de Gestão e Estratégias"
-            style={{
-              padding: '6px 8px',
-                border: '1px solid #8b5cf6',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-                color: '#8b5cf6',
-              display: 'flex',
-              alignItems: 'center',
-                justifyContent: 'center',
-              transition: 'all 0.2s',
-              textDecoration: 'none'
-            }}
-            onMouseOver={(e) => {
-                e.currentTarget.style.background = '#8b5cf6';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#8b5cf6';
-            }}
-          >
-              <Target size={16} />
-          </Link>
+          </Tooltip>
             
             {/* Botão Arquivos */}
-            <button
-              onClick={() => {
-                abrirModalArquivos(record.id, record.nome);
-              }}
-              title="Arquivos"
-              style={{
-                padding: '6px 8px',
-                border: '1px solid #f59e0b',
-                background: 'white',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                color: '#f59e0b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#f59e0b';
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#f59e0b';
-              }}
-            >
-              <FolderOpen size={16} />
-            </button>
+            <Tooltip text="Arquivos" backgroundColor="#f59e0b" delay={0}>
+              <button
+                onClick={() => {
+                  abrirModalArquivos(record.id, record.nome);
+                }}
+                style={{
+                  padding: '6px 8px',
+                  border: '1px solid #f59e0b',
+                  background: 'white',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  color: '#f59e0b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f59e0b';
+                  e.currentTarget.style.color = 'white';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#f59e0b';
+                }}
+              >
+                <FolderOpen size={16} />
+              </button>
+            </Tooltip>
             
             {/* Botão Outras Ações */}
             <div style={{ position: 'relative' }}>
-          <button
+          <Tooltip text="Outras ações" backgroundColor="#6b7280" delay={0}>
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setMenuAcoesAberto(menuAberto ? null : record.id);
                 }}
-                title="Outras ações"
             style={{
               padding: '6px 8px',
                   border: '1px solid #6b7280',
@@ -779,6 +784,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               >
                 <MoreVertical size={16} />
               </button>
+            </Tooltip>
               
               {/* Menu Dropdown */}
               {menuAberto && (

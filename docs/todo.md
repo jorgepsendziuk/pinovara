@@ -120,3 +120,7 @@ CREATE TABLE odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" ( "_URI" varchar
 CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_da9" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" USING hash ("_DOM_AURI");
 CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_lud" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" USING btree ("_LAST_UPDATE_DATE");
 
+
+melhore a 
+
+os botoes de acao nao sao muito intuitivos, portanto faça exibir os popups de hint onmouseover  das acoes mais rapido, e maior, com cor, é possível? nas  listagens de organizacoes, capacitacoes e qualificacoes

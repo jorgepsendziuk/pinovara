@@ -144,8 +144,23 @@ export async function gerarPDFQRCodeAvaliacao(capacitacao: Capacitacao) {
   if (capacitacao.organizacoes_completas && capacitacao.organizacoes_completas.length > 0) {
     const orgs = capacitacao.organizacoes_completas.map(org => org.nome).join(', ');
     doc.setFontSize(11);
-    doc.text(`Organização: ${orgs}`, margin, yPos);
-    yPos += 6;
+    doc.setFont(undefined, 'normal');
+    
+    // Usar splitTextToSize para quebrar o texto em múltiplas linhas
+    const maxWidth = pageWidth - 2 * margin;
+    const label = 'Organização: ';
+    const textoCompleto = label + orgs;
+    
+    // Dividir o texto completo em linhas
+    const linhas = doc.splitTextToSize(textoCompleto, maxWidth);
+    
+    // Renderizar cada linha
+    linhas.forEach((linha: string, index: number) => {
+      doc.text(linha, margin, yPos);
+      yPos += 5;
+    });
+    
+    yPos += 1; // Espaçamento adicional após as organizações
   }
   
   // Local

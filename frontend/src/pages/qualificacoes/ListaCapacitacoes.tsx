@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import DataGrid, { DataGridColumn } from '../../components/DataGrid/DataGrid';
 import { capacitacaoAPI } from '../../services/capacitacaoService';
-import { Capacitacao, CapacitacaoListResponse } from '../../types/capacitacao';
-import { Edit, Calendar, FileText, Printer, QrCode, Eye, Plus, Search, Loader2, MapPin, Clock, ExternalLink, CalendarDays, List, CheckCircle, Download, BarChart3, User } from 'lucide-react';
+import { Capacitacao, CapacitacaoListResponse, CapacitacaoStatus } from '../../types/capacitacao';
+import { Edit, Calendar, FileText, Printer, QrCode, Eye, Plus, Search, Loader2, MapPin, Clock, ExternalLink, CalendarDays, List, CheckCircle, Download, BarChart3, User, Users, XCircle, AlertCircle, Clipboard, ClipboardCheck } from 'lucide-react';
+import ModalValidacao from '../../components/capacitacoes/ModalValidacao';
+import { useAuth } from '../../contexts/AuthContext';
 import { gerarPDFQRCodeInscricao } from '../../utils/pdfQRCodeInscricao';
 import { gerarPDFQRCodeAvaliacao } from '../../utils/pdfQRCodeAvaliacao';
 import { gerarPdfConteudoCapacitacao } from '../../utils/pdfConteudoCapacitacao';
 import { gerarPdfRelatorioCapacitacao } from '../../utils/pdfRelatorioCapacitacao';
+import { avaliacaoAPI } from '../../services/avaliacaoService';
+import { gerarPdfRelatorioAvaliacoes } from '../../utils/pdfRelatorioAvaliacoes';
+import Tooltip from '../../components/Tooltip';
 import { Calendar as BigCalendar, dateFnsLocalizer, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -30,6 +35,7 @@ interface ListaCapacitacoesProps {
 }
 
 function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
+  const { isCoordinator, hasPermission } = useAuth();
   const [capacitacoes, setCapacitacoes] = useState<Capacitacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroTitulo, setFiltroTitulo] = useState('');
@@ -41,6 +47,11 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [tooltipEvent, setTooltipEvent] = useState<any>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [modalValidacao, setModalValidacao] = useState<{ isOpen: boolean; idCapacitacao: number; titulo: string }>({
+    isOpen: false,
+    idCapacitacao: 0,
+    titulo: ''
+  });
   const pageSize = 20;
 
   // Função helper para formatar data corretamente (evita problemas de timezone)
@@ -91,9 +102,13 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
   const carregarCapacitacoes = async () => {
     try {
       setLoading(true);
+      const validStatuses: CapacitacaoStatus[] = ['planejada', 'em_andamento', 'concluida', 'cancelada'];
+      const statusFilter: CapacitacaoStatus | undefined = filtroStatus && validStatuses.includes(filtroStatus as CapacitacaoStatus) 
+        ? (filtroStatus as CapacitacaoStatus) 
+        : undefined;
+      
       const response: CapacitacaoListResponse = await capacitacaoAPI.list({
-        titulo: filtroTitulo || undefined,
-        status: filtroStatus || undefined,
+        status: statusFilter,
         page,
         limit: pageSize
       });
@@ -130,194 +145,290 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
       align: 'left',
       render: (_, record: Capacitacao) => (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-start', alignItems: 'center' }}>
-          <button
-            onClick={() => window.open(`/capacitacao/${record.link_inscricao}`, '_blank')}
-            title="Ver Página Pública do Curso"
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #3b82f6',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: '#3b82f6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#3b82f6';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#3b82f6';
-            }}
-          >
-            <ExternalLink size={16} />
-          </button>
-          <button
-            onClick={() => onNavigate('painel', record.id)}
-            title="Painel do Instrutor"
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #056839',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: '#056839',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#056839';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#056839';
-            }}
-          >
-            <Eye size={16} />
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                await gerarPDFQRCodeInscricao(record);
-              } catch (error) {
-                console.error('Erro ao gerar PDF de QR code:', error);
-                alert('Erro ao gerar PDF de QR code de inscrição');
-              }
-            }}
-            title="Imprimir QR Code de Inscrição"
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #f59e0b',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: '#f59e0b',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#f59e0b';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#f59e0b';
-            }}
-          >
-            <QrCode size={16} />
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                await gerarPDFQRCodeAvaliacao(record);
-              } catch (error) {
-                console.error('Erro ao gerar PDF de QR code:', error);
-                alert('Erro ao gerar PDF de QR code de avaliação');
-              }
-            }}
-            title="Imprimir QR Code de Avaliação"
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #8b5cf6',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: '#8b5cf6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#8b5cf6';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#8b5cf6';
-            }}
-          >
-            <QrCode size={16} />
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                const capacitacaoCompleta = await capacitacaoAPI.getById(record.id!);
-                await gerarPdfConteudoCapacitacao(capacitacaoCompleta);
-              } catch (error) {
-                console.error('Erro ao gerar PDF:', error);
-                alert('Erro ao gerar PDF do conteúdo da capacitação');
-              }
-            }}
-            title="Gerar PDF do conteúdo"
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #3b82f6',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: '#3b82f6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#3b82f6';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#3b82f6';
-            }}
-          >
-            <Download size={16} />
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                const capacitacaoCompleta = await capacitacaoAPI.getById(record.id!);
-                const inscricoes = await capacitacaoAPI.listInscricoes(record.id!);
-                const presencas = await capacitacaoAPI.listPresencas(record.id!);
-                await gerarPdfRelatorioCapacitacao(capacitacaoCompleta, inscricoes, presencas);
-              } catch (error) {
-                console.error('Erro ao gerar PDF:', error);
-                alert('Erro ao gerar PDF do relatório da capacitação');
-              }
-            }}
-            title="Gerar PDF do relatório"
-            style={{
-              padding: '6px 8px',
-              border: '1px solid #10b981',
-              background: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              color: '#10b981',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#10b981';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#10b981';
-            }}
-          >
-            <BarChart3 size={16} />
-          </button>
+          <Tooltip text="Ver Página Pública do Curso" backgroundColor="#3b82f6" delay={0}>
+            <button
+              onClick={() => window.open(`/capacitacao/${record.link_inscricao}`, '_blank')}
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #3b82f6',
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#3b82f6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#3b82f6';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#3b82f6';
+              }}
+            >
+              <ExternalLink size={16} />
+            </button>
+          </Tooltip>
+          <Tooltip text="Painel do Instrutor" backgroundColor="#056839" delay={0}>
+            <button
+              onClick={() => onNavigate('painel', record.id)}
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #056839',
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#056839',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#056839';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#056839';
+              }}
+            >
+              <Eye size={16} />
+            </button>
+          </Tooltip>
+          <Tooltip text="Imprimir QR Code de Inscrição" backgroundColor="#f59e0b" delay={0}>
+            <button
+              onClick={async () => {
+                try {
+                  await gerarPDFQRCodeInscricao(record);
+                } catch (error) {
+                  console.error('Erro ao gerar PDF de QR code:', error);
+                  alert('Erro ao gerar PDF de QR code de inscrição');
+                }
+              }}
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #f59e0b',
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#f59e0b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#f59e0b';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#f59e0b';
+              }}
+            >
+              <QrCode size={16} />
+            </button>
+          </Tooltip>
+          <Tooltip text="Relatório de Avaliações" backgroundColor="#8b5cf6" delay={0}>
+            <button
+              onClick={async () => {
+                try {
+                  // Verificar se há avaliações
+                  const avaliacoes = await avaliacaoAPI.listAvaliacoes(record.id!);
+                  if (avaliacoes.length === 0) {
+                    alert('Esta capacitação ainda não possui avaliações submetidas.');
+                    return;
+                  }
+                  
+                  // Carregar dados necessários para o PDF
+                  const [capacitacao, inscricoes, estatisticas, versao] = await Promise.all([
+                    capacitacaoAPI.getById(record.id!),
+                    capacitacaoAPI.listInscricoes(record.id!),
+                    avaliacaoAPI.getEstatisticas(record.id!),
+                    avaliacaoAPI.getVersaoAtiva().catch(() => null)
+                  ]);
+                  
+                  await gerarPdfRelatorioAvaliacoes(
+                    capacitacao,
+                    avaliacoes,
+                    estatisticas,
+                    inscricoes,
+                    versao
+                  );
+                } catch (error: any) {
+                  console.error('Erro ao gerar relatório de avaliações:', error);
+                  alert(error.message || 'Erro ao gerar relatório de avaliações');
+                }
+              }}
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #8b5cf6',
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#8b5cf6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#8b5cf6';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#8b5cf6';
+              }}
+            >
+              <ClipboardCheck size={16} />
+            </button>
+          </Tooltip>
+          <Tooltip text="Imprimir QR Code de Avaliação" backgroundColor="#f59e0b" delay={0}>
+            <button
+              onClick={async () => {
+                try {
+                  await gerarPDFQRCodeAvaliacao(record);
+                } catch (error) {
+                  console.error('Erro ao gerar PDF de QR code:', error);
+                  alert('Erro ao gerar PDF de QR code de avaliação');
+                }
+              }}
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #f59e0b',
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#f59e0b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#f59e0b';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#f59e0b';
+              }}
+            >
+              <QrCode size={16} />
+            </button>
+          </Tooltip>
+          <Tooltip text="Gerar PDF do conteúdo" backgroundColor="#3b82f6" delay={0}>
+            <button
+              onClick={async () => {
+                try {
+                  const capacitacaoCompleta = await capacitacaoAPI.getById(record.id!);
+                  await gerarPdfConteudoCapacitacao(capacitacaoCompleta);
+                } catch (error) {
+                  console.error('Erro ao gerar PDF:', error);
+                  alert('Erro ao gerar PDF do conteúdo da capacitação');
+                }
+              }}
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #3b82f6',
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#3b82f6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#3b82f6';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#3b82f6';
+              }}
+            >
+              <Download size={16} />
+            </button>
+          </Tooltip>
+          <Tooltip text="Gerar PDF do relatório" backgroundColor="#10b981" delay={0}>
+            <button
+              onClick={async () => {
+                try {
+                  const capacitacaoCompleta = await capacitacaoAPI.getById(record.id!);
+                  const inscricoes = await capacitacaoAPI.listInscricoes(record.id!);
+                  const presencas = await capacitacaoAPI.listPresencas(record.id!);
+                  await gerarPdfRelatorioCapacitacao(capacitacaoCompleta, inscricoes, presencas);
+                } catch (error) {
+                  console.error('Erro ao gerar PDF:', error);
+                  alert('Erro ao gerar PDF do relatório da capacitação');
+                }
+              }}
+              style={{
+                padding: '6px 8px',
+                border: '1px solid #10b981',
+                background: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: '#10b981',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#10b981';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.color = '#10b981';
+              }}
+            >
+              <BarChart3 size={16} />
+            </button>
+          </Tooltip>
+          {(hasPermission('sistema', 'admin') || isCoordinator()) && (
+            <Tooltip text="Validar capacitação" backgroundColor="#10b981" delay={0}>
+              <button
+                onClick={() => {
+                  setModalValidacao({
+                    isOpen: true,
+                    idCapacitacao: record.id!,
+                    titulo: record.titulo || record.qualificacao?.titulo || 'Capacitação'
+                  });
+                }}
+                style={{
+                  padding: '6px 8px',
+                  border: '1px solid #10b981',
+                  background: 'white',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  color: '#10b981',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#10b981';
+                  e.currentTarget.style.color = 'white';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.color = '#10b981';
+                }}
+              >
+                <Clipboard size={16} />
+              </button>
+            </Tooltip>
+          )}
         </div>
       )
     },
@@ -416,14 +527,19 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
       key: 'metadados',
       title: 'Informações',
       width: '16%',
-      align: 'left',
+      align: 'center',
       render: (_, record: Capacitacao) => {
         const colors = getStatusColor(record.status || '');
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+            {/* Quantidade de Inscritos */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#64748b', fontSize: '12px', width: '100%' }}>
+              <Users size={12} />
+              <span>{record.total_inscritos || 0} inscrito{(record.total_inscritos || 0) !== 1 ? 's' : ''}</span>
+            </div>
             {/* Status */}
             {record.status && (
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
                 <span
                   style={{
                     padding: '4px 12px',
@@ -431,7 +547,9 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
                     fontSize: '12px',
                     fontWeight: '500',
                     backgroundColor: colors.bg,
-                    color: colors.color
+                    color: colors.color,
+                    textAlign: 'center',
+                    display: 'inline-block'
                   }}
                 >
                   {record.status === 'planejada' ? 'Planejada' :
@@ -443,23 +561,86 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
             )}
             {/* Criado em e por */}
             {record.created_at && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#64748b', fontSize: '12px', width: '100%', textAlign: 'center' }}>
                   <Clock size={12} />
                   <span>Criada em {formatarDataHora(record.created_at)} por:</span>
                 </div>
                 {record.tecnico_criador ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '600', color: '#3b2313', marginLeft: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '12px', fontWeight: '600', color: '#3b2313', width: '100%', textAlign: 'center' }}>
                     <User size={12} />
                     <span>{record.tecnico_criador.name}</span>
                   </div>
                 ) : (
-                  <div style={{ fontSize: '11px', fontStyle: 'italic', color: '#64748b', marginLeft: '16px' }}>
+                  <div style={{ fontSize: '11px', fontStyle: 'italic', color: '#64748b', textAlign: 'center', width: '100%' }}>
                     Não informado
                   </div>
                 )}
               </div>
             )}
+          </div>
+        );
+      }
+    },
+    {
+      key: 'validacao',
+      title: 'Validação',
+      width: '15%',
+      align: 'center',
+      render: (_, record: Capacitacao) => {
+        const status = record.validacao_status || 1;
+        const statusConfig = {
+          1: { label: 'NÃO VALIDADO', cor: '#9ca3af', icon: Clock },
+          2: { label: 'VALIDADO', cor: '#10b981', icon: CheckCircle },
+          3: { label: 'PENDÊNCIA', cor: '#f59e0b', icon: AlertCircle },
+          4: { label: 'REPROVADO', cor: '#ef4444', icon: XCircle },
+        };
+        const config = statusConfig[status as keyof typeof statusConfig] || statusConfig[1];
+        const StatusIcon = config.icon;
+
+        const podeValidar = hasPermission('sistema', 'admin') || isCoordinator();
+
+        return (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <span
+              onClick={() => {
+                if (podeValidar) {
+                  setModalValidacao({
+                    isOpen: true,
+                    idCapacitacao: record.id!,
+                    titulo: record.titulo || record.qualificacao?.titulo || 'Capacitação'
+                  });
+                }
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: '600',
+                backgroundColor: config.cor,
+                color: 'white',
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                cursor: podeValidar ? 'pointer' : 'default',
+                transition: podeValidar ? 'transform 0.2s' : 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (podeValidar) {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (podeValidar) {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }
+              }}
+              title={podeValidar ? 'Clique para gerenciar validação' : config.label}
+            >
+              <StatusIcon size={14} />
+              <span>{config.label}</span>
+            </span>
           </div>
         );
       }
@@ -931,6 +1112,18 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
           </>
         )}
       </div>
+
+      {/* Modal de Validação */}
+      {modalValidacao.isOpen && (
+        <ModalValidacao
+          capacitacaoId={modalValidacao.idCapacitacao}
+          capacitacaoNome={modalValidacao.titulo}
+          onClose={() => {
+            setModalValidacao({ isOpen: false, idCapacitacao: 0, titulo: '' });
+            carregarCapacitacoes(); // Recarregar para atualizar os dados
+          }}
+        />
+      )}
     </div>
   );
 }

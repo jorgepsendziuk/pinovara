@@ -16,6 +16,7 @@ import { gerarPDFListaPresencaVazia } from '../../utils/pdfListaPresencaVazia';
 import { gerarPDFListaInscricoesVazia } from '../../utils/pdfListaInscricoesVazia';
 import { gerarPdfConteudoCapacitacao } from '../../utils/pdfConteudoCapacitacao';
 import { gerarPdfRelatorioCapacitacao } from '../../utils/pdfRelatorioCapacitacao';
+import VisualizarAvaliacoes from './VisualizarAvaliacoes';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -38,7 +39,8 @@ import {
   Download,
   Image,
   FileText,
-  BarChart3
+  BarChart3,
+  ClipboardCheck
 } from 'lucide-react';
 import './QualificacoesModule.css';
 
@@ -68,7 +70,7 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
   const [erros, setErros] = useState<Record<string, string>>({});
   const [accordionLinksAberto, setAccordionLinksAberto] = useState(false);
   const [presencasSelecionadas, setPresencasSelecionadas] = useState<Set<number>>(new Set());
-  const [abaAtiva, setAbaAtiva] = useState<'editar' | 'inscricoes' | 'presencas' | 'evidencias'>('editar');
+  const [abaAtiva, setAbaAtiva] = useState<'editar' | 'inscricoes' | 'presencas' | 'evidencias' | 'avaliacoes'>('editar');
   const [evidencias, setEvidencias] = useState<CapacitacaoEvidencia[]>([]);
   const [uploading, setUploading] = useState(false);
   const [filtroTipoEvidencia, setFiltroTipoEvidencia] = useState<string>('');
@@ -1315,6 +1317,30 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
               <FileText size={18} />
               Evidências ({evidencias.length})
             </button>
+            {!modoInscricoes && (
+              <button
+                onClick={() => setAbaAtiva('avaliacoes')}
+                style={{
+                  flex: 1,
+                  padding: '16px 24px',
+                  background: abaAtiva === 'avaliacoes' ? 'white' : 'transparent',
+                  color: abaAtiva === 'avaliacoes' ? '#056839' : '#64748b',
+                  border: 'none',
+                  borderBottom: abaAtiva === 'avaliacoes' ? '3px solid #056839' : '3px solid transparent',
+                  cursor: 'pointer',
+                  fontWeight: abaAtiva === 'avaliacoes' ? '600' : '500',
+                  fontSize: '15px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <ClipboardCheck size={18} />
+                Avaliações
+              </button>
+            )}
           </div>
         </div>
 
@@ -2377,6 +2403,17 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
             </div>
           )}
         </div>
+        )}
+
+        {abaAtiva === 'avaliacoes' && !modoInscricoes && (
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '24px',
+            marginBottom: '24px'
+          }}>
+            <VisualizarAvaliacoes idCapacitacao={idCapacitacao} />
+          </div>
         )}
       </div>
     </div>

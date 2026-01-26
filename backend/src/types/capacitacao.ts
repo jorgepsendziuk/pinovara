@@ -19,6 +19,10 @@ export interface Capacitacao {
     id: number;
     titulo: string;
   };
+  validacao_status?: number | null;
+  validacao_usuario?: number | null;
+  validacao_data?: Date | null;
+  validacao_obs?: string | null;
 }
 
 export interface CapacitacaoFilters {

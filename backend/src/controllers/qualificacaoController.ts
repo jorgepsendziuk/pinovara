@@ -12,14 +12,9 @@ class QualificacaoController {
    */
   async list(req: AuthRequest, res: Response): Promise<void> {
     try {
-      // Verificar se é admin ou supervisor
-      const isAdmin = req.user?.roles?.some(role => 
-        role.name === 'admin' && role.module.name === 'sistema'
-      );
-      const isSupervisor = req.user?.roles?.some(role => 
-        role.name === 'supervisao' && role.module.name === 'organizacoes'
-      );
-      const canSeeAll = isAdmin || isSupervisor;
+      // Verificar se é admin, coordenador ou supervisor (todos veem tudo)
+      const userPermissions = (req as any).userPermissions;
+      const canSeeAll = userPermissions?.canAccessAll || false;
 
       const filters: QualificacaoFilters = {
         titulo: req.query.titulo as string,
@@ -32,7 +27,7 @@ class QualificacaoController {
                req.query.pageSize ? parseInt(req.query.pageSize as string) : 10
       };
 
-      // Se não for admin/supervisor, filtrar para mostrar apenas as que criou + as padrão (1, 2, 3)
+      // Se não for admin/supervisor/coordenador, filtrar para mostrar apenas as que criou + as padrão (1, 2, 3)
       if (!canSeeAll && req.user?.id) {
         // Não aplicar filtro de created_by aqui, vamos filtrar no service
         // Passar informação de que precisa filtrar
@@ -85,26 +80,30 @@ class QualificacaoController {
       }
 
       // Verificar permissões de acesso
-      const isAdmin = req.user?.roles?.some(role => 
-        role.name === 'admin' && role.module.name === 'sistema'
-      );
-      const isSupervisor = req.user?.roles?.some(role => 
-        role.name === 'supervisao' && role.module.name === 'organizacoes'
-      );
-      const canSeeAll = isAdmin || isSupervisor;
+      const userPermissions = (req as any).userPermissions;
+      const canSeeAll = userPermissions?.canAccessAll || false;
       const isPadrao = id === 1 || id === 2 || id === 3;
 
-      // Se não for admin/supervisor, verificar se pode ver esta qualificação
-      if (!canSeeAll && !isPadrao && qualificacao.created_by !== req.user?.id) {
-        res.status(HttpStatus.FORBIDDEN).json({
-          success: false,
-          error: {
-            message: 'Acesso negado. Você só pode visualizar qualificações que criou ou as qualificações padrão do sistema.',
-            statusCode: HttpStatus.FORBIDDEN
-          },
-          timestamp: new Date().toISOString()
-        });
-        return;
+      // Se não for admin/supervisor/coordenador, verificar se pode ver esta qualificação
+      if (!canSeeAll) {
+        const isCriador = qualificacao.created_by === req.user?.id;
+        const qualificacaoData = qualificacao as any;
+        const isMembroEquipe = qualificacaoData.equipe_tecnica?.some(
+          (membro: any) => membro.id_tecnico === req.user?.id
+        ) || false;
+
+        // Pode ver se: é criador OU membro da equipe técnica OU é qualificação padrão
+        if (!isCriador && !isMembroEquipe && !isPadrao) {
+          res.status(HttpStatus.FORBIDDEN).json({
+            success: false,
+            error: {
+              message: 'Acesso negado. Você só pode visualizar qualificações que criou, está vinculado ou as qualificações padrão do sistema.',
+              statusCode: HttpStatus.FORBIDDEN
+            },
+            timestamp: new Date().toISOString()
+          });
+          return;
+        }
       }
 
       res.status(HttpStatus.OK).json({
@@ -202,19 +201,15 @@ class QualificacaoController {
       }
 
       // Verificar permissões para edição
-      const isAdmin = req.user.roles?.some(role => 
-        role.name === 'admin' && role.module.name === 'sistema'
-      );
-      const isSupervisor = req.user.roles?.some(role => 
-        role.name === 'supervisao' && role.module.name === 'organizacoes'
-      );
+      const userPermissions = (req as any).userPermissions;
+      const isAdmin = userPermissions?.isAdmin || false;
 
-      // Qualificações padrão (1, 2, 3) só podem ser editadas por admin ou supervisor
-      if ((id === 1 || id === 2 || id === 3) && !isAdmin && !isSupervisor) {
+      // Qualificações padrão (1, 2, 3) só podem ser editadas por admin
+      if ((id === 1 || id === 2 || id === 3) && !isAdmin) {
         res.status(HttpStatus.FORBIDDEN).json({
           success: false,
           error: {
-            message: 'Acesso negado. Apenas administradores e supervisores podem editar qualificações padrão do sistema.',
+            message: 'Acesso negado. Apenas administradores podem editar qualificações padrão do sistema.',
             statusCode: HttpStatus.FORBIDDEN
           },
           timestamp: new Date().toISOString()
@@ -222,8 +217,8 @@ class QualificacaoController {
         return;
       }
 
-      // Para outras qualificações, verificar se é criador ou membro da equipe técnica
-      if (!isAdmin && !isSupervisor && (id !== 1 && id !== 2 && id !== 3)) {
+      // Para outras qualificações, verificar se é admin OU (criador OU membro da equipe técnica)
+      if (!isAdmin) {
         const isCriador = oldData.created_by === req.user?.id;
         const qualificacaoData = oldData as any;
         const isMembroEquipe = qualificacaoData.equipe_tecnica?.some(
@@ -234,7 +229,7 @@ class QualificacaoController {
           res.status(HttpStatus.FORBIDDEN).json({
             success: false,
             error: {
-              message: 'Acesso negado. Apenas o criador e a equipe técnica podem editar esta qualificação.',
+              message: 'Acesso negado. Apenas administradores, o criador e a equipe técnica podem editar esta qualificação.',
               statusCode: HttpStatus.FORBIDDEN
             },
             timestamp: new Date().toISOString()
@@ -324,16 +319,12 @@ class QualificacaoController {
         return;
       }
 
-      // Verificar permissões: admin/supervisor podem excluir qualquer qualificação,
+      // Verificar permissões: apenas admin pode excluir qualquer qualificação,
       // outros só podem excluir se forem criador ou membro da equipe técnica
-      const isAdmin = req.user.roles?.some(role => 
-        role.name === 'admin' && role.module.name === 'sistema'
-      );
-      const isSupervisor = req.user.roles?.some(role => 
-        role.name === 'supervisao' && role.module.name === 'organizacoes'
-      );
+      const userPermissions = (req as any).userPermissions;
+      const isAdmin = userPermissions?.isAdmin || false;
 
-      if (!isAdmin && !isSupervisor) {
+      if (!isAdmin) {
         const isCriador = oldData.created_by === req.user?.id;
         const qualificacaoData = oldData as any;
         const isMembroEquipe = qualificacaoData.equipe_tecnica?.some(
@@ -344,7 +335,7 @@ class QualificacaoController {
           res.status(HttpStatus.FORBIDDEN).json({
             success: false,
             error: {
-              message: 'Acesso negado. Apenas o criador e a equipe técnica podem excluir esta qualificação.',
+              message: 'Acesso negado. Apenas administradores, o criador e a equipe técnica podem excluir esta qualificação.',
               statusCode: HttpStatus.FORBIDDEN
             },
             timestamp: new Date().toISOString()
@@ -488,22 +479,18 @@ class QualificacaoController {
    */
   async listTecnicosDisponiveis(req: AuthRequest, res: Response): Promise<void> {
     try {
-      // Verificar se o usuário tem permissão (deve ser técnico, admin ou supervisor)
-      const isAdmin = req.user?.roles?.some(role =>
-        role.name === 'admin' && role.module.name === 'sistema'
-      );
-      const isSupervisor = req.user?.roles?.some(role =>
-        role.name === 'supervisor' && role.module.name === 'organizacoes'
-      );
-      const isTecnico = req.user?.roles?.some(role =>
-        role.name === 'tecnico' && role.module.name === 'organizacoes'
-      );
+      // Verificar se o usuário tem permissão (deve ser técnico, coordenador, supervisor ou admin)
+      const userPermissions = (req as any).userPermissions;
+      const isAdmin = userPermissions?.isAdmin || false;
+      const isSupervisor = userPermissions?.isSupervisor || false;
+      const isCoordinator = userPermissions?.isCoordinator || false;
+      const isTecnico = userPermissions?.isTechnician || false;
 
-      if (!isAdmin && !isSupervisor && !isTecnico) {
+      if (!isAdmin && !isSupervisor && !isCoordinator && !isTecnico) {
         res.status(HttpStatus.FORBIDDEN).json({
           success: false,
           error: {
-            message: 'Acesso negado. Apenas técnicos, supervisores ou administradores podem acessar esta funcionalidade.',
+            message: 'Acesso negado. Apenas técnicos, coordenadores, supervisores ou administradores podem acessar esta funcionalidade.',
             statusCode: HttpStatus.FORBIDDEN
           },
           timestamp: new Date().toISOString()
@@ -547,6 +534,104 @@ class QualificacaoController {
         },
         timestamp: new Date().toISOString()
       });
+    }
+  }
+
+  /**
+   * PATCH /qualificacoes/:id/validacao
+   * Atualizar apenas campos de validação (permitido para coordenadores)
+   */
+  async updateValidacao(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      const { validacao_status, validacao_obs, validacao_usuario } = req.body;
+      const userPermissions = (req as any).userPermissions;
+
+      if (isNaN(id)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: {
+            message: 'ID inválido',
+            statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Verificar se usuário é coordenador ou admin (supervisor NÃO pode validar)
+      if (!userPermissions?.isCoordinator && !userPermissions?.isAdmin) {
+        res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          error: {
+            message: 'Apenas coordenadores e administradores podem validar qualificações',
+            statusCode: HttpStatus.FORBIDDEN
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Atualizar apenas campos de validação
+      const dadosValidacao = {
+        validacao_status: validacao_status || null,
+        validacao_obs: validacao_obs || null,
+        validacao_usuario: validacao_usuario || req.user?.id || null,
+        validacao_data: new Date()
+      };
+
+      const qualificacao = await qualificacaoService.updateValidacao(id, dadosValidacao);
+
+      // Registrar auditoria
+      await auditService.createLog({
+        action: AuditAction.UPDATE,
+        entity: 'qualificacao',
+        entityId: id.toString(),
+        userId: req.user!.id,
+        newData: dadosValidacao,
+        req
+      });
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        message: 'Validação atualizada com sucesso',
+        data: qualificacao,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
+   * GET /qualificacoes/:id/historico-validacao
+   * Buscar histórico completo de validação de uma qualificação
+   */
+  async getHistoricoValidacao(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+
+      if (isNaN(id)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: {
+            message: 'ID inválido',
+            statusCode: HttpStatus.BAD_REQUEST
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const historico = await qualificacaoService.getHistoricoValidacao(id);
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        data: historico,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      this.handleError(error, res);
     }
   }
 }

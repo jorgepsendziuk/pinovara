@@ -41,6 +41,12 @@ export interface Capacitacao {
     name: string;
     email: string;
   } | null;
+  total_inscritos?: number;
+  validacao_status?: number | null;
+  validacao_usuario?: number | null;
+  validacao_data?: string | null;
+  validacao_obs?: string | null;
+  validacao_usuario_nome?: string | null;
 }
 
 export interface CapacitacaoFilters {

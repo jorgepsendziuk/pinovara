@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import DataGrid, { DataGridColumn } from '../../components/DataGrid/DataGrid';
 import { qualificacaoAPI } from '../../services/qualificacaoService';
 import { Qualificacao, QualificacaoListResponse } from '../../types/qualificacao';
-import { Edit, Trash2, FileText, BookOpen, Plus, Search, Loader2, User, Download, Clock } from 'lucide-react';
+import { Edit, Trash2, FileText, BookOpen, Plus, Search, Loader2, User, Download, Clock, CheckCircle, XCircle, AlertCircle, Clipboard } from 'lucide-react';
 import api from '../../services/api';
 import ModalMateriais from '../../components/qualificacoes/ModalMateriais';
+import ModalValidacao from '../../components/qualificacoes/ModalValidacao';
 import { useAuth } from '../../contexts/AuthContext';
 import { gerarPdfConteudoQualificacao } from '../../utils/pdfConteudoQualificacao';
+import Tooltip from '../../components/Tooltip';
 import './QualificacoesModule.css';
 
 interface ListaQualificacoesProps {
@@ -20,7 +22,7 @@ interface UserInfo {
 }
 
 function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
-  const { isAdmin, isSupervisor } = useAuth();
+  const { isAdmin, isCoordinator, hasPermission } = useAuth();
   const [qualificacoes, setQualificacoes] = useState<Qualificacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroTitulo, setFiltroTitulo] = useState('');
@@ -28,6 +30,11 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
   const [total, setTotal] = useState(0);
   const [criadores, setCriadores] = useState<Map<number, UserInfo>>(new Map());
   const [modalMateriais, setModalMateriais] = useState<{ isOpen: boolean; idQualificacao: number; titulo: string }>({
+    isOpen: false,
+    idQualificacao: 0,
+    titulo: ''
+  });
+  const [modalValidacao, setModalValidacao] = useState<{ isOpen: boolean; idQualificacao: number; titulo: string }>({
     isOpen: false,
     idQualificacao: 0,
     titulo: ''
@@ -50,10 +57,15 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
     return id === 1 || id === 2 || id === 3;
   };
 
-  // Verificar se pode editar qualificação padrão
+  // Verificar se pode editar qualificação padrão (apenas admin)
   const podeEditarPadrao = (id?: number): boolean => {
-    if (!isQualificacaoPadrao(id)) return true;
-    return isAdmin() || isSupervisor();
+    if (!isQualificacaoPadrao(id)) return isAdmin(); // Apenas admin pode editar qualquer qualificação
+    return isAdmin(); // Qualificações padrão só podem ser editadas por admin
+  };
+  
+  // Verificar se pode editar qualquer qualificação (apenas admin)
+  const podeEditarQualificacao = (): boolean => {
+    return isAdmin();
   };
 
   useEffect(() => {
@@ -136,51 +148,48 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
       align: 'left',
       render: (_, record: Qualificacao) => {
         const isPadrao = isQualificacaoPadrao(record.id);
-        const podeEditar = podeEditarPadrao(record.id);
+        const podeEditar = podeEditarQualificacao();
         
         return (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-start', alignItems: 'center' }}>
-            <button
-              onClick={() => onNavigate('edicao-qualificacao', record.id)}
-              title={podeEditar ? "Editar qualificação" : "Apenas administradores e supervisores podem editar qualificações padrão"}
-              disabled={!podeEditar}
-              style={{
-                padding: '6px 8px',
-                border: '1px solid #3b2313',
-                background: podeEditar ? 'white' : '#f3f4f6',
-                borderRadius: '4px',
-                cursor: podeEditar ? 'pointer' : 'not-allowed',
-                color: podeEditar ? '#3b2313' : '#9ca3af',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-                opacity: podeEditar ? 1 : 0.6
-              }}
-              onMouseOver={(e) => {
-                if (podeEditar) {
-                  e.currentTarget.style.background = '#3b2313';
-                  e.currentTarget.style.color = 'white';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (podeEditar) {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.color = '#3b2313';
-                }
-              }}
-            >
-              <Edit size={16} />
-            </button>
-            <button
-              onClick={() => {
-                setModalMateriais({
-                  isOpen: true,
-                  idQualificacao: record.id!,
-                  titulo: record.titulo
-                });
-              }}
-              title="Gerenciar materiais"
+            {podeEditar && (
+              <Tooltip text="Editar qualificação" backgroundColor="#3b2313" delay={0}>
+                <button
+                  onClick={() => onNavigate('edicao-qualificacao', record.id)}
+                  style={{
+                    padding: '6px 8px',
+                    border: '1px solid #3b2313',
+                    background: 'white',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    color: '#3b2313',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#3b2313';
+                    e.currentTarget.style.color = 'white';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'white';
+                    e.currentTarget.style.color = '#3b2313';
+                  }}
+                >
+                  <Edit size={16} />
+                </button>
+              </Tooltip>
+            )}
+            <Tooltip text="Gerenciar materiais" backgroundColor="#056839" delay={0}>
+              <button
+                onClick={() => {
+                  setModalMateriais({
+                    isOpen: true,
+                    idQualificacao: record.id!,
+                    titulo: record.titulo
+                  });
+                }}
               style={{
                 padding: '6px 8px',
                 border: '1px solid #056839',
@@ -204,17 +213,53 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
             >
               <FileText size={16} />
             </button>
-            <button
-              onClick={async () => {
-                try {
-                  const qualificacaoCompleta = await qualificacaoAPI.getById(record.id!);
-                  await gerarPdfConteudoQualificacao(qualificacaoCompleta);
-                } catch (error) {
-                  console.error('Erro ao gerar PDF:', error);
-                  alert('Erro ao gerar PDF da qualificação');
-                }
-              }}
-              title="Gerar PDF do conteúdo"
+            </Tooltip>
+            {(hasPermission('sistema', 'admin') || isCoordinator()) && (
+              <Tooltip text="Validar qualificação" backgroundColor="#10b981" delay={0}>
+                <button
+                  onClick={() => {
+                    setModalValidacao({
+                      isOpen: true,
+                      idQualificacao: record.id!,
+                      titulo: record.titulo || 'Qualificação'
+                    });
+                  }}
+                  style={{
+                    padding: '6px 8px',
+                    border: '1px solid #10b981',
+                    background: 'white',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    color: '#10b981',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#10b981';
+                    e.currentTarget.style.color = 'white';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'white';
+                    e.currentTarget.style.color = '#10b981';
+                  }}
+                >
+                  <Clipboard size={16} />
+                </button>
+              </Tooltip>
+            )}
+            <Tooltip text="Gerar PDF do conteúdo" backgroundColor="#3b82f6" delay={0}>
+              <button
+                onClick={async () => {
+                  try {
+                    const qualificacaoCompleta = await qualificacaoAPI.getById(record.id!);
+                    await gerarPdfConteudoQualificacao(qualificacaoCompleta);
+                  } catch (error) {
+                    console.error('Erro ao gerar PDF:', error);
+                    alert('Erro ao gerar PDF da qualificação');
+                  }
+                }}
               style={{
                 padding: '6px 8px',
                 border: '1px solid #3b82f6',
@@ -238,10 +283,11 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
             >
               <Download size={16} />
             </button>
+            </Tooltip>
             {!isPadrao && (
-              <button
-                onClick={() => handleExcluir(record.id!)}
-                title="Excluir qualificação"
+              <Tooltip text="Excluir qualificação" backgroundColor="#dc2626" delay={0}>
+                <button
+                  onClick={() => handleExcluir(record.id!)}
                 style={{
                   padding: '6px 8px',
                   border: '1px solid #dc2626',
@@ -265,6 +311,7 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
               >
                 <Trash2 size={16} />
               </button>
+              </Tooltip>
             )}
           </div>
         );
@@ -343,6 +390,68 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
                 <span>Criada em {formatarDataHora(record.created_at)}</span>
               </div>
             )}
+          </div>
+        );
+      }
+    },
+    {
+      key: 'validacao',
+      title: 'Validação',
+      width: '15%',
+      align: 'center',
+      render: (_, record: Qualificacao) => {
+        const status = record.validacao_status || 1;
+        const statusConfig = {
+          1: { label: 'NÃO VALIDADO', cor: '#9ca3af', icon: Clock },
+          2: { label: 'VALIDADO', cor: '#10b981', icon: CheckCircle },
+          3: { label: 'PENDÊNCIA', cor: '#f59e0b', icon: AlertCircle },
+          4: { label: 'REPROVADO', cor: '#ef4444', icon: XCircle },
+        };
+        const config = statusConfig[status as keyof typeof statusConfig] || statusConfig[1];
+        const StatusIcon = config.icon;
+        const podeValidar = hasPermission('sistema', 'admin') || isCoordinator();
+
+        return (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <span
+              onClick={() => {
+                if (podeValidar) {
+                  setModalValidacao({
+                    isOpen: true,
+                    idQualificacao: record.id!,
+                    titulo: record.titulo || 'Qualificação'
+                  });
+                }
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: '600',
+                backgroundColor: config.cor,
+                color: 'white',
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                cursor: podeValidar ? 'pointer' : 'default',
+                transition: podeValidar ? 'transform 0.2s' : 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (podeValidar) {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (podeValidar) {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }
+              }}
+              title={podeValidar ? 'Clique para gerenciar validação' : config.label}
+            >
+              <StatusIcon size={14} />
+              <span>{config.label}</span>
+            </span>
           </div>
         );
       }
@@ -518,6 +627,18 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
         isOpen={modalMateriais.isOpen}
         onClose={() => setModalMateriais({ isOpen: false, idQualificacao: 0, titulo: '' })}
       />
+
+      {/* Modal de Validação */}
+      {modalValidacao.isOpen && (
+        <ModalValidacao
+          qualificacaoId={modalValidacao.idQualificacao}
+          qualificacaoNome={modalValidacao.titulo}
+          onClose={() => {
+            setModalValidacao({ isOpen: false, idQualificacao: 0, titulo: '' });
+            carregarQualificacoes(); // Recarregar para atualizar os dados
+          }}
+        />
+      )}
     </div>
   );
 }

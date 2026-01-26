@@ -3,17 +3,24 @@ import { qualificacaoController } from '../controllers/qualificacaoController';
 import { capacitacaoMaterialController, uploadMaterial } from '../controllers/capacitacaoMaterialController';
 import { authenticateToken } from '../middleware/auth';
 import { requireAdmin } from '../middleware/adminAuth';
+import { checkQualificacaoCapacitacaoPermission } from '../middleware/qualificacaoCapacitacaoAuth';
 
 const router = Router();
 
 // Todas as rotas precisam de autenticação
 router.use(authenticateToken);
+// Middleware para definir permissões de qualificações/capacitações
+router.use(checkQualificacaoCapacitacaoPermission);
 
 // Rotas públicas (autenticadas)
 router.get('/', qualificacaoController.list.bind(qualificacaoController));
 
 // Rota para listar técnicos disponíveis (acessível por técnicos) - deve vir ANTES das rotas com parâmetros
 router.get('/tecnicos-disponiveis', qualificacaoController.listTecnicosDisponiveis.bind(qualificacaoController));
+
+// Rota de validação (deve vir antes de /:id para evitar conflito)
+router.patch('/:id/validacao', qualificacaoController.updateValidacao.bind(qualificacaoController));
+router.get('/:id/historico-validacao', qualificacaoController.getHistoricoValidacao.bind(qualificacaoController));
 
 router.get('/:id', qualificacaoController.getById.bind(qualificacaoController));
 

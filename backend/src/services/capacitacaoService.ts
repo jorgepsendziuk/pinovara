@@ -133,6 +133,11 @@ class CapacitacaoService {
                 }
               }
             }
+          },
+          _count: {
+            select: {
+              capacitacao_inscricao: true
+            }
           }
         }
       }),
@@ -221,7 +226,8 @@ class CapacitacaoService {
           id: criador.id,
           name: criador.name,
           email: criador.email
-        } : null
+        } : null,
+        total_inscritos: c._count?.capacitacao_inscricao || 0
       };
     });
 
@@ -337,6 +343,13 @@ class CapacitacaoService {
               }
             }
           }
+        },
+        validacao_usuario_user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
         }
       }
     });
@@ -404,7 +417,8 @@ class CapacitacaoService {
         id_tecnico: ct.id_tecnico,
         tecnico: ct.tecnico
       })),
-      tecnico_criador: tecnicoCriador
+      tecnico_criador: tecnicoCriador,
+      validacao_usuario_nome: capacitacao.validacao_usuario_user?.name || null
     } as any;
   }
 
@@ -1076,6 +1090,167 @@ class CapacitacaoService {
     });
 
     return presencas as any;
+  }
+
+  /**
+   * Atualizar apenas campos de validação (para coordenadores)
+   */
+  async updateValidacao(id: number, dadosValidacao: {
+    validacao_status: number | null;
+    validacao_obs: string | null;
+    validacao_usuario: number | null;
+    validacao_data: Date;
+  }): Promise<Capacitacao> {
+    // Verificar se capacitação existe
+    const existingCapacitacao = await prisma.capacitacao.findUnique({
+      where: { id }
+    });
+
+    if (!existingCapacitacao) {
+      throw new ApiError({
+        message: 'Capacitação não encontrada',
+        statusCode: HttpStatus.NOT_FOUND,
+        code: ErrorCode.RESOURCE_NOT_FOUND
+      });
+    }
+
+    // Atualizar apenas campos de validação
+    const capacitacao = await prisma.capacitacao.update({
+      where: { id },
+      data: {
+        validacao_status: dadosValidacao.validacao_status,
+        validacao_obs: dadosValidacao.validacao_obs,
+        validacao_usuario: dadosValidacao.validacao_usuario,
+        validacao_data: dadosValidacao.validacao_data
+      }
+    });
+
+    return capacitacao as Capacitacao;
+  }
+
+  /**
+   * Buscar histórico completo de validação de uma capacitação
+   * Busca todas as mudanças de status no audit_logs
+   */
+  async getHistoricoValidacao(idCapacitacao: number): Promise<any[]> {
+    // Verificar se capacitação existe
+    const capacitacao = await prisma.capacitacao.findUnique({
+      where: { id: idCapacitacao },
+      select: { id: true, titulo: true }
+    });
+
+    if (!capacitacao) {
+      throw new ApiError({
+        message: 'Capacitação não encontrada',
+        statusCode: HttpStatus.NOT_FOUND,
+        code: ErrorCode.RESOURCE_NOT_FOUND
+      });
+    }
+
+    // Buscar histórico do audit_logs
+    const sqlQuery = `
+      SELECT 
+        al.id AS log_id,
+        al."entityId"::integer AS capacitacao_id,
+        al.action,
+        al."createdAt" AS data_mudanca,
+        al."userId",
+        u.name AS usuario_nome,
+        u.email AS usuario_email,
+        al."oldData",
+        al."newData"
+      FROM pinovara.audit_logs al
+      LEFT JOIN pinovara.users u ON al."userId" = u.id
+      WHERE al.entity = 'capacitacao' 
+        AND al."entityId"::integer = ${idCapacitacao}
+        AND (
+          al.action LIKE '%validacao%' 
+          OR al.action LIKE '%validation%' 
+          OR al."newData"::text LIKE '%validacao_status%'
+          OR al."oldData"::text LIKE '%validacao_status%'
+        )
+      ORDER BY al."createdAt" DESC
+    `;
+
+    try {
+      const historico = await prisma.$queryRawUnsafe(sqlQuery) as any[];
+      
+      // Processar histórico para extrair status anterior e novo
+      return historico.map(item => {
+        let statusAnterior: number | null = null;
+        let statusNovo: number | null = null;
+        let observacoes: string | null = null;
+
+        // Tentar extrair do newData (JSON)
+        const newData = item.newData || item.new_data;
+        if (newData) {
+          try {
+            const parsedData = typeof newData === 'string' ? JSON.parse(newData) : newData;
+            if (parsedData.validacao_status !== undefined) {
+              statusNovo = parsedData.validacao_status;
+            }
+            if (parsedData.validacao_obs !== undefined) {
+              observacoes = parsedData.validacao_obs;
+            }
+          } catch (e) {
+            // Se não for JSON, tentar extrair como string
+            const newDataStr = typeof newData === 'string' ? newData : JSON.stringify(newData);
+            if (newDataStr.includes('validacao_status')) {
+              const match = newDataStr.match(/validacao_status["\s:]*(\d+)/);
+              if (match) {
+                statusNovo = parseInt(match[1]);
+              }
+            }
+            if (newDataStr.includes('validacao_obs')) {
+              const match = newDataStr.match(/validacao_obs["\s:]*["']([^"']+)["']/);
+              if (match) {
+                observacoes = match[1];
+              }
+            }
+          }
+        }
+
+        // Tentar extrair do oldData (JSON)
+        const oldData = item.oldData || item.old_data;
+        if (oldData) {
+          try {
+            const parsedData = typeof oldData === 'string' ? JSON.parse(oldData) : oldData;
+            if (parsedData.validacao_status !== undefined) {
+              statusAnterior = parsedData.validacao_status;
+            }
+          } catch (e) {
+            // Se não for JSON, tentar extrair como string
+            const oldDataStr = typeof oldData === 'string' ? oldData : JSON.stringify(oldData);
+            if (oldDataStr.includes('validacao_status')) {
+              const match = oldDataStr.match(/validacao_status["\s:]*(\d+)/);
+              if (match) {
+                statusAnterior = parseInt(match[1]);
+              }
+            }
+          }
+        }
+
+        return {
+          log_id: item.log_id,
+          capacitacao_id: item.capacitacao_id,
+          data_mudanca: item.data_mudanca,
+          status_anterior: statusAnterior,
+          status_novo: statusNovo,
+          usuario_nome: item.usuario_nome,
+          usuario_email: item.usuario_email,
+          observacoes: observacoes,
+          action: item.action
+        };
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar histórico de validação:', error);
+      throw new ApiError({
+        message: 'Erro ao buscar histórico de validação',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR,
+        details: error.message
+      });
+    }
   }
 }
 
