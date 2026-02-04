@@ -15,6 +15,7 @@ import qualificacaoRoutes from './qualificacaoRoutes';
 import capacitacaoRoutes from './capacitacaoRoutes';
 import capacitacaoPublicRoutes from './capacitacaoPublicRoutes';
 import avaliacaoRoutes from './avaliacaoRoutes';
+import supervisaoOcupacionalRoutes from './supervisaoOcupacionalRoutes';
 
 const router = Router();
 
@@ -106,5 +107,6 @@ router.use('/capacitacoes', capacitacaoRoutes);  // Rotas autenticadas
 
 router.use('/avaliacoes', avaliacaoRoutes);
 router.use('/repositorio', repositorioRoutes);
+router.use('/supervisao-ocupacional', supervisaoOcupacionalRoutes);
 
 export default router;

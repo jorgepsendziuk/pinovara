@@ -20,6 +20,7 @@ import SyncODKGeral from './pages/admin/SyncODKGeral';
 import OrganizacoesModule from './pages/modules/OrganizacoesModule';
 import PerfilModule from './pages/modules/PerfilModule';
 import QualificacoesModule from './pages/modules/QualificacoesModule';
+import SupervisaoOcupacionalModule from './pages/modules/SupervisaoOcupacionalModule';
 import RepositorioPublico from './pages/RepositorioPublico';
 import CapacitacaoPublica from './pages/qualificacoes/CapacitacaoPublica';
 import FormAvaliacao from './pages/qualificacoes/FormAvaliacao';
@@ -118,6 +119,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <QualificacoesModule />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/supervisao-ocupacional/*"
+        element={
+          <ProtectedRoute>
+            <SupervisaoOcupacionalModule />
           </ProtectedRoute>
         }
       />

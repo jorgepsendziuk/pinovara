@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["pinovara", "pinovara_aux", "capacitacao"]
+  schemas  = ["pinovara", "pinovara_aux", "capacitacao", "familias", "familias_aux"]
 }
 
 model audit_logs {
@@ -1196,6 +1196,8 @@ model users {
   capacitacao_tecnico_membro                                                 capacitacao_tecnico[]   @relation("capacitacao_tecnico_tecnico")
   capacitacao_tecnico_criados                                                capacitacao_tecnico[]   @relation("capacitacao_tecnico_criador")
   capacitacao_validacao_usuario                                              capacitacao[]          @relation("capacitacao_validacao_usuario")
+  familias_como_tecnico                                                      familias_individual[]   @relation("FamiliaTecnico")
+  familias_como_estagiario                                                   familias_individual[]   @relation("FamiliaEstagiario")
 
   @@schema("pinovara")
 }
@@ -1852,4 +1854,309 @@ model capacitacao_evidencia {
   @@index([tipo])
   @@index([uploaded_by])
   @@schema("capacitacao")
+}
+
+// ============================================
+// Modelos do Schema familias_aux
+// ============================================
+
+model gleba {
+  id          Int     @id
+  descricao   String? @db.VarChar
+  municipio   String? @db.VarChar
+  id_municipio Int?
+  estado      String? @db.Char(2)
+  id_estado   Int?
+  pasta       String? @db.VarChar
+
+  estado_rel      estado_familias?      @relation("GlebaEstado", fields: [id_estado], references: [id])
+  municipio_rel   municipio_ibge_familias? @relation("GlebaMunicipio", fields: [id_municipio], references: [id])
+  familias        familias_individual[]
+
+  @@schema("familias_aux")
+  @@map("gleba")
+}
+
+model estado_familias {
+  id        Int     @id
+  descricao String? @db.VarChar
+  uf        String? @db.Char(2)
+  id_unit   Int?
+
+  glebas    gleba[] @relation("GlebaEstado")
+  municipios municipio_ibge_familias[]
+  familias  familias_individual[]
+
+  @@schema("familias_aux")
+  @@map("estado")
+}
+
+model municipio_ibge_familias {
+  id            Int     @id
+  descricao     String? @db.VarChar
+  id_estado     Int?
+  uf            String? @db.Char(2)
+  modulo_fiscal Int?
+
+  estado estado_familias? @relation(fields: [id_estado], references: [id])
+  glebas gleba[] @relation("GlebaMunicipio")
+  familias familias_individual[]
+
+  @@schema("familias_aux")
+  @@map("municipio_ibge")
+}
+
+model validacao {
+  id        Int     @id
+  descricao String? @db.VarChar
+
+  familias familias_individual[]
+
+  @@schema("familias_aux")
+  @@map("validacao")
+}
+
+model validacao_estagiario {
+  id        Int     @id
+  descricao String? @db.VarChar
+
+  @@schema("familias_aux")
+  @@map("validacao_estagiario")
+}
+
+// ============================================
+// Modelos do Schema familias
+// ============================================
+
+model familias_individual {
+  id                          Int       @id @default(autoincrement())
+  uri                         String    @unique @map("_uri") @db.VarChar(80)
+  creator_uri_user            String?   @map("_creator_uri_user") @db.VarChar(80)
+  creation_date               DateTime? @map("_creation_date") @db.Timestamp(6)
+  last_update_uri_user       String?   @map("_last_update_uri_user") @db.VarChar(80)
+  last_update_date           DateTime? @map("_last_update_date") @db.Timestamp(6)
+  model_version               Int?      @map("_model_version")
+  ui_version                  Int?      @map("_ui_version")
+  is_complete                 Boolean?   @map("_is_complete")
+  submission_date            DateTime? @map("_submission_date") @db.Timestamp(6)
+  marked_as_complete_date    DateTime? @map("_marked_as_complete_date") @db.Timestamp(6)
+  
+  // Localização
+  estado                      Int?
+  municipio                   Int?
+  cod_gleba                   Int?
+  comunidade                  String?   @db.VarChar
+  quilombo                    String?   @db.VarChar
+  
+  // GPS
+  gps_lat                     Float?    @db.DoublePrecision
+  gps_lng                     Float?    @db.DoublePrecision
+  gps_alt                     Float?    @db.DoublePrecision
+  gps_acc                     Float?    @db.DoublePrecision
+  
+  // Metadados ODK
+  deviceid                    String?   @db.VarChar
+  meta_instance_id            String?   @db.VarChar
+  meta_instance_name          String?   @db.VarChar
+  inicio                      DateTime? @db.Timestamp(6)
+  fim                         DateTime? @db.Timestamp(6)
+  
+  // Validação
+  validacao                   Int?      @default(2)
+  obs_validacao               String?   @db.VarChar
+  tecnico                     Int?
+  estagiario                  Int?
+  validacao_estagiario        Int?      @default(2)
+  data_hora_alterado          DateTime? @db.Timestamp(6)
+  data_hora_validado          DateTime? @db.Timestamp(6)
+  
+  // Status
+  removido                    Boolean?  @default(false)
+  formulario_completo         Int?      @default(1)
+  
+  // Relacionamentos
+  estado_rel                  estado_familias?   @relation(fields: [estado], references: [id])
+  municipio_rel               municipio_ibge_familias? @relation(fields: [municipio], references: [id])
+  gleba_rel                   gleba?    @relation(fields: [cod_gleba], references: [id])
+  validacao_rel               validacao? @relation(fields: [validacao], references: [id])
+  tecnico_rel                 users?    @relation("FamiliaTecnico", fields: [tecnico], references: [id])
+  estagiario_rel              users?    @relation("FamiliaEstagiario", fields: [estagiario], references: [id])
+  
+  // Campos principais (simplificados - muitos campos foram omitidos para não sobrecarregar)
+  obs_gerais                  String?   @db.VarChar
+  n_moradores                 Int?
+  tipo_formulario             Int?
+  
+  // Informações Iniciais
+  num_imovel                  String?   @db.VarChar
+  aceitou_visita              Int?
+  tem_nome                    Int?
+  
+  // Identificação da Unidade Familiar
+  iuf_ocup_nome               String?   @db.VarChar
+  iuf_ocup_cpf                String?   @db.VarChar(11)
+  iuf_conj_nome               String?   @db.VarChar
+  iuf_conj_cpf                String?   @db.VarChar(11)
+  iuf_desc_acesso             String?   @db.VarChar
+  
+  // Identificação Ocupante (g00_0)
+  iuf_ocup_conhecido          String?   @db.VarChar
+  iuf_ocup_sexo               Int?
+  iuf_ocup_d_nascimento       DateTime? @db.Date
+  iuf_ocup_idade              Int?
+  iuf_ocup_nacionalidade      Int?
+  iuf_ocup_n_estado           Int?
+  iuf_ocup_n_municipio_int    Int?
+  iuf_ocup_nd_identidade      String?   @db.VarChar
+  iuf_ocup_nd_tipo            Int?
+  iuf_ocup_nd_orgao           String?   @db.VarChar
+  iuf_ocup_nd_uf              Int?
+  iuf_ocup_e_civil            Int?
+  iuf_ocup_d_casamento        DateTime? @db.Date
+  iuf_ocup_r_bens             Int?
+  iuf_ocup_n_mae              String?   @db.VarChar
+  iuf_ocup_profissao          Int?
+  iuf_ocup_profissao_outros   String?   @db.VarChar
+  iuf_ocup_aposentado         String?   @db.VarChar
+  iuf_ocup_tel1               String?   @db.VarChar
+  iuf_ocup_tel2               String?   @db.VarChar
+  iuf_ocup_email              String?   @db.VarChar
+  
+  // Identificação Cônjuge (g00_0_1)
+  iuf_conj_conhecido          String?   @db.VarChar
+  iuf_conj_sexo               Int?
+  iuf_conj_d_nascimento       DateTime? @db.Date
+  iuf_conj_idade              Int?
+  iuf_conj_nacionalidade      Int?
+  iuf_conj_n_estado           Int?
+  iuf_conj_n_municipio_int    Int?
+  iuf_conj_nd_identidade      String?   @db.VarChar
+  iuf_conj_nd_tipo            Int?
+  iuf_conj_nd_orgao           String?   @db.VarChar
+  iuf_conj_nd_uf              Int?
+  iuf_conj_e_civil            Int?
+  iuf_conj_d_casamento        DateTime? @db.Date
+  iuf_conj_r_bens             Int?
+  iuf_conj_n_mae              String?   @db.VarChar
+  iuf_conj_profissao          Int?
+  iuf_conj_profissao_outros   String?   @db.VarChar
+  iuf_conj_aposentado         String?   @db.VarChar
+  iuf_conj_tel1               String?   @db.VarChar
+  iuf_conj_tel2               String?   @db.VarChar
+  iuf_conj_email              String?   @db.VarChar
+  
+  // Endereço para Correspondência
+  ec_zona                     Int?
+  ec_logrado                  String?   @db.VarChar
+  ec_numero                   String?   @db.VarChar
+  ec_complem                  String?   @db.VarChar
+  ec_bairro                   String?   @db.VarChar
+  ec_cep                      String?   @db.VarChar
+  ec_uf                       Int?
+  ec_cod_ibg                  Int?
+  
+  // Informações do Imóvel (alguns campos principais)
+  ii_titulo_definitivo        Int?
+  ii_titulo_quitado           Int?
+  ii_titulo_baixa             Int?
+  ii_linha_credito            Int?
+  ii_linha_credito_qual       String?   @db.VarChar
+  ii_fr_regularizacao         Int?
+  ii_fr_r_doc                 Int?
+  ii_fr_r_doc_outro           String?   @db.VarChar
+  ii_p_principal              String?   @db.VarChar
+  ii_r_st                     String?   @db.VarChar
+  ii_do_originaria            DateTime? @db.Date
+  ii_do_atual                 DateTime? @db.Date
+  ii_o_primitivo              Int?
+  ii_din_urbano               Float?    @db.DoublePrecision
+  ii_c_acesso                 Int?
+  ii_car_possui               Int?
+  ii_car_protocolo            String?   @db.VarChar
+  ii_georreferenciada         Int?
+  ii_ai_matricula             Float?    @db.DoublePrecision
+  ii_declarada_medida         Int?
+  ii_vm_fiscal                Float?    @db.DoublePrecision
+  ii_d_possui                 Int?
+  ii_d_orgaopublico           Int?
+  ii_d_orgaopublico_outros    String?   @db.VarChar
+  ii_d_cc_td                  Int?
+  ii_d_cc_ccdru               Int?
+  ii_d_sncr                   String?   @db.VarChar
+  ii_d_certific               String?   @db.VarChar
+  ii_d_comprobatoria          String?   @db.VarChar
+  ii_d_comprobatoria_outros   String?   @db.VarChar
+  
+  // Quadro de Áreas
+  qa_a_sede                   Float?    @db.DoublePrecision
+  qa_a_p_proprio              Float?    @db.DoublePrecision
+  qa_a_m_nativa               Float?    @db.DoublePrecision
+  qa_a_florestada             Float?    @db.DoublePrecision
+  qa_a_pousio                 Float?    @db.DoublePrecision
+  qa_a_p_nativa               Float?    @db.DoublePrecision
+  qa_a_p_plantada             Float?    @db.DoublePrecision
+  qa_a_degradada              Float?    @db.DoublePrecision
+  
+  // Requisitos para Regularização Fundiária
+  rrf_p_cultura               Int?
+  rrf_eo_direta               Int?
+  rrf_eo_forma                Int?
+  rrf_ed_anterior             Int?
+  rrf_ed_anterior_quem         Int?
+  rrf_oc_proprietario         Int?
+  rrf_oc_proprietario_quem    Int?
+  rrf_oc_escravo              Int?
+  rrf_oc_escravo_quem         Int?
+  rrf_oc_beneficiado          Int?
+  rrf_oc_beneficiado_quem     Int?
+  rrf_oc_crime                Int?
+  rrf_oc_crime_quem           Int?
+  rrf_oc_cargo                Int?
+  
+  // Informações de Renda
+  ir_r_bruta                  Int?
+  ir_r_e_lote                 Int?
+  ir_f_p_social               Int?
+  ir_f_p_social_outro         String?   @db.VarChar
+  
+  // Saneamento Básico
+  // sb_q2_10 e sb_q2_7 estão em tabelas separadas (familias_individual_saneamento e familias_individual_agua)
+  sb_moradia_outro            String?   @db.VarChar
+  sb_agua_outro               String?   @db.VarChar
+  sb_agua_suficiente          Int?
+  sb_d_residuo                Int?
+  sb_d_residuo_outro          String?   @db.VarChar
+  
+  // Segurança Alimentar
+  san_tiveram_preocupacao     Int?
+  san_preocupacao             Int?
+  san_acabaram_antes          Int?
+  san_acabou                  Int?
+  san_ficaram_sem             Int?
+  san_sem_dinheiro            Int?
+  san_comeram_pouco           Int?
+  san_deixou_refeicao         Int?
+  san_comeu_menos_devia       Int?
+  san_comeu_menos             Int?
+  san_sentiu_fome             Int?
+  san_uma_refeicao            Int?
+  san_refeicao_completa       Int?
+  san_orientacao_profissional Int?
+  san_orientacao              Int?
+  
+  // Produção Agrária
+  // pa_a_vegetal, pa_a_animal, pa_comercial, pa_p_animal, pa_p_vegetal estão em tabelas separadas
+  pa_a_vegetal_outros         String?   @db.VarChar
+  pa_p_vegetal_outros         String?   @db.VarChar
+  
+  // Observações
+  // obs_form não encontrado no banco - pode estar em obs_gerais ou outro campo
+
+  @@schema("familias")
+  @@map("familias_individual")
+  @@index([cod_gleba])
+  @@index([estado])
+  @@index([municipio])
+  @@index([validacao])
+  @@index([removido])
 }

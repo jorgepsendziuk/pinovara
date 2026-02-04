@@ -171,262 +171,72 @@ jobs:
         };
         EOF
 
-        # Create deploy script
-        cat > $DEPLOY_DIR/deploy.sh << 'EOF'
+        # Copy zero-downtime deploy script to deploy package
+        if [ -f "scripts/deploy/deploy-zero-downtime.sh" ]; then
+          cp scripts/deploy/deploy-zero-downtime.sh $DEPLOY_DIR/deploy-zero-downtime.sh
+          chmod +x $DEPLOY_DIR/deploy-zero-downtime.sh
+          echo "✅ Zero-downtime deploy script included"
+        else
+          echo "⚠️ Zero-downtime script not found, will use inline script"
+        fi
+
+        # Create frontend deploy script (simple, no downtime needed)
+        cat > $DEPLOY_DIR/deploy-frontend.sh << 'EOF'
         #!/bin/bash
         set -e
-
-        echo "🚀 PINOVARA v4.2 - ULTRA FAST DEPLOY STARTING..."
-        echo "⚡ FAST MODE - Reusing existing Prisma client"
-        echo "📋 BACKUP system enabled - Creating timestamped backups"
-
-        # Check PM2
-        if ! command -v pm2 &> /dev/null; then
-          echo "❌ PM2 not installed"
-          exit 1
-        fi
-        echo "✅ PM2 available"
-
-        # Backup System - Create timestamped backups before deployment
+        
+        echo "🎨 Deploying frontend..."
+        
         BACKUP_TIMESTAMP=$(date +%Y%m%d-%H%M%S)
         BACKUP_DIR="/var/www/pinovara/backup"
         
-        echo "💾 CREATING BACKUPS - Timestamp: $BACKUP_TIMESTAMP"
-        
-        # Create backup directory structure
-        sudo mkdir -p "$BACKUP_DIR"
-        sudo chown -R $USER:$USER "$BACKUP_DIR"
-        
-        # Backup existing backend if it exists
-        if [ -d "/var/www/pinovara/backend" ]; then
-          echo "💾 Backing up existing backend..."
-          mv /var/www/pinovara/backend "$BACKUP_DIR/backend-$BACKUP_TIMESTAMP"
-          echo "✅ Backend backed up to: $BACKUP_DIR/backend-$BACKUP_TIMESTAMP"
-        else
-          echo "ℹ️ No existing backend to backup"
-        fi
-        
-        # Backup existing frontend if it exists
+        # Backup frontend
         if [ -d "/var/www/html" ] && [ "$(ls -A /var/www/html 2>/dev/null)" ]; then
           echo "💾 Backing up existing frontend..."
           sudo mkdir -p "$BACKUP_DIR/frontend-$BACKUP_TIMESTAMP"
           sudo chown -R $USER:$USER "$BACKUP_DIR/frontend-$BACKUP_TIMESTAMP"
           cp -r /var/www/html/* "$BACKUP_DIR/frontend-$BACKUP_TIMESTAMP/" 2>/dev/null || true
-          echo "✅ Frontend backed up to: $BACKUP_DIR/frontend-$BACKUP_TIMESTAMP"
-        else
-          echo "ℹ️ No existing frontend to backup"
+          echo "✅ Frontend backed up"
         fi
         
-        # Cleanup old backups - keep only last 3 backups of each type
-        echo "🧹 Cleaning up old backups (keeping last 3)..."
+        # Deploy new frontend
+        sudo mkdir -p /var/www/html
+        sudo chown -R $USER:$USER /var/www/html
+        rm -rf /var/www/html/* 2>/dev/null || true
         
-        # Clean backend backups
-        cd "$BACKUP_DIR" && ls -d backend-* 2>/dev/null | head -n -3 | xargs rm -rf 2>/dev/null || true
-        
-        # Clean frontend backups
-        cd "$BACKUP_DIR" && ls -d frontend-* 2>/dev/null | head -n -3 | xargs rm -rf 2>/dev/null || true
-        
-        echo "✅ Backup system completed"
-
-        # Create directories with proper ownership from start
-        echo "👤 Current user: $(whoami)"
-        echo "👤 \$USER variable: $USER"
-        sudo mkdir -p /var/www/pinovara
-        sudo chown -R $USER:$USER /var/www/pinovara
-
-        # Stop existing processes
-        pm2 stop pinovara-backend 2>/dev/null || true
-        pm2 delete pinovara-backend 2>/dev/null || true
-
-        # Create fresh backend directory (old one already backed up)
-        mkdir -p /var/www/pinovara/backend
-
-        # Copy files with explicit paths
-        echo "📋 Deploying backend files..."
-        DEPLOY_SOURCE="$DEPLOY_TMP_DIR"
-        echo "📂 Source directory: $DEPLOY_SOURCE"
-        echo "📂 Target directory: /var/www/pinovara/backend"
-
-        # Navigate to source directory for copying
-        cd "$DEPLOY_SOURCE" || { echo "❌ Failed to cd to $DEPLOY_SOURCE"; exit 1; }
-
-        # Copy files with full paths (no sudo needed now)
-        if [ -f "package.json" ]; then
-            cp package.json /var/www/pinovara/backend/package.json
-            echo "✅ package.json copied"
+        if [ -d "$DEPLOY_TMP_DIR/frontend-dist" ]; then
+          cp -r "$DEPLOY_TMP_DIR/frontend-dist"/* /var/www/html/
+          echo "✅ Frontend deployed successfully"
         else
-            echo "❌ package.json not found in $DEPLOY_SOURCE"
-            exit 1
-        fi
-        
-        if [ -f "package-lock.json" ]; then
-            cp package-lock.json /var/www/pinovara/backend/package-lock.json
-            echo "✅ package-lock.json copied"
-        else
-            echo "❌ package-lock.json not found in $DEPLOY_SOURCE"
-            ls -la "$DEPLOY_SOURCE"
-            exit 1
-        fi
-
-        if [ -f ".env" ]; then
-            cp .env /var/www/pinovara/backend/
-            echo "✅ .env copied"
-        else
-            echo "❌ .env not found in $DEPLOY_SOURCE"
-        fi
-
-        if [ -f "ecosystem.config.js" ]; then
-            cp ecosystem.config.js /var/www/pinovara/backend/
-            echo "✅ ecosystem.config.js copied"
-        else
-            echo "❌ ecosystem.config.js not found in $DEPLOY_SOURCE"
-            ls -la "$DEPLOY_SOURCE"/
-        fi
-
-        if [ -d "dist" ]; then
-            cp -r dist /var/www/pinovara/backend/
-            echo "✅ dist/ copied"
-        else
-            echo "❌ dist/ not found in $DEPLOY_SOURCE"
-        fi
-
-        if [ -d "prisma" ]; then
-            cp -r prisma /var/www/pinovara/backend/
-            echo "✅ prisma/ copied"
-        else
-            echo "❌ prisma/ not found in $DEPLOY_SOURCE"
-        fi
-
-        # Navigate to target directory for execution
-        cd /var/www/pinovara/backend || { echo "❌ Failed to cd to /var/www/pinovara/backend"; exit 1; }
-        echo "📂 Current directory: $(pwd)"
-        echo "📁 Directory contents: $(ls -la)"
-
-        # Ensure we're in the correct directory and it has the right files
-        if [ ! -f "package.json" ]; then
-          echo "❌ package.json not found in current directory"
-          echo "📂 Current dir: $(pwd)"
-          echo "📁 Contents: $(ls -la)"
+          echo "❌ Frontend files not found"
           exit 1
         fi
         
-        sudo chmod -R 777 /var/www/pinovara/backend 
-
-        # Install dependencies on server (now with independent lockfiles!)
-        echo "📦 Installing backend dependencies on server..."
-        cd /var/www/pinovara/backend && npm ci --production --omit=dev
-        echo "✅ Dependencies installed successfully"
-
-        # Prisma client strategy (ULTRA SMART!)
-        echo "⚡ Checking existing Prisma client on server..."
-        
-        # Check if Prisma client already exists on server (from previous deploys)
-        if [ -d "/var/www/pinovara/backend/node_modules/@prisma/client" ] && [ -f "/var/www/pinovara/backend/node_modules/@prisma/client/index.js" ]; then
-          echo "🎉 FOUND existing Prisma client on server!"
-          echo "⚡ SKIPPING Prisma generation (ULTRA FAST mode!)"
-          echo "📝 Using existing client from previous deploy"
-        else
-          echo "🔍 No existing Prisma client found on server"
-          
-          # Try to use pre-generated client from CI (from Docker image)
-          if [ -d "$DEPLOY_SOURCE/prisma-client" ]; then
-            echo "⚡ Restoring pre-generated Prisma Client from Docker image..."
-            sudo mkdir -p /var/www/pinovara/backend/node_modules/@prisma
-            sudo mkdir -p /var/www/pinovara/backend/node_modules/.prisma
-            sudo chown -R $USER:$USER /var/www/pinovara/backend/node_modules/@prisma
-            sudo chown -R $USER:$USER /var/www/pinovara/backend/node_modules/.prisma
-            
-            # Copiar Prisma Client
-            if [ -d "$DEPLOY_SOURCE/prisma-client/@prisma" ]; then
-              # Estrutura completa @prisma
-              cp -r "$DEPLOY_SOURCE/prisma-client/@prisma" /var/www/pinovara/backend/node_modules/
-            elif [ -d "$DEPLOY_SOURCE/prisma-client/@prisma-client" ]; then
-              # Estrutura alternativa (apenas client)
-              mkdir -p /var/www/pinovara/backend/node_modules/@prisma
-              cp -r "$DEPLOY_SOURCE/prisma-client/@prisma-client" /var/www/pinovara/backend/node_modules/@prisma/client
-            fi
-            
-            # Copiar cache .prisma se existir
-            if [ -d "$DEPLOY_SOURCE/prisma-client/.prisma" ]; then
-              cp -r "$DEPLOY_SOURCE/prisma-client/.prisma" /var/www/pinovara/backend/node_modules/ 2>/dev/null || true
-            fi
-            
-            echo "✅ Prisma Client restored from Docker image (FAST!)"
-          else
-            echo "⚠️ No pre-generated client available"
-            echo "🚑 Use 'Deploy Full' workflow to regenerate Prisma client"
-            echo "📝 This deploy will use existing client or fail gracefully"
-          fi
-        fi
-        
-        # NOTE: Database schema is NEVER modified by deploy
-        # System adapts to existing database structure
-
-        # Start application
-        echo "🚀 Starting application..."
-        echo "📂 Current directory: $(pwd)"
-        echo "📄 Files in directory: $(ls -la)"
-
-        if [ -f "ecosystem.config.js" ]; then
-            echo "✅ ecosystem.config.js found, starting PM2..."
-            pm2 start ecosystem.config.js --env production
-            pm2 save
-            echo "✅ Application started successfully"
-        else
-            echo "❌ ecosystem.config.js not found in $(pwd)"
-            echo "📄 Available files:"
-            ls -la
-            exit 1
-        fi
-
-        # Deploy frontend
-        echo "🎨 Deploying frontend..."
-        sudo mkdir -p /var/www/html
-        sudo chown -R $USER:$USER /var/www/html
-        # Frontend backup already done above, now clean and deploy fresh files
-        rm -rf /var/www/html/* 2>/dev/null || true
-        
-        # Navigate to source directory for frontend deployment
-        cd "$DEPLOY_TMP_DIR" || { echo "❌ Failed to cd to $DEPLOY_TMP_DIR"; exit 1; }
-        
-        if [ -d "frontend-dist" ]; then
-          echo "📁 Found frontend-dist directory"
-          ls -la frontend-dist/ | head -5
-          cp -r frontend-dist/* /var/www/html/
-          echo "✅ Frontend deployed successfully"
-          echo "📊 Files in /var/www/html:"
-          ls -la /var/www/html/ | head -5
-        else
-          echo "❌ Frontend files not found"
-          echo "📂 Available directories:"
-          ls -la "$DEPLOY_TMP_DIR"
-        fi
-
-        echo "✅ DEPLOYMENT COMPLETED SUCCESSFULLY!"
-        
-        # Show backup status
-        echo ""
-        echo "💾 BACKUP STATUS:"
-        if [ -d "$BACKUP_DIR" ]; then
-          echo "📁 Backup directory: $BACKUP_DIR"
-          echo "📊 Available backups:"
-          ls -la "$BACKUP_DIR" | grep -E "(backend-|frontend-)" | tail -10 || echo "   No backups found"
-        else
-          echo "⚠️ No backup directory found"
-        fi
+        # Cleanup old frontend backups (keep last 3)
+        cd "$BACKUP_DIR" 2>/dev/null && ls -dt frontend-* 2>/dev/null | tail -n +4 | xargs rm -rf 2>/dev/null || true
         EOF
+        
+        chmod +x $DEPLOY_DIR/deploy-frontend.sh
 
-        chmod +x $DEPLOY_DIR/deploy.sh
-
-        # Upload and execute
+        # Upload and execute zero-downtime deploy
         scp -r $DEPLOY_DIR ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+        echo '🚀 Starting Zero-Downtime Deploy...'
         echo '👤 SSH User: ${{ secrets.SERVER_USER }}'
         echo '👤 Current user in SSH session: \$(whoami)'
-        echo '👤 \$USER variable in SSH: '\$USER
         DEPLOY_TMP_DIR=\$(ls -d /tmp/pinovara-deploy-* | head -1)
         export DEPLOY_TMP_DIR
-        bash \$DEPLOY_TMP_DIR/deploy.sh
+        
+        # Execute zero-downtime backend deploy
+        if [ -f \"\$DEPLOY_TMP_DIR/deploy-zero-downtime.sh\" ]; then
+          bash \$DEPLOY_TMP_DIR/deploy-zero-downtime.sh
+        else
+          echo '❌ Zero-downtime script not found, falling back to standard deploy'
+          exit 1
+        fi
+        
+        # Deploy frontend (after backend is confirmed working)
+        bash \$DEPLOY_TMP_DIR/deploy-frontend.sh
         "
 
         # Cleanup

@@ -33,7 +33,8 @@ import {
   Database,
   Archive,
   GraduationCap,
-  Calendar
+  Calendar,
+  Home
 } from 'lucide-react';
 
 // Hook personalizado para detectar breakpoints responsivos
@@ -204,6 +205,51 @@ const Sidebar: React.FC = () => {
       icon: Map,
       path: '/organizacoes/mapa',
       module: 'organizacoes'
+    },
+    {
+      id: 'supervisao-ocupacional',
+      label: 'Supervisão Ocupacional',
+      icon: Home,
+      path: '/supervisao-ocupacional',
+      module: 'supervisao_ocupacional',
+      children: [
+        {
+          id: 'supervisao-dashboard',
+          label: 'Dashboard',
+          icon: BarChart,
+          path: '/supervisao-ocupacional/dashboard',
+          module: 'supervisao_ocupacional'
+        },
+        {
+          id: 'supervisao-glebas',
+          label: 'Glebas/Assentamentos',
+          icon: Map,
+          path: '/supervisao-ocupacional/glebas',
+          module: 'supervisao_ocupacional'
+        },
+        {
+          id: 'supervisao-familias',
+          label: 'Famílias',
+          icon: Users,
+          path: '/supervisao-ocupacional/familias',
+          module: 'supervisao_ocupacional'
+        },
+        {
+          id: 'supervisao-mapa',
+          label: 'Mapa de Cadastros',
+          icon: Map,
+          path: '/supervisao-ocupacional/mapa',
+          module: 'supervisao_ocupacional'
+        }
+        // Ocultado temporariamente
+        // {
+        //   id: 'supervisao-sync',
+        //   label: 'Sincronizar ODK',
+        //   icon: Database,
+        //   path: '/supervisao-ocupacional/sync',
+        //   module: 'supervisao_ocupacional'
+        // }
+      ]
     },
     {
       id: 'repositorio',

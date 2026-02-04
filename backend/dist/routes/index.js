@@ -19,6 +19,7 @@ const repositorioRoutes_1 = __importDefault(require("./repositorioRoutes"));
 const qualificacaoRoutes_1 = __importDefault(require("./qualificacaoRoutes"));
 const capacitacaoRoutes_1 = __importDefault(require("./capacitacaoRoutes"));
 const avaliacaoRoutes_1 = __importDefault(require("./avaliacaoRoutes"));
+const supervisaoOcupacionalRoutes_1 = __importDefault(require("./supervisaoOcupacionalRoutes"));
 const router = (0, express_1.Router)();
 router.get('/', (req, res) => {
     res.json({
@@ -93,5 +94,6 @@ router.use('/qualificacoes', qualificacaoRoutes_1.default);
 router.use('/capacitacoes', capacitacaoRoutes_1.default);
 router.use('/avaliacoes', avaliacaoRoutes_1.default);
 router.use('/repositorio', repositorioRoutes_1.default);
+router.use('/supervisao-ocupacional', supervisaoOcupacionalRoutes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map
