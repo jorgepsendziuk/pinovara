@@ -1,0 +1,25 @@
+═══════════════════════════════════════════════════════════════
+✅ COMANDO PARA COLAR NO SERVIDOR (DEPLOY FINAL - PRISMA CORRIGIDO)
+═══════════════════════════════════════════════════════════════
+
+CORREÇÃO APLICADA:
+- Adicionado binaryTargets no schema.prisma
+- Agora inclui binário debian-openssl-3.0.x (para servidor Linode)
+
+Depois de fazer upload do arquivo via Termius, cole este comando:
+
+cd /var/www/pinovara && tar -xzf deploy-FINAL-*.tar.gz && rm -rf backend/dist frontend/dist && mv backend-dist backend/dist && mv frontend-dist frontend/dist && rm -rf backend/node_modules/.prisma backend/node_modules/@prisma && mkdir -p backend/node_modules && cp -r prisma-client/.prisma backend/node_modules/ && cp -r prisma-client/@prisma backend/node_modules/ && rm -rf prisma-client && sudo cp -r frontend/dist/* /var/www/html/ && pm2 stop all && pm2 delete all && sudo fuser -k 3001/tcp 2>/dev/null || true && sleep 2 && pm2 start /var/www/pinovara/backend/dist/server.js --name pinovara-backend --cwd /var/www/pinovara/backend && pm2 save && sudo systemctl reload nginx && echo "" && echo "✅ Deploy concluído!" && echo "" && pm2 status && echo "" && pm2 logs pinovara-backend --lines 20
+
+═══════════════════════════════════════════════════════════════
+
+ARQUIVO PARA UPLOAD:
+  deploy-FINAL-[timestamp].tar.gz (aprox. 270 MB)
+
+DESTINO:
+  /var/www/pinovara/
+
+VERIFICAÇÃO:
+  pm2 logs pinovara-backend --lines 30
+  curl http://localhost:3001/health
+  
+═══════════════════════════════════════════════════════════════

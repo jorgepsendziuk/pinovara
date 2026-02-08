@@ -123,4 +123,30 @@ CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_lud" ON odk_prod."ORGANIZA
 
 melhore a 
 
-os botoes de acao nao sao muito intuitivos, portanto faça exibir os popups de hint onmouseover  das acoes mais rapido, e maior, com cor, é possível? nas  listagens de organizacoes, capacitacoes e qualificacoes
+tornar a pagina inicial logada a que atualmente é Dashboard do Usuário.
+
+tirar toda essa baboseira e colocar um quadro top discreto com perfil: nome, email, papeis, link para acessar e editar perfil senha etc.
+
+na parte restante da pagina, vamos distribuir cards nao muito grandes, com icones, com acesso as funcionalidades do sistema, distribuidos em categorias:
+
+título: Perfil de Entrada e Plano de Gestão
+card: Organizações
+card: Mapa de Organizações
+
+título: Qualificação e Formação Profissional
+card: Planos de Qualificação
+card: Capacitações
+
+título: Cadastro de Famílias
+card: Territórios
+card: Famílias
+card: Mapa de Cadastros
+
+avulsos:
+card: Repositório
+card: Configuração ODK
+
+(caso administrador)
+título: Administração
+card: Usuários
+card: Auditoria

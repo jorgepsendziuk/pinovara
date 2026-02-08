@@ -299,15 +299,46 @@ else
 fi
 
 # ==========================================
-# PASSO 4: INICIAR NOVA VERSÃO EM PORTE TEMPORÁRIA
+# PASSO 4: PARAR VERSÃO ANTIGA E LIBERAR PORTA 3001
 # ==========================================
-print_status "🚀 Iniciando nova versão para testes..."
+print_status "🛑 Parando versão antiga para liberar porta 3001..."
 
-# Criar ecosystem.config.js temporário para nova versão
+# Parar e remover todos os processos PM2 relacionados
+pm2 stop all 2>/dev/null || true
+pm2 delete all 2>/dev/null || true
+
+# Garantir que porta 3001 está livre
+print_status "🔓 Liberando porta 3001..."
+sudo fuser -k 3001/tcp 2>/dev/null || true
+sleep 2
+
+# Verificar se porta está livre
+if sudo lsof -i :3001 >/dev/null 2>&1; then
+    print_error "❌ Porta 3001 ainda está ocupada"
+    sudo lsof -i :3001
+    print_error "Tentando forçar liberação..."
+    sudo killall node 2>/dev/null || true
+    sleep 3
+    
+    if sudo lsof -i :3001 >/dev/null 2>&1; then
+        print_error "❌ Não foi possível liberar porta 3001"
+        rollback "$CURRENT_BACKUP"
+        exit 1
+    fi
+fi
+
+print_success "✅ Porta 3001 liberada"
+
+# ==========================================
+# PASSO 5: INICIAR NOVA VERSÃO NA PORTA 3001
+# ==========================================
+print_status "🚀 Iniciando nova versão..."
+
+# Criar ecosystem.config.js para nova versão
 cat > "$NEW_BACKEND_DIR/ecosystem.config.js" << EOF
 module.exports = {
   apps: [{
-    name: 'pinovara-backend-new-$BACKUP_TIMESTAMP',
+    name: 'pinovara-backend',
     script: 'dist/server.js',
     cwd: '$NEW_BACKEND_DIR',
     instances: 1,
@@ -322,9 +353,9 @@ EOF
 
 cd "$NEW_BACKEND_DIR"
 
-# Iniciar nova versão com nome temporário
+# Iniciar nova versão
 if pm2 start ecosystem.config.js --env production; then
-    print_success "Nova versão iniciada (nome temporário)"
+    print_success "Nova versão iniciada"
     sleep 5  # Dar tempo para iniciar
 else
     print_error "Falha ao iniciar nova versão"
@@ -333,7 +364,7 @@ else
 fi
 
 # ==========================================
-# PASSO 5: HEALTH CHECK DA NOVA VERSÃO
+# PASSO 6: HEALTH CHECK DA NOVA VERSÃO
 # ==========================================
 print_status "🏥 Verificando saúde da nova versão..."
 
@@ -346,51 +377,19 @@ else
 fi
 
 # ==========================================
-# PASSO 6: TROCAR PARA NOVA VERSÃO (ZERO DOWNTIME)
+# PASSO 7: FINALIZAR DEPLOY (MOVER DIRETÓRIOS)
 # ==========================================
-print_status "🔄 Fazendo troca zero-downtime..."
+print_status "🔄 Finalizando deploy..."
 
-# Parar versão antiga
-if pm2 list | grep -q "pinovara-backend"; then
-    print_status "Parando versão antiga..."
-    pm2 stop pinovara-backend 2>/dev/null || true
-    pm2 delete pinovara-backend 2>/dev/null || true
-fi
+# Parar processo atual (já está rodando com caminho temporário)
+pm2 stop pinovara-backend 2>/dev/null || true
 
-# Parar versão temporária e iniciar com nome de produção
-print_status "Parando versão temporária..."
-pm2 stop "pinovara-backend-new-$BACKUP_TIMESTAMP" 2>/dev/null || true
-pm2 delete "pinovara-backend-new-$BACKUP_TIMESTAMP" 2>/dev/null || true
-
-# Criar ecosystem.config.js final com caminho correto
-cat > "$NEW_BACKEND_DIR/ecosystem.config.js" << EOF
-module.exports = {
-  apps: [{
-    name: 'pinovara-backend',
-    script: 'dist/server.js',
-    cwd: '$BACKEND_DIR',
-    instances: 1,
-    exec_mode: 'fork',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 3001
-    }
-  }]
-};
-EOF
-
-# Iniciar com nome de produção
-print_status "Iniciando versão de produção..."
-cd "$NEW_BACKEND_DIR"
-pm2 start ecosystem.config.js --env production
-pm2 save
-
-# Trocar diretório (usando symlink para facilitar rollback futuro)
+# Trocar diretório (mover nova versão para produção)
 if [ -L "$BACKEND_DIR" ]; then
     rm "$BACKEND_DIR"
 elif [ -d "$BACKEND_DIR" ]; then
-    # Manter backup do diretório antigo
-    mv "$BACKEND_DIR" "$BACKUP_DIR/backend-old-$BACKUP_TIMESTAMP"
+    # Já foi feito backup no início, só remover
+    rm -rf "$BACKEND_DIR" 2>/dev/null || true
 fi
 
 # Mover nova versão para diretório de produção
@@ -415,20 +414,20 @@ EOF
 
 # Reiniciar com configuração correta
 cd "$BACKEND_DIR"
-pm2 restart pinovara-backend --update-env || pm2 start ecosystem.config.js --env production
+pm2 restart pinovara-backend --update-env
 pm2 save
 
-print_success "Troca concluída"
+print_success "Deploy concluído - diretórios atualizados"
 
 # ==========================================
-# PASSO 7: VERIFICAÇÃO FINAL
+# PASSO 8: VERIFICAÇÃO FINAL
 # ==========================================
 print_status "🔍 Verificação final..."
 
 sleep 3
 
 if check_backend_health "$HEALTH_CHECK_URL" 5; then
-    print_success "✅ ✅ ✅ DEPLOY ZERO-DOWNTIME CONCLUÍDO COM SUCESSO! ✅ ✅ ✅"
+    print_success "✅ ✅ ✅ DEPLOY CONCLUÍDO COM SUCESSO! ✅ ✅ ✅"
     echo ""
     echo "📊 Status:"
     pm2 status | grep pinovara-backend || true

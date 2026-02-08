@@ -207,22 +207,15 @@ const Sidebar: React.FC = () => {
       module: 'organizacoes'
     },
     {
-      id: 'supervisao-ocupacional',
-      label: 'Supervisão Ocupacional',
+      id: 'cadastro-familias',
+      label: 'Cadastro de Famílias',
       icon: Home,
       path: '/supervisao-ocupacional',
       module: 'supervisao_ocupacional',
       children: [
         {
-          id: 'supervisao-dashboard',
-          label: 'Dashboard',
-          icon: BarChart,
-          path: '/supervisao-ocupacional/dashboard',
-          module: 'supervisao_ocupacional'
-        },
-        {
           id: 'supervisao-glebas',
-          label: 'Glebas/Assentamentos',
+          label: 'Territórios',
           icon: Map,
           path: '/supervisao-ocupacional/glebas',
           module: 'supervisao_ocupacional'
@@ -260,7 +253,7 @@ const Sidebar: React.FC = () => {
     },
     {
       id: 'qualificacoes',
-      label: 'Qualificações',
+      label: 'Planos de Qualificação',
       icon: GraduationCap,
       path: '/qualificacoes',
       module: 'qualificacoes'

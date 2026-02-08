@@ -59,25 +59,23 @@ jobs:
     - name: 🐳 Build Docker Image & Extract Prisma Client
       working-directory: ./backend
       run: |
-        echo "🐳 Building Docker image to generate Prisma Client..."
+        echo "🐳 Building Docker image to generate Prisma Client with correct binaryTargets..."
         
-        # Build Docker image (multi-stage, para até o stage builder)
-        docker build --target builder -t pinovara-backend:builder .
+        # Build Docker image (usa stage prisma-generator que gera o Prisma com binaryTargets corretos)
+        docker build --target prisma-generator -t pinovara-backend:prisma-generator .
         
         echo "📦 Extracting Prisma Client from Docker image..."
         
         # Criar container temporário para extrair Prisma Client
-        CONTAINER_ID=$(docker create pinovara-backend:builder)
+        CONTAINER_ID=$(docker create pinovara-backend:prisma-generator)
         
         # Criar diretório para Prisma Client
         mkdir -p ../prisma-client
         
         # Extrair Prisma Client do container
-        # Copiar toda a estrutura @prisma
         echo "📦 Extracting @prisma directory..."
         docker cp $CONTAINER_ID:/app/node_modules/@prisma ../prisma-client/@prisma || {
           echo "⚠️ Failed to extract @prisma, trying alternative..."
-          # Tentar extrair apenas o client se a estrutura for diferente
           docker cp $CONTAINER_ID:/app/node_modules/@prisma/client ../prisma-client/@prisma-client 2>/dev/null || {
             echo "❌ Failed to extract Prisma Client"
             docker rm $CONTAINER_ID
@@ -85,16 +83,27 @@ jobs:
           }
         }
         
-        # Extrair cache .prisma se existir (opcional)
-        echo "📦 Extracting .prisma cache (optional)..."
-        docker cp $CONTAINER_ID:/app/node_modules/.prisma ../prisma-client/.prisma 2>/dev/null || echo "ℹ️ .prisma cache not found (this is optional)"
+        # Extrair cache .prisma (contém os binários para diferentes plataformas)
+        echo "📦 Extracting .prisma cache with binaryTargets..."
+        docker cp $CONTAINER_ID:/app/node_modules/.prisma ../prisma-client/.prisma || {
+          echo "❌ Failed to extract .prisma cache (required for binaryTargets)"
+          docker rm $CONTAINER_ID
+          exit 1
+        }
         
         # Remover container temporário
         docker rm $CONTAINER_ID
         
-        echo "✅ Prisma Client extracted successfully"
-        echo "📁 Prisma Client location: ../prisma-client/"
-        ls -la ../prisma-client/ | head -10
+        echo "✅ Prisma Client extracted successfully with binaryTargets:"
+        echo "   - native (desenvolvimento)"
+        echo "   - debian-openssl-3.0.x (servidor Linode)"
+        echo "   - linux-musl-openssl-3.0.x (Docker Alpine)"
+        echo ""
+        echo "📁 Prisma Client structure:"
+        ls -la ../prisma-client/
+        echo ""
+        echo "📁 Binary targets available:"
+        ls -la ../prisma-client/.prisma/client/ 2>/dev/null || echo "Using @prisma structure"
 
     - name: 🎨 Build Frontend
       working-directory: ./frontend

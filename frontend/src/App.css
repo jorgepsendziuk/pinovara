@@ -3195,6 +3195,11 @@ main, section, article, aside, header, footer {
   position: relative;
 }
 
+/* Menu buttons (items with children) should be bolder */
+.nav-button {
+  font-weight: 600;
+}
+
 .nav-button:hover,
 .nav-link:hover {
   background: rgba(59, 35, 19, 0.05);

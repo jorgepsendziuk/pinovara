@@ -12,7 +12,8 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Instalar dependências (incluindo Prisma CLI)
-RUN npm ci
+# Usar npm install se package-lock.json não existir
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 # Gerar Prisma Client
 RUN npx prisma generate
@@ -25,7 +26,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar apenas dependências de produção
-RUN npm ci --only=production
+# Usar npm install se package-lock.json não existir
+RUN if [ -f package-lock.json ]; then npm ci --only=production; else npm install --only=production; fi
 
 # Copiar código compilado
 COPY dist ./dist/
