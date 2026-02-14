@@ -1,9 +1,11 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from './auth';
 import { HttpStatus, ErrorCode } from '../types/api';
+import { permissionService } from '../services/permissionService';
 
 /**
  * Middleware para verificar permissões do módulo de Supervisão Ocupacional
+ * Usa role_permissions se disponível; caso contrário fallback para lógica hardcoded
  */
 export const checkSupervisaoOcupacionalPermission = async (
   req: AuthRequest,
@@ -26,37 +28,14 @@ export const checkSupervisaoOcupacionalPermission = async (
       return;
     }
 
-    // Verificar se é admin do sistema (acesso total)
-    const isSystemAdmin = user.roles?.some((role: any) => 
-      role.module?.name === 'sistema' && role.name === 'admin'
-    );
+    const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+    const isSystemAdmin = user.roles?.some((role: any) => role.module?.name === 'sistema' && role.name === 'admin');
+    const isModuleAdmin = user.roles?.some((role: any) => role.module?.name === 'supervisao_ocupacional' && role.name === 'admin');
+    const isCoordinator = user.roles?.some((role: any) => role.module?.name === 'supervisao_ocupacional' && role.name === 'coordenador');
+    const isSupervisor = user.roles?.some((role: any) => role.module?.name === 'supervisao_ocupacional' && role.name === 'supervisor');
+    const isTechnician = user.roles?.some((role: any) => role.module?.name === 'supervisao_ocupacional' && role.name === 'tecnico');
+    const isEstagiario = user.roles?.some((role: any) => role.module?.name === 'supervisao_ocupacional' && role.name === 'estagiario');
 
-    // Verificar se é admin do módulo supervisao_ocupacional
-    const isModuleAdmin = user.roles?.some((role: any) => 
-      role.module?.name === 'supervisao_ocupacional' && role.name === 'admin'
-    );
-
-    // Verificar se é coordenador do módulo supervisao_ocupacional
-    const isCoordinator = user.roles?.some((role: any) => 
-      role.module?.name === 'supervisao_ocupacional' && role.name === 'coordenador'
-    );
-
-    // Verificar se é supervisor do módulo supervisao_ocupacional (apenas visualização)
-    const isSupervisor = user.roles?.some((role: any) => 
-      role.module?.name === 'supervisao_ocupacional' && role.name === 'supervisor'
-    );
-
-    // Verificar se é técnico do módulo supervisao_ocupacional
-    const isTechnician = user.roles?.some((role: any) => 
-      role.module?.name === 'supervisao_ocupacional' && role.name === 'tecnico'
-    );
-
-    // Verificar se é estagiário do módulo supervisao_ocupacional
-    const isEstagiario = user.roles?.some((role: any) => 
-      role.module?.name === 'supervisao_ocupacional' && role.name === 'estagiario'
-    );
-
-    // Verificar se o usuário tem alguma role do módulo supervisao_ocupacional ou é admin do sistema
     const hasPermission = isSystemAdmin || isModuleAdmin || isCoordinator || isSupervisor || isTechnician || isEstagiario;
 
     if (!hasPermission) {
@@ -72,7 +51,25 @@ export const checkSupervisaoOcupacionalPermission = async (
       return;
     }
 
-    // Armazenar permissões detalhadas do usuário para uso nos controllers
+    let canViewAll: boolean;
+    let canEdit: boolean;
+    let canValidate: boolean;
+    let canViewOwnOnly: boolean;
+
+    const useDb = await permissionService.hasRolePermissionsData(userId);
+    if (useDb) {
+      const codes = await permissionService.getEffectivePermissions(userId);
+      canViewAll = codes.includes('supervisao.view_all') || codes.includes('sistema.admin');
+      canEdit = codes.includes('supervisao.edit') || codes.includes('sistema.admin');
+      canValidate = codes.includes('supervisao.validate') || codes.includes('sistema.admin');
+      canViewOwnOnly = codes.includes('supervisao.view_own_only');
+    } else {
+      canViewAll = isSystemAdmin || isModuleAdmin || isCoordinator || isSupervisor || isTechnician;
+      canEdit = isSystemAdmin || isModuleAdmin || isTechnician;
+      canValidate = isSystemAdmin || isModuleAdmin || isCoordinator;
+      canViewOwnOnly = isTechnician || isEstagiario;
+    }
+
     (req as any).userPermissions = {
       userId: user.id,
       roles: user.roles,
@@ -82,11 +79,10 @@ export const checkSupervisaoOcupacionalPermission = async (
       isSupervisor,
       isTechnician,
       isEstagiario,
-      // Permissões específicas
-      canViewAll: isSystemAdmin || isModuleAdmin || isCoordinator || isSupervisor || isTechnician, // Todos podem ver, mas técnico só vê suas próprias
-      canEdit: isSystemAdmin || isModuleAdmin || isTechnician, // Admin e Técnico podem editar (Supervisor NÃO)
-      canValidate: isSystemAdmin || isModuleAdmin || isCoordinator, // Admin e Coordenador podem validar (Supervisor NÃO)
-      canViewOwnOnly: isTechnician || isEstagiario // Técnico e Estagiário só veem suas próprias famílias
+      canViewAll,
+      canEdit,
+      canValidate,
+      canViewOwnOnly
     };
 
     next();

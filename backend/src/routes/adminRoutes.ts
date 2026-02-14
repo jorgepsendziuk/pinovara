@@ -85,6 +85,24 @@ router.put('/users/:id/status', adminController.updateUserStatus);
 router.get('/roles', adminController.getRoles);
 
 /**
+ * GET /admin/permissions
+ * Listar todas as permissões do catálogo
+ */
+router.get('/permissions', adminController.getPermissions);
+
+/**
+ * GET /admin/roles/:roleId/permissions
+ * Obter permissões de um role
+ */
+router.get('/roles/:roleId/permissions', adminController.getRolePermissions);
+
+/**
+ * PUT /admin/roles/:roleId/permissions
+ * Atualizar permissões de um role
+ */
+router.put('/roles/:roleId/permissions', adminController.updateRolePermissions);
+
+/**
  * POST /admin/users/:id/roles
  * Atribuir role a um usuário
  * 

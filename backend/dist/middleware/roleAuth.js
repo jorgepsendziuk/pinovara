@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.hasAccessToOrganizacao = exports.checkOrganizacaoPermission = exports.requireTechnician = exports.requireRole = void 0;
 const api_1 = require("../types/api");
+const permissionService_1 = require("../services/permissionService");
 const requireRole = (moduleName, roleName) => {
     return (req, res, next) => {
         if (!req.user) {
@@ -38,7 +39,7 @@ const requireRole = (moduleName, roleName) => {
 };
 exports.requireRole = requireRole;
 exports.requireTechnician = (0, exports.requireRole)('organizacoes', 'tecnico');
-const checkOrganizacaoPermission = (req, res, next) => {
+const checkOrganizacaoPermission = async (req, res, next) => {
     if (!req.user) {
         res.status(api_1.HttpStatus.UNAUTHORIZED).json({
             success: false,
@@ -51,17 +52,30 @@ const checkOrganizacaoPermission = (req, res, next) => {
         });
         return;
     }
-    const isAdmin = req.user.roles?.some(role => role.name === 'admin' && role.module.name === 'sistema');
-    const isTechnician = req.user.roles?.some(role => role.name === 'tecnico' && role.module.name === 'organizacoes');
-    const isCoordinator = req.user.roles?.some(role => role.name === 'coordenador' && role.module.name === 'organizacoes');
-    const isSupervisor = req.user.roles?.some(role => role.name === 'supervisao' && role.module.name === 'organizacoes');
+    const userId = typeof req.user.id === 'string' ? parseInt(req.user.id, 10) : req.user.id;
+    const isAdmin = req.user.roles?.some((role) => role.name === 'admin' && role.module?.name === 'sistema');
+    const isTechnician = req.user.roles?.some((role) => role.name === 'tecnico' && role.module?.name === 'organizacoes');
+    const isCoordinator = req.user.roles?.some((role) => role.name === 'coordenador' && role.module?.name === 'organizacoes');
+    const isSupervisor = req.user.roles?.some((role) => role.name === 'supervisao' && role.module?.name === 'organizacoes');
+    let canAccessAll;
+    let canEdit;
+    const useDb = await permissionService_1.permissionService.hasRolePermissionsData(userId);
+    if (useDb) {
+        const codes = await permissionService_1.permissionService.getEffectivePermissions(userId);
+        canAccessAll = codes.includes('organizacoes.list_all') || codes.includes('sistema.admin');
+        canEdit = codes.includes('organizacoes.edit') || codes.includes('sistema.admin');
+    }
+    else {
+        canAccessAll = isAdmin || isCoordinator || isSupervisor;
+        canEdit = isAdmin || isTechnician;
+    }
     req.userPermissions = {
         isAdmin,
         isTechnician,
         isCoordinator,
         isSupervisor,
-        canAccessAll: isAdmin || isCoordinator || isSupervisor,
-        canEdit: isAdmin || isTechnician,
+        canAccessAll,
+        canEdit,
         userId: req.user.id
     };
     next();

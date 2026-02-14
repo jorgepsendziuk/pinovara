@@ -1132,17 +1132,46 @@ model organizacao_producao {
 }
 
 model roles {
-  id          Int          @id @default(autoincrement())
-  name        String
-  description String?
-  active      Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime
-  moduleId    Int
-  modules     modules      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  user_roles  user_roles[]
+  id               Int               @id @default(autoincrement())
+  name             String
+  description      String?
+  active           Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime
+  moduleId         Int
+  modules          modules           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  user_roles       user_roles[]
+  role_permissions role_permissions[]
 
   @@unique([name, moduleId])
+  @@schema("pinovara")
+}
+
+model permissions {
+  id               Int               @id @default(autoincrement())
+  code             String            @unique @db.VarChar(100)
+  name             String            @db.VarChar(255)
+  description      String?           @db.Text
+  module_name      String?           @db.VarChar(100)
+  category         String?           @db.VarChar(100)
+  active           Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime
+  role_permissions role_permissions[]
+
+  @@schema("pinovara")
+}
+
+model role_permissions {
+  roleId        Int
+  permissionId  Int
+  enabled       Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  roles         roles     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissions   permissions @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
   @@schema("pinovara")
 }
 

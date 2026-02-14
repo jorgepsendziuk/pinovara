@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI, AuthUser, LoginResponse, RegisterResponse, hasPermission, hasAnyPermission } from '../services/api';
+import { authAPI, AuthUser, LoginResponse, RegisterResponse, hasPermission, hasAnyPermission, hasPermissionCode } from '../services/api';
 import AccessDenied from '../pages/AccessDenied';
 
 // ========== INTERFACES ==========
@@ -34,6 +34,8 @@ interface AuthContextData {
   // Utilitários
   hasPermission: (moduleName: string, roleName?: string) => boolean;
   hasAnyPermission: (permissions: { module: string; role?: string }[]) => boolean;
+  /** Verifica permissão por código (ex: 'qualificacoes.edit'). Usa dados de role_permissions quando disponível. */
+  hasPermissionCode: (code: string) => boolean;
   isAdmin: () => boolean;
   isCoordinator: () => boolean;
   isSupervisor: () => boolean;
@@ -246,6 +248,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   /**
+   * Verificar se usuário tem uma permissão por código
+   */
+  const checkPermissionCode = (code: string): boolean => {
+    return hasPermissionCode(user, code);
+  };
+
+  /**
    * Verificar se usuário é administrador
    */
   const isAdmin = (): boolean => {
@@ -370,6 +379,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Utilitários
     hasPermission: checkPermission,
     hasAnyPermission: checkAnyPermission,
+    hasPermissionCode: checkPermissionCode,
     isAdmin,
     isCoordinator,
     isSupervisor,

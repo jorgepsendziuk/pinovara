@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const adminService_1 = __importDefault(require("../services/adminService"));
+const permissionService_1 = require("../services/permissionService");
 const api_1 = require("../types/api");
 const ApiError_1 = require("../utils/ApiError");
 const auditService_1 = __importDefault(require("../services/auditService"));
@@ -338,6 +339,74 @@ class AdminController {
                     roles,
                     total: roles.length
                 },
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(res, error);
+        }
+    }
+    async getPermissions(req, res) {
+        try {
+            const permissions = await permissionService_1.permissionService.getAllPermissions();
+            res.json({
+                success: true,
+                message: 'Permissões listadas com sucesso',
+                data: { permissions },
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(res, error);
+        }
+    }
+    async getRolePermissions(req, res) {
+        try {
+            const roleId = parseInt(req.params.roleId);
+            if (isNaN(roleId)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: { message: 'ID de role inválido', statusCode: api_1.HttpStatus.BAD_REQUEST },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const permissions = await permissionService_1.permissionService.getPermissionsByRole(roleId);
+            res.json({
+                success: true,
+                message: 'Permissões do role listadas',
+                data: { permissions },
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(res, error);
+        }
+    }
+    async updateRolePermissions(req, res) {
+        try {
+            const roleId = parseInt(req.params.roleId);
+            if (isNaN(roleId)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: { message: 'ID de role inválido', statusCode: api_1.HttpStatus.BAD_REQUEST },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const { updates } = req.body;
+            if (!Array.isArray(updates)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: { message: 'Body deve conter updates (array)', statusCode: api_1.HttpStatus.BAD_REQUEST },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            await permissionService_1.permissionService.updateRolePermissions(roleId, updates);
+            res.json({
+                success: true,
+                message: 'Permissões atualizadas com sucesso',
                 timestamp: new Date().toISOString()
             });
         }

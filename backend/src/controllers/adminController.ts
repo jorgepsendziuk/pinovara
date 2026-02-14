@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import adminService from '../services/adminService';
+import { permissionService } from '../services/permissionService';
 import { ErrorCode, HttpStatus } from '../types/api';
 import { ApiError } from '../utils/ApiError';
 import auditService from '../services/auditService';
@@ -410,6 +411,87 @@ class AdminController {
           roles,
           total: roles.length
         },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * GET /admin/permissions
+   * Listar todas as permissões do catálogo
+   */
+  async getPermissions(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const permissions = await permissionService.getAllPermissions();
+      res.json({
+        success: true,
+        message: 'Permissões listadas com sucesso',
+        data: { permissions },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * GET /admin/roles/:roleId/permissions
+   * Obter permissões de um role
+   */
+  async getRolePermissions(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      if (isNaN(roleId)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: { message: 'ID de role inválido', statusCode: HttpStatus.BAD_REQUEST },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      const permissions = await permissionService.getPermissionsByRole(roleId);
+      res.json({
+        success: true,
+        message: 'Permissões do role listadas',
+        data: { permissions },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * PUT /admin/roles/:roleId/permissions
+   * Atualizar permissões de um role
+   * Body: { updates: Array<{ permissionId: number; enabled: boolean }> }
+   */
+  async updateRolePermissions(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      if (isNaN(roleId)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: { message: 'ID de role inválido', statusCode: HttpStatus.BAD_REQUEST },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      const { updates } = req.body;
+      if (!Array.isArray(updates)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: { message: 'Body deve conter updates (array)', statusCode: HttpStatus.BAD_REQUEST },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      await permissionService.updateRolePermissions(roleId, updates);
+      res.json({
+        success: true,
+        message: 'Permissões atualizadas com sucesso',
         timestamp: new Date().toISOString()
       });
     } catch (error) {

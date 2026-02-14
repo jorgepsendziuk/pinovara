@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Users,
   Edit,
-  Trash
+  Trash,
+  Shield
 } from 'lucide-react';
+import { permissionAPI, Permission } from '../../services/api';
 
 interface Module {
   id: number;
@@ -57,7 +59,15 @@ function RoleManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'modules' | 'users'>('modules');
+  const [activeTab, setActiveTab] = useState<'modules' | 'users' | 'permissions'>('modules');
+
+  // Permissões por Role
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [rolePermissionsMap, setRolePermissionsMap] = useState<Record<number, Record<number, boolean>>>({});
+  const [permsLoading, setPermsLoading] = useState(false);
+  const [permsError, setPermsError] = useState<string | null>(null);
+  const [savingRoleId, setSavingRoleId] = useState<number | null>(null);
+  const [dirtyRoles, setDirtyRoles] = useState<Set<number>>(new Set());
 
   // Form states
   const [showModuleForm, setShowModuleForm] = useState(false);
@@ -364,6 +374,87 @@ function RoleManagement() {
     }));
   };
 
+  const fetchPermissionsData = useCallback(async () => {
+    setPermsLoading(true);
+    setPermsError(null);
+    try {
+      const perms = await permissionAPI.getPermissions();
+      setPermissions(perms);
+      const map: Record<number, Record<number, boolean>> = {};
+      await Promise.all(
+        roles.map(async (role) => {
+          const rp = await permissionAPI.getRolePermissions(role.id);
+          map[role.id] = {};
+          perms.forEach((p) => {
+            const found = rp.find((r) => r.permissionId === p.id);
+            map[role.id][p.id] = found ? found.enabled : false;
+          });
+        })
+      );
+      setRolePermissionsMap(map);
+      setDirtyRoles(new Set());
+    } catch (err) {
+      setPermsError(err instanceof Error ? err.message : 'Erro ao carregar permissões');
+    } finally {
+      setPermsLoading(false);
+    }
+  }, [roles]);
+
+  useEffect(() => {
+    if (activeTab === 'permissions' && roles.length > 0 && !permsLoading) {
+      fetchPermissionsData();
+    }
+  }, [activeTab, roles.length, permsLoading, fetchPermissionsData]);
+
+  const handlePermissionToggle = (roleId: number, permissionId: number, enabled: boolean) => {
+    setRolePermissionsMap((prev) => ({
+      ...prev,
+      [roleId]: {
+        ...(prev[roleId] || {}),
+        [permissionId]: enabled
+      }
+    }));
+    setDirtyRoles((prev) => new Set(prev).add(roleId));
+  };
+
+  const handleSaveRolePermissions = async (roleId: number) => {
+    setSavingRoleId(roleId);
+    setError(null);
+    try {
+      const map = rolePermissionsMap[roleId] || {};
+      const updates = Object.entries(map).map(([permId, enabled]) => ({
+        permissionId: parseInt(permId, 10),
+        enabled
+      }));
+      await permissionAPI.updateRolePermissions(roleId, updates);
+      setDirtyRoles((prev) => {
+        const next = new Set(prev);
+        next.delete(roleId);
+        return next;
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao salvar permissões');
+    } finally {
+      setSavingRoleId(null);
+    }
+  };
+
+  const handleSaveAllPermissions = async () => {
+    for (const roleId of dirtyRoles) {
+      await handleSaveRolePermissions(roleId);
+    }
+  };
+
+  const groupPermissionsByModule = () => {
+    const byModule: Record<string, Permission[]> = {};
+    permissions.forEach((p) => {
+      const key = p.module_name || 'outros';
+      if (!byModule[key]) byModule[key] = [];
+      byModule[key].push(p);
+    });
+    return Object.entries(byModule).sort(([a], [b]) => a.localeCompare(b));
+  };
+
   useEffect(() => {
     fetchModules();
     fetchRoles();
@@ -407,6 +498,12 @@ function RoleManagement() {
           onClick={() => setActiveTab('users')}
         >
           <Users size={18} style={{marginRight: '0.5rem'}} /> Usuários & Atribuições
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'permissions' ? 'active' : ''}`}
+          onClick={() => setActiveTab('permissions')}
+        >
+          <Shield size={18} style={{marginRight: '0.5rem'}} /> Permissões por Role
         </button>
       </div>
 
@@ -586,6 +683,103 @@ function RoleManagement() {
             <div className="empty-state">
               <h3>Nenhum usuário encontrado</h3>
               <p>Não há usuários cadastrados no sistema.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Aba Permissões por Role */}
+      {activeTab === 'permissions' && (
+        <div className="permissions-tab">
+          <div className="compact-header">
+            <div className="compact-title">
+              <h2>Permissões por Papel</h2>
+              <p>Defina quais funcionalidades cada papel pode executar. Alterações afetam o backend imediatamente ao salvar.</p>
+            </div>
+            {dirtyRoles.size > 0 && (
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveAllPermissions}
+                disabled={savingRoleId !== null}
+              >
+                {savingRoleId !== null ? 'Salvando...' : `Salvar alterações (${dirtyRoles.size})`}
+              </button>
+            )}
+          </div>
+
+          {(permsError || error) && (
+            <div className="alert alert-error alert-compact">
+              <p>{permsError || error}</p>
+              <button onClick={() => { setPermsError(null); setError(null); }}>×</button>
+            </div>
+          )}
+
+          {permsLoading ? (
+            <div className="loading-state">
+              <p>Carregando permissões...</p>
+            </div>
+          ) : permissions.length === 0 ? (
+            <div className="empty-state">
+              <h3>Nenhuma permissão configurada</h3>
+              <p>O catálogo de permissões pode não ter sido carregado. Verifique se o banco de dados possui as tabelas permissions e role_permissions.</p>
+            </div>
+          ) : (
+            <div className="permissions-matrix-wrapper">
+              <table className="permissions-matrix">
+                <thead>
+                  <tr>
+                    <th className="permission-role-cell">Papel / Módulo</th>
+                    {groupPermissionsByModule().map(([modName, perms]) => (
+                      <th key={modName} colSpan={perms.length} className="permission-module-header">
+                        {modName}
+                      </th>
+                    ))}
+                  </tr>
+                  <tr>
+                    <th></th>
+                    {permissions.map((p) => (
+                      <th key={p.id} className="permission-col-header" title={p.description || p.name}>
+                        {p.name.length > 25 ? `${p.name.substring(0, 22)}...` : p.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {groupRolesByModule().map(({ module, roles: moduleRoles }) =>
+                    moduleRoles.map((role) => (
+                      <tr key={role.id}>
+                        <td className="permission-role-cell">
+                          <div className="role-name-cell">
+                            <strong>{role.name}</strong>
+                            <span className="module-badge">{module.name}</span>
+                            {dirtyRoles.has(role.id) && (
+                              <button
+                                className="btn btn-small btn-primary"
+                                style={{ marginLeft: '8px' }}
+                                onClick={() => handleSaveRolePermissions(role.id)}
+                                disabled={savingRoleId === role.id}
+                              >
+                                {savingRoleId === role.id ? '...' : 'Salvar'}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        {permissions.map((p) => (
+                          <td key={p.id} className="permission-cell">
+                            <label className="permission-checkbox-label">
+                              <input
+                                type="checkbox"
+                                checked={!!(rolePermissionsMap[role.id]?.[p.id])}
+                                onChange={(e) => handlePermissionToggle(role.id, p.id, e.target.checked)}
+                              />
+                            </label>
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

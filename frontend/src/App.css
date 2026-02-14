@@ -8425,6 +8425,99 @@ main, section, article, aside, header, footer {
   box-shadow: 0 0 0 2px rgba(5, 104, 57, 0.1);
 }
 
+/* ========== PERMISSÕES POR ROLE ========== */
+.permissions-tab {
+  margin-top: 1rem;
+}
+
+.permissions-tab .compact-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.permissions-matrix-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--border-radius-lg);
+  background: var(--bg-tertiary);
+}
+
+.permissions-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.permissions-matrix th,
+.permissions-matrix td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  text-align: center;
+}
+
+.permission-role-cell {
+  text-align: left !important;
+  min-width: 180px;
+  position: sticky;
+  left: 0;
+  background: var(--bg-tertiary);
+  z-index: 1;
+}
+
+.permission-module-header {
+  background: rgba(5, 104, 57, 0.1);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.permission-col-header {
+  font-weight: 500;
+  font-size: 0.8rem;
+  max-width: 120px;
+  white-space: nowrap;
+}
+
+.permission-cell {
+  min-width: 44px;
+}
+
+.permission-checkbox-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0;
+}
+
+.permission-checkbox-label input {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.role-name-cell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.role-name-cell .module-badge {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: rgba(148, 163, 184, 0.2);
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--border-radius-sm);
+}
+
+.permissions-matrix tbody tr:hover {
+  background: rgba(5, 104, 57, 0.03);
+}
+
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
   .role-tabs {

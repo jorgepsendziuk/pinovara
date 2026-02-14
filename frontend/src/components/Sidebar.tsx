@@ -77,12 +77,14 @@ interface MenuItem {
   path: string;
   module?: string;
   permission?: string;
+  /** Código de permissão (ex: menu.organizacoes). Quando presente e user.permissions populado, usa hasPermissionCode. */
+  permissionCode?: string;
   hideForRoles?: string[]; // Ocultar para roles específicos
   children?: MenuItem[];
 }
 
 const Sidebar: React.FC = () => {
-  const { user, hasPermission, isCoordinator, isSupervisor, logout } = useAuth();
+  const { user, hasPermission, hasPermissionCode, isCoordinator, isSupervisor, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const hasNoRoles = !user?.roles || user.roles.length === 0;
@@ -218,6 +220,7 @@ const Sidebar: React.FC = () => {
       icon: FileText,
       path: '/organizacoes/lista',
       module: 'organizacoes',
+      permissionCode: 'menu.organizacoes',
       children: [
         {
           id: 'organizacoes',
@@ -242,6 +245,7 @@ const Sidebar: React.FC = () => {
       icon: GraduationCap,
       path: '/qualificacoes',
       module: 'qualificacoes',
+      permissionCode: 'menu.qualificacoes',
       children: [
         {
           id: 'qualificacoes',
@@ -266,6 +270,7 @@ const Sidebar: React.FC = () => {
       icon: Home,
       path: '/familias',
       module: 'supervisao_ocupacional',
+      permissionCode: 'menu.supervisao',
       children: [
         {
           id: 'supervisao-glebas',
@@ -527,6 +532,7 @@ const Sidebar: React.FC = () => {
       path: '/admin',
       module: 'sistema',
       permission: 'admin',
+      permissionCode: 'sistema.admin',
       children: [
         {
           id: 'usuarios',
@@ -606,10 +612,15 @@ const Sidebar: React.FC = () => {
         return false;
       }
     }
-    
-    // Verificação de permissão padrão
+
+    // Quando role_permissions está populado, usar códigos de permissão
+    if (item.permissionCode && user?.permissions && user.permissions.length > 0) {
+      return hasPermissionCode(item.permissionCode);
+    }
+
+    // Fallback: verificação por module/role (antes do seed ou itens sem permissionCode)
     if (!item.permission) return true;
-    if (!item.module) return true; // Se não tem module, permite acesso (permissão controlada dentro do componente)
+    if (!item.module) return true;
     return hasPermission(item.module, item.permission);
   };
 

@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from './auth';
 import { ErrorCode, HttpStatus } from '../types/api';
+import { permissionService } from '../services/permissionService';
 
 /**
  * Middleware para verificar se o usuário tem role específico
@@ -52,8 +53,9 @@ export const requireTechnician = requireRole('organizacoes', 'tecnico');
 
 /**
  * Middleware para verificar permissões nas organizações baseado na role
+ * Usa role_permissions se disponível; caso contrário fallback para lógica hardcoded
  */
-export const checkOrganizacaoPermission = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const checkOrganizacaoPermission = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   if (!req.user) {
     res.status(HttpStatus.UNAUTHORIZED).json({
       success: false,
@@ -67,33 +69,32 @@ export const checkOrganizacaoPermission = (req: AuthRequest, res: Response, next
     return;
   }
 
-  // Verificar se é admin (acesso total)
-  const isAdmin = req.user.roles?.some(role => 
-    role.name === 'admin' && role.module.name === 'sistema'
-  );
+  const userId = typeof req.user.id === 'string' ? parseInt(req.user.id, 10) : req.user.id;
+  const isAdmin = req.user.roles?.some((role: any) => role.name === 'admin' && role.module?.name === 'sistema');
+  const isTechnician = req.user.roles?.some((role: any) => role.name === 'tecnico' && role.module?.name === 'organizacoes');
+  const isCoordinator = req.user.roles?.some((role: any) => role.name === 'coordenador' && role.module?.name === 'organizacoes');
+  const isSupervisor = req.user.roles?.some((role: any) => role.name === 'supervisao' && role.module?.name === 'organizacoes');
 
-  // Verificar se é técnico
-  const isTechnician = req.user.roles?.some(role => 
-    role.name === 'tecnico' && role.module.name === 'organizacoes'
-  );
+  let canAccessAll: boolean;
+  let canEdit: boolean;
 
-  // Verificar se é coordenador (visualização de todas organizações)
-  const isCoordinator = req.user.roles?.some(role => 
-    role.name === 'coordenador' && role.module.name === 'organizacoes'
-  );
+  const useDb = await permissionService.hasRolePermissionsData(userId);
+  if (useDb) {
+    const codes = await permissionService.getEffectivePermissions(userId);
+    canAccessAll = codes.includes('organizacoes.list_all') || codes.includes('sistema.admin');
+    canEdit = codes.includes('organizacoes.edit') || codes.includes('sistema.admin');
+  } else {
+    canAccessAll = isAdmin || isCoordinator || isSupervisor;
+    canEdit = isAdmin || isTechnician;
+  }
 
-  const isSupervisor = req.user.roles?.some(role => 
-    role.name === 'supervisao' && role.module.name === 'organizacoes'
-  );
-
-  // Adicionar informações sobre permissões à requisição
   (req as any).userPermissions = {
     isAdmin,
     isTechnician,
     isCoordinator,
     isSupervisor,
-    canAccessAll: isAdmin || isCoordinator || isSupervisor, // Coordenador e Supervisor veem todas organizações
-    canEdit: isAdmin || isTechnician, // Coordenador e Supervisor NÃO podem editar
+    canAccessAll,
+    canEdit,
     userId: req.user.id
   };
 

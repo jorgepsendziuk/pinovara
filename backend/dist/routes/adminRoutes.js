@@ -56,6 +56,9 @@ router.put('/users/:id', adminController_1.default.updateUser);
 router.delete('/users/:id', adminController_1.default.deleteUser);
 router.put('/users/:id/status', adminController_1.default.updateUserStatus);
 router.get('/roles', adminController_1.default.getRoles);
+router.get('/permissions', adminController_1.default.getPermissions);
+router.get('/roles/:roleId/permissions', adminController_1.default.getRolePermissions);
+router.put('/roles/:roleId/permissions', adminController_1.default.updateRolePermissions);
 router.post('/users/:id/roles', adminController_1.default.assignRole);
 router.delete('/users/:id/roles/:roleId', adminController_1.default.removeRole);
 router.get('/stats', async (req, res) => {

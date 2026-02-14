@@ -139,6 +139,8 @@ export interface AuthUser {
       name: string;
     };
   }[];
+  /** Códigos das permissões efetivas (preenchido quando role_permissions está no banco) */
+  permissions?: string[];
 }
 
 export interface LoginResponse {
@@ -298,6 +300,77 @@ export const hasAnyPermission = (user: AuthUser | null, permissions: { module: s
   if (!user) return false;
 
   return permissions.some(permission => hasPermission(user, permission.module, permission.role));
+};
+
+/**
+ * Verificar se usuário tem uma permissão por código (ex: 'qualificacoes.edit').
+ * Usa o array permissions retornado por /auth/me quando role_permissions está populado.
+ * Retorna false quando permissions está vazio (antes do seed).
+ */
+export const hasPermissionCode = (user: AuthUser | null, code: string): boolean => {
+  if (!user) return false;
+  const perms = user.permissions;
+  if (!perms || perms.length === 0) return false;
+  return perms.includes(code);
+};
+
+// ========== SERVIÇOS DE PERMISSÕES (ADMIN) ==========
+
+export interface Permission {
+  id: number;
+  code: string;
+  name: string;
+  description: string | null;
+  module_name: string | null;
+  category: string | null;
+  active: boolean;
+}
+
+export interface RolePermission {
+  roleId: number;
+  permissionId: number;
+  enabled: boolean;
+}
+
+export const permissionAPI = {
+  /**
+   * Listar todas as permissões do catálogo
+   */
+  getPermissions: async (): Promise<Permission[]> => {
+    const response = await api.get<ApiResponse<{ permissions: Permission[] }>>('/admin/permissions');
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao listar permissões');
+    }
+    return response.data.data!.permissions;
+  },
+
+  /**
+   * Obter permissões de um role
+   */
+  getRolePermissions: async (roleId: number): Promise<RolePermission[]> => {
+    const response = await api.get<ApiResponse<{ permissions: RolePermission[] }>>(
+      `/admin/roles/${roleId}/permissions`
+    );
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao obter permissões do papel');
+    }
+    return response.data.data!.permissions;
+  },
+
+  /**
+   * Atualizar permissões de um role
+   * @param roleId ID do papel
+   * @param updates Array de { permissionId, enabled }
+   */
+  updateRolePermissions: async (
+    roleId: number,
+    updates: Array<{ permissionId: number; enabled: boolean }>
+  ): Promise<void> => {
+    const response = await api.put<ApiResponse>(`/admin/roles/${roleId}/permissions`, { updates });
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Erro ao atualizar permissões');
+    }
+  }
 };
 
 // ========== SERVIÇOS DE ORGANIZAÇÕES ==========

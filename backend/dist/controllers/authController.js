@@ -8,6 +8,7 @@ const authService_1 = require("../services/authService");
 const api_1 = require("../types/api");
 const auditService_1 = __importDefault(require("../services/auditService"));
 const audit_1 = require("../types/audit");
+const permissionService_1 = require("../services/permissionService");
 class AuthController {
     async login(req, res) {
         try {
@@ -64,9 +65,20 @@ class AuthController {
                 return;
             }
             const user = await authService_1.authService.getUserById(req.user.id);
+            let permissions = [];
+            try {
+                const userId = typeof req.user.id === 'string' ? parseInt(req.user.id, 10) : req.user.id;
+                if (!isNaN(userId) && await permissionService_1.permissionService.hasRolePermissionsData(userId)) {
+                    permissions = await permissionService_1.permissionService.getEffectivePermissions(userId);
+                }
+            }
+            catch (_err) {
+            }
             res.status(api_1.HttpStatus.OK).json({
                 success: true,
-                data: { user },
+                data: {
+                    user: { ...user, permissions }
+                },
                 timestamp: new Date().toISOString()
             });
         }

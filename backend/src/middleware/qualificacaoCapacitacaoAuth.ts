@@ -1,11 +1,13 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from './auth';
 import { ErrorCode, HttpStatus } from '../types/api';
+import { permissionService } from '../services/permissionService';
 
 /**
  * Middleware para verificar permissões nas qualificações e capacitações baseado na role
+ * Usa role_permissions se disponível; caso contrário fallback para lógica hardcoded
  */
-export const checkQualificacaoCapacitacaoPermission = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const checkQualificacaoCapacitacaoPermission = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   if (!req.user) {
     res.status(HttpStatus.UNAUTHORIZED).json({
       success: false,
@@ -19,35 +21,36 @@ export const checkQualificacaoCapacitacaoPermission = (req: AuthRequest, res: Re
     return;
   }
 
-  // Verificar se é admin (acesso total)
-  const isAdmin = req.user.roles?.some(role => 
-    role.name === 'admin' && role.module.name === 'sistema'
-  );
+  const userId = typeof req.user.id === 'string' ? parseInt(req.user.id, 10) : req.user.id;
+  const isAdmin = req.user.roles?.some((role: any) => role.name === 'admin' && role.module?.name === 'sistema');
+  const isCoordinator = req.user.roles?.some((role: any) => role.name === 'coordenador' && role.module?.name === 'organizacoes');
+  const isSupervisor = req.user.roles?.some((role: any) => role.name === 'supervisao' && role.module?.name === 'organizacoes');
+  const isTechnician = req.user.roles?.some((role: any) => role.name === 'tecnico' && (role.module?.name === 'organizacoes' || role.module?.name === 'qualificacoes'));
 
-  // Verificar se é coordenador (visualização de tudo, validação, mas não edição)
-  const isCoordinator = req.user.roles?.some(role => 
-    role.name === 'coordenador' && role.module.name === 'organizacoes'
-  );
+  let canAccessAll: boolean;
+  let canEdit: boolean;
+  let canValidate: boolean;
 
-  // Verificar se é supervisor (visualização de tudo, mas não edição nem validação)
-  const isSupervisor = req.user.roles?.some(role => 
-    role.name === 'supervisao' && role.module.name === 'organizacoes'
-  );
+  const useDb = await permissionService.hasRolePermissionsData(userId);
+  if (useDb) {
+    const codes = await permissionService.getEffectivePermissions(userId);
+    canAccessAll = codes.includes('qualificacoes.list_all') || codes.includes('capacitacoes.list_all') || codes.includes('sistema.admin');
+    canEdit = codes.includes('qualificacoes.edit') || codes.includes('capacitacoes.edit') || codes.includes('sistema.admin');
+    canValidate = codes.includes('qualificacoes.validate') || codes.includes('capacitacoes.validate') || codes.includes('sistema.admin');
+  } else {
+    canAccessAll = isAdmin || isCoordinator || isSupervisor;
+    canEdit = isAdmin || isTechnician;
+    canValidate = isAdmin || isCoordinator;
+  }
 
-  // Verificar se é técnico
-  const isTechnician = req.user.roles?.some(role => 
-    role.name === 'tecnico' && role.module.name === 'organizacoes'
-  );
-
-  // Adicionar informações sobre permissões à requisição
   (req as any).userPermissions = {
     isAdmin,
     isCoordinator,
     isSupervisor,
     isTechnician,
-    canAccessAll: isAdmin || isCoordinator || isSupervisor, // Admin, Coordenador e Supervisor veem tudo
-    canEdit: isAdmin || isTechnician, // Admin e Técnico podem editar (técnico: qualificações que criou ou nas quais é membro da equipe)
-    canValidate: isAdmin || isCoordinator, // Admin e Coordenador podem validar (Supervisor NÃO)
+    canAccessAll,
+    canEdit,
+    canValidate,
     userId: req.user.id
   };
 

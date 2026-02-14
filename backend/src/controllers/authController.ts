@@ -5,6 +5,7 @@ import { HttpStatus } from '../types/api';
 import { AuthRequest } from '../middleware/auth';
 import auditService from '../services/auditService';
 import { AuditAction } from '../types/audit';
+import { permissionService } from '../services/permissionService';
 
 class AuthController {
   /**
@@ -62,6 +63,7 @@ class AuthController {
 
   /**
    * GET /auth/me
+   * Retorna o usuário com suas permissões efetivas (códigos) quando role_permissions estiver populado.
    */
   async me(req: AuthRequest, res: Response): Promise<void> {
     try {
@@ -79,9 +81,21 @@ class AuthController {
 
       const user = await authService.getUserById(req.user.id);
 
+      let permissions: string[] = [];
+      try {
+        const userId = typeof req.user.id === 'string' ? parseInt(req.user.id, 10) : req.user.id;
+        if (!isNaN(userId) && await permissionService.hasRolePermissionsData(userId)) {
+          permissions = await permissionService.getEffectivePermissions(userId);
+        }
+      } catch (_err) {
+        // Ignorar erro - permissions ficam vazios
+      }
+
       res.status(HttpStatus.OK).json({
         success: true,
-        data: { user },
+        data: {
+          user: { ...user, permissions }
+        },
         timestamp: new Date().toISOString()
       });
     } catch (error) {

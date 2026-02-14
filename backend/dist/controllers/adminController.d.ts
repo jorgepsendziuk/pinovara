@@ -10,6 +10,9 @@ declare class AdminController {
     assignRole(req: AuthRequest, res: Response): Promise<void>;
     removeRole(req: AuthRequest, res: Response): Promise<void>;
     getRoles(req: AuthRequest, res: Response): Promise<void>;
+    getPermissions(req: AuthRequest, res: Response): Promise<void>;
+    getRolePermissions(req: AuthRequest, res: Response): Promise<void>;
+    updateRolePermissions(req: AuthRequest, res: Response): Promise<void>;
     private handleError;
     impersonateUser(req: AuthRequest, res: Response): Promise<void>;
 }
