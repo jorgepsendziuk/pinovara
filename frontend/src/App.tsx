@@ -40,6 +40,7 @@ import AccessDenied from './pages/AccessDenied';
 import ConfiguracaoODK from './pages/ConfiguracaoODK';
 import FormularioEnketo from './pages/FormularioEnketo';
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade';
+import ParecerTecnico from './pages/ParecerTecnico';
 import AvisoCookies from './components/AvisoCookies';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import SessionExpiryAlert from './components/SessionExpiryAlert';
@@ -56,6 +57,7 @@ function AppRoutes() {
       <Route path="/" element={<Landing />} />
       <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
       <Route path="/repositorio" element={<RepositorioPublico />} />
+      <Route path="/parecer" element={<ParecerTecnico />} />
       <Route path="/capacitacao/:linkInscricao" element={<CapacitacaoPublica />} />
       <Route path="/capacitacao/:linkAvaliacao/avaliacao" element={<FormAvaliacao />} />
 
@@ -124,7 +126,7 @@ function AppRoutes() {
       />
 
       <Route
-        path="/supervisao-ocupacional/*"
+        path="/familias/*"
         element={
           <ProtectedRoute>
             <SupervisaoOcupacionalModule />

@@ -20,6 +20,7 @@ app.set('trust proxy', true);
 app.use((0, cors_1.default)({
     origin: [
         'http://localhost:5173',
+        'http://localhost:5174',
         'http://localhost:8080',
         'http://localhost:3000',
         'https://pinovaraufba.com.br'

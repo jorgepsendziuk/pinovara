@@ -437,8 +437,8 @@ export function PublicRoute({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      // Redirecionar para lista de organizações quando autenticado
-      navigate('/organizacoes/lista', { replace: true });
+      // Redirecionar para a dashboard do usuário quando já autenticado
+      navigate('/pinovara', { replace: true });
     }
   }, [isAuthenticated, loading, navigate]);
 

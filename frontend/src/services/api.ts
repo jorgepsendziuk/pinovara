@@ -18,7 +18,7 @@ import { sessionManager, SESSION_EXPIRED_EVENT_NAME } from './sessionManager';
 // ========== CONFIGURAÇÃO DA API ==========
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || window.location.origin.replace('5173', '3001').replace('8080', '3001'),
+  baseURL: import.meta.env.VITE_API_URL || window.location.origin.replace('5173', '3001').replace('8080', '3001').replace('3000', '3001'),
   timeout: import.meta.env.VITE_API_TIMEOUT ? parseInt(import.meta.env.VITE_API_TIMEOUT) : 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -220,6 +220,19 @@ export const authAPI = {
       // Erro genérico
       throw new Error(error.message || 'Erro ao fazer login');
     }
+  },
+
+  /**
+   * Obter acesso disponível para usuário sem papéis (inscrições em capacitações e organizações associadas ao email)
+   */
+  meuAcessoSemPapel: async (): Promise<{ capacitacoesInscrito: number; organizacoesAssociadas: number }> => {
+    const response = await api.get<ApiResponse<{ capacitacoesInscrito: number; organizacoesAssociadas: number }>>(
+      '/auth/meu-acesso-sem-papel'
+    );
+    if (!response.data.success) {
+      return { capacitacoesInscrito: 0, organizacoesAssociadas: 0 };
+    }
+    return response.data.data!;
   },
 
   /**

@@ -8,6 +8,7 @@ router.post('/login', authController_1.authController.login.bind(authController_
 router.post('/register', authController_1.authController.register.bind(authController_1.authController));
 router.get('/verify', authController_1.authController.verify.bind(authController_1.authController));
 router.get('/me', auth_1.authenticateToken, authController_1.authController.me.bind(authController_1.authController));
+router.get('/meu-acesso-sem-papel', auth_1.authenticateToken, authController_1.authController.meuAcessoSemPapel.bind(authController_1.authController));
 router.put('/profile', auth_1.authenticateToken, authController_1.authController.updateProfile.bind(authController_1.authController));
 router.post('/logout', auth_1.authenticateToken, authController_1.authController.logout.bind(authController_1.authController));
 router.post('/refresh', auth_1.authenticateToken, authController_1.authController.refresh.bind(authController_1.authController));

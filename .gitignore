@@ -40,6 +40,8 @@ logs/
 # Temporary files
 .tmp/
 temp/
+.deploy-local/
+prisma-client/
 
 # Coverage
 coverage/

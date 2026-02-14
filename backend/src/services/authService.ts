@@ -403,6 +403,39 @@ class AuthService {
   }
 
   /**
+   * Retorna o acesso disponível para usuário sem papéis (inscrições em capacitações e organizações associadas ao email)
+   */
+  async getMeuAcessoSemPapel(email: string): Promise<{ capacitacoesInscrito: number; organizacoesAssociadas: number }> {
+    const emailNorm = email?.trim().toLowerCase();
+    if (!emailNorm) {
+      return { capacitacoesInscrito: 0, organizacoesAssociadas: 0 };
+    }
+
+    const [inscricoesCount, orgsCount] = await Promise.all([
+      // Capacitações em que o email está inscrito (distintas)
+      prisma.capacitacao_inscricao
+        .findMany({
+          where: { email: { equals: emailNorm, mode: 'insensitive' } },
+          select: { id_capacitacao: true },
+          distinct: ['id_capacitacao']
+        })
+        .then((r) => r.length),
+      // Organizações onde email ou representante_email = user.email
+      prisma.organizacao.count({
+        where: {
+          OR: [
+            { email: { equals: emailNorm, mode: 'insensitive' } },
+            { representante_email: { equals: emailNorm, mode: 'insensitive' } }
+          ],
+          removido: { not: true }
+        }
+      })
+    ]);
+
+    return { capacitacoesInscrito: inscricoesCount, organizacoesAssociadas: orgsCount };
+  }
+
+  /**
    * Gerar token JWT
    */
   private generateToken(payload: JWTPayload): string {

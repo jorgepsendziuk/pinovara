@@ -208,7 +208,7 @@ export default function ListaFamilias() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-start', alignItems: 'center' }}>
           <Tooltip text="Ver detalhes" backgroundColor="#3b82f6" delay={0}>
             <button
-              onClick={() => navigate(`/supervisao-ocupacional/familias/${record.id}`)}
+              onClick={() => navigate(`/familias/${record.id}`)}
               style={{
                 padding: '6px 8px',
                 border: '1px solid #3b82f6',
@@ -236,7 +236,7 @@ export default function ListaFamilias() {
           {canEdit && (
             <Tooltip text="Editar" backgroundColor="#056839" delay={0}>
               <button
-                onClick={() => navigate(`/supervisao-ocupacional/familias/${record.id}/editar`)}
+                onClick={() => navigate(`/familias/${record.id}/editar`)}
                 style={{
                   padding: '6px 8px',
                   border: '1px solid #056839',
@@ -265,7 +265,7 @@ export default function ListaFamilias() {
           {canValidate && (
             <Tooltip text="Validar" backgroundColor="#10b981" delay={0}>
               <button
-                onClick={() => navigate(`/supervisao-ocupacional/familias/${record.id}`)}
+                onClick={() => navigate(`/familias/${record.id}`)}
                 style={{
                   padding: '6px 8px',
                   border: '1px solid #10b981',
@@ -594,7 +594,7 @@ export default function ListaFamilias() {
                 backgroundColor: 'white'
               }}
             >
-              <option value="">Todas as Glebas/Assentamentos</option>
+              <option value="">Todos os Territórios</option>
               {glebas.map(gleba => (
                 <option key={gleba.id} value={gleba.id.toString()}>
                   {gleba.descricao}

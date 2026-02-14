@@ -10,11 +10,6 @@ documentar as ultimas modificacoes, verificar documentacao se esta refletindo o 
 
 continuar a implementação de gestao de roles e papeis
 
-usar datagrid mais robusta nas listagens de:
-usuarios
-grid
-roles
-organizacoes etc
 
 
 toda vez que uma versao modifica coisas no prisma e ou no backend o deploy automatico pelo github actions nao da certo e tenho que pedir pra ajustar e tentar de novo.
@@ -121,32 +116,10 @@ CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_da9" ON odk_prod."ORGANIZA
 CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_lud" ON odk_prod."ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF" USING btree ("_LAST_UPDATE_DATE");
 
 
-melhore a 
 
-tornar a pagina inicial logada a que atualmente é Dashboard do Usuário.
+o usuario tecnico nao esta tendo poderes de atualizar as qualificacoes  qual tem acesso ou é criador.
 
-tirar toda essa baboseira e colocar um quadro top discreto com perfil: nome, email, papeis, link para acessar e editar perfil senha etc.
+libere a funcao de edicao das qualificacoes para role tecnico.
 
-na parte restante da pagina, vamos distribuir cards nao muito grandes, com icones, com acesso as funcionalidades do sistema, distribuidos em categorias:
-
-título: Perfil de Entrada e Plano de Gestão
-card: Organizações
-card: Mapa de Organizações
-
-título: Qualificação e Formação Profissional
-card: Planos de Qualificação
-card: Capacitações
-
-título: Cadastro de Famílias
-card: Territórios
-card: Famílias
-card: Mapa de Cadastros
-
-avulsos:
-card: Repositório
-card: Configuração ODK
-
-(caso administrador)
-título: Administração
-card: Usuários
-card: Auditoria
+e vamos pensar numa pagina na administracao pra gerenciar essas permissoes de cada role.
+detalhe todas aspermissoes por roles, ache onde elas estao definidas no codigo, e veja o que é mecessario mudar  para fazermos a gestao, ligar e desligar todas sa funcoes de todos os roles pela gestao de roles da administracao?

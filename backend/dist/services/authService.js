@@ -325,6 +325,31 @@ class AuthService {
             default: return 7 * 24 * 60 * 60;
         }
     }
+    async getMeuAcessoSemPapel(email) {
+        const emailNorm = email?.trim().toLowerCase();
+        if (!emailNorm) {
+            return { capacitacoesInscrito: 0, organizacoesAssociadas: 0 };
+        }
+        const [inscricoesCount, orgsCount] = await Promise.all([
+            prisma.capacitacao_inscricao
+                .findMany({
+                where: { email: { equals: emailNorm, mode: 'insensitive' } },
+                select: { id_capacitacao: true },
+                distinct: ['id_capacitacao']
+            })
+                .then((r) => r.length),
+            prisma.organizacao.count({
+                where: {
+                    OR: [
+                        { email: { equals: emailNorm, mode: 'insensitive' } },
+                        { representante_email: { equals: emailNorm, mode: 'insensitive' } }
+                    ],
+                    removido: { not: true }
+                }
+            })
+        ]);
+        return { capacitacoesInscrito: inscricoesCount, organizacoesAssociadas: orgsCount };
+    }
     generateToken(payload) {
         if (!process.env.JWT_SECRET) {
             throw new Error('JWT_SECRET não configurado');

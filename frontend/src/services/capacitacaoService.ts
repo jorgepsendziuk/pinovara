@@ -364,18 +364,50 @@ export const capacitacaoAPI = {
   },
 
   /**
-   * Download de evidência
+   * Extrai o nome do arquivo do header Content-Disposition (fallback)
    */
-  downloadEvidencia: async (idCapacitacao: number, evidenciaId: number): Promise<void> => {
+  _getFilenameFromDisposition(disposition: string | undefined): string | null {
+    if (!disposition) return null;
+    const match = /filename\*?=(?:UTF-8'')?["']?([^"'\s;]+)["']?/i.exec(disposition);
+    if (match) return decodeURIComponent(match[1].trim());
+    const simple = /filename=["']?([^"'\s;]+)["']?/i.exec(disposition);
+    return simple ? simple[1].trim() : null;
+  },
+
+  /**
+   * Download de evidência ou abrir no navegador.
+   * @param nomeArquivo - Nome original do arquivo (com extensão); usado no download e fallback
+   * @param abrirNoNavegador - Se true, abre em nova aba em vez de baixar
+   */
+  downloadEvidencia: async (
+    idCapacitacao: number,
+    evidenciaId: number,
+    options?: { nomeArquivo?: string; abrirNoNavegador?: boolean }
+  ): Promise<void> => {
     const response = await api.get(`/capacitacoes/${idCapacitacao}/evidencias/${evidenciaId}/download`, {
       responseType: 'blob'
     });
 
-    // Criar link temporário para download
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const disposition = response.headers?.['content-disposition'] ?? response.headers?.['Content-Disposition'];
+    const nomeDoArquivo =
+      options?.nomeArquivo?.trim() ||
+      capacitacaoAPI._getFilenameFromDisposition(disposition) ||
+      `evidencia_${evidenciaId}`;
+
+    const contentType = response.headers?.['content-type'] ?? response.headers?.['Content-Type'] ?? 'application/octet-stream';
+    const blob = new Blob([response.data], { type: contentType });
+    const url = window.URL.createObjectURL(blob);
+
+    if (options?.abrirNoNavegador) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      // Revogar após um tempo para o navegador carregar a aba
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+      return;
+    }
+
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `evidencia_${evidenciaId}`);
+    link.setAttribute('download', nomeDoArquivo);
     document.body.appendChild(link);
     link.click();
     link.remove();

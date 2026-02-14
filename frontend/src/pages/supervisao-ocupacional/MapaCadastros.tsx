@@ -240,7 +240,7 @@ export default function MapaCadastros() {
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500', color: '#334155' }}>Gleba</label>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500', color: '#334155' }}>Território</label>
               <select
                 value={filtroGleba}
                 onChange={(e) => setFiltroGleba(e.target.value)}
@@ -252,7 +252,7 @@ export default function MapaCadastros() {
                   fontSize: '14px'
                 }}
               >
-                <option value="">Todas as glebas</option>
+                <option value="">Todos os territórios</option>
                 {glebasDisponiveis.map(gleba => (
                   <option key={gleba.id} value={gleba.id.toString()}>
                     {gleba.descricao}
@@ -310,7 +310,7 @@ export default function MapaCadastros() {
           <div style={{ flex: 1, minHeight: '600px' }}>
             <MapaGrande
               familias={filteredFamilias}
-              onFamiliaClick={(id) => navigate(`/supervisao-ocupacional/familias/${id}`)}
+              onFamiliaClick={(id) => navigate(`/familias/${id}`)}
               onMapReady={(map, markers) => {
                 setMapInstance(map);
                 setMarkersMap(markers);
@@ -360,7 +360,7 @@ export default function MapaCadastros() {
                           #{familia.id}
                         </h4>
                         <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b' }}>
-                          {familia.gleba_rel?.descricao || 'Sem gleba'}
+                          {familia.gleba_rel?.descricao || 'Sem território'}
                         </p>
                         <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#64748b' }}>
                           {familia.municipio_rel?.descricao || '-'} / {familia.estado_rel?.uf || '-'}
@@ -387,7 +387,7 @@ export default function MapaCadastros() {
                         <MapIcon size={12} /> Ir Para
                       </button>
                       <button
-                        onClick={() => navigate(`/supervisao-ocupacional/familias/${familia.id}`)}
+                        onClick={() => navigate(`/familias/${familia.id}`)}
                         style={{
                           padding: '6px 12px',
                           background: '#056839',
@@ -499,7 +499,7 @@ function MapaGrande({ familias, onFamiliaClick, onMapReady }: MapaGrandeProps) {
       popupContent.innerHTML = `
         <h4 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 16px;">#${familia.id}</h4>
         <div style="margin-bottom: 8px;">
-          <p style="margin: 4px 0; color: #34495e; font-size: 14px;"><strong>Gleba:</strong> ${familia.gleba_rel?.descricao || 'Não informada'}</p>
+          <p style="margin: 4px 0; color: #34495e; font-size: 14px;"><strong>Território:</strong> ${familia.gleba_rel?.descricao || 'Não informado'}</p>
           <p style="margin: 4px 0; color: #34495e; font-size: 14px;">${localizacao}</p>
           ${familia.comunidade ? `<p style="margin: 4px 0; color: #34495e; font-size: 13px;"><strong>Comunidade:</strong> ${familia.comunidade}</p>` : ''}
           ${familia.n_moradores ? `<p style="margin: 4px 0; color: #34495e; font-size: 13px;"><strong>Moradores:</strong> ${familia.n_moradores}</p>` : ''}

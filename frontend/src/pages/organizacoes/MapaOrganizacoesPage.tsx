@@ -467,8 +467,22 @@ function MapaGrande({ organizacoes, onOrganizacaoClick, onNavigate, onGerarRelat
       onMapReady(map, markers);
     }
 
+    // Redimensionar mapa quando o container mudar (ex.: sidebar collapsed)
+    const container = map.getContainer();
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    resizeObserver.observe(container);
+
+    const handleWindowResize = () => {
+      map.invalidateSize();
+    };
+    window.addEventListener('resize', handleWindowResize);
+
     // Cleanup function
     return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', handleWindowResize);
       map.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

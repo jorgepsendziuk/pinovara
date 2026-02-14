@@ -146,6 +146,30 @@
   box-shadow: 0 4px 8px rgba(5, 104, 57, 0.3);
 }
 
+/* Botão Cadastrar território: verde com texto branco (evita override marrom) */
+.btn-territorio-cadastrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #056839 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.btn-territorio-cadastrar:hover {
+  background: #04502d !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(5, 104, 57, 0.3);
+}
+
 /* ========== CARDS ========== */
 
 .stats-card {

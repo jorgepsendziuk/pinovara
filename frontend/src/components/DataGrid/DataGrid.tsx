@@ -29,6 +29,9 @@ export interface DataGridProps<T = any> {
     total: number;
     showSizeChanger?: boolean;
     showQuickJumper?: boolean;
+    showTop?: boolean;
+    showAllLabel?: string;
+    onShowAll?: () => void;
     onChange: (page: number, pageSize: number) => void;
   };
   filters?: {
@@ -461,7 +464,6 @@ function DataGrid<T = any>({
             {Math.min(pagination.current * pagination.pageSize, pagination.total)} de{' '}
             {pagination.total} registros
           </div>
-          
           <div className="pagination-controls">
             <button
               onClick={() => pagination.onChange(pagination.current - 1, pagination.pageSize)}
@@ -470,11 +472,9 @@ function DataGrid<T = any>({
             >
               ← Anterior
             </button>
-            
             <span className="current-page">
               Página {pagination.current} de {Math.ceil(pagination.total / pagination.pageSize)}
             </span>
-            
             <button
               onClick={() => pagination.onChange(pagination.current + 1, pagination.pageSize)}
               disabled={pagination.current >= Math.ceil(pagination.total / pagination.pageSize)}
@@ -483,22 +483,10 @@ function DataGrid<T = any>({
               Próxima →
             </button>
           </div>
-          
-          {pagination.showSizeChanger && (
-            <div className="page-size-changer">
-              <label>
-                Itens por página:
-                <select
-                  value={pagination.pageSize}
-                  onChange={(e) => pagination.onChange(1, parseInt(e.target.value))}
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-              </label>
-            </div>
+          {pagination.onShowAll && (
+            <button type="button" onClick={pagination.onShowAll} className="btn btn-secondary btn-small" style={{ marginLeft: '8px' }}>
+              {pagination.showAllLabel ?? 'Mostrar Todos'}
+            </button>
           )}
         </div>
       )}

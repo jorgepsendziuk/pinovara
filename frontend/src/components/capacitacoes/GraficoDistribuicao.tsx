@@ -7,6 +7,26 @@ interface GraficoDistribuicaoProps {
 
 const CORES = ['#056839', '#1976d2', '#f59e0b', '#8b5cf6', '#ef4444', '#10b981', '#6366f1'];
 
+function formatarOpcaoLabel(opcao: string, tipo: TipoPergunta): string {
+  if (tipo === 'sim_nao_talvez') {
+    const map: Record<string, string> = {
+      'sim': 'Sim',
+      'nao': 'Não',
+      'talvez': 'Talvez'
+    };
+    return map[opcao.toLowerCase()] || opcao;
+  }
+  if (tipo === 'sim_nao_parcialmente') {
+    const map: Record<string, string> = {
+      'sim': 'Sim',
+      'nao': 'Não',
+      'parcialmente': 'Parcialmente'
+    };
+    return map[opcao.toLowerCase()] || opcao;
+  }
+  return opcao;
+}
+
 export default function GraficoDistribuicao({ estatistica }: GraficoDistribuicaoProps) {
   const { pergunta, distribuicao, media, total_respostas } = estatistica;
 
@@ -14,7 +34,7 @@ export default function GraficoDistribuicao({ estatistica }: GraficoDistribuicao
   const dadosBarra = distribuicao 
     ? Object.entries(distribuicao)
         .map(([opcao, quantidade]) => ({
-          opcao: formatarOpcao(opcao, pergunta.tipo),
+          opcao: formatarOpcaoLabel(opcao, pergunta.tipo),
           quantidade,
           percentual: total_respostas > 0 ? ((quantidade / total_respostas) * 100).toFixed(1) : '0'
         }))
@@ -35,26 +55,6 @@ export default function GraficoDistribuicao({ estatistica }: GraficoDistribuicao
     value: item.quantidade,
     fill: CORES[index % CORES.length]
   }));
-
-  const formatarOpcao = (opcao: string, tipo: TipoPergunta): string => {
-    if (tipo === 'sim_nao_talvez') {
-      const map: Record<string, string> = {
-        'sim': 'Sim',
-        'nao': 'Não',
-        'talvez': 'Talvez'
-      };
-      return map[opcao.toLowerCase()] || opcao;
-    }
-    if (tipo === 'sim_nao_parcialmente') {
-      const map: Record<string, string> = {
-        'sim': 'Sim',
-        'nao': 'Não',
-        'parcialmente': 'Parcialmente'
-      };
-      return map[opcao.toLowerCase()] || opcao;
-    }
-    return opcao;
-  };
 
   const renderGrafico = () => {
     if (!distribuicao || Object.keys(distribuicao).length === 0) {

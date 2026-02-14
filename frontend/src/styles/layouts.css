@@ -32,21 +32,22 @@
 
 .main-content {
   flex: 1;
-  margin-left: 250px;
+  margin-left: 280px;
   transition: margin-left var(--transition-cubic) 0.3s;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  width: calc(100% - 250px);
-  max-width: calc(100% - 250px);
+  width: calc(100vw - 280px);
+  max-width: calc(100vw - 280px);
+  min-width: 0;
   box-sizing: border-box;
   overflow-x: hidden;
 }
 
 .dashboard-layout .sidebar.collapsed + .main-content {
   margin-left: 70px;
-  width: calc(100% - 70px);
-  max-width: calc(100% - 70px);
+  width: calc(100vw - 70px);
+  max-width: calc(100vw - 70px);
 }
 
 .dashboard-main {
@@ -284,9 +285,11 @@
 
 .mapa-main-container {
   display: grid;
-  grid-template-columns: 1fr 350px;
+  grid-template-columns: minmax(0, 1fr) 350px;
   gap: var(--spacing-lg);
   margin-top: var(--spacing-lg);
+  min-width: 0;
+  width: 100%;
 }
 
 .mapa-container {
@@ -295,6 +298,8 @@
   overflow: hidden;
   box-shadow: var(--shadow-md);
   min-height: 600px;
+  min-width: 0;
+  width: 100%;
 }
 
 .lista-lateral {
@@ -402,8 +407,8 @@
 @media (max-width: 1024px) {
   .main-content {
     margin-left: 70px;
-    width: calc(100% - 70px);
-    max-width: calc(100% - 70px);
+    width: calc(100vw - 70px);
+    max-width: calc(100vw - 70px);
   }
 
   .mapa-main-container {

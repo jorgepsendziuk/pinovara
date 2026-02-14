@@ -15,7 +15,7 @@ export default function DetalhesFamilia() {
   const { hasPermission } = useAuth();
   
   const idFromPath = useMemo(() => {
-    const match = location.pathname.match(/\/familias\/(\d+)/);
+    const match = location.pathname.match(/^\/familias\/(\d+)$/);
     return match ? match[1] : null;
   }, [location.pathname]);
   
@@ -199,7 +199,7 @@ export default function DetalhesFamilia() {
           </div>
           <div className="header-actions">
             <button
-              onClick={() => navigate('/supervisao-ocupacional/familias')}
+              onClick={() => navigate('/familias')}
               style={{
                 padding: '10px 20px',
                 background: '#f3f4f6',
@@ -245,7 +245,7 @@ export default function DetalhesFamilia() {
           </div>
           <div className="header-actions">
             <button
-              onClick={() => navigate('/supervisao-ocupacional/familias')}
+              onClick={() => navigate('/familias')}
               style={{
                 padding: '10px 20px',
                 background: '#f3f4f6',
@@ -297,7 +297,7 @@ export default function DetalhesFamilia() {
                             hasPermission('supervisao_ocupacional', 'tecnico');
             return canEdit ? (
               <button
-                onClick={() => navigate(`/supervisao-ocupacional/familias/${familia.id}/editar`)}
+                onClick={() => navigate(`/familias/${familia.id}/editar`)}
                 style={{
                   padding: '10px 20px',
                   background: '#056839',
@@ -318,7 +318,7 @@ export default function DetalhesFamilia() {
             ) : null;
           })()}
           <button
-            onClick={() => navigate('/supervisao-ocupacional/familias')}
+            onClick={() => navigate('/familias')}
             style={{
               padding: '10px 20px',
               background: '#f3f4f6',
@@ -370,7 +370,7 @@ export default function DetalhesFamilia() {
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Gleba</label>
+                <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Território</label>
                 <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#334155' }}>
                   {familia.gleba_rel?.descricao || '-'}
                 </p>

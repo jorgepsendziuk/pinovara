@@ -260,8 +260,8 @@ function Landing() {
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                   </svg>
                 </div>
-                <h4>Supervisão Ocupacional</h4>
-                <p>Supervisão ocupacional com levantamento de informações socioeconômicas e ambientais das famílias.</p>
+                <h4>Cadastro de Famílias</h4>
+                <p>Cadastro de famílias com levantamento de informações socioeconômicas e ambientais em territórios (glebas, assentamentos e quilombos).</p>
               </div>
 
               <div className="feature">
@@ -418,8 +418,8 @@ function Landing() {
                       <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                     </svg>
                   </div>
-                  <h4 className="phase-title">Supervisão Ocupacional</h4>
-                  <p className="phase-description">Acompanhamento das famílias</p>
+                  <h4 className="phase-title">Cadastro de Famílias</h4>
+                  <p className="phase-description">Acompanhamento das famílias em territórios</p>
                 </div>
                 <div className="phase-metas-list">
                   <div className="meta-entry">

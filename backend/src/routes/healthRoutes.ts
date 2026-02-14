@@ -25,19 +25,24 @@ router.get('/health', async (req: Request, res: Response) => {
     };
 
     // Teste rápido de conexão com banco
+    let databaseError: string | undefined;
     try {
       await prisma.$queryRaw`SELECT 1`;
       healthData.services.database = 'up';
     } catch (error) {
       healthData.services.database = 'down';
       healthData.status = 'degraded';
+      databaseError = error instanceof Error ? error.message : String(error);
     }
 
     const statusCode = healthData.status === 'healthy' ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE;
     
     res.status(statusCode).json({
       success: true,
-      data: healthData,
+      data: {
+        ...healthData,
+        ...(databaseError && { databaseError })
+      },
       timestamp: new Date().toISOString()
     });
 

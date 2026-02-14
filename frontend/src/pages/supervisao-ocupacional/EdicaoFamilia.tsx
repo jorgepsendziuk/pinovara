@@ -20,7 +20,7 @@ export default function EdicaoFamilia() {
   const { hasPermission } = useAuth();
   
   const idFromPath = useMemo(() => {
-    const match = location.pathname.match(/\/familias\/(\d+)\/editar/);
+    const match = location.pathname.match(/^\/familias\/(\d+)\/editar$/);
     return match ? match[1] : null;
   }, [location.pathname]);
   
@@ -132,7 +132,7 @@ export default function EdicaoFamilia() {
       
       if (response.data.success) {
         alert('Família atualizada com sucesso!');
-        navigate(`/supervisao-ocupacional/familias/${idFromPath}`);
+        navigate(`/familias/${idFromPath}`);
       } else {
         setError('Erro ao salvar: resposta inválida');
       }
@@ -161,7 +161,7 @@ export default function EdicaoFamilia() {
       return (
         <div key={fieldName} style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '14px', fontWeight: '500', color: '#334155', display: 'block', marginBottom: '8px' }}>
-            Gleba/Assentamento/Quilombo
+            Território
           </label>
           <select
             value={currentGlebaId ? currentGlebaId.toString() : ''}
@@ -184,7 +184,7 @@ export default function EdicaoFamilia() {
               boxSizing: 'border-box'
             }}
           >
-            <option value="">Selecione uma Gleba/Assentamento/Quilombo...</option>
+            <option value="">Selecione um território...</option>
             {glebas.map((gleba) => (
               <option key={gleba.id} value={gleba.id.toString()}>
                 {gleba.descricao}
@@ -470,7 +470,7 @@ export default function EdicaoFamilia() {
           </div>
           <div className="header-actions">
             <button
-              onClick={() => navigate('/supervisao-ocupacional/familias')}
+              onClick={() => navigate('/familias')}
               style={{
                 padding: '10px 20px',
                 background: '#f3f4f6',
@@ -551,7 +551,7 @@ export default function EdicaoFamilia() {
         </div>
         <div className="header-actions">
           <button
-            onClick={() => navigate(`/supervisao-ocupacional/familias/${familia.id}`)}
+            onClick={() => navigate(`/familias/${familia.id}`)}
             style={{
               padding: '10px 20px',
               background: '#f3f4f6',

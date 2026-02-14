@@ -489,65 +489,81 @@ class AvaliacaoService {
 
   /**
    * Obter estatísticas de avaliações de uma capacitação
+   * Usa as perguntas das respostas reais (não versão ativa) para garantir
+   * que perguntas sim/nao/talvez etc. tenham suas distribuições calculadas
    */
   async getEstatisticas(idCapacitacao: number): Promise<AvaliacaoEstatisticas[]> {
-    // Buscar todas as avaliações da capacitação
     const avaliacoes = await this.listAvaliacoes(idCapacitacao);
 
     if (avaliacoes.length === 0) {
       return [];
     }
 
-    // Buscar todas as perguntas da versão ativa
-    const versaoAtiva = await this.getVersaoAtiva();
-    if (!versaoAtiva || !versaoAtiva.perguntas) {
+    const todasRespostas = avaliacoes.flatMap(a => a.respostas || []);
+    if (todasRespostas.length === 0) {
       return [];
     }
 
-    // Agrupar respostas por pergunta
+    // Agrupar por id_pergunta preservando ordem (via Map com ordem de primeira aparição)
+    const grupos = new Map<number, { respostas: typeof todasRespostas; pergunta: any }>();
+    for (const r of todasRespostas) {
+      const pergunta = (r as any).pergunta ?? (r as any).avaliacao_pergunta;
+      if (!pergunta) continue;
+      const id = r.id_pergunta;
+      if (!grupos.has(id)) {
+        grupos.set(id, { respostas: [], pergunta });
+      }
+      grupos.get(id)!.respostas.push(r);
+    }
+
+    // Ordenar por ordem da pergunta
     const estatisticas: AvaliacaoEstatisticas[] = [];
+    const itensOrdenados = Array.from(grupos.entries()).sort(
+      (a, b) => (a[1].pergunta.ordem ?? 0) - (b[1].pergunta.ordem ?? 0)
+    );
 
-    for (const pergunta of versaoAtiva.perguntas) {
-      const respostas = avaliacoes
-        .flatMap(a => a.respostas || [])
-        .filter(r => r.id_pergunta === pergunta.id);
-
+    for (const [, { respostas, pergunta }] of itensOrdenados) {
       const total_respostas = respostas.length;
-
       let distribuicao: Record<string, number> | undefined;
       let media: number | undefined;
 
       if (pergunta.tipo === 'escala_5' || pergunta.tipo === 'escala_3') {
-        // Calcular distribuição e média
         const valores: number[] = [];
         distribuicao = {};
-
+        const maxEscala = pergunta.tipo === 'escala_5' ? 5 : 3;
+        let opcoes: string[] = [];
+        try {
+          const raw = (pergunta as any).opcoes;
+          opcoes = Array.isArray(raw) ? raw : (typeof raw === 'string' && raw ? JSON.parse(raw) : []);
+        } catch {
+          opcoes = [];
+        }
         for (const resposta of respostas) {
-          const valor = resposta.resposta_opcao;
-          if (valor) {
-            const num = parseInt(valor);
-            if (!isNaN(num)) {
-              valores.push(num);
-              distribuicao[valor] = (distribuicao[valor] || 0) + 1;
-            }
+          const valor = resposta.resposta_opcao?.trim();
+          if (!valor) continue;
+          distribuicao[valor] = (distribuicao[valor] || 0) + 1;
+          const num = parseInt(valor);
+          if (!isNaN(num) && num >= 1 && num <= maxEscala) {
+            valores.push(num);
+          } else {
+            const idx = opcoes.findIndex((o: string) => String(o).trim().toLowerCase() === valor.toLowerCase());
+            if (idx >= 0) valores.push(idx + 1);
           }
         }
-
         if (valores.length > 0) {
           media = valores.reduce((a, b) => a + b, 0) / valores.length;
         }
       } else if (pergunta.tipo !== 'texto_livre') {
-        // Distribuição de opções
         distribuicao = {};
         for (const resposta of respostas) {
-          const opcao = resposta.resposta_opcao || 'sem_resposta';
+          const opcao = String(resposta.resposta_opcao ?? 'sem_resposta').trim() || 'sem_resposta';
           distribuicao[opcao] = (distribuicao[opcao] || 0) + 1;
         }
       }
 
       estatisticas.push({
         pergunta: {
-          id: pergunta.id!,
+          id: pergunta.id,
           texto: pergunta.texto_pergunta,
           tipo: pergunta.tipo as any
         },

@@ -9,6 +9,10 @@ declare class AuthService {
         email: string;
     }): Promise<UserWithRoles>;
     private getExpiresInSeconds;
+    getMeuAcessoSemPapel(email: string): Promise<{
+        capacitacoesInscrito: number;
+        organizacoesAssociadas: number;
+    }>;
     private generateToken;
 }
 declare class ApiError extends Error {

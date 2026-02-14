@@ -8,6 +8,7 @@ const routeTitles: Record<string, string> = {
   '/login': 'Login',
   '/register': 'Cadastro',
   '/politica-privacidade': 'Política de Privacidade',
+  '/parecer': 'Parecer Técnico - Aditivo Contrato PINOVARA',
   
   // Organizações
   '/organizacoes': 'Organizações',

@@ -31,7 +31,7 @@ export default function EdicaoGleba() {
   
   // Extrair ID do pathname usando useMemo para garantir que seja recalculado
   const idFromPath = useMemo(() => {
-    const match = location.pathname.match(/\/glebas\/edicao\/(\d+)/);
+    const match = location.pathname.match(/\/territorios\/edicao\/(\d+)/);
     const id = match ? match[1] : null;
     console.log('EdicaoGleba - pathname:', location.pathname, 'ID extraído:', id);
     return id;
@@ -111,7 +111,7 @@ export default function EdicaoGleba() {
       }
     } catch (err: any) {
       console.error('Erro ao carregar gleba:', err);
-      const errorMsg = err.response?.data?.error || err.message || 'Erro ao carregar gleba';
+      const errorMsg = err.response?.data?.error || err.message || 'Erro ao carregar território';
       setError(errorMsg);
       setLoading(false);
       loadingRef.current = false;
@@ -152,10 +152,10 @@ export default function EdicaoGleba() {
       setError(null);
       const response = await api.put(`/supervisao-ocupacional/glebas/${idFromPath}`, gleba);
       if (response.data.success) {
-        navigate('/supervisao-ocupacional/glebas');
+        navigate('/familias/territorios');
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao salvar gleba');
+      setError(err.response?.data?.error || 'Erro ao salvar território');
     } finally {
       setSaving(false);
     }
@@ -166,7 +166,7 @@ export default function EdicaoGleba() {
       <div className="supervisao-ocupacional-module">
         <div className="loading-container">
           <Loader2 size={32} className="spinning" />
-          <p>Carregando gleba...</p>
+          <p>Carregando território...</p>
         </div>
       </div>
     );
@@ -179,12 +179,12 @@ export default function EdicaoGleba() {
           <div className="header-info">
             <h1>
               <Map size={24} />
-              Erro ao carregar gleba
+              Erro ao carregar território
             </h1>
           </div>
           <div className="header-actions">
             <button
-              onClick={() => navigate('/supervisao-ocupacional/glebas')}
+              onClick={() => navigate('/familias/territorios')}
               style={{
                 padding: '10px 20px',
                 background: '#f3f4f6',
@@ -225,12 +225,12 @@ export default function EdicaoGleba() {
           <div className="header-info">
             <h1>
               <Map size={24} />
-              Gleba não encontrada
+              Território não encontrado
             </h1>
           </div>
           <div className="header-actions">
             <button
-              onClick={() => navigate('/supervisao-ocupacional/glebas')}
+              onClick={() => navigate('/familias/territorios')}
               style={{
                 padding: '10px 20px',
                 background: '#f3f4f6',
@@ -257,7 +257,7 @@ export default function EdicaoGleba() {
             padding: '16px', 
             borderRadius: '8px'
           }}>
-            Gleba não encontrada
+            Território não encontrado
           </div>
         </div>
       </div>
@@ -270,12 +270,12 @@ export default function EdicaoGleba() {
         <div className="header-info">
           <h1>
             <Map size={24} />
-            Editar Gleba #{gleba.id}
+            Editar território #{gleba.id}
           </h1>
         </div>
         <div className="header-actions">
           <button
-            onClick={() => navigate('/supervisao-ocupacional/glebas')}
+            onClick={() => navigate('/familias/territorios')}
             style={{
               padding: '10px 20px',
               background: '#f3f4f6',
@@ -426,7 +426,7 @@ export default function EdicaoGleba() {
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
               <button
                 type="button"
-                onClick={() => navigate('/supervisao-ocupacional/glebas')}
+                onClick={() => navigate('/familias/territorios')}
                 style={{
                   padding: '12px 24px',
                   background: '#f3f4f6',

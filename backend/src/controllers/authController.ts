@@ -192,6 +192,37 @@ class AuthController {
   }
 
   /**
+   * GET /auth/meu-acesso-sem-papel
+   * Retorna capacitações inscritas e organizações associadas ao email do usuário (para usuários sem papéis)
+   */
+  async meuAcessoSemPapel(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(HttpStatus.UNAUTHORIZED).json({
+          success: false,
+          error: {
+            message: 'Usuário não autenticado',
+            statusCode: HttpStatus.UNAUTHORIZED
+          },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const user = await authService.getUserById(req.user.id);
+      const acesso = await authService.getMeuAcessoSemPapel(user.email);
+
+      res.status(HttpStatus.OK).json({
+        success: true,
+        data: acesso,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
    * POST /auth/refresh
    */
   async refresh(req: AuthRequest, res: Response): Promise<void> {

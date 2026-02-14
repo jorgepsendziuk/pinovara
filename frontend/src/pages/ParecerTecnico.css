@@ -1,0 +1,220 @@
+/* Parecer Técnico - Página e impressão */
+
+.parecer-tecnico {
+  min-height: 100vh;
+  background: var(--parecer-bg, #e8eae6);
+  padding: 1.5rem 1rem 3rem;
+}
+
+.parecer-tecnico__toolbar {
+  max-width: 900px;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.parecer-tecnico__btn-back,
+.parecer-tecnico__btn-print {
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+}
+
+.parecer-tecnico__btn-back {
+  background: #056839;
+  color: #fff;
+}
+
+.parecer-tecnico__btn-back:hover {
+  background: #04502b;
+}
+
+.parecer-tecnico__btn-print {
+  background: #2c5282;
+  color: #fff;
+}
+
+.parecer-tecnico__btn-print:hover {
+  background: #234e77;
+}
+
+.parecer-tecnico__doc {
+  max-width: 900px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 2.5rem 3rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.parecer-tecnico__header {
+  border-bottom: 2px solid #056839;
+  padding-bottom: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.parecer-tecnico__title {
+  color: #1a1a1a;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem 0;
+}
+
+.parecer-tecnico__subtitle {
+  color: #444;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.parecer-tecnico__section {
+  margin-bottom: 2rem;
+}
+
+.parecer-tecnico__section h2 {
+  color: #056839;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.parecer-tecnico__section p,
+.parecer-tecnico__section li {
+  color: #333;
+  line-height: 1.7;
+  margin: 0 0 0.75rem 0;
+}
+
+.parecer-tecnico__section ul {
+  margin: 0 0 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.parecer-tecnico__intro-table {
+  margin-bottom: 1rem;
+}
+
+.parecer-tecnico__table-wrap {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.parecer-tecnico__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.parecer-tecnico__table th,
+.parecer-tecnico__table td {
+  border: 1px solid #ccc;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.parecer-tecnico__table th {
+  background: #056839;
+  color: #fff;
+  font-weight: 600;
+}
+
+.parecer-tecnico__table tbody tr:nth-child(even) {
+  background: #f6f8f5;
+}
+
+.parecer-tecnico__table td:first-child {
+  font-weight: 600;
+  width: 2.5rem;
+}
+
+.parecer-tecnico__table td:nth-child(2) {
+  min-width: 180px;
+}
+
+.parecer-tecnico__footer {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.parecer-tecnico__footer p {
+  margin: 0;
+}
+
+/* Impressão */
+@media print {
+  .parecer-tecnico {
+    background: #fff;
+    padding: 0;
+    min-height: auto;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .parecer-tecnico__doc {
+    max-width: 100%;
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .parecer-tecnico__header {
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .parecer-tecnico__title {
+    font-size: 1.5rem;
+  }
+
+  .parecer-tecnico__section {
+    margin-bottom: 1.25rem;
+    break-inside: avoid;
+  }
+
+  .parecer-tecnico__section h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .parecer-tecnico__table {
+    font-size: 0.8rem;
+  }
+
+  .parecer-tecnico__table th,
+  .parecer-tecnico__table td {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .parecer-tecnico__table th {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .parecer-tecnico__table tbody tr:nth-child(even) {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .parecer-tecnico__footer {
+    margin-top: 1.5rem;
+    font-size: 0.8rem;
+  }
+
+  @page {
+    margin: 1.5cm;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

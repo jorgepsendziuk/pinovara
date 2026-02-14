@@ -166,6 +166,15 @@
 .data-grid-table td.center { text-align: center; }
 .data-grid-table td.right { text-align: right; }
 
+/* Coluna Ações: largura mínima para caber pelo menos 2 botões */
+.data-grid-table th[data-column-key="actions"],
+.data-grid-table td[data-column-key="actions"],
+.data-grid-table th[data-column-key="acoes"],
+.data-grid-table td[data-column-key="acoes"] {
+  min-width: 100px;
+  white-space: nowrap;
+}
+
 .data-grid-table tbody tr {
   transition: background-color 0.2s ease;
 }
@@ -382,8 +391,8 @@
   }
 
   /* Ocultar colunas menos importantes em telas médias */
-  .data-grid-table th[data-column-key]:not([data-column-key="actions"]):not([data-column-key="acoes"]):not([data-column-key="nome"]):not([data-column-key="titulo"]):nth-child(n+4),
-  .data-grid-table td[data-column-key]:not([data-column-key="actions"]):not([data-column-key="acoes"]):not([data-column-key="nome"]):not([data-column-key="titulo"]):nth-child(n+4) {
+  .data-grid-table th[data-column-key]:not([data-column-key="actions"]):not([data-column-key="acoes"]):not([data-column-key="nome"]):not([data-column-key="titulo"]):not([data-column-key="name"]):nth-child(n+4),
+  .data-grid-table td[data-column-key]:not([data-column-key="actions"]):not([data-column-key="acoes"]):not([data-column-key="nome"]):not([data-column-key="titulo"]):not([data-column-key="name"]):nth-child(n+4) {
     display: none;
   }
 
@@ -448,8 +457,8 @@
   }
 
   /* Em telas muito pequenas, mostrar apenas ações e nome/título */
-  .data-grid-table th[data-column-key]:not([data-column-key="actions"]):not([data-column-key="acoes"]):not([data-column-key="nome"]):not([data-column-key="titulo"]),
-  .data-grid-table td[data-column-key]:not([data-column-key="actions"]):not([data-column-key="acoes"]):not([data-column-key="nome"]):not([data-column-key="titulo"]) {
+  .data-grid-table th[data-column-key]:not([data-column-key="actions"]):not([data-column-key="acoes"]):not([data-column-key="nome"]):not([data-column-key="titulo"]):not([data-column-key="name"]),
+  .data-grid-table td[data-column-key]:not([data-column-key="actions"]):not([data-column-key="acoes"]):not([data-column-key="nome"]):not([data-column-key="titulo"]):not([data-column-key="name"]) {
     display: none;
   }
 

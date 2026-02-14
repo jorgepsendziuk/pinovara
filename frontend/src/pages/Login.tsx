@@ -16,13 +16,12 @@ function Login() {
     api: 'checking' | 'connected' | 'error';
     database: 'checking' | 'connected' | 'error';
     apiUrl: string;
+    databaseError?: string;
   }>({
     api: 'checking',
     database: 'checking',
     apiUrl: '',
   });
-
-  const [isHealthExpanded, setIsHealthExpanded] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -32,10 +31,13 @@ function Login() {
     checkSystemHealth();
   }, []);
 
-  // Debug: Monitorar mudanças no estado error
+  // Refresh status every second when there is an error
   useEffect(() => {
-    console.log('🔍 Estado "error" mudou para:', error);
-  }, [error]);
+    const hasError = healthStatus.api === 'error' || healthStatus.database === 'error';
+    if (!hasError) return;
+    const interval = setInterval(checkSystemHealth, 1000);
+    return () => clearInterval(interval);
+  }, [healthStatus.api, healthStatus.database]);
 
   const checkSystemHealth = async () => {
     try {
@@ -48,9 +50,11 @@ function Login() {
 
       // Check database connection via health endpoint
       const healthResponse = await api.get('/health');
+      const dbUp = healthResponse.data.data?.services?.database === 'up';
       setHealthStatus(prev => ({
         ...prev,
-        database: healthResponse.data.data?.services?.database === 'up' ? 'connected' : 'error'
+        database: dbUp ? 'connected' : 'error',
+        databaseError: dbUp ? undefined : (healthResponse.data.data?.databaseError || 'Conexão com o banco falhou')
       }));
     } catch (error) {
       console.error('Health check failed:', error);
@@ -81,7 +85,7 @@ function Login() {
     try {
       await login(formData);
       console.log('✅ Login bem-sucedido, navegando...');
-      navigate('/organizacoes/lista');
+      navigate('/pinovara');
     } catch (error: any) {
       console.error('🔴 Erro capturado no Login:', error);
       
@@ -127,74 +131,27 @@ function Login() {
     }
   };
 
-  // Debug: Log na renderização
-  console.log('🎨 Renderizando Login. Estado error:', error, 'length:', error?.length);
-
   return (
     <div className="auth-page">
       {/* Mensagem de erro fixa no topo */}
       {error && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 9999,
-          padding: '1rem 1.5rem',
-          backgroundColor: '#fee2e2',
-          border: '2px solid #dc2626',
-          borderRadius: '8px',
-          color: '#dc2626',
-          fontSize: '0.95rem',
-          fontWeight: 500,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          boxShadow: '0 4px 16px rgba(220, 38, 38, 0.25)',
-          minWidth: '400px',
-          maxWidth: '600px',
-          animation: 'slideDown 0.3s ease-out'
-        }}>
-          <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>⚠️</span>
-          <div style={{ flex: 1 }}>
-            <strong style={{ display: 'block', marginBottom: '0.25rem', fontSize: '1rem' }}>Erro no login:</strong>
-            <span style={{ fontSize: '0.9rem' }}>{error}</span>
+        <div className="login-error-toast">
+          <span className="login-error-icon">⚠️</span>
+          <div className="login-error-content">
+            <strong className="login-error-title">Erro no login:</strong>
+            <span className="login-error-text">{error}</span>
           </div>
-          <button
-            onClick={() => setError('')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#dc2626',
-              fontSize: '1.5rem',
-              cursor: 'pointer',
-              padding: '0',
-              lineHeight: 1
-            }}
-            title="Fechar"
-          >
+          <button type="button" onClick={() => setError('')} className="login-error-close" title="Fechar" aria-label="Fechar">
             ×
           </button>
         </div>
       )}
 
       <div className="auth-container">
+        <Link to="/" className="auth-back-link">
+          ← Voltar ao Início
+        </Link>
         <div className="auth-header">
-          <Link 
-            to="/" 
-            className="btn btn-outline btn-sm"
-            style={{
-              position: 'absolute',
-              top: '-60px',
-              left: '0',
-              background: 'white',
-              border: '2px solid var(--primary-color)',
-              color: 'var(--primary-color)'
-            }}
-          >
-            ← Voltar ao Início
-          </Link>
-          
           <div className="logo">
             <h1>PINOVARA</h1>
             <p>Entre na sua conta</p>
@@ -250,59 +207,24 @@ function Login() {
         </div>
 
 
-        <div className="health-check">
-          <div
-            className="health-header"
-            onClick={() => setIsHealthExpanded(!isHealthExpanded)}
-          >
-            <h4>Status do Sistema:</h4>
+        <div className="health-check health-check-discrete health-check-compact">
+          <div className="health-header health-header-discrete">
+            <span className="health-title-discrete">Status do Sistema</span>
             <div className="health-indicators-compact">
               <span className={`status-dot ${healthStatus.api}`} title="API"></span>
-              <span className={`status-dot ${healthStatus.database}`} title="Banco de Dados"></span>
+              <span
+                className={`status-dot ${healthStatus.database}`}
+                title={healthStatus.database === 'error' && healthStatus.databaseError ? healthStatus.databaseError : 'Banco de Dados'}
+              />
             </div>
-            <span className={`accordion-arrow ${isHealthExpanded ? 'expanded' : ''}`}>
-              ▼
+            <span className="health-status-text">
+              {healthStatus.api === 'checking' || healthStatus.database === 'checking'
+                ? 'Verificando...'
+                : healthStatus.api === 'error' || healthStatus.database === 'error'
+                  ? 'Erro'
+                  : 'Conectado'}
             </span>
           </div>
-
-          {isHealthExpanded && (
-            <div className="health-details">
-              <div className="health-status">
-                <div className="health-item">
-                  <span className="health-label">API:</span>
-                  <span className={`health-indicator ${healthStatus.api}`}>
-                    {healthStatus.api === 'checking' && '⏳ Verificando...'}
-                    {healthStatus.api === 'connected' && '✅ Conectado'}
-                    {healthStatus.api === 'error' && '❌ Erro'}
-                  </span>
-                </div>
-                <div className="health-item">
-                  <span className="health-label">Banco de Dados:</span>
-                  <span className={`health-indicator ${healthStatus.database}`}>
-                    {healthStatus.database === 'checking' && '⏳ Verificando...'}
-                    {healthStatus.database === 'connected' && '✅ Conectado'}
-                    {healthStatus.database === 'error' && '❌ Erro'}
-                  </span>
-                </div>
-                {healthStatus.apiUrl && (
-                  <div className="health-item">
-                    <span className="health-label">URL da API:</span>
-                    <span className="health-indicator api-url">
-                      🔗 {healthStatus.apiUrl}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={checkSystemHealth}
-                className="btn btn-outline btn-small health-refresh"
-                disabled={healthStatus.api === 'checking'}
-              >
-                🔄 Verificar Novamente
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>

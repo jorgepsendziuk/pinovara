@@ -22,7 +22,7 @@ interface UserInfo {
 }
 
 function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
-  const { isAdmin, isCoordinator, hasPermission } = useAuth();
+  const { user, isAdmin, isCoordinator, hasPermission } = useAuth();
   const [qualificacoes, setQualificacoes] = useState<Qualificacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroTitulo, setFiltroTitulo] = useState('');
@@ -62,10 +62,18 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
     if (!isQualificacaoPadrao(id)) return isAdmin(); // Apenas admin pode editar qualquer qualificação
     return isAdmin(); // Qualificações padrão só podem ser editadas por admin
   };
-  
-  // Verificar se pode editar qualquer qualificação (apenas admin)
-  const podeEditarQualificacao = (): boolean => {
-    return isAdmin();
+
+  // Verificar se pode editar qualificação: admin OU técnico (criador ou membro da equipe)
+  const podeEditarQualificacao = (record: Qualificacao): boolean => {
+    if (isQualificacaoPadrao(record.id)) return isAdmin();
+    if (isAdmin()) return true;
+    const isTecnico = hasPermission('organizacoes', 'tecnico') || hasPermission('qualificacoes', 'tecnico');
+    if (isTecnico && user) {
+      const userId = user.id;
+      if (record.created_by != null && String(record.created_by) === String(userId)) return true;
+      if (record.equipe_tecnica?.some(m => String(m.id_tecnico) === String(userId))) return true;
+    }
+    return false;
   };
 
   useEffect(() => {
@@ -148,7 +156,7 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
       align: 'left',
       render: (_, record: Qualificacao) => {
         const isPadrao = isQualificacaoPadrao(record.id);
-        const podeEditar = podeEditarQualificacao();
+        const podeEditar = podeEditarQualificacao(record);
         
         return (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-start', alignItems: 'center' }}>

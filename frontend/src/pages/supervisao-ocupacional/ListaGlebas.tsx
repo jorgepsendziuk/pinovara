@@ -6,29 +6,73 @@ import { Map, Plus, Eye, Search, Loader2, Edit } from 'lucide-react';
 import Tooltip from '../../components/Tooltip';
 import './SupervisaoOcupacionalModule.css';
 
+const TIPOS_TERRITORIO = [
+  { value: '', label: 'Todos os tipos' },
+  { value: 'gleba', label: 'Gleba' },
+  { value: 'assentamento', label: 'Assentamento' },
+  { value: 'quilombo', label: 'Quilombo' }
+];
+
 interface Gleba {
   id: number;
   descricao: string;
+  tipo?: string | null;
   municipio: string | null;
   estado: string | null;
+  id_estado?: number | null;
+  id_municipio?: number | null;
   estado_rel: { id: number; descricao: string; uf: string } | null;
   municipio_rel: { id: number; descricao: string } | null;
   _count: { familias: number };
+}
+
+interface Estado {
+  id: number;
+  descricao: string;
+  uf: string;
+}
+
+interface Municipio {
+  id: number;
+  descricao: string;
 }
 
 export default function ListaGlebas() {
   const [glebas, setGlebas] = useState<Gleba[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filtroDescricao, setFiltroDescricao] = useState('');
+  const [filtroNome, setFiltroNome] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [filtroMunicipio, setFiltroMunicipio] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [estados, setEstados] = useState<Estado[]>([]);
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const navigate = useNavigate();
   const pageSize = 20;
 
   useEffect(() => {
+    api.get('/supervisao-ocupacional/estados').then(res => {
+      if (res.data?.data) setEstados(Array.isArray(res.data.data) ? res.data.data : res.data.data.data || []);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!filtroEstado) {
+      setMunicipios([]);
+      setFiltroMunicipio('');
+      return;
+    }
+    api.get(`/supervisao-ocupacional/municipios/${filtroEstado}`).then(res => {
+      if (res.data?.data) setMunicipios(Array.isArray(res.data.data) ? res.data.data : res.data.data.data || []);
+    }).catch(() => setMunicipios([]));
+    setFiltroMunicipio('');
+  }, [filtroEstado]);
+
+  useEffect(() => {
     loadGlebas();
-  }, [page, filtroDescricao]);
+  }, [page, filtroNome, filtroEstado, filtroMunicipio, filtroTipo]);
 
   const loadGlebas = async () => {
     try {
@@ -37,16 +81,17 @@ export default function ListaGlebas() {
         page,
         limit: pageSize
       };
-      if (filtroDescricao) {
-        params.descricao = filtroDescricao;
-      }
+      if (filtroNome) params.descricao = filtroNome;
+      if (filtroEstado) params.id_estado = filtroEstado;
+      if (filtroMunicipio) params.id_municipio = filtroMunicipio;
+      if (filtroTipo) params.tipo = filtroTipo;
       const response = await api.get('/supervisao-ocupacional/glebas', { params });
       if (response.data.success) {
         setGlebas(response.data.data.data || []);
         setTotal(response.data.data.total || response.data.data.data?.length || 0);
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao carregar glebas');
+      setError(err.response?.data?.error || 'Erro ao carregar territórios');
     } finally {
       setLoading(false);
     }
@@ -62,7 +107,7 @@ export default function ListaGlebas() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-start', alignItems: 'center' }}>
           <Tooltip text="Ver detalhes" backgroundColor="#3b82f6" delay={0}>
             <button
-              onClick={() => navigate(`/supervisao-ocupacional/glebas/${record.id}`)}
+              onClick={() => navigate(`/familias/territorios/${record.id}`)}
               style={{
                 padding: '6px 8px',
                 border: '1px solid #3b82f6',
@@ -87,9 +132,9 @@ export default function ListaGlebas() {
               <Eye size={16} />
             </button>
           </Tooltip>
-          <Tooltip text="Editar gleba" backgroundColor="#056839" delay={0}>
+          <Tooltip text="Editar território" backgroundColor="#056839" delay={0}>
             <button
-              onClick={() => navigate(`/supervisao-ocupacional/glebas/edicao/${record.id}`)}
+              onClick={() => navigate(`/familias/territorios/edicao/${record.id}`)}
               style={{
                 padding: '6px 8px',
                 border: '1px solid #056839',
@@ -148,7 +193,7 @@ export default function ListaGlebas() {
     {
       key: 'estado',
       title: 'Estado',
-      width: '12%',
+      width: '10%',
       render: (_, record: Gleba) => {
         const uf = record.estado_rel?.uf || record.estado || '-';
         return (
@@ -163,6 +208,16 @@ export default function ListaGlebas() {
             {uf}
           </span>
         );
+      }
+    },
+    {
+      key: 'tipo',
+      title: 'Tipo',
+      width: '12%',
+      render: (_, record: Gleba) => {
+        const t = (record.tipo || '').toLowerCase();
+        const label = t === 'gleba' ? 'Gleba' : t === 'assentamento' ? 'Assentamento' : t === 'quilombo' ? 'Quilombo' : record.tipo || '-';
+        return <span style={{ color: '#64748b' }}>{label}</span>;
       }
     },
     {
@@ -183,7 +238,7 @@ export default function ListaGlebas() {
       <div className="supervisao-ocupacional-module" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
         <div className="loading-container">
           <Loader2 size={32} className="spinning" />
-          <p>Carregando glebas...</p>
+          <p>Carregando territórios...</p>
         </div>
       </div>
     );
@@ -195,39 +250,20 @@ export default function ListaGlebas() {
         <div className="header-info">
           <h1>
             <Map size={24} />
-            Glebas/Assentamentos
+            Territórios
           </h1>
           <p>
-            {total} gleba{total !== 1 ? 's' : ''} cadastrada{total !== 1 ? 's' : ''}
+            {total} território{total !== 1 ? 's' : ''} cadastrado{total !== 1 ? 's' : ''}
           </p>
         </div>
         <div className="header-actions">
           <button
-            className="btn btn-primary"
-            onClick={() => navigate('/supervisao-ocupacional/glebas/nova')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 20px',
-              background: '#056839',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              fontSize: '14px',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#04502d';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = '#056839';
-            }}
+            type="button"
+            className="btn-territorio-cadastrar"
+            onClick={() => navigate('/familias/territorios/nova')}
           >
             <Plus size={16} />
-            Nova Gleba
+            Cadastrar
           </button>
         </div>
       </div>
@@ -246,58 +282,49 @@ export default function ListaGlebas() {
           </div>
         )}
 
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-          <div style={{ position: 'relative', flex: '1', minWidth: '150px', maxWidth: '100%', width: '100%' }}>
-            <Search
-              size={18}
-              style={{
-                position: 'absolute',
-                left: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#64748b'
-              }}
-            />
+        <div className="territorios-filtros" style={{ marginBottom: '16px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+          <div style={{ position: 'relative', flex: '1', minWidth: '160px', maxWidth: '220px' }}>
+            <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
             <input
               type="text"
-              placeholder="Buscar por descrição..."
-              value={filtroDescricao}
-              onChange={(e) => setFiltroDescricao(e.target.value)}
+              placeholder="Buscar por nome..."
+              value={filtroNome}
+              onChange={(e) => setFiltroNome(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && loadGlebas()}
-              style={{
-                width: '100%',
-                padding: '12px 12px 12px 40px',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                transition: 'all 0.2s'
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#056839';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(5, 104, 57, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = '#e2e8f0';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              style={{ width: '100%', padding: '10px 10px 10px 38px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
             />
           </div>
-          <button
-            onClick={loadGlebas}
-            className="btn btn-primary"
-            style={{
-              padding: '12px 24px',
-              background: '#056839',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
+          <select
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+            style={{ padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', minWidth: '120px' }}
           >
+            <option value="">Todos os estados</option>
+            {estados.map(e => (
+              <option key={e.id} value={e.id}>{e.uf}</option>
+            ))}
+          </select>
+          <select
+            value={filtroMunicipio}
+            onChange={(e) => setFiltroMunicipio(e.target.value)}
+            disabled={!filtroEstado}
+            style={{ padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', minWidth: '140px', opacity: filtroEstado ? 1 : 0.7 }}
+          >
+            <option value="">Todos os municípios</option>
+            {municipios.map(m => (
+              <option key={m.id} value={m.id}>{m.descricao}</option>
+            ))}
+          </select>
+          <select
+            value={filtroTipo}
+            onChange={(e) => setFiltroTipo(e.target.value)}
+            style={{ padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', minWidth: '140px' }}
+          >
+            {TIPOS_TERRITORIO.map(t => (
+              <option key={t.value || 'all'} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          <button type="button" onClick={loadGlebas} className="btn-territorio-cadastrar" style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Search size={16} />
             Buscar
           </button>
@@ -316,14 +343,14 @@ export default function ListaGlebas() {
               onChange: (newPage) => setPage(newPage)
             }}
             emptyState={{
-              title: 'Nenhuma gleba encontrada',
-              description: filtroDescricao
+              title: 'Nenhum território encontrado',
+              description: filtroNome || filtroEstado || filtroMunicipio || filtroTipo
                 ? 'Tente ajustar os filtros de busca'
-                : 'Comece criando sua primeira gleba',
+                : 'Comece cadastrando seu primeiro território',
               icon: <Map size={48} color="#cbd5e1" />,
               action: {
-                label: 'Criar Gleba',
-                onClick: () => navigate('/supervisao-ocupacional/glebas/nova')
+                label: 'Cadastrar',
+                onClick: () => navigate('/familias/territorios/nova')
               }
             }}
           />

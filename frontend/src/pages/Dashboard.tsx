@@ -1,14 +1,34 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useMeuAcessoSemPapel } from '../hooks/useMeuAcessoSemPapel';
 import Sidebar from '../components/Sidebar';
 import VersionIndicator from '../components/VersionIndicator';
 import TermosUso from '../components/TermosUso';
-import { User, Award, Layers, CheckCircle } from 'lucide-react';
+import {
+  Users,
+  Building,
+  Map as MapIcon,
+  GraduationCap,
+  Calendar,
+  MapPin,
+  Archive,
+  Smartphone,
+  FileCheck,
+  Edit,
+  Mail,
+  SunDim,
+  Sun,
+  MoonStar,
+  Info
+} from 'lucide-react';
 
 function Dashboard() {
   const { user, hasPermission, logout } = useAuth();
+  const hasNoRoles = !user?.roles || user.roles.length === 0;
+  const { data: acesso, loading: acessoLoading } = useMeuAcessoSemPapel(!!user && hasNoRoles);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [mostrarTermos, setMostrarTermos] = useState(false);
 
   useEffect(() => {
@@ -43,6 +63,28 @@ function Dashboard() {
     return <div>Carregando...</div>;
   }
 
+  const isAdmin = hasPermission('sistema', 'admin');
+
+  const h = new Date().getHours();
+  const override = searchParams.get('greeting');
+  const getGreeting = () => {
+    if (override === 'manha') return 'Bom dia';
+    if (override === 'tarde') return 'Boa tarde';
+    if (override === 'noite') return 'Boa noite';
+    if (h >= 5 && h < 12) return 'Bom dia';
+    if (h >= 12 && h < 18) return 'Boa tarde';
+    return 'Boa noite';
+  };
+  const getGreetingIcon = () => {
+    if (override === 'manha') return SunDim;
+    if (override === 'tarde') return Sun;
+    if (override === 'noite') return MoonStar;
+    if (h >= 5 && h < 12) return SunDim;
+    if (h >= 12 && h < 18) return Sun;
+    return MoonStar;
+  };
+  const GreetingIcon = getGreetingIcon();
+
   return (
     <div className="dashboard-layout">
       {/* Modal de Termos de Uso */}
@@ -59,110 +101,212 @@ function Dashboard() {
       <Sidebar />
 
       <div className="main-content">
-        <main className="dashboard-main">
+        <main className="dashboard-main dashboard-main-with-greeting">
+          <div className="dashboard-greeting-bg-icon" aria-hidden>
+            <GreetingIcon size={120} strokeWidth={1.2} />
+          </div>
           <div className="container">
-            <div className="page-header">
-              <div className="header-content">
-                <h2>Dashboard do Usuário</h2>
-                <p>Gerencie suas informações e visualize seus dados</p>
-              </div>
-            </div>
-
-            {/* Card de acesso rápido ao perfil */}
-            <div className="quick-access-card">
-              <div className="card-icon">
-                <User size={48} />
-              </div>
-              <div className="card-content">
-                <h3>Meu Perfil</h3>
-                <p>Atualize suas informações pessoais, altere sua senha e gerencie suas preferências</p>
-                <button 
-                  className="btn btn-primary"
-                  onClick={() => navigate('/perfil')}
-                >
-                  Acessar Perfil
-                </button>
-              </div>
-            </div>
-
-            <div className="user-details">
-              <h3>Informações da Conta</h3>
-
-              <div className="info-grid">
-                <div className="info-item">
-                  <label>ID do Usuário:</label>
-                  <span>{user.id}</span>
-                </div>
-
-                <div className="info-item">
-                  <label>Email:</label>
-                  <span>{user.email}</span>
-                </div>
-
-                <div className="info-item">
-                  <label>Nome:</label>
-                  <span>{user.name}</span>
-                </div>
-
-                <div className="info-item">
-                  <label>Status:</label>
-                  <span className={`status ${user.active ? 'active' : 'inactive'}`}>
-                    {user.active ? 'Ativo' : 'Inativo'}
+            {/* Informações do Perfil */}
+            <div 
+              className="profile-card-content profile-card-transparent"
+              onClick={() => navigate('/perfil')}
+              title="Clique para editar perfil"
+            >
+              <div className="profile-avatar-section"
+              onClick={() => navigate('/perfil')}
+              title="Clique para editar perfil"
+            >
+                <div className="profile-info">
+                  <h3 className="profile-name">
+                    <span className="profile-greeting">{getGreeting()},</span> {user.name}
+                  </h3>
+                  <span className="profile-email">
+                    <Mail size={14} />
+                    {user.email}
                   </span>
+                  {user.roles && user.roles.length > 0 && (
+                    <span className="profile-roles">
+                      {user.roles.map((role: any) => role.name).join(', ')}
+                    </span>
+                  )}
                 </div>
+                <div className="profile-edit-icon">
+                <Edit size={18} />
               </div>
+              </div>
+
             </div>
 
-            <div className="user-roles">
-              <h3>Papéis e Módulos</h3>
-
-              {user.roles && user.roles.length > 0 ? (
-                <div className="roles-grid">
-                  {user.roles.map((role: any) => (
-                    <div key={role.id} className="role-card">
-                      <div className="role-header">
-                        <h4>{role.name}</h4>
-                        <span className="module-badge">{role.module.name}</span>
+            {/* Categorias e Cards */}
+            <div className="dashboard-categories">
+              {/* Usuário sem papéis: mostrar apenas capacitações inscrito e organizações associadas */}
+              {hasNoRoles && (
+                acessoLoading ? (
+                  <div className="category-section">
+                    <p style={{ color: '#666', textAlign: 'center' }}>Carregando seus acessos...</p>
+                  </div>
+                ) : acesso && (acesso.capacitacoesInscrito > 0 || acesso.organizacoesAssociadas > 0) ? (
+                  <>
+                    {acesso.capacitacoesInscrito > 0 && (
+                      <div className="category-section">
+                        <h2 className="category-title">Minhas Capacitações</h2>
+                        <p className="category-subtitle" style={{ fontSize: '0.9em', color: '#666', marginBottom: '1rem' }}>
+                          Você está inscrito em {acesso.capacitacoesInscrito} capacitação(ões) com este email
+                        </p>
+                        <div className="cards-grid">
+                          <div className="dashboard-card" onClick={() => navigate('/capacitacoes')}>
+                            <div className="card-icon">
+                              <Calendar size={20} />
+                            </div>
+                            <h3 className="card-title">Capacitações</h3>
+                          </div>
+                        </div>
                       </div>
-                      <p>Módulo: {role.module.name}</p>
+                    )}
+                    {acesso.organizacoesAssociadas > 0 && (
+                      <div className="category-section">
+                        <h2 className="category-title">Minhas Organizações</h2>
+                        <p className="category-subtitle" style={{ fontSize: '0.9em', color: '#666', marginBottom: '1rem' }}>
+                          Este email está cadastrado em {acesso.organizacoesAssociadas} organização(ões)
+                        </p>
+                        <div className="cards-grid">
+                          <div className="dashboard-card" onClick={() => navigate('/organizacoes/lista')}>
+                            <div className="card-icon">
+                              <Building size={20} />
+                            </div>
+                            <h3 className="card-title">Organizações</h3>
+                          </div>
+                          <div className="dashboard-card" onClick={() => navigate('/organizacoes/mapa')}>
+                            <div className="card-icon">
+                              <MapIcon size={20} />
+                            </div>
+                            <h3 className="card-title">Mapa de Organizações</h3>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="category-section" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                      <Info size={48} color="#888" strokeWidth={1.2} />
                     </div>
-                  ))}
+                    <h2 className="category-title" style={{ marginBottom: '0.5rem' }}>Bem-vindo ao PINOVARA!</h2>
+                    <p style={{ color: '#666', maxWidth: '480px', margin: '0 auto', lineHeight: 1.6 }}>
+                      Você ainda não possui permissões ou vínculos cadastrados. Entre em contato com a equipe do projeto
+                      para solicitar acesso às capacitações ou organizações, ou aguarde o processamento do seu cadastro.
+                    </p>
+                  </div>
+                )
+              )}
+
+              {/* Usuário com papéis: dashboard completo */}
+              {!hasNoRoles && (
+              <>
+              {/* Perfil de Entrada e Plano de Gestão */}
+              <div className="category-section">
+                <h2 className="category-title">Perfil de Entrada e Plano de Gestão</h2>
+                <div className="cards-grid">
+                  <div className="dashboard-card" onClick={() => navigate('/organizacoes/lista')}>
+                    <div className="card-icon">
+                      <Building size={20} />
+                    </div>
+                    <h3 className="card-title">Organizações</h3>
+                  </div>
+                  <div className="dashboard-card" onClick={() => navigate('/organizacoes/mapa')}>
+                    <div className="card-icon">
+                      <MapIcon size={20} />
+                    </div>
+                    <h3 className="card-title">Mapa de Organizações</h3>
+                  </div>
                 </div>
-              ) : (
-                <div className="no-roles">
-                  <p>Nenhum papel atribuído ainda.</p>
+              </div>
+
+              {/* Qualificação e Formação Profissional */}
+              <div className="category-section">
+                <h2 className="category-title">Qualificação e Formação Profissional</h2>
+                <div className="cards-grid">
+                  <div className="dashboard-card" onClick={() => navigate('/qualificacoes')}>
+                    <div className="card-icon">
+                      <GraduationCap size={20} />
+                    </div>
+                    <h3 className="card-title">Planos de Qualificação</h3>
+                  </div>
+                  <div className="dashboard-card" onClick={() => navigate('/capacitacoes')}>
+                    <div className="card-icon">
+                      <Calendar size={20} />
+                    </div>
+                    <h3 className="card-title">Capacitações</h3>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cadastro de Famílias */}
+              <div className="category-section">
+                <h2 className="category-title">Cadastro de Famílias</h2>
+                <div className="cards-grid">
+                  <div className="dashboard-card" onClick={() => navigate('/familias/territorios')}>
+                    <div className="card-icon">
+                      <MapPin size={20} />
+                    </div>
+                    <h3 className="card-title">Territórios</h3>
+                  </div>
+                  <div className="dashboard-card" onClick={() => navigate('/familias')}>
+                    <div className="card-icon">
+                      <Users size={20} />
+                    </div>
+                    <h3 className="card-title">Famílias</h3>
+                  </div>
+                  <div className="dashboard-card" onClick={() => navigate('/familias/mapa')}>
+                    <div className="card-icon">
+                      <MapIcon size={20} />
+                    </div>
+                    <h3 className="card-title">Mapa de Cadastros</h3>
+                  </div>
+                </div>
+              </div>
+
+              {/* Administração (apenas para admins) */}
+              {isAdmin && (
+                <div className="category-section">
+                  <h2 className="category-title">Administração</h2>
+                  <div className="cards-grid">
+                    <div className="dashboard-card" onClick={() => navigate('/admin/users')}>
+                      <div className="card-icon">
+                        <Users size={20} />
+                      </div>
+                      <h3 className="card-title">Usuários</h3>
+                    </div>
+                    <div className="dashboard-card" onClick={() => navigate('/admin/audit-logs')}>
+                      <div className="card-icon">
+                        <FileCheck size={20} />
+                      </div>
+                      <h3 className="card-title">Auditoria</h3>
+                    </div>
+                  </div>
                 </div>
               )}
-            </div>
 
-            <div className="dashboard-stats">
-              <h3>Estatísticas</h3>
-
-              <div className="stats-grid">
-                <div className="stat-card">
-                  <Award size={24} style={{ marginBottom: '8px', color: '#056839' }} />
-                  <div className="stat-value">{user.roles ? user.roles.length : 0}</div>
-                  <div className="stat-label">Papéis Atribuídos</div>
-                </div>
-
-                <div className="stat-card">
-                  <Layers size={24} style={{ marginBottom: '8px', color: '#056839' }} />
-                  <div className="stat-value">
-                    {user.roles ?
-                      new Set(user.roles.map(role => role.module.id)).size : 0
-                    }
+              {/* Outros */}
+              <div className="category-section">
+                <h2 className="category-title">Outros</h2>
+                <div className="cards-grid">
+                  <div className="dashboard-card" onClick={() => navigate('/repositorio')}>
+                    <div className="card-icon">
+                      <Archive size={20} />
+                    </div>
+                    <h3 className="card-title">Repositório</h3>
                   </div>
-                  <div className="stat-label">Módulos com Acesso</div>
-                </div>
-
-                <div className="stat-card">
-                  <CheckCircle size={24} style={{ marginBottom: '8px', color: '#056839' }} />
-                  <div className="stat-value">
-                    {user.active ? 'Sim' : 'Não'}
+                  <div className="dashboard-card" onClick={() => navigate('/configuracao-odk')}>
+                    <div className="card-icon">
+                      <Smartphone size={20} />
+                    </div>
+                    <h3 className="card-title">Configuração ODK</h3>
                   </div>
-                  <div className="stat-label">Conta Ativa</div>
                 </div>
               </div>
+              </>
+              )}
             </div>
           </div>
         </main>

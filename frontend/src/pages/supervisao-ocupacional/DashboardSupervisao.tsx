@@ -51,7 +51,7 @@ export default function DashboardSupervisao() {
           <div className="header-info">
             <h1>
               <BarChart3 size={24} />
-              Supervisão Ocupacional
+              Cadastro de Famílias
             </h1>
           </div>
         </div>
@@ -79,10 +79,10 @@ export default function DashboardSupervisao() {
         <div className="header-info">
           <h1>
             <BarChart3 size={24} />
-            Supervisão Ocupacional
+            Cadastro de Famílias
           </h1>
           <p>
-            {totalGlebas} gleba{totalGlebas !== 1 ? 's' : ''} cadastrada{totalGlebas !== 1 ? 's' : ''} • {totalFamilias} família{totalFamilias !== 1 ? 's' : ''} cadastrada{totalFamilias !== 1 ? 's' : ''}
+            {totalGlebas} território{totalGlebas !== 1 ? 's' : ''} cadastrado{totalGlebas !== 1 ? 's' : ''} • {totalFamilias} família{totalFamilias !== 1 ? 's' : ''} cadastrada{totalFamilias !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
@@ -92,7 +92,7 @@ export default function DashboardSupervisao() {
           <div className="stats-card">
             <h2>
               <Map size={20} style={{ display: 'inline-block', marginRight: '8px', verticalAlign: 'middle' }} />
-              Total de Glebas
+              Total de Territórios
             </h2>
             <p className="stat-value">{totalGlebas}</p>
           </div>

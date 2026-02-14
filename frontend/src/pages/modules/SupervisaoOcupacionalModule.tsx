@@ -33,34 +33,28 @@ function SupervisaoOcupacionalModule() {
     
     setLastPath(path);
     
-    // Verificar rotas específicas primeiro (mais específicas primeiro)
-    if (path.includes('/glebas/edicao/')) {
+    // Rotas: /familias = lista de famílias; /familias/:id = detalhe; /familias/:id/editar = edição
+    // /familias/territorios, /familias/mapa, /familias/dashboard
+    if (path.includes('/territorios/edicao/')) {
       setViewAtiva('edicao-gleba');
-    } else if (path.match(/\/familias\/\d+\/editar$/)) {
+    } else if (path.match(/^\/familias\/\d+\/editar$/)) {
       setViewAtiva('edicao-familia');
-    } else if (path.match(/\/familias\/\d+$/)) {
+    } else if (path.match(/^\/familias\/\d+$/)) {
       setViewAtiva('detalhes-familia');
-    } else if (path.match(/\/glebas\/\d+$/)) {
-      // Se for um ID numérico sem /edicao/, redirecionar para edição
-      const match = path.match(/\/glebas\/(\d+)$/);
+    } else if (path.match(/\/territorios\/\d+$/)) {
+      const match = path.match(/\/territorios\/(\d+)$/);
       if (match) {
-        navigate(`/supervisao-ocupacional/glebas/edicao/${match[1]}`, { replace: true });
+        navigate(`/familias/territorios/edicao/${match[1]}`, { replace: true });
         return;
       }
     } else if (path.includes('/dashboard')) {
       setViewAtiva('dashboard');
     } else if (path.includes('/mapa')) {
       setViewAtiva('mapa');
-    } else if (path.includes('/glebas')) {
+    } else if (path.includes('/territorios')) {
       setViewAtiva('glebas');
-    } else if (path.includes('/familias')) {
+    } else if (path === '/familias' || path === '/familias/') {
       setViewAtiva('familias');
-    // Ocultado temporariamente
-    // } else if (path.includes('/sync')) {
-    //   setViewAtiva('sync');
-    } else if (path === '/supervisao-ocupacional' || path === '/supervisao-ocupacional/') {
-      // Redirecionar para dashboard se não houver view específica
-      navigate('/supervisao-ocupacional/dashboard', { replace: true });
     }
   }, [location.pathname, navigate, lastPath]);
 
@@ -89,14 +83,14 @@ function SupervisaoOcupacionalModule() {
   };
 
   return (
-    <div className="app-container">
+    <div className="dashboard-layout">
+      <VersionIndicator position="top-right" theme="auto" />
       <Sidebar />
-      <main className="main-content">
-        <VersionIndicator />
+      <div className="main-content">
         <div className="supervisao-ocupacional-module">
           {renderView()}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

@@ -20,6 +20,7 @@ router.get('/health', async (req, res) => {
                 database: 'checking'
             }
         };
+        let databaseError;
         try {
             await prisma.$queryRaw `SELECT 1`;
             healthData.services.database = 'up';
@@ -27,11 +28,15 @@ router.get('/health', async (req, res) => {
         catch (error) {
             healthData.services.database = 'down';
             healthData.status = 'degraded';
+            databaseError = error instanceof Error ? error.message : String(error);
         }
         const statusCode = healthData.status === 'healthy' ? api_1.HttpStatus.OK : api_1.HttpStatus.SERVICE_UNAVAILABLE;
         res.status(statusCode).json({
             success: true,
-            data: healthData,
+            data: {
+                ...healthData,
+                ...(databaseError && { databaseError })
+            },
             timestamp: new Date().toISOString()
         });
     }

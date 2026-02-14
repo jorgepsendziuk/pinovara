@@ -54,9 +54,11 @@ function QualificacoesModule() {
       }
     } else if (path.includes('/capacitacoes/painel/')) {
       setViewAtiva('painel');
-      const id = path.split('/painel/')[1];
+      const match = path.match(/\/painel\/(\d+)/);
+      const id = match ? match[1] : path.split('/painel/')[1]?.split(/[/?#]/)[0];
       if (id) {
-        setCapacitacaoSelecionada(parseInt(id));
+        const numId = parseInt(id, 10);
+        if (!isNaN(numId)) setCapacitacaoSelecionada(numId);
       }
     } else if (path.includes('/capacitacoes')) {
       setViewAtiva('capacitacoes');

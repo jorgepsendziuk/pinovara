@@ -11,7 +11,7 @@
 
 /* Container principal */
 .perfil-container {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   background: transparent;
   min-height: 100%;
 }
@@ -39,48 +39,22 @@
   padding: 0;
 }
 
-.perfil-main .page-header {
+.perfil-main .profile-header-compact {
   background: white;
   border-radius: 0.75rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 1rem;
-  padding: 1.25rem;
-}
-
-.perfil-main .page-header .header-content h1 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.perfil-main .page-header .header-content p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-}
-
-.perfil-main .profile-avatar-section {
-  background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 1rem;
-  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 
 .perfil-main .profile-tabs {
   background: white;
   border-radius: 0.75rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 1rem;
-  padding: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 
 .perfil-main .profile-form {
   background: white;
   border-radius: 0.75rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 
 /* Responsividade */

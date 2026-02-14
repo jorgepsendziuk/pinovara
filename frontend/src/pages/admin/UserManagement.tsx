@@ -34,6 +34,15 @@ interface Role {
   };
 }
 
+function moduleToBadge(moduleName: string): string {
+  const map: Record<string, string> = {
+    organizacoes: 'ORG',
+    sistema: 'SIS',
+    cadastro: 'CAD',
+  };
+  return map[moduleName?.toLowerCase()] ?? (moduleName?.slice(0, 3)?.toUpperCase() || '—');
+}
+
 function UserManagement() {
   const { user: currentUser, isImpersonating, originalUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
@@ -51,13 +60,72 @@ function UserManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
 
   const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
 
-  // Definição das colunas da DataGrid - Versão Simplificada
+  // Definição das colunas da DataGrid - Ações primeiro (esquerda) para ser responsivo como em ListaCapacitacoes
   const columns: DataGridColumn<User>[] = [
+    {
+      key: 'actions',
+      title: 'Ações',
+      width: '20%',
+      align: 'left',
+      render: (_, record: User) => (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-start', alignItems: 'center' }}>
+          <button
+            onClick={() => openRoleModal(record)}
+            className="btn-icon"
+            title="Gerenciar papéis"
+            style={{ padding: '6px 8px', border: '1px solid #ddd', borderRadius: '4px', background: '#fff', cursor: 'pointer', color: '#056839', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Users size={14} />
+          </button>
+          <button
+            onClick={() => openEditModal(record)}
+            className="btn-icon"
+            title="Editar"
+            style={{ padding: '6px 8px', border: '1px solid #ddd', borderRadius: '4px', background: '#fff', cursor: 'pointer', color: '#3b2313', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Edit size={14} />
+          </button>
+          {record.id !== currentUser?.id && (
+            <>
+              <button
+                onClick={() => handleImpersonateUser(record)}
+                className="btn-icon"
+                title="Personificar usuário"
+                style={{ padding: '6px 8px', border: '1px solid #ddd', borderRadius: '4px', background: '#fff', cursor: 'pointer', color: '#3b82f6', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Eye size={14} />
+              </button>
+              <button
+                onClick={() => handleDeleteUser(record.id, record.name)}
+                className="btn-icon"
+                title="Excluir"
+                style={{ padding: '6px 8px', border: '1px solid #ddd', borderRadius: '4px', background: '#fff', cursor: 'pointer', color: '#dc3545', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Trash size={14} />
+              </button>
+            </>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'id',
+      title: 'ID',
+      dataIndex: 'id',
+      width: '14%',
+      sortable: true,
+      render: (id: string) => (
+        <span style={{ fontFamily: 'monospace', fontSize: '0.8em', color: '#555' }} title={id}>
+          {id}
+        </span>
+      ),
+    },
     {
       key: 'name',
       title: 'Nome',
@@ -96,11 +164,18 @@ function UserManagement() {
         if (!roles || roles.length === 0) {
           return <span style={{ color: '#999', fontSize: '0.9em' }}>Nenhum</span>;
         }
+        const order = ['sistema', 'organizacoes', 'cadastro'];
+        const sorted = [...roles].sort((a: any, b: any) => {
+          const ma = order.indexOf((a.module?.name ?? '').toLowerCase());
+          const mb = order.indexOf((b.module?.name ?? '').toLowerCase());
+          if (ma !== mb) return (ma === -1 ? 99 : ma) - (mb === -1 ? 99 : mb);
+          return (a.name ?? '').localeCompare(b.name ?? '');
+        });
         return (
-          <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-            {roles.map((role: any) => (
-              <span key={role.id} className="badge badge-primary" style={{ fontSize: '0.85em' }}>
-                {role.name}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.9em' }}>
+            {sorted.map((r: any) => (
+              <span key={r.id}>
+                {r.name} ({moduleToBadge(r.module?.name ?? '')})
               </span>
             ))}
           </div>
@@ -118,52 +193,6 @@ function UserManagement() {
         <span style={{ fontSize: '0.9em' }}>
           {new Date(date).toLocaleDateString('pt-BR')}
         </span>
-      ),
-    },
-    {
-      key: 'actions',
-      title: 'Ações',
-      width: '13%',
-      align: 'center',
-      render: (_, record: User) => (
-        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-          <button
-            onClick={() => openRoleModal(record)}
-            className="btn-icon"
-            title="Gerenciar papéis"
-            style={{ padding: '0.4rem', border: '1px solid #ddd', borderRadius: '4px', background: '#fff', cursor: 'pointer', color: '#056839' }}
-          >
-            <Users size={14} />
-          </button>
-          <button
-            onClick={() => openEditModal(record)}
-            className="btn-icon"
-            title="Editar"
-            style={{ padding: '0.4rem', border: '1px solid #ddd', borderRadius: '4px', background: '#fff', cursor: 'pointer', color: '#3b2313' }}
-          >
-            <Edit size={14} />
-          </button>
-          {record.id !== currentUser?.id && (
-            <>
-              <button
-                onClick={() => handleImpersonateUser(record)}
-                className="btn-icon"
-                title="Personificar usuário"
-                style={{ padding: '0.4rem', border: '1px solid #ddd', borderRadius: '4px', background: '#fff', cursor: 'pointer', color: '#3b82f6' }}
-              >
-                <Eye size={14} />
-              </button>
-              <button
-                onClick={() => handleDeleteUser(record.id, record.name)}
-                className="btn-icon"
-                title="Excluir"
-                style={{ padding: '0.4rem', border: '1px solid #ddd', borderRadius: '4px', background: '#fff', cursor: 'pointer', color: '#dc3545' }}
-              >
-                <Trash size={14} />
-              </button>
-            </>
-          )}
-        </div>
       ),
     },
   ];
@@ -199,7 +228,7 @@ function UserManagement() {
       // Aplicar filtro de papel
       if (roleFilter) {
         allUsers = allUsers.filter((user: User) =>
-          user.roles.some(role => role.id === roleFilter)
+          user.roles.some(role => String(role.id) === String(roleFilter))
         );
       }
 
@@ -475,15 +504,18 @@ function UserManagement() {
     }
   }, [currentPage, pageSize, searchTerm, roleFilter]);
 
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearchTerm(searchInput);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
   // Handlers para DataGrid
   const handlePaginationChange = (page: number, pageSize: number) => {
     setCurrentPage(page);
     setPageSize(pageSize);
-  };
-
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
-    setCurrentPage(1); // Resetar para primeira página ao buscar
   };
 
   const handleRoleFilterChange = (value: string) => {
@@ -605,8 +637,8 @@ function UserManagement() {
           <input
             type="text"
             placeholder="Nome ou email..."
-            value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             style={{
               padding: '0.5rem 0.75rem',
               borderRadius: '4px',
@@ -639,11 +671,13 @@ function UserManagement() {
           </select>
         </div>
         
-        {(roleFilter || searchTerm) && (
+        {(roleFilter || searchInput) && (
           <button 
             onClick={() => {
-              handleRoleFilterChange('');
-              handleSearchChange('');
+              setRoleFilter('');
+              setSearchInput('');
+              setSearchTerm('');
+              setCurrentPage(1);
             }}
             className="btn btn-sm"
             style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', background: '#f3f4f6', color: '#666', border: '1px solid #ddd' }}
@@ -692,7 +726,8 @@ function UserManagement() {
             current: currentPage,
             pageSize: pageSize,
             total: totalUsers,
-            showSizeChanger: true,
+            showAllLabel: 'Mostrar Todos',
+            onShowAll: () => handlePaginationChange(1, Math.max(totalUsers, 1)),
             onChange: handlePaginationChange,
           }}
           filters={{
@@ -725,51 +760,58 @@ function UserManagement() {
             </div>
             
             <div className="modal-body">
-              <div className="current-roles">
-                <h3>Papéis Atuais</h3>
-                {selectedUser.roles && selectedUser.roles.length > 0 ? (
-                  <div className="roles-list">
-                    {selectedUser.roles.map((role: any) => (
-                      <div key={role.id} className="role-item">
-                        <span className="role-badge">
-                          {role.name} ({role.module.name})
-                        </span>
-                        <button
-                          onClick={() => handleRemoveRole(selectedUser.id, role.id)}
-                          className="btn btn-small btn-danger"
-                        >
-                          Remover
-                        </button>
+              {(() => {
+                const userRoleIds = new Set((selectedUser.roles ?? []).map((r: any) => String(r.id)));
+                const byModule = availableRoles.reduce<Record<string, Role[]>>((acc, role) => {
+                  const mod = role.module?.name ?? 'outro';
+                  if (!acc[mod]) acc[mod] = [];
+                  acc[mod].push(role);
+                  return acc;
+                }, {});
+                const moduleOrder = ['sistema', 'organizacoes', 'cadastro'];
+                const orderedModules = [...new Set([...moduleOrder, ...Object.keys(byModule)])].filter(m => byModule[m]?.length);
+                return (
+                  <div style={{ overflowX: 'auto' }}>
+                    {orderedModules.map((mod) => (
+                      <div key={mod} style={{ marginBottom: '1.25rem' }}>
+                        <h3 style={{ marginBottom: '0.5rem', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className="badge badge-secondary" style={{ fontSize: '0.8em' }}>{moduleToBadge(mod)}</span>
+                          <span style={{ textTransform: 'capitalize', color: '#333' }}>{mod}</span>
+                        </h3>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid #e5e5e5' }}>
+                              <th style={{ textAlign: 'left', padding: '0.5rem 0.5rem 0.5rem 0', fontWeight: 600 }}>Papel</th>
+                              <th style={{ textAlign: 'left', padding: '0.5rem', fontWeight: 600 }}>Status</th>
+                              <th style={{ textAlign: 'right', padding: '0.5rem', fontWeight: 600 }}>Ação</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {byModule[mod].map((role) => {
+                              const assigned = userRoleIds.has(String(role.id));
+                              return (
+                                <tr key={role.id} style={{ borderBottom: '1px solid #eee' }}>
+                                  <td style={{ padding: '0.5rem 0.5rem 0.5rem 0' }}>{role.name}</td>
+                                  <td style={{ padding: '0.5rem' }}>
+                                    <span style={{ color: assigned ? '#056839' : '#666' }}>{assigned ? 'Atribuído' : 'Disponível'}</span>
+                                  </td>
+                                  <td style={{ padding: '0.5rem', textAlign: 'right' }}>
+                                    {assigned ? (
+                                      <button type="button" onClick={() => handleRemoveRole(selectedUser.id, role.id)} className="btn btn-small btn-danger">Remover</button>
+                                    ) : (
+                                      <button type="button" onClick={() => handleAssignRole(selectedUser.id, role.id)} className="btn btn-small btn-success">Atribuir</button>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p>Nenhum papel atribuído ainda.</p>
-                )}
-              </div>
-              
-              <div className="available-roles">
-                <h3>Papéis Disponíveis</h3>
-                {getAvailableRolesForUser(selectedUser).length > 0 ? (
-                  <div className="roles-list">
-                    {getAvailableRolesForUser(selectedUser).map((role: Role) => (
-                      <div key={role.id} className="role-item">
-                        <span className="role-badge">
-                          {role.name} ({role.module.name})
-                        </span>
-                        <button
-                          onClick={() => handleAssignRole(selectedUser.id, role.id)}
-                          className="btn btn-small btn-success"
-                        >
-                          Atribuir
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p>Todos os papéis disponíveis já foram atribuídos.</p>
-                )}
-              </div>
+                );
+              })()}
             </div>
             
             <div className="modal-footer">

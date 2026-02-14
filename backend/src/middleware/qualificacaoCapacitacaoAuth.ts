@@ -46,7 +46,7 @@ export const checkQualificacaoCapacitacaoPermission = (req: AuthRequest, res: Re
     isSupervisor,
     isTechnician,
     canAccessAll: isAdmin || isCoordinator || isSupervisor, // Admin, Coordenador e Supervisor veem tudo
-    canEdit: isAdmin, // Apenas Admin pode editar
+    canEdit: isAdmin || isTechnician, // Admin e Técnico podem editar (técnico: qualificações que criou ou nas quais é membro da equipe)
     canValidate: isAdmin || isCoordinator, // Admin e Coordenador podem validar (Supervisor NÃO)
     userId: req.user.id
   };

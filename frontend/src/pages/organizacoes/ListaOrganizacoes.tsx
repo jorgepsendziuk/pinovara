@@ -129,44 +129,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
     carregarDadosFiltros();
   }, []);
 
-  // Recolhe o menu lateral automaticamente em telas menores (igual ao PlanoGestaoPage)
-  useEffect(() => {
-    let attempts = 0;
-    const maxAttempts = 6;
-
-    const tryCollapseSidebar = () => {
-      const sidebar = document.querySelector('.sidebar') as HTMLElement | null;
-      const sidebarToggle = document.querySelector('.sidebar-toggle') as HTMLElement | null;
-
-      if (!sidebar || !sidebarToggle) {
-        return false;
-      }
-
-      const viewportWidth = window.innerWidth;
-
-      // Em telas muito pequenas o menu já opera como drawer; evitar interferir
-      const shouldCollapse = viewportWidth >= 900;
-
-      if (shouldCollapse && !sidebar.classList.contains('collapsed')) {
-        sidebarToggle.click();
-        return true;
-      }
-
-      return sidebar.classList.contains('collapsed');
-    };
-
-    if (!tryCollapseSidebar()) {
-      const intervalId = setInterval(() => {
-        attempts += 1;
-        if (tryCollapseSidebar() || attempts >= maxAttempts) {
-          clearInterval(intervalId);
-        }
-      }, 180);
-
-      return () => clearInterval(intervalId);
-    }
-  }, []);
-
   // Fechar menu de ações ao clicar fora
   useEffect(() => {
     const handleClickOutside = () => {

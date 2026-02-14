@@ -158,6 +158,31 @@ class AuthController {
             this.handleError(error, res);
         }
     }
+    async meuAcessoSemPapel(req, res) {
+        try {
+            if (!req.user) {
+                res.status(api_1.HttpStatus.UNAUTHORIZED).json({
+                    success: false,
+                    error: {
+                        message: 'Usuário não autenticado',
+                        statusCode: api_1.HttpStatus.UNAUTHORIZED
+                    },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const user = await authService_1.authService.getUserById(req.user.id);
+            const acesso = await authService_1.authService.getMeuAcessoSemPapel(user.email);
+            res.status(api_1.HttpStatus.OK).json({
+                success: true,
+                data: acesso,
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(error, res);
+        }
+    }
     async refresh(req, res) {
         try {
             if (!req.user) {

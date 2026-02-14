@@ -37,6 +37,7 @@ import {
   ChevronDown,
   Upload,
   Download,
+  ExternalLink,
   Image,
   FileText,
   BarChart3,
@@ -251,10 +252,24 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
 
   const handleDownloadEvidencia = async (evidencia: CapacitacaoEvidencia) => {
     try {
-      await capacitacaoAPI.downloadEvidencia(idCapacitacao, evidencia.id);
+      await capacitacaoAPI.downloadEvidencia(idCapacitacao, evidencia.id, {
+        nomeArquivo: evidencia.nome_arquivo
+      });
     } catch (error: any) {
       console.error('Erro ao fazer download de evidência:', error);
       alert(error.message || 'Erro ao fazer download de evidência');
+    }
+  };
+
+  const handleAbrirEvidencia = async (evidencia: CapacitacaoEvidencia) => {
+    try {
+      await capacitacaoAPI.downloadEvidencia(idCapacitacao, evidencia.id, {
+        nomeArquivo: evidencia.nome_arquivo,
+        abrirNoNavegador: true
+      });
+    } catch (error: any) {
+      console.error('Erro ao abrir evidência:', error);
+      alert(error.message || 'Erro ao abrir evidência');
     }
   };
 
@@ -2363,6 +2378,23 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
                     )}
                   </div>
                   <div style={{display: 'flex', gap: '8px'}}>
+                    <button
+                      onClick={() => handleAbrirEvidencia(evidencia)}
+                      style={{
+                        padding: '8px',
+                        background: '#0ea5e9',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="Abrir"
+                    >
+                      <ExternalLink size={16} />
+                    </button>
                     <button
                       onClick={() => handleDownloadEvidencia(evidencia)}
                       style={{

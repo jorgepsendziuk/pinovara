@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useMeuAcessoSemPapel } from '../hooks/useMeuAcessoSemPapel';
 import Icon from './Icon';
 import {
   BarChart,
@@ -84,15 +85,33 @@ const Sidebar: React.FC = () => {
   const { user, hasPermission, isCoordinator, isSupervisor, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const hasNoRoles = !user?.roles || user.roles.length === 0;
+  const { data: acesso } = useMeuAcessoSemPapel(!!user && hasNoRoles);
   const { screenSize, isMobile, isTablet } = useResponsive();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
-  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['administracao']));
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['perfil-entrada', 'qualificacao-formacao', 'cadastro-familias']));
+  const [sidebarTooltip, setSidebarTooltip] = useState<{ show: boolean; text: string; x: number; y: number }>({ show: false, text: '', x: 0, y: 0 });
   const sidebarRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<HTMLDivElement>(null);
   const userExpandedRef = useRef<boolean>(false); // Track if user manually expanded
+
+  const showSidebarHint = (e: React.MouseEvent, text: string) => {
+    if (!isCollapsed || isMobile) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setSidebarTooltip({
+      show: true,
+      text,
+      x: rect.right + 10,
+      y: rect.top + rect.height / 2
+    });
+  };
+
+  const hideSidebarHint = () => {
+    setSidebarTooltip(prev => ({ ...prev, show: false }));
+  };
 
   const toggleMenu = (menuId: string) => {
     // Se o menu está colapsado, expandir primeiro
@@ -192,56 +211,83 @@ const Sidebar: React.FC = () => {
   }, [isMobile, isTablet, screenSize, isCollapsed]);
 
   const menuItems: MenuItem[] = [
+    /* Perfil de Entrada e Plano de Gestão */
     {
-      id: 'organizacoes',
-      label: 'Organizações',
-      icon: Building,
+      id: 'perfil-entrada',
+      label: 'Perfil de Entrada e Plano de Gestão',
+      icon: FileText,
       path: '/organizacoes/lista',
-      module: 'organizacoes'
+      module: 'organizacoes',
+      children: [
+        {
+          id: 'organizacoes',
+          label: 'Organizações',
+          icon: Building,
+          path: '/organizacoes/lista',
+          module: 'organizacoes'
+        },
+        {
+          id: 'organizacoes-mapa',
+          label: 'Mapa de Organizações',
+          icon: Map,
+          path: '/organizacoes/mapa',
+          module: 'organizacoes'
+        }
+      ]
     },
+    /* Qualificação e Formação Profissional */
     {
-      id: 'organizacoes-mapa',
-      label: 'Mapa de Organizações',
-      icon: Map,
-      path: '/organizacoes/mapa',
-      module: 'organizacoes'
+      id: 'qualificacao-formacao',
+      label: 'Qualificação e Formação Profissional',
+      icon: GraduationCap,
+      path: '/qualificacoes',
+      module: 'qualificacoes',
+      children: [
+        {
+          id: 'qualificacoes',
+          label: 'Planos de Qualificação',
+          icon: GraduationCap,
+          path: '/qualificacoes',
+          module: 'qualificacoes'
+        },
+        {
+          id: 'capacitacoes',
+          label: 'Capacitações',
+          icon: Calendar,
+          path: '/capacitacoes',
+          module: 'qualificacoes'
+        }
+      ]
     },
+    /* Cadastro de Famílias */
     {
       id: 'cadastro-familias',
       label: 'Cadastro de Famílias',
       icon: Home,
-      path: '/supervisao-ocupacional',
+      path: '/familias',
       module: 'supervisao_ocupacional',
       children: [
         {
           id: 'supervisao-glebas',
           label: 'Territórios',
           icon: Map,
-          path: '/supervisao-ocupacional/glebas',
+          path: '/familias/territorios',
           module: 'supervisao_ocupacional'
         },
         {
           id: 'supervisao-familias',
           label: 'Famílias',
           icon: Users,
-          path: '/supervisao-ocupacional/familias',
+          path: '/familias',
           module: 'supervisao_ocupacional'
         },
         {
           id: 'supervisao-mapa',
           label: 'Mapa de Cadastros',
           icon: Map,
-          path: '/supervisao-ocupacional/mapa',
+          path: '/familias/mapa',
           module: 'supervisao_ocupacional'
         }
-        // Ocultado temporariamente
-        // {
-        //   id: 'supervisao-sync',
-        //   label: 'Sincronizar ODK',
-        //   icon: Database,
-        //   path: '/supervisao-ocupacional/sync',
-        //   module: 'supervisao_ocupacional'
-        // }
       ]
     },
     {
@@ -249,21 +295,6 @@ const Sidebar: React.FC = () => {
       label: 'Repositório',
       icon: Archive,
       path: '/repositorio',
-      // Sem module definido para que todos possam ver (permissão é controlada dentro do componente)
-    },
-    {
-      id: 'qualificacoes',
-      label: 'Planos de Qualificação',
-      icon: GraduationCap,
-      path: '/qualificacoes',
-      module: 'qualificacoes'
-    },
-    {
-      id: 'capacitacoes',
-      label: 'Capacitações',
-      icon: Calendar,
-      path: '/capacitacoes',
-      module: 'qualificacoes'
     },
     
     // 🚧 ===== MÓDULOS EM DESENVOLVIMENTO - OCULTOS =====
@@ -486,17 +517,9 @@ const Sidebar: React.FC = () => {
       label: 'Configuração ODK',
       icon: Smartphone,
       path: '/configuracao-odk',
-      module: 'configuracao',
-      children: [
-        {
-          id: 'configuracao-odk-main',
-          label: 'Configuração ODK Collect',
-          icon: LinkIcon,
-          path: '/configuracao-odk',
-          module: 'configuracao'
-        }
-      ]
+      module: 'configuracao'
     },
+    /* Administração (apenas admin) */
     {
       id: 'administracao',
       label: 'Administração',
@@ -541,7 +564,39 @@ const Sidebar: React.FC = () => {
     }
   ];
 
+  // Menu restrito para usuário sem papéis: apenas capacitações inscrito e organizações associadas
+  const menuItemsSemPapel: MenuItem[] = [];
+  if (hasNoRoles && acesso) {
+    if (acesso.capacitacoesInscrito > 0) {
+      menuItemsSemPapel.push({
+        id: 'capacitacoes-sem-papel',
+        label: 'Capacitações',
+        icon: Calendar,
+        path: '/capacitacoes',
+        module: 'qualificacoes'
+      });
+    }
+    if (acesso.organizacoesAssociadas > 0) {
+      menuItemsSemPapel.push({
+        id: 'organizacoes-sem-papel',
+        label: 'Organizações',
+        icon: Building,
+        path: '/organizacoes/lista',
+        module: 'organizacoes',
+        children: [
+          { id: 'organizacoes-lista', label: 'Organizações', icon: Building, path: '/organizacoes/lista', module: 'organizacoes' },
+          { id: 'organizacoes-mapa', label: 'Mapa de Organizações', icon: Map, path: '/organizacoes/mapa', module: 'organizacoes' }
+        ]
+      });
+    }
+  }
+
+  const itemsToRender = hasNoRoles ? menuItemsSemPapel : menuItems;
+
   const hasAccess = (item: MenuItem): boolean => {
+    // Usuário sem papéis: todos os itens do menu restrito têm acesso
+    if (hasNoRoles) return true;
+
     // Verificar se o item deve ser ocultado para roles específicos
     if (item.hideForRoles) {
       if (isCoordinator() && item.hideForRoles.includes('coordenador')) {
@@ -649,7 +704,7 @@ const Sidebar: React.FC = () => {
         }}
         onClick={handleOverlayClick}
       >
-        {/* Header */}
+        {/* Header: logo + toggle */}
       <div className="sidebar-header">
         <div className="sidebar-logo-section">
           <div className="sidebar-logo">
@@ -664,25 +719,6 @@ const Sidebar: React.FC = () => {
               )}
             </Link>
           </div>
-
-          {/* User Info - Embaixo da logo */}
-          {!isCollapsed && user && (
-            <Link to="/perfil" className="user-compact-link">
-              <div className="user-compact">
-                <div className="user-avatar-mini">
-                  <span>{user.name?.charAt(0).toUpperCase()}</span>
-                </div>
-                <div className="user-info-mini">
-                  <span className="user-name-mini">
-                    {user.name?.split(' ')[0]}
-                  </span>
-                  <span className="user-role-mini">
-                    {user.roles?.[0]?.name || 'Usuário'}
-                  </span>
-                </div>
-              </div>
-            </Link>
-          )}
         </div>
 
         <button
@@ -698,10 +734,18 @@ const Sidebar: React.FC = () => {
         </button>
       </div>
 
+      {/* User line - uma linha 100% logo abaixo do logo */}
+      {!isCollapsed && user && (
+        <Link to="/perfil" className="sidebar-user-line">
+          <span className="sidebar-user-name">{user.name?.split(' ')[0]}</span>
+          <span className="sidebar-user-role">{user.roles?.[0]?.name || 'Usuário'}</span>
+        </Link>
+      )}
+
       {/* Navigation - Com scroll */}
       <nav className="sidebar-nav">
         <ul className="nav-list">
-          {menuItems
+          {itemsToRender
             .filter(item => hasAccess(item))
             .map(item => (
               <li key={item.id} className="nav-item">
@@ -710,6 +754,8 @@ const Sidebar: React.FC = () => {
                     <button
                       className={`nav-button ${isMenuActive(item) ? 'active' : ''}`}
                       onClick={() => toggleMenu(item.id)}
+                      onMouseEnter={(e) => showSidebarHint(e, item.label)}
+                      onMouseLeave={hideSidebarHint}
                     >
                       <span className="nav-icon">{renderIcon(item.icon, 16)}</span>
                       {!isCollapsed && (
@@ -752,6 +798,8 @@ const Sidebar: React.FC = () => {
                       e.stopPropagation();
                       handleNavLinkClick();
                     }}
+                    onMouseEnter={(e) => showSidebarHint(e, item.label)}
+                    onMouseLeave={hideSidebarHint}
                   >
                     <span className="nav-icon">{renderIcon(item.icon, 16)}</span>
                     {!isCollapsed && (
@@ -770,6 +818,8 @@ const Sidebar: React.FC = () => {
           className="logout-button"
           onClick={handleLogout}
           title="Sair do sistema"
+          onMouseEnter={(e) => showSidebarHint(e, 'Sair')}
+          onMouseLeave={hideSidebarHint}
         >
           <span className="logout-icon"><LogOut size={16} /></span>
           {!isCollapsed && (
@@ -777,6 +827,25 @@ const Sidebar: React.FC = () => {
           )}
         </button>
       </div>
+
+      {/* Tooltip quando sidebar collapsed */}
+      {sidebarTooltip.show && (
+        <div
+          className="sidebar-collapsed-tooltip"
+          style={{
+            position: 'fixed',
+            left: `${sidebarTooltip.x}px`,
+            top: `${sidebarTooltip.y}px`,
+            transform: 'translateY(-50%)',
+            zIndex: 10001,
+            pointerEvents: 'none'
+          }}
+          onMouseEnter={() => setSidebarTooltip(prev => ({ ...prev, show: true }))}
+          onMouseLeave={hideSidebarHint}
+        >
+          {sidebarTooltip.text}
+        </div>
+      )}
 
       {/* Redimensionador - só mostrar no desktop */}
       {!isCollapsed && !isMobile && (
