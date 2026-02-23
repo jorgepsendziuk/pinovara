@@ -8461,10 +8461,14 @@ main, section, article, aside, header, footer {
 
 .permission-role-cell {
   text-align: left !important;
-  min-width: 180px;
+  min-width: 140px;
+  max-width: 200px;
   position: sticky;
   left: 0;
   background: var(--bg-tertiary);
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
   z-index: 1;
 }
 
@@ -8477,8 +8481,11 @@ main, section, article, aside, header, footer {
 .permission-col-header {
   font-weight: 500;
   font-size: 0.8rem;
-  max-width: 120px;
-  white-space: nowrap;
+  max-width: 140px;
+  min-width: 80px;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .permission-cell {
@@ -8516,6 +8523,44 @@ main, section, article, aside, header, footer {
 
 .permissions-matrix tbody tr:hover {
   background: rgba(5, 104, 57, 0.03);
+}
+
+.permissions-by-module {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.permissions-module-card {
+  background: var(--bg-tertiary);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+}
+
+.permissions-module-title {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  background: rgba(5, 104, 57, 0.08);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.permissions-module-card .permissions-matrix-wrapper {
+  border: none;
+  border-radius: 0;
+}
+
+.permissions-module-card .permissions-matrix th,
+.permissions-module-card .permissions-matrix td {
+  padding: 0.5rem 0.75rem;
+}
+
+.permission-actions-col,
+.permission-actions-cell {
+  width: 80px;
+  text-align: center;
 }
 
 /* ========== RESPONSIVE ========== */

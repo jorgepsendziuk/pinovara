@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import DataGrid, { DataGridColumn } from '../../components/DataGrid/DataGrid';
 import { qualificacaoAPI } from '../../services/qualificacaoService';
 import { Qualificacao, QualificacaoListResponse } from '../../types/qualificacao';
-import { Edit, Trash2, FileText, BookOpen, Plus, Search, Loader2, User, Download, Clock, CheckCircle, XCircle, AlertCircle, Clipboard } from 'lucide-react';
-import api from '../../services/api';
+import { Edit, Trash2, FileText, BookOpen, Plus, Search, Loader2, User, Clock, CheckCircle, XCircle, AlertCircle, FolderOpen } from 'lucide-react';
 import ModalMateriais from '../../components/qualificacoes/ModalMateriais';
 import ModalValidacao from '../../components/qualificacoes/ModalValidacao';
 import { useAuth } from '../../contexts/AuthContext';
@@ -15,12 +14,6 @@ interface ListaQualificacoesProps {
   onNavigate: (view: string, id?: number) => void;
 }
 
-interface UserInfo {
-  id: number;
-  name: string;
-  email: string;
-}
-
 function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
   const { user, isAdmin, isCoordinator, hasPermission } = useAuth();
   const [qualificacoes, setQualificacoes] = useState<Qualificacao[]>([]);
@@ -28,7 +21,6 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
   const [filtroTitulo, setFiltroTitulo] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [criadores, setCriadores] = useState<Map<number, UserInfo>>(new Map());
   const [modalMateriais, setModalMateriais] = useState<{ isOpen: boolean; idQualificacao: number; titulo: string }>({
     isOpen: false,
     idQualificacao: 0,
@@ -63,6 +55,13 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
     return isAdmin(); // Qualificações padrão só podem ser editadas por admin
   };
 
+  // Verificar se pode excluir: apenas o técnico criador (ou admin)
+  const podeExcluirQualificacao = (record: Qualificacao): boolean => {
+    if (isAdmin()) return true;
+    if (!user) return false;
+    return record.created_by != null && String(record.created_by) === String(user.id);
+  };
+
   // Verificar se pode editar qualificação: admin OU técnico (criador ou membro da equipe)
   const podeEditarQualificacao = (record: Qualificacao): boolean => {
     if (isQualificacaoPadrao(record.id)) return isAdmin();
@@ -80,33 +79,6 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
     carregarQualificacoes();
   }, [page, filtroTitulo]);
 
-  const carregarCriadores = async (qualificacoes: Qualificacao[]) => {
-    const userIds = qualificacoes
-      .map(q => q.created_by)
-      .filter((id): id is number => id !== undefined && id !== null);
-    
-    const uniqueUserIds = [...new Set(userIds)];
-    
-    const criadoresMap = new Map<number, UserInfo>();
-    
-    for (const userId of uniqueUserIds) {
-      try {
-        const response = await api.get(`/admin/users/${userId}`);
-        if (response.data.success && response.data.data?.user) {
-          criadoresMap.set(userId, {
-            id: response.data.data.user.id,
-            name: response.data.data.user.name,
-            email: response.data.data.user.email
-          });
-        }
-      } catch (error) {
-        console.error(`Erro ao carregar usuário ${userId}:`, error);
-      }
-    }
-    
-    setCriadores(criadoresMap);
-  };
-
   const carregarQualificacoes = async () => {
     try {
       setLoading(true);
@@ -117,9 +89,6 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
       });
       setQualificacoes(response.qualificacoes);
       setTotal(response.total || response.qualificacoes.length);
-      
-      // Carregar informações dos criadores
-      await carregarCriadores(response.qualificacoes);
     } catch (error) {
       console.error('Erro ao carregar qualificações:', error);
       alert('Erro ao carregar qualificações');
@@ -189,7 +158,8 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
                 </button>
               </Tooltip>
             )}
-            <Tooltip text="Gerenciar materiais" backgroundColor="#056839" delay={0}>
+            {podeEditarQualificacao(record) && (
+            <Tooltip text="Materiais" backgroundColor="#f59e0b" delay={0}>
               <button
                 onClick={() => {
                   setModalMateriais({
@@ -200,28 +170,29 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
                 }}
               style={{
                 padding: '6px 8px',
-                border: '1px solid #056839',
+                border: '1px solid #f59e0b',
                 background: 'white',
                 borderRadius: '4px',
                 cursor: 'pointer',
-                color: '#056839',
+                color: '#f59e0b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.2s'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = '#056839';
+                e.currentTarget.style.background = '#f59e0b';
                 e.currentTarget.style.color = 'white';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#056839';
+                e.currentTarget.style.color = '#f59e0b';
               }}
             >
-              <FileText size={16} />
+              <FolderOpen size={16} />
             </button>
             </Tooltip>
+            )}
             {(hasPermission('sistema', 'admin') || isCoordinator()) && (
               <Tooltip text="Validar qualificação" backgroundColor="#10b981" delay={0}>
                 <button
@@ -253,11 +224,11 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
                     e.currentTarget.style.color = '#10b981';
                   }}
                 >
-                  <Clipboard size={16} />
+                  <CheckCircle size={16} />
                 </button>
               </Tooltip>
             )}
-            <Tooltip text="Gerar PDF do conteúdo" backgroundColor="#3b82f6" delay={0}>
+            <Tooltip text="Qualificação (PDF)" backgroundColor="#3b82f6" delay={0}>
               <button
                 onClick={async () => {
                   try {
@@ -289,10 +260,10 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
                 e.currentTarget.style.color = '#3b82f6';
               }}
             >
-              <Download size={16} />
+              <FileText size={16} />
             </button>
             </Tooltip>
-            {!isPadrao && (
+            {!isPadrao && podeExcluirQualificacao(record) && (
               <Tooltip text="Excluir qualificação" backgroundColor="#dc2626" delay={0}>
                 <button
                   onClick={() => handleExcluir(record.id!)}
@@ -349,7 +320,7 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
       width: '20%',
       align: 'left',
       render: (_, record: Qualificacao) => {
-        const criador = record.criador || (record.created_by ? criadores.get(record.created_by) : null);
+        const criador = record.criador;
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', alignItems: 'center' }}>
             {criador ? (

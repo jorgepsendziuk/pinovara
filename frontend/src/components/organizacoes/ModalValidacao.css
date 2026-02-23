@@ -242,6 +242,17 @@
   flex: 1;
 }
 
+/* Observações: label e texto em peso e tamanho de parágrafo (texto costuma ser longo) */
+.info-row-observacoes .info-label,
+.info-row-observacoes .info-value-observacoes {
+  font-weight: 400;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+.info-row-observacoes .info-value-observacoes {
+  text-align: left;
+}
+
 /* Histórico de Validação */
 .historico-section {
   margin-top: 1rem;
@@ -343,14 +354,17 @@
   margin-top: 0.375rem;
   padding-top: 0.375rem;
   border-top: 1px solid #e5e7eb;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 400;
   color: #4b5563;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
+.historico-observacoes .historico-observacoes-label,
 .historico-observacoes strong {
-  color: #374151;
-  font-weight: 600;
+  font-weight: 400;
+  font-size: 0.875rem;
+  color: #6b7280;
 }
 
 /* Modal Actions */

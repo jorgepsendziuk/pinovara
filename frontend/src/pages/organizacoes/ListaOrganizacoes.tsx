@@ -25,9 +25,8 @@ import {
   User,
   FolderOpen,
   Search,
-  Target,
-  MoreVertical,
-  Archive
+  Archive,
+  CheckCircle
 } from 'lucide-react';
 
 interface Organizacao {
@@ -46,6 +45,7 @@ interface Organizacao {
   id_tecnico?: number | null;
   tecnico_nome?: string | null;
   tecnico_email?: string | null;
+  equipe_tecnica?: Array<{ id_tecnico: number }>;
   validacao_status?: number | null;
   plano_gestao_validacao_status?: number | null;
   removido?: boolean | null;
@@ -63,15 +63,15 @@ interface ListaOrganizacoesProps {
 }
 
 function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
-  const { isCoordinator, isSupervisor, hasPermission } = useAuth();
+  const { user, isCoordinator, isSupervisor, hasPermission } = useAuth();
   const [loading, setLoading] = useState(true);
   const [gerandoPDF, setGerandoPDF] = useState<number | null>(null);
+  const [gerandoPDFPlano, setGerandoPDFPlano] = useState<number | null>(null);
   const [gerandoRelatorio, setGerandoRelatorio] = useState<number | null>(null);
   const [modalArquivosAberto, setModalArquivosAberto] = useState(false);
   const [modalValidacaoAberto, setModalValidacaoAberto] = useState(false);
   const [modalValidacaoPlanoGestaoAberto, setModalValidacaoPlanoGestaoAberto] = useState(false);
   const [organizacaoSelecionada, setOrganizacaoSelecionada] = useState<{ id: number; nome: string } | null>(null);
-  const [menuAcoesAberto, setMenuAcoesAberto] = useState<number | null>(null); // ID da organização com menu aberto
 
   // Estados para scroll infinito
   const [todasOrganizacoesFiltradas, setTodasOrganizacoesFiltradas] = useState<Organizacao[]>([]);
@@ -128,22 +128,6 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   useEffect(() => {
     carregarDadosFiltros();
   }, []);
-
-  // Fechar menu de ações ao clicar fora
-  useEffect(() => {
-    const handleClickOutside = () => {
-      if (menuAcoesAberto !== null) {
-        setMenuAcoesAberto(null);
-      }
-    };
-    
-    if (menuAcoesAberto !== null) {
-      document.addEventListener('click', handleClickOutside);
-      return () => {
-        document.removeEventListener('click', handleClickOutside);
-      };
-    }
-  }, [menuAcoesAberto]);
 
   // Função para executar a busca
   const executarBusca = () => {
@@ -293,6 +277,31 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       alert(`❌ Erro ao gerar relatório: ${error.message}`);
     } finally {
       setGerandoRelatorio(null);
+    }
+  };
+
+  const gerarPdfPlanoGestao = async (organizacaoId: number) => {
+    setGerandoPDFPlano(organizacaoId);
+    try {
+      const token = localStorage.getItem('@pinovara:token');
+      const response = await fetch(
+        `${API_BASE}/organizacoes/${organizacaoId}/plano-gestao/pdf`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      if (!response.ok) throw new Error('Erro ao gerar PDF');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `plano-gestao-${organizacaoId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao gerar PDF do plano de gestão');
+    } finally {
+      setGerandoPDFPlano(null);
     }
   };
 
@@ -570,306 +579,122 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   // Não precisamos deste handler, a ordenação é feita externamente via sortConfig
 
 
+  // Helpers de acesso
+  const userIdNum = user?.id != null ? Number(user.id) : null;
+  const isAdmin = hasPermission('sistema', 'admin');
+  const podeAcessarPlanoGestao = (record: Organizacao) => {
+    if (userIdNum == null) return false;
+    if (isAdmin) return true;
+    if (record.id_tecnico === userIdNum) return true;
+    const equipe = record.equipe_tecnica || [];
+    return equipe.some((m) => m.id_tecnico === userIdNum);
+  };
+  const podeExcluir = (record: Organizacao) => userIdNum != null && record.id_tecnico === userIdNum;
+
+  const btn = (color: string) => ({
+    padding: '6px 8px',
+    border: `1px solid ${color}`,
+    background: 'white',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    color,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s',
+  });
+
   // Definição das colunas da DataGrid
   const columns: DataGridColumn<Organizacao>[] = [
     {
       key: 'actions',
       title: 'Ações',
-      width: '20%',
-      align: 'center',
+      width: '140px',
+      align: 'left',
       render: (_, record: Organizacao) => {
         const podeValidar = isCoordinator() || hasPermission('sistema', 'admin');
         const podeEditar = !isCoordinator() && !isSupervisor();
-        const menuAberto = menuAcoesAberto === record.id;
-        
+        const podePlano = podeAcessarPlanoGestao(record);
+        const podeDel = podeExcluir(record);
+
         return (
-          <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
-            {/* Link Editar */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-start', alignItems: 'center' }}>
             {podeEditar && (
-            <Tooltip text="Editar organização" backgroundColor="#3b2313" delay={0}>
-              <Link
-                to={`/organizacoes/edicao/${record.id}`}
-                style={{ 
-                  padding: '6px 8px', 
-                  border: '1px solid #3b2313', 
-                  background: 'white',
-                  borderRadius: '4px',
-                  cursor: 'pointer', 
-                  color: '#3b2313',
-                  display: 'flex',
-                  alignItems: 'center',
-                    justifyContent: 'center',
-                  transition: 'all 0.2s',
-                  textDecoration: 'none'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#3b2313';
-                  e.currentTarget.style.color = 'white';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.color = '#3b2313';
-                }}
-              >
+              <Tooltip text="Editar Perfil de Entrada" backgroundColor="#3b2313" delay={0}>
+                <Link to={`/organizacoes/edicao/${record.id}`} style={{ ...btn('#3b2313'), textDecoration: 'none' }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = '#3b2313'; e.currentTarget.style.color = 'white'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#3b2313'; }}>
                   <Edit size={16} />
-              </Link>
-            </Tooltip>
-          )}
-            
-            {/* Botão Relatório */}
-          <Tooltip text="Gerar Relatório Completo" backgroundColor="#056839" delay={0}>
-            <button
-              onClick={() => gerarRelatorio(record.id, record.nome)}
-              disabled={gerandoRelatorio === record.id}
-              style={{
-                padding: '6px 8px',
-                border: '1px solid #056839',
-                background: 'white',
-                borderRadius: '4px',
-                cursor: gerandoRelatorio === record.id ? 'not-allowed' : 'pointer',
-                color: gerandoRelatorio === record.id ? '#ccc' : '#056839',
-                display: 'flex',
-                alignItems: 'center',
-                  justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => {
-                if (gerandoRelatorio !== record.id) {
-                  e.currentTarget.style.background = '#056839';
-                  e.currentTarget.style.color = 'white';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (gerandoRelatorio !== record.id) {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.color = '#056839';
-                }
-              }}
-            >
+                </Link>
+              </Tooltip>
+            )}
+            {podePlano && (
+              <Tooltip text="Editar Plano de Gestão" backgroundColor="#8b5cf6" delay={0}>
+                <Link to={`/organizacoes/plano-gestao/${record.id}`} style={{ ...btn('#8b5cf6'), textDecoration: 'none' }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = '#8b5cf6'; e.currentTarget.style.color = 'white'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#8b5cf6'; }}>
+                  <Edit size={16} />
+                </Link>
+              </Tooltip>
+            )}
+            <Tooltip text="Perfil de Entrada (PDF)" backgroundColor="#056839" delay={0}>
+              <button onClick={() => gerarRelatorio(record.id, record.nome)} disabled={gerandoRelatorio === record.id}
+                style={{ ...btn(gerandoRelatorio === record.id ? '#ccc' : '#056839'), cursor: gerandoRelatorio === record.id ? 'not-allowed' : 'pointer' }}
+                onMouseOver={(e) => { if (gerandoRelatorio !== record.id) { e.currentTarget.style.background = '#056839'; e.currentTarget.style.color = 'white'; } }}
+                onMouseOut={(e) => { if (gerandoRelatorio !== record.id) { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#056839'; } }}>
                 <FileText size={16} />
-            </button>
-          </Tooltip>
-            
-            {/* Link Plano de Gestão */}
-          <Tooltip text="Plano de Gestão e Estratégias" backgroundColor="#8b5cf6" delay={0}>
-            <Link
-                to={`/organizacoes/plano-gestao/${record.id}`}
-              style={{
-                padding: '6px 8px',
-                  border: '1px solid #8b5cf6',
-                background: 'white',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                  color: '#8b5cf6',
-                display: 'flex',
-                alignItems: 'center',
-                  justifyContent: 'center',
-                transition: 'all 0.2s',
-                textDecoration: 'none'
-              }}
-              onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#8b5cf6';
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.color = '#8b5cf6';
-              }}
-            >
-                <Target size={16} />
-            </Link>
-          </Tooltip>
-            
-            {/* Botão Arquivos */}
+              </button>
+            </Tooltip>
+            <Tooltip text="Plano de Gestão (PDF)" backgroundColor="#8b5cf6" delay={0}>
+              <button onClick={() => gerarPdfPlanoGestao(record.id)} disabled={gerandoPDFPlano === record.id}
+                style={{ ...btn(gerandoPDFPlano === record.id ? '#ccc' : '#8b5cf6'), cursor: gerandoPDFPlano === record.id ? 'not-allowed' : 'pointer' }}
+                onMouseOver={(e) => { if (gerandoPDFPlano !== record.id) { e.currentTarget.style.background = '#8b5cf6'; e.currentTarget.style.color = 'white'; } }}
+                onMouseOut={(e) => { if (gerandoPDFPlano !== record.id) { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#8b5cf6'; } }}>
+                <FileText size={16} />
+              </button>
+            </Tooltip>
             <Tooltip text="Arquivos" backgroundColor="#f59e0b" delay={0}>
-              <button
-                onClick={() => {
-                  abrirModalArquivos(record.id, record.nome);
-                }}
-                style={{
-                  padding: '6px 8px',
-                  border: '1px solid #f59e0b',
-                  background: 'white',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  color: '#f59e0b',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#f59e0b';
-                  e.currentTarget.style.color = 'white';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.color = '#f59e0b';
-                }}
-              >
+              <button onClick={() => abrirModalArquivos(record.id, record.nome)} style={btn('#f59e0b')}
+                onMouseOver={(e) => { e.currentTarget.style.background = '#f59e0b'; e.currentTarget.style.color = 'white'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#f59e0b'; }}>
                 <FolderOpen size={16} />
               </button>
             </Tooltip>
-            
-            {/* Botão Outras Ações */}
-            <div style={{ position: 'relative' }}>
-          <Tooltip text="Outras ações" backgroundColor="#6b7280" delay={0}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMenuAcoesAberto(menuAberto ? null : record.id);
-                }}
-            style={{
-              padding: '6px 8px',
-                  border: '1px solid #6b7280',
-                  background: menuAberto ? '#6b7280' : 'white',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  color: menuAberto ? 'white' : '#6b7280',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  if (!menuAberto) {
-                    e.currentTarget.style.background = '#6b7280';
-                    e.currentTarget.style.color = 'white';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!menuAberto) {
-                    e.currentTarget.style.background = 'white';
-                    e.currentTarget.style.color = '#6b7280';
-                  }
-                }}
-              >
-                <MoreVertical size={16} />
+            {podeValidar && (
+              <Tooltip text="Validar Perfil de Entrada" backgroundColor="#056839" delay={0}>
+                <button onClick={() => abrirModalValidacao(record.id, record.nome)} style={btn('#056839')}
+                  onMouseOver={(e) => { e.currentTarget.style.background = '#056839'; e.currentTarget.style.color = 'white'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#056839'; }}>
+                  <CheckCircle size={16} />
+                </button>
+              </Tooltip>
+            )}
+            {podeValidar && (
+              <Tooltip text="Validar Plano de Gestão" backgroundColor="#8b5cf6" delay={0}>
+                <button onClick={() => abrirModalValidacaoPlanoGestao(record.id, record.nome)} style={btn('#8b5cf6')}
+                  onMouseOver={(e) => { e.currentTarget.style.background = '#8b5cf6'; e.currentTarget.style.color = 'white'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#8b5cf6'; }}>
+                  <CheckCircle size={16} />
+                </button>
+              </Tooltip>
+            )}
+            <Tooltip text="Termo de Adesão" backgroundColor="#28a745" delay={0}>
+              <button onClick={() => gerarTermoAdesao(record.id)} disabled={gerandoPDF === record.id}
+                style={{ ...btn(gerandoPDF === record.id ? '#ccc' : '#28a745'), cursor: gerandoPDF === record.id ? 'not-allowed' : 'pointer' }}
+                onMouseOver={(e) => { if (gerandoPDF !== record.id) { e.currentTarget.style.background = '#28a745'; e.currentTarget.style.color = 'white'; } }}
+                onMouseOut={(e) => { if (gerandoPDF !== record.id) { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#28a745'; } }}>
+                <Printer size={16} />
               </button>
             </Tooltip>
-              
-              {/* Menu Dropdown */}
-              {menuAberto && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: '100%',
-                    marginTop: '4px',
-              background: 'white',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    zIndex: 1000,
-                    minWidth: '180px',
-                    padding: '4px'
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {podeValidar && (
-                    <button
-                      onClick={() => {
-                        abrirModalValidacao(record.id, record.nome);
-                        setMenuAcoesAberto(null);
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '8px 12px',
-                        textAlign: 'left',
-                        background: 'transparent',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        color: '#374151',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
-                        transition: 'background 0.2s'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = '#f3f4f6';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                      }}
-                    >
-                      <Clipboard size={16} color="#10b981" />
-                      <span>Validar</span>
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      gerarTermoAdesao(record.id);
-                      setMenuAcoesAberto(null);
-                    }}
-                    disabled={gerandoPDF === record.id}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      textAlign: 'left',
-                      background: 'transparent',
-                      border: 'none',
-              borderRadius: '4px',
-              cursor: gerandoPDF === record.id ? 'not-allowed' : 'pointer',
-                      color: gerandoPDF === record.id ? '#9ca3af' : '#374151',
-              display: 'flex',
-              alignItems: 'center',
-                      gap: '8px',
-                      fontSize: '14px',
-                      transition: 'background 0.2s',
-              opacity: gerandoPDF === record.id ? 0.5 : 1
-            }}
-            onMouseOver={(e) => {
-              if (gerandoPDF !== record.id) {
-                        e.currentTarget.style.background = '#f3f4f6';
-              }
-            }}
-            onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-            }}
-          >
-                    <Printer size={16} color="#28a745" />
-                    <span>Imprimir Termo</span>
-          </button>
-          {!isCoordinator() && (
-            <button
-                      onClick={() => {
-                        handleExcluir(record.id);
-                        setMenuAcoesAberto(null);
-                      }}
-              style={{ 
-                        width: '100%',
-                        padding: '8px 12px',
-                        textAlign: 'left',
-                        background: 'transparent',
-                        border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer', 
-                        color: '#dc2626',
-                display: 'flex',
-                alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
-                        transition: 'background 0.2s',
-                        borderTop: '1px solid #e5e7eb',
-                        marginTop: '4px',
-                        paddingTop: '8px'
-              }}
-              onMouseOver={(e) => {
-                        e.currentTarget.style.background = '#fee2e2';
-              }}
-              onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-              }}
-            >
-                      <Trash size={16} color="#dc2626" />
-                      <span>Excluir</span>
-            </button>
-          )}
-        </div>
-              )}
-            </div>
+            {podeDel && (
+              <Tooltip text="Excluir organização" backgroundColor="#dc2626" delay={0}>
+                <button onClick={() => handleExcluir(record.id)} style={btn('#dc2626')}
+                  onMouseOver={(e) => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.color = 'white'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#dc2626'; }}>
+                  <Trash size={16} />
+                </button>
+              </Tooltip>
+            )}
           </div>
         );
       },
@@ -946,24 +771,38 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       },
     },
     {
-      key: 'tecnico',
-      title: 'Técnico',
-      dataIndex: 'tecnico_nome',
-      width: '14%',
-      responsive: {
-        hideOn: 'mobile'
-      },
-      render: (tecnico_nome: string | null, record: Organizacao) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-          {tecnico_nome ? (
-            <>
-              <User size={14} color="#666" />
-              <span style={{ color: '#444', fontWeight: '500' }} title={record.tecnico_email || undefined}>
-                {tecnico_nome}
-              </span>
-            </>
-          ) : (
-            <span style={{ color: '#999', fontStyle: 'italic' }}>Sem técnico</span>
+      key: 'informacoes',
+      title: 'Informações',
+      width: '20%',
+      align: 'left',
+      render: (_: any, record: Organizacao) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <User size={12} color="#64748b" />
+            <span><strong>Criado por:</strong> {record.tecnico_nome || 'Não informado'}</span>
+          </div>
+          {record.data_criacao && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b' }}>
+              <span><strong>Em:</strong> {formatarDataBR(record.data_criacao)}</span>
+            </div>
+          )}
+          {(record.telefone || record.email) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {record.telefone && (
+                <a href={getWhatsAppLink(record.telefone)} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#25D366', textDecoration: 'none', fontSize: '12px' }}
+                  title="WhatsApp">
+                  <MessageCircle size={12} />
+                  {formatarTelefone(record.telefone)}
+                </a>
+              )}
+              {record.email && (
+                <a href={`mailto:${record.email}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#666', textDecoration: 'none', fontSize: '12px' }} title="E-mail">
+                  <Mail size={12} />
+                  {record.email}
+                </a>
+              )}
+            </div>
           )}
         </div>
       ),
@@ -1028,121 +867,25 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         );
       },
     },
-    {
-      key: 'data_criacao',
-      title: 'Data Criação',
-      dataIndex: 'data_criacao',
-      width: '12%',
-      sortable: true,
-      responsive: {
-        hideOn: 'mobile'
-      },
-      render: (data_criacao: string | Date | null) => (
-        <span style={{ fontSize: '12px', color: '#666' }}>
-          {formatarDataBR(data_criacao)}
-        </span>
-      ),
-    },
-    {
-      key: 'primeira_alteracao_status',
-      title: 'Primeira Validação',
-      dataIndex: 'primeira_alteracao_status',
-      width: '12%',
-      sortable: true,
-      responsive: {
-        hideOn: 'mobile'
-      },
-      render: (primeira_alteracao_status: string | Date | null) => (
-        <span style={{ fontSize: '12px', color: '#666' }}>
-          {formatarDataBR(primeira_alteracao_status)}
-        </span>
-      ),
-    },
-    {
-      key: 'data_aprovacao',
-      title: 'Data Aprovação',
-      dataIndex: 'data_aprovacao',
-      width: '12%',
-      sortable: true,
-      responsive: {
-        hideOn: 'mobile'
-      },
-      render: (data_aprovacao: string | Date | null) => (
-        <span style={{ fontSize: '12px', color: data_aprovacao ? '#10b981' : '#999' }}>
-          {formatarDataBR(data_aprovacao)}
-        </span>
-      ),
-    },
-    {
-      key: 'contato',
-      title: 'Contato',
-      dataIndex: 'telefone',
-      width: '14%',
-      responsive: {
-        hideOn: 'mobile'
-      },
-      render: (telefone: string, record: Organizacao) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
-          {telefone && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <a 
-                href={getWhatsAppLink(telefone)} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px', 
-                  color: '#25D366', 
-                  textDecoration: 'none',
-                  fontWeight: '500'
-                }}
-                title="Abrir no WhatsApp"
-              >
-                <MessageCircle size={14} />
-                {formatarTelefone(telefone)}
-              </a>
-            </div>
-          )}
-          {record.email && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <a 
-                href={`mailto:${record.email}`}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px', 
-                  color: '#666', 
-                  textDecoration: 'none'
-                }}
-                title="Enviar e-mail"
-              >
-                <Mail size={14} />
-                {record.email}
-              </a>
-            </div>
-          )}
-          {!telefone && !record.email && <span style={{ color: '#999' }}>-</span>}
-        </div>
-      ),
-    },
   ];
 
 
   if (loading) {
     return (
-      <div style={{ padding: '1.5rem' }}>
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1.5rem' }}>
-          <Building2 size={24} /> Lista de Organizações
-        </h2>
-        <div className="loading-spinner">Carregando organizações...</div>
+      <div className="lista-organizacoes-module">
+        <div className="lista-organizacoes-loading">
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1.5rem' }}>
+            <Building2 size={24} /> Lista de Organizações
+          </h2>
+          <div className="loading-spinner">Carregando organizações...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '100%', overflowX: 'visible', overflowY: 'visible' }}>
-      {/* Header simples e compacto */}
+    <div className="lista-organizacoes-module">
+      {/* Header */}
       <div className="lista-organizacoes-header">
         <h2>
           <Building2 size={24} /> Lista de Organizações
@@ -1157,6 +900,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         )}
       </div>
 
+      <div className="lista-organizacoes-content">
       {/* Seção de Filtros */}
       <div className="filters-section">
         <div className="filters-grid">
@@ -1311,9 +1055,9 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         </div>
       </div>
 
-      {/* Legenda Flutuante */}
+      {/* Legenda Flutuante (oculta em mobile) */}
       {legendaVisivel && (
-        <div style={{
+        <div className="lista-organizacoes-legenda" style={{
           position: 'fixed',
           bottom: '120px',
           right: '0px',
@@ -1366,14 +1110,8 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
         </div>
       )}
 
-      {/* DataGrid */}
-      {/* Layout Desktop - DataGrid */}
-      <div className="desktop-only" style={{ 
-        background: 'white',
-        borderRadius: '8px',
-        padding: '1rem',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
+      {/* DataGrid - Desktop */}
+      <div className="desktop-only lista-organizacoes-datagrid-wrapper">
         <DataGrid<Organizacao>
             columns={columns}
             dataSource={organizacoesExibidas}
@@ -1398,7 +1136,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
               window.scrollTo(0, 0);
             }}
           />
-          {/* Indicador de scroll infinito */}
+        {/* Indicador de scroll infinito */}
           {organizacoesExibidas.length < totalOrganizacoes && (
             <div style={{ 
               padding: '1rem', 
@@ -1489,188 +1227,44 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                     </div>
                   </div>
                 </div>
-                <div className="organization-actions" style={{ position: 'relative' }}>
+                <div className="organization-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                   {!isCoordinator() && !isSupervisor() && (
-                  <Link
-                    to={`/organizacoes/edicao/${org.id}`}
-                      title="Editar organização"
-                      style={{ color: '#3b2313', borderColor: '#3b2313', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', textDecoration: 'none' }}
-                  >
-                    <Edit size={16} />
-                  </Link>
+                    <Link to={`/organizacoes/edicao/${org.id}`} title="Editar Perfil de Entrada" style={{ color: '#3b2313', display: 'flex', padding: '8px', textDecoration: 'none' }}>
+                      <Edit size={16} />
+                    </Link>
                   )}
-                  
-                    <button
-                    onClick={() => gerarRelatorio(org.id, org.nome)}
-                    disabled={gerandoRelatorio === org.id}
-                    title="Gerar Relatório Completo"
-                    style={{ color: '#056839', borderColor: '#056839', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', opacity: gerandoRelatorio === org.id ? 0.5 : 1 }}
-                    >
+                  {podeAcessarPlanoGestao(org) && (
+                    <Link to={`/organizacoes/plano-gestao/${org.id}`} title="Editar Plano de Gestão" style={{ color: '#8b5cf6', display: 'flex', padding: '8px', textDecoration: 'none' }}>
+                      <Edit size={16} />
+                    </Link>
+                  )}
+                  <button onClick={() => gerarRelatorio(org.id, org.nome)} disabled={gerandoRelatorio === org.id} title="Perfil de Entrada (PDF)" style={{ color: '#056839', display: 'flex', padding: '8px', opacity: gerandoRelatorio === org.id ? 0.5 : 1 }}>
                     <FileText size={16} />
-                    </button>
-                  
-                  <Link
-                    to={`/organizacoes/plano-gestao/${org.id}`}
-                    title="Plano de Gestão e Estratégias"
-                    style={{ color: '#8b5cf6', borderColor: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', textDecoration: 'none' }}
-                  >
-                    <Target size={16} />
-                  </Link>
-                  
-                  {/* Botão Arquivos */}
-                  <button
-                    onClick={() => {
-                      abrirModalArquivos(org.id, org.nome);
-                    }}
-                    title="Arquivos"
-                    style={{ color: '#f59e0b', borderColor: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px' }}
-                  >
+                  </button>
+                  <button onClick={() => gerarPdfPlanoGestao(org.id)} disabled={gerandoPDFPlano === org.id} title="Plano de Gestão (PDF)" style={{ color: '#8b5cf6', display: 'flex', padding: '8px', opacity: gerandoPDFPlano === org.id ? 0.5 : 1 }}>
+                    <FileText size={16} />
+                  </button>
+                  <button onClick={() => abrirModalArquivos(org.id, org.nome)} title="Arquivos" style={{ color: '#f59e0b', display: 'flex', padding: '8px' }}>
                     <FolderOpen size={16} />
                   </button>
-                  
-                  {/* Botão Outras Ações Mobile */}
-                  <div style={{ position: 'relative' }}>
-                  <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuAcoesAberto(menuAcoesAberto === org.id ? null : org.id);
-                      }}
-                      title="Outras ações"
-                      style={{
-                        color: menuAcoesAberto === org.id ? 'white' : '#6b7280',
-                        borderColor: '#6b7280',
-                        background: menuAcoesAberto === org.id ? '#6b7280' : 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '8px'
-                      }}
-                  >
-                      <MoreVertical size={16} />
-                  </button>
-                  
-                    {/* Menu Dropdown Mobile */}
-                    {menuAcoesAberto === org.id && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          right: 0,
-                          top: '100%',
-                          marginTop: '4px',
-                          background: 'white',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                          zIndex: 1000,
-                          minWidth: '180px',
-                          padding: '4px'
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {(isCoordinator() || hasPermission('sistema', 'admin')) && (
-                  <button
-                            onClick={() => {
-                              abrirModalValidacao(org.id, org.nome);
-                              setMenuAcoesAberto(null);
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              textAlign: 'left',
-                              background: 'transparent',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              color: '#374151',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              fontSize: '14px',
-                              transition: 'background 0.2s'
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = '#f3f4f6';
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = 'transparent';
-                            }}
-                          >
-                            <Clipboard size={16} color="#10b981" />
-                            <span>Validar</span>
-                  </button>
-                        )}
-                        <button
-                          onClick={() => {
-                            gerarTermoAdesao(org.id);
-                            setMenuAcoesAberto(null);
-                          }}
-                          disabled={gerandoPDF === org.id}
-                          style={{
-                            width: '100%',
-                            padding: '8px 12px',
-                            textAlign: 'left',
-                            background: 'transparent',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: gerandoPDF === org.id ? 'not-allowed' : 'pointer',
-                            color: gerandoPDF === org.id ? '#9ca3af' : '#374151',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '14px',
-                            transition: 'background 0.2s',
-                            opacity: gerandoPDF === org.id ? 0.5 : 1
-                          }}
-                          onMouseOver={(e) => {
-                            if (gerandoPDF !== org.id) {
-                              e.currentTarget.style.background = '#f3f4f6';
-                            }
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                          }}
-                        >
-                          <Printer size={16} color="#28a745" />
-                          <span>Imprimir Termo</span>
-                        </button>
-                  {!isCoordinator() && (
-                    <button
-                            onClick={() => {
-                              handleExcluir(org.id);
-                              setMenuAcoesAberto(null);
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              textAlign: 'left',
-                              background: 'transparent',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              color: '#dc2626',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              fontSize: '14px',
-                              transition: 'background 0.2s',
-                              borderTop: '1px solid #e5e7eb',
-                              marginTop: '4px',
-                              paddingTop: '8px'
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = '#fee2e2';
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = 'transparent';
-                            }}
-                    >
-                            <Trash size={16} color="#dc2626" />
-                            <span>Excluir</span>
+                  {(isCoordinator() || hasPermission('sistema', 'admin')) && (
+                    <button onClick={() => abrirModalValidacao(org.id, org.nome)} title="Validar Perfil de Entrada" style={{ color: '#056839', display: 'flex', padding: '8px' }}>
+                      <CheckCircle size={16} />
                     </button>
                   )}
-                      </div>
-                    )}
-                  </div>
+                  {(isCoordinator() || hasPermission('sistema', 'admin')) && (
+                    <button onClick={() => abrirModalValidacaoPlanoGestao(org.id, org.nome)} title="Validar Plano de Gestão" style={{ color: '#8b5cf6', display: 'flex', padding: '8px' }}>
+                      <CheckCircle size={16} />
+                    </button>
+                  )}
+                  <button onClick={() => gerarTermoAdesao(org.id)} disabled={gerandoPDF === org.id} title="Termo de Adesão" style={{ color: '#28a745', display: 'flex', padding: '8px', opacity: gerandoPDF === org.id ? 0.5 : 1 }}>
+                    <Printer size={16} />
+                  </button>
+                  {podeExcluir(org) && (
+                    <button onClick={() => handleExcluir(org.id)} title="Excluir" style={{ color: '#dc2626', display: 'flex', padding: '8px' }}>
+                      <Trash size={16} />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -1682,17 +1276,14 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       {/* Indicador de scroll infinito Mobile */}
       <div className="mobile-only">
         {!loading && organizacoesExibidas.length > 0 && organizacoesExibidas.length < totalOrganizacoes && (
-          <div style={{
-            padding: '1rem',
-            textAlign: 'center',
-            color: '#6b7280',
-            fontSize: '0.875rem',
-            marginTop: '1rem'
-          }}>
+          <div className="scroll-infinito-mobile">
             Mostrando {organizacoesExibidas.length} de {totalOrganizacoes} organizações. Role para carregar mais...
           </div>
         )}
       </div>
+
+      </div>
+      {/* fim lista-organizacoes-content */}
 
       {/* Modal de Arquivos */}
       {modalArquivosAberto && organizacaoSelecionada && (

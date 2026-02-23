@@ -5,6 +5,7 @@ import { Qualificacao } from '../../types/qualificacao';
 import RepositorioMateriais from '../../components/qualificacoes/RepositorioMateriais';
 import GerenciarEquipeQualificacao from '../../components/qualificacoes/GerenciarEquipeQualificacao';
 import Validacao from '../../components/qualificacoes/Validacao';
+import ValidacaoQualificacaoReadOnly from '../../components/qualificacoes/ValidacaoQualificacaoReadOnly';
 import { gerarPdfConteudoQualificacao } from '../../utils/pdfConteudoQualificacao';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -34,6 +35,7 @@ interface FormQualificacaoProps {
 
 function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
   const { isCoordinator, isSupervisor, hasPermission } = useAuth();
+  const podeEditarValidacao = hasPermission('sistema', 'admin') || isCoordinator();
   const [loading, setLoading] = useState(false);
   const [carregandoDados, setCarregandoDados] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('informacoes');
@@ -114,8 +116,14 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
       } else {
         setValidacaoUsuarioNome(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar qualificação:', error);
+      const status = error?.response?.status;
+      if (status === 403) {
+        alert('Acesso negado. Você só pode acessar qualificações que criou ou está vinculado.');
+        onNavigate('qualificacoes');
+        return;
+      }
       alert('Erro ao carregar qualificação');
     } finally {
       setCarregandoDados(false);
@@ -674,40 +682,44 @@ function FormQualificacao({ id, onNavigate }: FormQualificacaoProps) {
 
         {abaAtiva === 'validacao' && id && (
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <Validacao
-              qualificacaoId={id}
-              validacaoStatus={formData.validacao_status || null}
-              validacaoUsuario={formData.validacao_usuario || null}
-              validacaoData={formData.validacao_data ? new Date(formData.validacao_data) : null}
-              validacaoObs={formData.validacao_obs || null}
-              validacaoUsuarioNome={validacaoUsuarioNome}
-              onUpdate={handleUpdateValidacao}
-              onUpdateAll={async (dados) => {
-                if (!id) return;
-                try {
-                  const qualificacaoAtualizada = await qualificacaoAPI.updateValidacao(id, dados);
-                  setFormData({
-                    ...formData,
-                    validacao_status: qualificacaoAtualizada.validacao_status,
-                    validacao_usuario: qualificacaoAtualizada.validacao_usuario,
-                    validacao_data: qualificacaoAtualizada.validacao_data,
-                    validacao_obs: qualificacaoAtualizada.validacao_obs
-                  });
-                  if (qualificacaoAtualizada.validacao_usuario && qualificacaoAtualizada.validacao_usuario !== formData.validacao_usuario) {
-                    try {
-                      const response = await api.get(`/admin/users/${qualificacaoAtualizada.validacao_usuario}`);
-                      if (response.data.success && response.data.data?.user) {
-                        setValidacaoUsuarioNome(response.data.data.user.name);
+            {podeEditarValidacao ? (
+              <Validacao
+                qualificacaoId={id}
+                validacaoStatus={formData.validacao_status || null}
+                validacaoUsuario={formData.validacao_usuario || null}
+                validacaoData={formData.validacao_data ? new Date(formData.validacao_data) : null}
+                validacaoObs={formData.validacao_obs || null}
+                validacaoUsuarioNome={validacaoUsuarioNome}
+                onUpdate={handleUpdateValidacao}
+                onUpdateAll={async (dados) => {
+                  if (!id) return;
+                  try {
+                    const qualificacaoAtualizada = await qualificacaoAPI.updateValidacao(id, dados);
+                    setFormData({
+                      ...formData,
+                      validacao_status: qualificacaoAtualizada.validacao_status,
+                      validacao_usuario: qualificacaoAtualizada.validacao_usuario,
+                      validacao_data: qualificacaoAtualizada.validacao_data,
+                      validacao_obs: qualificacaoAtualizada.validacao_obs
+                    });
+                    if (qualificacaoAtualizada.validacao_usuario && qualificacaoAtualizada.validacao_usuario !== formData.validacao_usuario) {
+                      try {
+                        const response = await api.get(`/admin/users/${qualificacaoAtualizada.validacao_usuario}`);
+                        if (response.data.success && response.data.data?.user) {
+                          setValidacaoUsuarioNome(response.data.data.user.name);
+                        }
+                      } catch (error) {
+                        console.error('Erro ao carregar usuário validador:', error);
                       }
-                    } catch (error) {
-                      console.error('Erro ao carregar usuário validador:', error);
                     }
+                  } catch (error: any) {
+                    throw error;
                   }
-                } catch (error: any) {
-                  throw error;
-                }
-              }}
-            />
+                }}
+              />
+            ) : (
+              <ValidacaoQualificacaoReadOnly qualificacaoId={id} />
+            )}
           </div>
         )}
       </div>

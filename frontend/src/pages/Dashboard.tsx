@@ -20,7 +20,8 @@ import {
   SunDim,
   Sun,
   MoonStar,
-  Info
+  Info,
+  Shield
 } from 'lucide-react';
 
 function Dashboard() {
@@ -276,6 +277,12 @@ function Dashboard() {
                         <Users size={20} />
                       </div>
                       <h3 className="card-title">Usuários</h3>
+                    </div>
+                    <div className="dashboard-card" onClick={() => navigate('/admin/roles')}>
+                      <div className="card-icon">
+                        <Shield size={20} />
+                      </div>
+                      <h3 className="card-title">Módulos e Papéis</h3>
                     </div>
                     <div className="dashboard-card" onClick={() => navigate('/admin/audit-logs')}>
                       <div className="card-icon">

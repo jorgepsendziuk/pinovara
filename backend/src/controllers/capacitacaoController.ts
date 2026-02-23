@@ -12,9 +12,10 @@ class CapacitacaoController {
    */
   async list(req: AuthRequest, res: Response): Promise<void> {
     try {
-      // Verificar se é admin, coordenador ou supervisor (todos veem tudo)
+      // Técnicos só veem capacitações que criaram ou estão na equipe.
+      // Apenas admin, coordenador e supervisor veem todas.
       const userPermissions = (req as any).userPermissions;
-      const canSeeAll = userPermissions?.canAccessAll || false;
+      const canSeeAll = userPermissions?.isAdmin || userPermissions?.isCoordinator || userPermissions?.isSupervisor || false;
 
       const filters: CapacitacaoFilters = {
         id_qualificacao: req.query.id_qualificacao ? parseInt(req.query.id_qualificacao as string) : undefined,
@@ -78,9 +79,9 @@ class CapacitacaoController {
         return;
       }
 
-      // Verificar permissões de acesso
+      // Técnicos só podem acessar capacitações que criaram ou estão na equipe.
       const userPermissions = (req as any).userPermissions;
-      const canSeeAll = userPermissions?.canAccessAll || false;
+      const canSeeAll = userPermissions?.isAdmin || userPermissions?.isCoordinator || userPermissions?.isSupervisor || false;
 
       // Se não for admin/supervisor/coordenador, verificar se pode ver esta capacitação
       if (!canSeeAll) {

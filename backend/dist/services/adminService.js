@@ -327,14 +327,94 @@ class AdminService {
             });
         }
     }
+    async getAllModules() {
+        try {
+            const modules = await prisma.modules.findMany({
+                include: {
+                    _count: { select: { roles: true } }
+                },
+                orderBy: { name: 'asc' }
+            });
+            return modules.map((m) => ({
+                id: m.id,
+                name: m.name,
+                description: m.description || '',
+                active: m.active,
+                createdAt: m.createdAt,
+                updatedAt: m.updatedAt,
+                _count: m._count
+            }));
+        }
+        catch (error) {
+            console.error('❌ [AdminService] Error listing modules:', error);
+            throw new ApiError_1.ApiError({
+                message: 'Erro ao listar módulos',
+                statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                code: api_1.ErrorCode.DATABASE_ERROR
+            });
+        }
+    }
+    async createModule(data) {
+        try {
+            const module = await prisma.modules.create({
+                data: {
+                    name: data.name,
+                    description: data.description || null,
+                    updatedAt: new Date()
+                }
+            });
+            return module;
+        }
+        catch (error) {
+            console.error('❌ [AdminService] Error creating module:', error);
+            throw new ApiError_1.ApiError({
+                message: 'Erro ao criar módulo',
+                statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                code: api_1.ErrorCode.DATABASE_ERROR
+            });
+        }
+    }
+    async updateModule(moduleId, data) {
+        try {
+            const module = await prisma.modules.update({
+                where: { id: moduleId },
+                data: {
+                    ...(data.name !== undefined && { name: data.name }),
+                    ...(data.description !== undefined && { description: data.description }),
+                    updatedAt: new Date()
+                }
+            });
+            return module;
+        }
+        catch (error) {
+            console.error('❌ [AdminService] Error updating module:', error);
+            throw new ApiError_1.ApiError({
+                message: 'Erro ao atualizar módulo',
+                statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                code: api_1.ErrorCode.DATABASE_ERROR
+            });
+        }
+    }
+    async deleteModule(moduleId) {
+        try {
+            await prisma.modules.delete({
+                where: { id: moduleId }
+            });
+        }
+        catch (error) {
+            console.error('❌ [AdminService] Error deleting module:', error);
+            throw new ApiError_1.ApiError({
+                message: 'Erro ao excluir módulo',
+                statusCode: api_1.HttpStatus.INTERNAL_SERVER_ERROR,
+                code: api_1.ErrorCode.DATABASE_ERROR
+            });
+        }
+    }
     async getAllRoles() {
         try {
             const roles = await prisma.roles.findMany({
                 include: {
                     modules: true
-                },
-                where: {
-                    active: true
                 },
                 orderBy: [
                     { modules: { name: 'asc' } },

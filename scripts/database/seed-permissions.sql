@@ -87,6 +87,17 @@ BEGIN
     END LOOP;
   END LOOP;
 
+  -- Editor organizacoes: acessar e editar todos cadastros (organizações, qualificações e capacitações)
+  FOR r IN SELECT r2.id FROM pinovara.roles r2 JOIN pinovara.modules m ON m.id = r2."moduleId" WHERE m.name = 'organizacoes' AND r2.name = 'editor'
+  LOOP
+    FOR perm_id IN SELECT id FROM pinovara.permissions WHERE code IN ('qualificacoes.list_all', 'qualificacoes.edit', 'capacitacoes.list_all', 'capacitacoes.edit', 'organizacoes.list_all', 'organizacoes.edit', 'organizacoes.plano_gestao.edit', 'menu.organizacoes', 'menu.qualificacoes', 'repositorio.upload')
+    LOOP
+      INSERT INTO pinovara.role_permissions ("roleId", "permissionId", enabled, "createdAt", "updatedAt")
+      VALUES (r.id, perm_id, true, NOW(), NOW())
+      ON CONFLICT ("roleId", "permissionId") DO UPDATE SET enabled = true, "updatedAt" = NOW();
+    END LOOP;
+  END LOOP;
+
   -- Técnico qualificacoes (se existir)
   FOR r IN SELECT r2.id FROM pinovara.roles r2 JOIN pinovara.modules m ON m.id = r2."moduleId" WHERE m.name = 'qualificacoes' AND r2.name = 'tecnico'
   LOOP
@@ -98,17 +109,10 @@ BEGIN
     END LOOP;
   END LOOP;
 
-  -- Supervisão Ocupacional: admin, coordenador, tecnico, supervisor, estagiario
+  -- Supervisão Ocupacional: coordenador, tecnico, supervisor, estagiario (admin apenas no sistema)
   FOR r IN SELECT r2.id, m.name as mod_name, r2.name as role_name FROM pinovara.roles r2 JOIN pinovara.modules m ON m.id = r2."moduleId" WHERE m.name = 'supervisao_ocupacional'
   LOOP
-    IF r.role_name = 'admin' THEN
-      FOR perm_id IN SELECT id FROM pinovara.permissions WHERE module_name = 'supervisao_ocupacional' OR code LIKE 'menu.supervisao'
-      LOOP
-        INSERT INTO pinovara.role_permissions ("roleId", "permissionId", enabled, "createdAt", "updatedAt")
-        VALUES (r.id, perm_id, true, NOW(), NOW())
-        ON CONFLICT ("roleId", "permissionId") DO UPDATE SET enabled = true, "updatedAt" = NOW();
-      END LOOP;
-    ELSIF r.role_name = 'coordenador' THEN
+    IF r.role_name = 'coordenador' THEN
       FOR perm_id IN SELECT id FROM pinovara.permissions WHERE code IN ('supervisao.view_all', 'supervisao.validate', 'menu.supervisao')
       LOOP
         INSERT INTO pinovara.role_permissions ("roleId", "permissionId", enabled, "createdAt", "updatedAt")

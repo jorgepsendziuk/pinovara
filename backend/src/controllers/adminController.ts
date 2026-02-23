@@ -397,6 +397,105 @@ class AdminController {
   }
 
   /**
+   * GET /admin/modules
+   * Listar todos os módulos
+   */
+  async getModules(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const modules = await adminService.getAllModules();
+
+      res.json({
+        success: true,
+        message: 'Módulos listados com sucesso',
+        data: { modules },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * POST /admin/modules
+   * Criar novo módulo
+   */
+  async createModule(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { name, description } = req.body;
+
+      const module = await adminService.createModule({ name, description });
+
+      res.status(HttpStatus.CREATED).json({
+        success: true,
+        message: 'Módulo criado com sucesso',
+        data: { module },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * PUT /admin/modules/:id
+   * Atualizar módulo
+   */
+  async updateModule(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const moduleId = parseInt(req.params.id);
+      if (isNaN(moduleId)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: { message: 'ID de módulo inválido', statusCode: HttpStatus.BAD_REQUEST },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const { name, description } = req.body;
+
+      const module = await adminService.updateModule(moduleId, { name, description });
+
+      res.json({
+        success: true,
+        message: 'Módulo atualizado com sucesso',
+        data: { module },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * DELETE /admin/modules/:id
+   * Excluir módulo
+   */
+  async deleteModule(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const moduleId = parseInt(req.params.id);
+      if (isNaN(moduleId)) {
+        res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          error: { message: 'ID de módulo inválido', statusCode: HttpStatus.BAD_REQUEST },
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      await adminService.deleteModule(moduleId);
+
+      res.json({
+        success: true,
+        message: 'Módulo excluído com sucesso',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
    * GET /admin/roles
    * Listar todas as roles disponíveis
    */
@@ -411,6 +510,24 @@ class AdminController {
           roles,
           total: roles.length
         },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * GET /admin/permissions/full
+   * Listar permissões + role_permissions em uma única chamada (menos requisições)
+   */
+  async getPermissionsFull(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { permissions, rolePermissions } = await permissionService.getPermissionsFull();
+      res.json({
+        success: true,
+        message: 'Permissões listadas',
+        data: { permissions, rolePermissions },
         timestamp: new Date().toISOString()
       });
     } catch (error) {

@@ -154,6 +154,27 @@ class OrganizacaoService {
         const organizacoesPaginadas = organizacoes.slice(skip, skip + limit);
         console.log(`   Retornando: ${organizacoesPaginadas.length} organizações`);
         if (organizacoesPaginadas.length > 0) {
+            const idsOrgs = organizacoesPaginadas.map((o) => o.id);
+            try {
+                const equipes = await prisma.organizacao_tecnico.findMany({
+                    where: { id_organizacao: { in: idsOrgs } },
+                    select: { id_organizacao: true, id_tecnico: true }
+                });
+                const porOrg = new Map();
+                for (const eq of equipes) {
+                    const arr = porOrg.get(eq.id_organizacao) || [];
+                    arr.push({ id_tecnico: eq.id_tecnico });
+                    porOrg.set(eq.id_organizacao, arr);
+                }
+                for (const org of organizacoesPaginadas) {
+                    org.equipe_tecnica = porOrg.get(org.id) || [];
+                }
+            }
+            catch (e) {
+                console.warn('⚠️ Erro ao carregar equipe_tecnica para lista:', e);
+            }
+        }
+        if (organizacoesPaginadas.length > 0) {
             console.log('📊 Amostra de organização:', {
                 id: organizacoesPaginadas[0].id,
                 nome: organizacoesPaginadas[0].nome,

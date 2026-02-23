@@ -316,7 +316,7 @@ const ModalValidacao: React.FC<ModalValidacaoProps> = ({
                             </div>
                             {item.observacoes && (
                               <div className="historico-observacoes">
-                                <strong>Observações:</strong> {item.observacoes}
+                                <span className="historico-observacoes-label">Observações:</span> {item.observacoes}
                               </div>
                             )}
                           </div>

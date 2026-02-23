@@ -1,195 +1,100 @@
 import { PrismaClient } from '@prisma/client';
-import { ErrorCode, HttpStatus } from '../types/api';
-import { ApiError } from '../utils/ApiError';
 
 const prisma = new PrismaClient();
 
-export interface Permission {
-  id: number;
-  code: string;
-  name: string;
-  description: string | null;
-  module_name: string | null;
-  category: string | null;
-  active: boolean;
-}
-
-export interface RolePermission {
-  roleId: number;
-  permissionId: number;
-  enabled: boolean;
-}
-
-class PermissionService {
+export const permissionService = {
   /**
-   * Listar todas as permissões do catálogo
-   */
-  async getAllPermissions(): Promise<Permission[]> {
-    try {
-      const rows = await prisma.permissions.findMany({
-        where: { active: true },
-        orderBy: [{ module_name: 'asc' }, { category: 'asc' }, { code: 'asc' }]
-      });
-      return rows as Permission[];
-    } catch (error) {
-      console.error('❌ [PermissionService] getAllPermissions:', error);
-      throw new ApiError({
-        message: 'Erro ao listar permissões',
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        code: ErrorCode.DATABASE_ERROR
-      });
-    }
-  }
-
-  /**
-   * Obter permissões de um role (com status enabled)
-   */
-  async getPermissionsByRole(roleId: number): Promise<RolePermission[]> {
-    try {
-      const rows = await prisma.role_permissions.findMany({
-        where: { roleId },
-        select: { roleId: true, permissionId: true, enabled: true }
-      });
-      return rows;
-    } catch (error) {
-      console.error('❌ [PermissionService] getPermissionsByRole:', error);
-      throw new ApiError({
-        message: 'Erro ao obter permissões do role',
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        code: ErrorCode.DATABASE_ERROR
-      });
-    }
-  }
-
-  /**
-   * Obter permissões efetivas de um usuário (códigos das permissões habilitadas)
-   * Agrega de todos os roles do usuário
-   */
-  async getEffectivePermissions(userId: number): Promise<string[]> {
-    try {
-      const userRoles = await prisma.user_roles.findMany({
-        where: { userId },
-        select: { roleId: true }
-      });
-      const roleIds = userRoles.map(ur => ur.roleId);
-      if (roleIds.length === 0) return [];
-
-      const rolePerms = await prisma.role_permissions.findMany({
-        where: { roleId: { in: roleIds }, enabled: true },
-        include: { permissions: true }
-      });
-      const codes = [...new Set(rolePerms.map(rp => rp.permissions.code))];
-      return codes;
-    } catch (error) {
-      console.error('❌ [PermissionService] getEffectivePermissions:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Verificar se usuário tem permissão por código
-   */
-  async hasPermission(userId: number, code: string): Promise<boolean> {
-    const codes = await this.getEffectivePermissions(userId);
-    return codes.includes(code);
-  }
-
-  /**
-   * Verificar se há dados de role_permissions para os roles do usuário.
-   * Se não houver, os middlewares devem usar fallback (lógica hardcoded).
+   * Verifica se o usuário tem dados de role_permissions (possui roles com permissões atribuídas).
    */
   async hasRolePermissionsData(userId: number): Promise<boolean> {
-    try {
-      const userRoles = await prisma.user_roles.findMany({
-        where: { userId },
-        select: { roleId: true }
-      });
-      const roleIds = userRoles.map(ur => ur.roleId);
-      if (roleIds.length === 0) return false;
-      const count = await prisma.role_permissions.count({
-        where: { roleId: { in: roleIds } }
-      });
-      return count > 0;
-    } catch {
-      return false;
-    }
-  }
+    const roleIds = await prisma.user_roles.findMany({
+      where: { userId },
+      select: { roleId: true }
+    }).then(rows => rows.map(r => r.roleId));
+    if (roleIds.length === 0) return false;
+    const count = await prisma.role_permissions.count({
+      where: { roleId: { in: roleIds } }
+    });
+    return count > 0;
+  },
 
   /**
-   * Atualizar permissões de um role (upsert em lote)
+   * Retorna os códigos de permissão efetivos do usuário (via user_roles -> role_permissions -> permissions).
    */
-  async updateRolePermissions(
-    roleId: number,
-    updates: Array<{ permissionId: number; enabled: boolean }>
-  ): Promise<void> {
-    try {
-      for (const u of updates) {
-        await prisma.role_permissions.upsert({
-          where: {
-            roleId_permissionId: { roleId, permissionId: u.permissionId }
-          },
-          create: {
-            roleId,
-            permissionId: u.permissionId,
-            enabled: u.enabled,
-            updatedAt: new Date()
-          },
-          update: { enabled: u.enabled, updatedAt: new Date() }
-        });
-      }
-    } catch (error) {
-      console.error('❌ [PermissionService] updateRolePermissions:', error);
-      throw new ApiError({
-        message: 'Erro ao atualizar permissões do role',
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        code: ErrorCode.DATABASE_ERROR
-      });
-    }
-  }
+  async getEffectivePermissions(userId: number): Promise<string[]> {
+    const userRoles = await prisma.user_roles.findMany({
+      where: { userId },
+      select: { roleId: true }
+    });
+    const roleIds = userRoles.map(r => r.roleId);
+    if (roleIds.length === 0) return [];
+    const rps = await prisma.role_permissions.findMany({
+      where: { roleId: { in: roleIds }, enabled: true },
+      include: { permissions: { select: { code: true } } }
+    });
+    const codes = rps.map(rp => rp.permissions.code);
+    return [...new Set(codes)];
+  },
 
   /**
-   * Obter roles com suas permissões (para UI de gestão)
+   * Lista todas as permissões e todos os role_permissions (para admin).
    */
-  async getRolesWithPermissions(): Promise<
-    Array<{
-      id: number;
-      name: string;
-      moduleId: number;
-      module: { id: number; name: string };
-      permissions: Array<{ permissionId: number; code: string; name: string; enabled: boolean }>;
-    }>
-  > {
-    try {
-      const roles = await prisma.roles.findMany({
-        where: { active: true },
-        include: {
-          modules: true,
-          role_permissions: {
-            include: { permissions: true }
-          }
+  async getPermissionsFull(): Promise<{
+    permissions: Array<{ id: number; code: string; name: string; module_name: string | null; category: string | null; active: boolean }>;
+    rolePermissions: Array<{ roleId: number; permissionId: number; enabled: boolean }>;
+  }> {
+    const [permissions, rolePermissions] = await Promise.all([
+      prisma.permissions.findMany({
+        orderBy: [{ module_name: 'asc' }, { code: 'asc' }],
+        select: { id: true, code: true, name: true, module_name: true, category: true, active: true }
+      }),
+      prisma.role_permissions.findMany({
+        select: { roleId: true, permissionId: true, enabled: true }
+      })
+    ]);
+    return { permissions, rolePermissions };
+  },
+
+  /**
+   * Lista todas as permissões do catálogo.
+   */
+  async getAllPermissions() {
+    return prisma.permissions.findMany({
+      orderBy: [{ module_name: 'asc' }, { code: 'asc' }]
+    });
+  },
+
+  /**
+   * Lista permissões atribuídas a um role (com enabled).
+   */
+  async getPermissionsByRole(roleId: number) {
+    return prisma.role_permissions.findMany({
+      where: { roleId },
+      include: { permissions: true }
+    });
+  },
+
+  /**
+   * Atualiza permissões de um role. updates: Array<{ permissionId: number; enabled: boolean }>
+   */
+  async updateRolePermissions(roleId: number, updates: Array<{ permissionId: number; enabled: boolean }>): Promise<void> {
+    const now = new Date();
+    for (const u of updates) {
+      await prisma.role_permissions.upsert({
+        where: {
+          roleId_permissionId: { roleId, permissionId: u.permissionId }
+        },
+        create: {
+          roleId,
+          permissionId: u.permissionId,
+          enabled: u.enabled,
+          updatedAt: now
+        },
+        update: {
+          enabled: u.enabled,
+          updatedAt: now
         }
       });
-      return roles.map(r => ({
-        id: r.id,
-        name: r.name,
-        moduleId: r.moduleId,
-        module: { id: r.modules.id, name: r.modules.name },
-        permissions: r.role_permissions.map(rp => ({
-          permissionId: rp.permissionId,
-          code: rp.permissions.code,
-          name: rp.permissions.name,
-          enabled: rp.enabled
-        }))
-      }));
-    } catch (error) {
-      console.error('❌ [PermissionService] getRolesWithPermissions:', error);
-      throw new ApiError({
-        message: 'Erro ao listar roles com permissões',
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        code: ErrorCode.DATABASE_ERROR
-      });
     }
   }
-}
-
-export const permissionService = new PermissionService();
+};

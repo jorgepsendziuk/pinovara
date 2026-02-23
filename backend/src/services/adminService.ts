@@ -471,6 +471,102 @@ class AdminService {
   }
 
   /**
+   * Listar todos os módulos
+   */
+  async getAllModules() {
+    try {
+      const modules = await prisma.modules.findMany({
+        include: {
+          _count: { select: { roles: true } }
+        },
+        orderBy: { name: 'asc' }
+      });
+
+      return modules.map((m) => ({
+        id: m.id,
+        name: m.name,
+        description: m.description || '',
+        active: m.active,
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt,
+        _count: m._count
+      }));
+    } catch (error) {
+      console.error('❌ [AdminService] Error listing modules:', error);
+      throw new ApiError({
+        message: 'Erro ao listar módulos',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
+   * Criar novo módulo
+   */
+  async createModule(data: { name: string; description?: string }) {
+    try {
+      const module = await prisma.modules.create({
+        data: {
+          name: data.name,
+          description: data.description || null,
+          updatedAt: new Date()
+        }
+      });
+      return module;
+    } catch (error) {
+      console.error('❌ [AdminService] Error creating module:', error);
+      throw new ApiError({
+        message: 'Erro ao criar módulo',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
+   * Atualizar módulo
+   */
+  async updateModule(moduleId: number, data: { name?: string; description?: string }) {
+    try {
+      const module = await prisma.modules.update({
+        where: { id: moduleId },
+        data: {
+          ...(data.name !== undefined && { name: data.name }),
+          ...(data.description !== undefined && { description: data.description }),
+          updatedAt: new Date()
+        }
+      });
+      return module;
+    } catch (error) {
+      console.error('❌ [AdminService] Error updating module:', error);
+      throw new ApiError({
+        message: 'Erro ao atualizar módulo',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
+   * Excluir módulo (cascade remove roles)
+   */
+  async deleteModule(moduleId: number) {
+    try {
+      await prisma.modules.delete({
+        where: { id: moduleId }
+      });
+    } catch (error) {
+      console.error('❌ [AdminService] Error deleting module:', error);
+      throw new ApiError({
+        message: 'Erro ao excluir módulo',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: ErrorCode.DATABASE_ERROR
+      });
+    }
+  }
+
+  /**
    * Listar todas as roles disponíveis
    */
   async getAllRoles() {
@@ -478,9 +574,6 @@ class AdminService {
       const roles = await prisma.roles.findMany({
         include: {
           modules: true
-        },
-        where: {
-          active: true
         },
         orderBy: [
           { modules: { name: 'asc' } },

@@ -41,3 +41,10 @@ CREATE INDEX IF NOT EXISTS idx_role_permissions_permission ON pinovara.role_perm
 -- Comentários
 COMMENT ON TABLE pinovara.permissions IS 'Catálogo de permissões/funcionalidades do sistema';
 COMMENT ON TABLE pinovara.role_permissions IS 'Permissões habilitadas por role (ligar/desligar por role)';
+
+-- Permissões para o usuário da aplicação (ajustar se o usuário for diferente)
+GRANT SELECT, INSERT, UPDATE, DELETE ON pinovara.permissions TO pinovara;
+GRANT SELECT, INSERT, UPDATE, DELETE ON pinovara.role_permissions TO pinovara;
+GRANT USAGE, SELECT ON SEQUENCE pinovara.permissions_id_seq TO pinovara;
+
+

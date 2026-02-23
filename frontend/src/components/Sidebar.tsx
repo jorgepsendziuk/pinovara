@@ -543,6 +543,15 @@ const Sidebar: React.FC = () => {
           permission: 'admin'
         },
         {
+          id: 'roles',
+          label: 'Módulos e Permissões',
+          icon: Sliders,
+          path: '/admin/roles',
+          module: 'sistema',
+          permission: 'admin',
+          permissionCode: 'sistema.admin'
+        },
+        {
           id: 'audit-logs',
           label: 'Auditoria',
           icon: FileCheck,

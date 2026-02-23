@@ -1,11 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  Users,
-  Edit,
-  Trash,
-  Shield
-} from 'lucide-react';
-import { permissionAPI, Permission } from '../../services/api';
+import { Edit, Trash, Shield } from 'lucide-react';
+
+interface Permission {
+  id: number;
+  code: string;
+  name: string;
+  description: string | null;
+  module_name: string | null;
+  category: string | null;
+  active: boolean;
+}
 
 interface Module {
   id: number;
@@ -30,36 +34,12 @@ interface Role {
   _count?: { userRoles: number };
 }
 
-interface User {
-  id: number;
-  email: string;
-  name: string;
-  active: boolean;
-  roles: {
-    id: number;
-    name: string;
-    module: {
-      id: number;
-      name: string;
-    };
-  }[];
-}
-
-interface UserRole {
-  id: number;
-  userId: number;
-  roleId: number;
-  assignedAt: string;
-  assignedBy?: number;
-}
-
 function RoleManagement() {
   const [modules, setModules] = useState<Module[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'modules' | 'users' | 'permissions'>('modules');
+  const [activeTab, setActiveTab] = useState<'modules' | 'permissions'>('modules');
 
   // Permissões por Role
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -72,16 +52,14 @@ function RoleManagement() {
   // Form states
   const [showModuleForm, setShowModuleForm] = useState(false);
   const [showRoleForm, setShowRoleForm] = useState(false);
-  const [showUserRoleModal, setShowUserRoleModal] = useState(false);
   const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
   // Form data
   const [newModule, setNewModule] = useState({ name: '', description: '' });
   const [newRole, setNewRole] = useState({ name: '', description: '', moduleId: '' });
 
-  const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://pinovaraufba.com.br' : 'http://localhost:3001');
+  // Em dev: usa /api (proxy Vite -> localhost:3001). Em prod: URL completa.
+  const API_BASE = import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_URL || 'https://pinovaraufba.com.br');
 
   const fetchModules = async () => {
     try {
@@ -99,7 +77,8 @@ function RoleManagement() {
       }
 
       const data = await response.json();
-      setModules(data.data.modules);
+      const list = data.data?.modules ?? data.modules ?? [];
+      setModules(Array.isArray(list) ? list : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     }
@@ -122,79 +101,12 @@ function RoleManagement() {
       }
 
       const data = await response.json();
-      setRoles(data.data.roles);
+      const list = data.data?.roles ?? data.roles ?? [];
+      setRoles(Array.isArray(list) ? list : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const token = localStorage.getItem('@pinovara:token');
-
-      const response = await fetch(`${API_BASE}/admin/users`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao carregar usuários');
-      }
-
-      const data = await response.json();
-      setUsers(data.data.users);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar usuários');
-    }
-  };
-
-  const handleAssignRole = async (userId: number, roleId: number) => {
-    try {
-      const token = localStorage.getItem('@pinovara:token');
-
-      const response = await fetch(`${API_BASE}/admin/users/${userId}/roles`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ roleId }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao atribuir papel');
-      }
-
-      await fetchUsers();
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao atribuir papel');
-    }
-  };
-
-  const handleRemoveRole = async (userId: number, roleId: number) => {
-    try {
-      const token = localStorage.getItem('@pinovara:token');
-
-      const response = await fetch(`${API_BASE}/admin/users/${userId}/roles/${roleId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao remover papel');
-      }
-
-      await fetchUsers();
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao remover papel');
     }
   };
 
@@ -288,13 +200,18 @@ function RoleManagement() {
     try {
       const token = localStorage.getItem('@pinovara:token');
       
+      const payload = {
+        name: newRole.name,
+        description: newRole.description,
+        moduleId: newRole.moduleId ? parseInt(String(newRole.moduleId), 10) : undefined,
+      };
       const response = await fetch(`${API_BASE}/admin/roles`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newRole),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -374,37 +291,89 @@ function RoleManagement() {
     }));
   };
 
+  const normalizeModuleName = (s: string) =>
+    (s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+
+  /** Permissões de um módulo (match normalizado: case + acentos) */
+  const getPermissionsForModule = (moduleName: string): Permission[] => {
+    const n = normalizeModuleName(moduleName);
+    return permissions.filter((p) => normalizeModuleName(p.module_name || '') === n || (n === 'sistema' && !p.module_name));
+  };
+
+  /** Roles de um módulo por nome. Admin só no sistema. */
+  const getRolesForModuleName = (moduleName: string): Role[] => {
+    const n = normalizeModuleName(moduleName);
+    const r = roles.filter((role) => normalizeModuleName(role.module?.name || '') === n);
+    return n === 'sistema' ? r : r.filter((x) => x.name !== 'admin');
+  };
+
+  /** Seções a exibir: module_name das permissions. "outros" é exibido junto com sistema. */
+  const permissionSections = () => {
+    const seen = new Set<string>();
+    permissions.forEach((p) => {
+      const key = (p.module_name || 'outros').toLowerCase();
+      seen.add(key === 'outros' ? 'sistema' : key);
+    });
+    return Array.from(seen).sort();
+  };
+
   const fetchPermissionsData = useCallback(async () => {
     setPermsLoading(true);
     setPermsError(null);
+    const token = localStorage.getItem('@pinovara:token');
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
     try {
-      const perms = await permissionAPI.getPermissions();
-      setPermissions(perms);
+      const res = await fetch(`${API_BASE}/admin/permissions/full`, { headers });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error?.message || 'Falha ao carregar permissões');
+      }
+      const data = await res.json();
+      const perms: Permission[] = data.data?.permissions ?? data.permissions ?? [];
+      const rawRp = data.data?.rolePermissions ?? data.rolePermissions;
+      // Backend retorna rolePermissions como array de { roleId, permissionId, enabled }; converter para Record<roleId, array>
+      const rolePermissions: Record<number, Array<{ permissionId: number; enabled: boolean }>> = {};
+      if (Array.isArray(rawRp)) {
+        rawRp.forEach((item: { roleId: number; permissionId: number; enabled: boolean }) => {
+          if (!rolePermissions[item.roleId]) rolePermissions[item.roleId] = [];
+          rolePermissions[item.roleId].push({ permissionId: item.permissionId, enabled: item.enabled });
+        });
+      } else if (rawRp && typeof rawRp === 'object' && !Array.isArray(rawRp)) {
+        Object.keys(rawRp).forEach((k) => {
+          const roleId = parseInt(k, 10);
+          const arr = (rawRp as Record<string, unknown>)[k];
+          rolePermissions[roleId] = Array.isArray(arr) ? arr : [];
+        });
+      }
+      setPermissions(Array.isArray(perms) ? perms : []);
+
       const map: Record<number, Record<number, boolean>> = {};
-      await Promise.all(
-        roles.map(async (role) => {
-          const rp = await permissionAPI.getRolePermissions(role.id);
-          map[role.id] = {};
-          perms.forEach((p) => {
-            const found = rp.find((r) => r.permissionId === p.id);
-            map[role.id][p.id] = found ? found.enabled : false;
-          });
-        })
-      );
+      roles.forEach((role) => {
+        map[role.id] = {};
+        const rp = rolePermissions[role.id] ?? [];
+        perms.forEach((p) => {
+          const found = Array.isArray(rp) ? rp.find((r: { permissionId: number }) => r.permissionId === p.id) : undefined;
+          map[role.id][p.id] = found ? (found as { enabled: boolean }).enabled : false;
+        });
+      });
       setRolePermissionsMap(map);
       setDirtyRoles(new Set());
     } catch (err) {
-      setPermsError(err instanceof Error ? err.message : 'Erro ao carregar permissões');
+      const msg = err instanceof Error ? err.message : 'Erro ao carregar permissões';
+      setPermsError(msg.includes('fetch') || msg.includes('refused') || msg.includes('Failed to fetch')
+        ? 'Não foi possível conectar ao servidor. Verifique se o backend está em execução e VITE_API_URL.'
+        : msg);
     } finally {
       setPermsLoading(false);
     }
   }, [roles]);
 
   useEffect(() => {
-    if (activeTab === 'permissions' && roles.length > 0 && !permsLoading) {
+    if (activeTab === 'permissions' && roles.length > 0) {
       fetchPermissionsData();
     }
-  }, [activeTab, roles.length, permsLoading, fetchPermissionsData]);
+  }, [activeTab, roles.length, fetchPermissionsData]);
 
   const handlePermissionToggle = (roleId: number, permissionId: number, enabled: boolean) => {
     setRolePermissionsMap((prev) => ({
@@ -420,13 +389,22 @@ function RoleManagement() {
   const handleSaveRolePermissions = async (roleId: number) => {
     setSavingRoleId(roleId);
     setError(null);
+    const token = localStorage.getItem('@pinovara:token');
     try {
       const map = rolePermissionsMap[roleId] || {};
       const updates = Object.entries(map).map(([permId, enabled]) => ({
         permissionId: parseInt(permId, 10),
         enabled
       }));
-      await permissionAPI.updateRolePermissions(roleId, updates);
+      const res = await fetch(`${API_BASE}/admin/roles/${roleId}/permissions`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error?.message || 'Erro ao salvar permissões');
+      }
       setDirtyRoles((prev) => {
         const next = new Set(prev);
         next.delete(roleId);
@@ -445,20 +423,9 @@ function RoleManagement() {
     }
   };
 
-  const groupPermissionsByModule = () => {
-    const byModule: Record<string, Permission[]> = {};
-    permissions.forEach((p) => {
-      const key = p.module_name || 'outros';
-      if (!byModule[key]) byModule[key] = [];
-      byModule[key].push(p);
-    });
-    return Object.entries(byModule).sort(([a], [b]) => a.localeCompare(b));
-  };
-
   useEffect(() => {
     fetchModules();
     fetchRoles();
-    fetchUsers();
   }, []);
 
   if (loading) {
@@ -480,7 +447,6 @@ function RoleManagement() {
           <div className="compact-stats">
             <span>{modules.filter(m => m.active).length} módulos</span>
             <span>{roles.filter(r => r.active).length} papéis</span>
-            <span>{users.filter(u => u.active).length} usuários</span>
           </div>
         </div>
       </div>
@@ -492,12 +458,6 @@ function RoleManagement() {
           onClick={() => setActiveTab('modules')}
         >
           📁 Módulos & Papéis
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
-          onClick={() => setActiveTab('users')}
-        >
-          <Users size={18} style={{marginRight: '0.5rem'}} /> Usuários & Atribuições
         </button>
         <button
           className={`tab-button ${activeTab === 'permissions' ? 'active' : ''}`}
@@ -599,95 +559,6 @@ function RoleManagement() {
         </>
       )}
 
-      {/* Aba de Usuários */}
-      {activeTab === 'users' && (
-        <div className="users-tab">
-          <div className="compact-header">
-            <div className="compact-title">
-              <h2>Atribuição de Papéis</h2>
-              <p>Gerencie quais papéis cada usuário possui</p>
-            </div>
-          </div>
-
-          {/* Lista de Usuários */}
-          <div className="users-list">
-            {users.map((user) => (
-              <div key={user.id} className="user-item">
-                <div className="user-info">
-                  <div className="user-header">
-                    <div className="user-name-email">
-                      <h3>{user.name}</h3>
-                      <span className="user-email">{user.email}</span>
-                    </div>
-                    <div className="user-status">
-                      <span className={`status-indicator ${user.active ? 'active' : 'inactive'}`}>
-                        {user.active ? '● Ativo' : '○ Inativo'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Papéis atuais do usuário */}
-                  <div className="user-roles">
-                    <h4>Papéis Atuais:</h4>
-                    <div className="role-tags">
-                      {user.roles.length > 0 ? (
-                        user.roles.map((role) => (
-                          <span key={role.id} className="role-tag">
-                            <span className="role-module">{role.module.name}:</span>
-                            <span className="role-name">{role.name}</span>
-                            <button
-                              onClick={() => handleRemoveRole(user.id, role.id)}
-                              className="role-remove-btn"
-                              title="Remover papel"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))
-                      ) : (
-                        <span className="no-roles">Nenhum papel atribuído</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Adicionar papel */}
-                  <div className="add-role-section">
-                    <h4>Adicionar Papel:</h4>
-                    <select
-                      onChange={(e) => {
-                        const roleId = parseInt(e.target.value);
-                        if (roleId) {
-                          handleAssignRole(user.id, roleId);
-                          e.target.value = '';
-                        }
-                      }}
-                      defaultValue=""
-                    >
-                      <option value="">Selecione um papel</option>
-                      {roles
-                        .filter(role => role.active && !user.roles.some(userRole => userRole.id === role.id))
-                        .map((role) => (
-                          <option key={role.id} value={role.id}>
-                            {role.module.name}: {role.name}
-                          </option>
-                        ))
-                      }
-                    </select>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {users.length === 0 && (
-            <div className="empty-state">
-              <h3>Nenhum usuário encontrado</h3>
-              <p>Não há usuários cadastrados no sistema.</p>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Aba Permissões por Role */}
       {activeTab === 'permissions' && (
         <div className="permissions-tab">
@@ -721,65 +592,67 @@ function RoleManagement() {
           ) : permissions.length === 0 ? (
             <div className="empty-state">
               <h3>Nenhuma permissão configurada</h3>
-              <p>O catálogo de permissões pode não ter sido carregado. Verifique se o banco de dados possui as tabelas permissions e role_permissions.</p>
+              <p>Execute os scripts SQL no banco: <code>create-permissions-tables.sql</code> e <code>seed-permissions.sql</code> (em scripts/database/).</p>
             </div>
           ) : (
-            <div className="permissions-matrix-wrapper">
-              <table className="permissions-matrix">
-                <thead>
-                  <tr>
-                    <th className="permission-role-cell">Papel / Módulo</th>
-                    {groupPermissionsByModule().map(([modName, perms]) => (
-                      <th key={modName} colSpan={perms.length} className="permission-module-header">
-                        {modName}
-                      </th>
-                    ))}
-                  </tr>
-                  <tr>
-                    <th></th>
-                    {permissions.map((p) => (
-                      <th key={p.id} className="permission-col-header" title={p.description || p.name}>
-                        {p.name.length > 25 ? `${p.name.substring(0, 22)}...` : p.name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {groupRolesByModule().map(({ module, roles: moduleRoles }) =>
-                    moduleRoles.map((role) => (
-                      <tr key={role.id}>
-                        <td className="permission-role-cell">
-                          <div className="role-name-cell">
-                            <strong>{role.name}</strong>
-                            <span className="module-badge">{module.name}</span>
-                            {dirtyRoles.has(role.id) && (
-                              <button
-                                className="btn btn-small btn-primary"
-                                style={{ marginLeft: '8px' }}
-                                onClick={() => handleSaveRolePermissions(role.id)}
-                                disabled={savingRoleId === role.id}
-                              >
-                                {savingRoleId === role.id ? '...' : 'Salvar'}
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                        {permissions.map((p) => (
-                          <td key={p.id} className="permission-cell">
-                            <label className="permission-checkbox-label">
-                              <input
-                                type="checkbox"
-                                checked={!!(rolePermissionsMap[role.id]?.[p.id])}
-                                onChange={(e) => handlePermissionToggle(role.id, p.id, e.target.checked)}
-                              />
-                            </label>
-                          </td>
-                        ))}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            <div className="permissions-by-module">
+              {permissionSections().map((moduleName) => {
+                const filteredRoles = getRolesForModuleName(moduleName);
+                const permsToShow = getPermissionsForModule(moduleName);
+                if (permsToShow.length === 0) return null;
+
+                return (
+                  <div key={moduleName} className="permissions-module-card">
+                    <h3 className="permissions-module-title">{moduleName}</h3>
+                    <div className="permissions-matrix-wrapper">
+                      <table className="permissions-matrix">
+                        <thead>
+                          <tr>
+                            <th className="permission-role-cell">Papel</th>
+                            {permsToShow.map((p) => (
+                              <th key={p.id} className="permission-col-header" title={p.description || p.name}>
+                                {p.name}
+                              </th>
+                            ))}
+                            <th className="permission-actions-col">Salvar</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredRoles.map((role) => (
+                            <tr key={role.id}>
+                              <td className="permission-role-cell">
+                                <strong>{role.name}</strong>
+                              </td>
+                              {permsToShow.map((p) => (
+                                <td key={p.id} className="permission-cell">
+                                  <label className="permission-checkbox-label">
+                                    <input
+                                      type="checkbox"
+                                      checked={!!(rolePermissionsMap[role.id]?.[p.id])}
+                                      onChange={(e) => handlePermissionToggle(role.id, p.id, e.target.checked)}
+                                    />
+                                  </label>
+                                </td>
+                              ))}
+                              <td className="permission-actions-cell">
+                                {dirtyRoles.has(role.id) && (
+                                  <button
+                                    className="btn btn-small btn-primary"
+                                    onClick={() => handleSaveRolePermissions(role.id)}
+                                    disabled={savingRoleId === role.id}
+                                  >
+                                    {savingRoleId === role.id ? '...' : 'Salvar'}
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -840,12 +713,12 @@ function RoleManagement() {
               <div className="form-group">
                 <label>Módulo:</label>
                 <select
-                  value={newRole.moduleId}
+                  value={String(newRole.moduleId || '')}
                   onChange={(e) => setNewRole({...newRole, moduleId: e.target.value})}
                 >
                   <option value="">Selecione um módulo</option>
                   {modules.filter(m => m.active).map(module => (
-                    <option key={module.id} value={module.id}>{module.name}</option>
+                    <option key={module.id} value={String(module.id)}>{module.name}</option>
                   ))}
                 </select>
               </div>
@@ -935,11 +808,15 @@ function RoleManagement() {
               <div className="form-group">
                 <label>Módulo:</label>
                 <select
-                  value={editingRole.moduleId}
-                  onChange={(e) => setEditingRole({...editingRole, moduleId: parseInt(e.target.value)})}
+                  value={String(editingRole.moduleId ?? '')}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setEditingRole({...editingRole, moduleId: v ? parseInt(v, 10) : 0});
+                  }}
                 >
+                  <option value="">Selecione um módulo</option>
                   {modules.filter(m => m.active).map(module => (
-                    <option key={module.id} value={module.id}>{module.name}</option>
+                    <option key={module.id} value={String(module.id)}>{module.name}</option>
                   ))}
                 </select>
               </div>

@@ -76,6 +76,32 @@ router.delete('/users/:id', adminController.deleteUser);
  */
 router.put('/users/:id/status', adminController.updateUserStatus);
 
+// ========== MODULE MANAGEMENT ROUTES ==========
+
+/**
+ * GET /admin/modules
+ * Listar todos os módulos
+ */
+router.get('/modules', adminController.getModules);
+
+/**
+ * POST /admin/modules
+ * Criar novo módulo
+ */
+router.post('/modules', adminController.createModule);
+
+/**
+ * PUT /admin/modules/:id
+ * Atualizar módulo
+ */
+router.put('/modules/:id', adminController.updateModule);
+
+/**
+ * DELETE /admin/modules/:id
+ * Excluir módulo
+ */
+router.delete('/modules/:id', adminController.deleteModule);
+
 // ========== ROLE MANAGEMENT ROUTES ==========
 
 /**
@@ -83,6 +109,12 @@ router.put('/users/:id/status', adminController.updateUserStatus);
  * Listar todas as roles disponíveis
  */
 router.get('/roles', adminController.getRoles);
+
+/**
+ * GET /admin/permissions/full
+ * Permissões + role_permissions em uma única chamada (para UI de gestão)
+ */
+router.get('/permissions/full', adminController.getPermissionsFull.bind(adminController));
 
 /**
  * GET /admin/permissions

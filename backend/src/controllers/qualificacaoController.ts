@@ -12,9 +12,10 @@ class QualificacaoController {
    */
   async list(req: AuthRequest, res: Response): Promise<void> {
     try {
-      // Verificar se é admin, coordenador ou supervisor (todos veem tudo)
+      // Técnicos só veem qualificações que criaram, estão na equipe ou padrão (1,2,3).
+      // Admin, coordenador, supervisor e editor veem todas.
       const userPermissions = (req as any).userPermissions;
-      const canSeeAll = userPermissions?.canAccessAll || false;
+      const canSeeAll = userPermissions?.canAccessAll || userPermissions?.isAdmin || userPermissions?.isCoordinator || userPermissions?.isSupervisor || userPermissions?.isEditor || false;
 
       const filters: QualificacaoFilters = {
         titulo: req.query.titulo as string,
@@ -29,10 +30,11 @@ class QualificacaoController {
 
       // Se não for admin/supervisor/coordenador, filtrar para mostrar apenas as que criou + as padrão (1, 2, 3)
       if (!canSeeAll && req.user?.id) {
-        // Não aplicar filtro de created_by aqui, vamos filtrar no service
-        // Passar informação de que precisa filtrar
-        (filters as any).userId = req.user.id;
-        (filters as any).filterByUser = true;
+        const userId = typeof req.user.id === 'string' ? parseInt(req.user.id, 10) : req.user.id;
+        if (!isNaN(userId)) {
+          (filters as any).userId = userId;
+          (filters as any).filterByUser = true;
+        }
       }
 
       const result = await qualificacaoService.list(filters);
@@ -79,9 +81,9 @@ class QualificacaoController {
         return;
       }
 
-      // Verificar permissões de acesso
+      // Técnicos só podem acessar qualificações que criaram, estão na equipe ou padrão.
       const userPermissions = (req as any).userPermissions;
-      const canSeeAll = userPermissions?.canAccessAll || false;
+      const canSeeAll = userPermissions?.isAdmin || userPermissions?.isCoordinator || userPermissions?.isSupervisor || false;
       const isPadrao = id === 1 || id === 2 || id === 3;
 
       // Se não for admin/supervisor/coordenador, verificar se pode ver esta qualificação

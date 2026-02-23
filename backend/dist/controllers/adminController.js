@@ -329,6 +329,81 @@ class AdminController {
             this.handleError(res, error);
         }
     }
+    async getModules(req, res) {
+        try {
+            const modules = await adminService_1.default.getAllModules();
+            res.json({
+                success: true,
+                message: 'Módulos listados com sucesso',
+                data: { modules },
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(res, error);
+        }
+    }
+    async createModule(req, res) {
+        try {
+            const { name, description } = req.body;
+            const module = await adminService_1.default.createModule({ name, description });
+            res.status(api_1.HttpStatus.CREATED).json({
+                success: true,
+                message: 'Módulo criado com sucesso',
+                data: { module },
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(res, error);
+        }
+    }
+    async updateModule(req, res) {
+        try {
+            const moduleId = parseInt(req.params.id);
+            if (isNaN(moduleId)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: { message: 'ID de módulo inválido', statusCode: api_1.HttpStatus.BAD_REQUEST },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            const { name, description } = req.body;
+            const module = await adminService_1.default.updateModule(moduleId, { name, description });
+            res.json({
+                success: true,
+                message: 'Módulo atualizado com sucesso',
+                data: { module },
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(res, error);
+        }
+    }
+    async deleteModule(req, res) {
+        try {
+            const moduleId = parseInt(req.params.id);
+            if (isNaN(moduleId)) {
+                res.status(api_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    error: { message: 'ID de módulo inválido', statusCode: api_1.HttpStatus.BAD_REQUEST },
+                    timestamp: new Date().toISOString()
+                });
+                return;
+            }
+            await adminService_1.default.deleteModule(moduleId);
+            res.json({
+                success: true,
+                message: 'Módulo excluído com sucesso',
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(res, error);
+        }
+    }
     async getRoles(req, res) {
         try {
             const roles = await adminService_1.default.getAllRoles();
@@ -339,6 +414,20 @@ class AdminController {
                     roles,
                     total: roles.length
                 },
+                timestamp: new Date().toISOString()
+            });
+        }
+        catch (error) {
+            this.handleError(res, error);
+        }
+    }
+    async getPermissionsFull(req, res) {
+        try {
+            const { permissions, rolePermissions } = await permissionService_1.permissionService.getPermissionsFull();
+            res.json({
+                success: true,
+                message: 'Permissões listadas',
+                data: { permissions, rolePermissions },
                 timestamp: new Date().toISOString()
             });
         }

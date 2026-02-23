@@ -48,17 +48,22 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
     plano_gestao_validacao_obs: string | null;
     plano_gestao_validacao_usuario_nome?: string | null;
   } | null>(null);
+  const [orgTecnicoIds, setOrgTecnicoIds] = useState<{ id_tecnico: number | null; equipe: number[] }>({ id_tecnico: null, equipe: [] });
 
-  // Verifica se o usuário tem role com permissão de edição
-  const canEdit = user?.roles?.some((role: any) =>
-    ['tecnico', 'admin', 'coordenador', 'supervisao'].includes(role.name)
-  ) || false;
+  // Edição: admin pode tudo. Tecnico: apenas criador ou equipe vinculada. Coordenador e supervisao não editam.
+  const canEdit = (() => {
+    if (!user?.id) return false;
+    const roleNames = (user.roles || []).map((r: any) => r.name);
+    const isAdmin = roleNames.some((n: string) => n === 'admin');
+    if (isAdmin) return true;
+    if (!roleNames.some((n: string) => n === 'tecnico')) return false;
+    if (orgTecnicoIds.id_tecnico === user.id) return true;
+    return orgTecnicoIds.equipe.includes(user.id);
+  })();
 
   useEffect(() => {
-    console.log('🔐 User completo:', JSON.stringify(user, null, 2));
-    console.log('✏️ Can Edit:', canEdit);
-    console.log('📝 Roles:', user?.roles?.map((r: any) => r.name).join(', '));
-  }, [user, canEdit]);
+    console.log('🔐 User:', user?.id, 'Can Edit:', canEdit, 'orgTecnicoIds:', orgTecnicoIds);
+  }, [user, canEdit, orgTecnicoIds]);
 
   // Detecta mudança de tamanho da tela
   useEffect(() => {
@@ -230,6 +235,16 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
         plano_gestao_validacao_data: orgData.plano_gestao_validacao_data || null,
         plano_gestao_validacao_obs: orgData.plano_gestao_validacao_obs || null,
         plano_gestao_validacao_usuario_nome: nomeValidador,
+      });
+
+      const equipe = Array.isArray(orgData.equipe_tecnica)
+        ? orgData.equipe_tecnica.map((m: any) => m.id_tecnico)
+        : Array.isArray(orgData.organizacao_tecnico)
+          ? orgData.organizacao_tecnico.map((m: any) => m.id_tecnico)
+          : [];
+      setOrgTecnicoIds({
+        id_tecnico: orgData.id_tecnico ?? null,
+        equipe: equipe.filter((id: number) => id != null),
       });
     } catch (err: any) {
       console.error('Erro ao carregar dados de validação:', err);

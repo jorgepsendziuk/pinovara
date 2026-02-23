@@ -41,8 +41,10 @@ import {
   Image,
   FileText,
   BarChart3,
-  ClipboardCheck
+  ClipboardCheck,
+  Shield
 } from 'lucide-react';
+import ValidacaoCapacitacaoReadOnly from '../../components/capacitacoes/ValidacaoCapacitacaoReadOnly';
 import './QualificacoesModule.css';
 
 interface PainelInstrutorProps {
@@ -71,7 +73,7 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
   const [erros, setErros] = useState<Record<string, string>>({});
   const [accordionLinksAberto, setAccordionLinksAberto] = useState(false);
   const [presencasSelecionadas, setPresencasSelecionadas] = useState<Set<number>>(new Set());
-  const [abaAtiva, setAbaAtiva] = useState<'editar' | 'inscricoes' | 'presencas' | 'evidencias' | 'avaliacoes'>('editar');
+  const [abaAtiva, setAbaAtiva] = useState<'editar' | 'inscricoes' | 'presencas' | 'evidencias' | 'avaliacoes' | 'validacao'>('editar');
   const [evidencias, setEvidencias] = useState<CapacitacaoEvidencia[]>([]);
   const [uploading, setUploading] = useState(false);
   const [filtroTipoEvidencia, setFiltroTipoEvidencia] = useState<string>('');
@@ -129,8 +131,14 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
           instituicao: cap.organizacoes_completas![0].nome
         }));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar dados:', error);
+      const status = error?.response?.status;
+      if (status === 403) {
+        alert('Acesso negado. Você só pode acessar capacitações que criou ou está vinculado.');
+        onNavigate('capacitacoes');
+        return;
+      }
       alert('Erro ao carregar dados da capacitação');
     } finally {
       setLoading(false);
@@ -1356,6 +1364,28 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
                 Avaliações
               </button>
             )}
+            <button
+              onClick={() => setAbaAtiva('validacao')}
+              style={{
+                flex: 1,
+                padding: '16px 24px',
+                background: abaAtiva === 'validacao' ? 'white' : 'transparent',
+                color: abaAtiva === 'validacao' ? '#056839' : '#64748b',
+                border: 'none',
+                borderBottom: abaAtiva === 'validacao' ? '3px solid #056839' : '3px solid transparent',
+                cursor: 'pointer',
+                fontWeight: abaAtiva === 'validacao' ? '600' : '500',
+                fontSize: '15px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Shield size={18} />
+              Validação
+            </button>
           </div>
         </div>
 
@@ -2445,6 +2475,22 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
             marginBottom: '24px'
           }}>
             <VisualizarAvaliacoes idCapacitacao={idCapacitacao} />
+          </div>
+        )}
+
+        {abaAtiva === 'validacao' && (
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '24px',
+            marginBottom: '24px',
+            border: '1px solid #e2e8f0'
+          }}>
+            <h2 style={{ margin: '0 0 16px 0', color: '#3b2313', fontSize: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Shield size={20} />
+              Validação
+            </h2>
+            <ValidacaoCapacitacaoReadOnly capacitacaoId={idCapacitacao} />
           </div>
         )}
       </div>

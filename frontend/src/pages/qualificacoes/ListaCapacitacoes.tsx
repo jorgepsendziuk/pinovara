@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import DataGrid, { DataGridColumn } from '../../components/DataGrid/DataGrid';
 import { capacitacaoAPI } from '../../services/capacitacaoService';
 import { Capacitacao, CapacitacaoListResponse, CapacitacaoStatus } from '../../types/capacitacao';
-import { Edit, Calendar, FileText, Printer, QrCode, Eye, Plus, Search, Loader2, MapPin, Clock, ExternalLink, CalendarDays, List, CheckCircle, Download, BarChart3, User, Users, XCircle, AlertCircle, Clipboard, ClipboardCheck } from 'lucide-react';
+import { Edit, Calendar, FileText, Printer, QrCode, Eye, Plus, Search, Loader2, MapPin, Clock, ExternalLink, CalendarDays, List, CheckCircle, BarChart3, User, Users, XCircle, AlertCircle, ClipboardCheck } from 'lucide-react';
 import ModalValidacao from '../../components/capacitacoes/ModalValidacao';
 import { useAuth } from '../../contexts/AuthContext';
 import { gerarPDFQRCodeInscricao } from '../../utils/pdfQRCodeInscricao';
@@ -35,7 +35,7 @@ interface ListaCapacitacoesProps {
 }
 
 function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
-  const { isCoordinator, hasPermission } = useAuth();
+  const { user, isCoordinator, hasPermission } = useAuth();
   const [capacitacoes, setCapacitacoes] = useState<Capacitacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroTitulo, setFiltroTitulo] = useState('');
@@ -122,6 +122,21 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
     }
   };
 
+  // Coordenador (sem ser admin) só vê: Validar, Relatórios, Ver Página Pública
+  const podeVerAcoesOperacionais = (): boolean => {
+    return hasPermission('sistema', 'admin') || !isCoordinator();
+  };
+
+  // Técnico só acessa Painel/QR/edição se for criador, membro da equipe ou admin
+  const podeAcessarCapacitacaoParaEdicao = (record: Capacitacao): boolean => {
+    if (hasPermission('sistema', 'admin')) return true;
+    if (!user) return false;
+    const userId = String(user.id);
+    if (record.created_by != null && String(record.created_by) === userId) return true;
+    const naEquipe = record.equipe_tecnica?.some((m: { id_tecnico: number }) => String(m.id_tecnico) === userId);
+    return !!naEquipe;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'planejada':
@@ -172,6 +187,7 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
               <ExternalLink size={16} />
             </button>
           </Tooltip>
+          {podeVerAcoesOperacionais() && podeAcessarCapacitacaoParaEdicao(record) && (
           <Tooltip text="Painel do Instrutor" backgroundColor="#056839" delay={0}>
             <button
               onClick={() => onNavigate('painel', record.id)}
@@ -199,6 +215,8 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
               <Eye size={16} />
             </button>
           </Tooltip>
+          )}
+          {podeVerAcoesOperacionais() && podeAcessarCapacitacaoParaEdicao(record) && (
           <Tooltip text="Imprimir QR Code de Inscrição" backgroundColor="#f59e0b" delay={0}>
             <button
               onClick={async () => {
@@ -233,6 +251,7 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
               <QrCode size={16} />
             </button>
           </Tooltip>
+          )}
           <Tooltip text="Relatório de Avaliações" backgroundColor="#8b5cf6" delay={0}>
             <button
               onClick={async () => {
@@ -288,6 +307,7 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
               <ClipboardCheck size={16} />
             </button>
           </Tooltip>
+          {podeVerAcoesOperacionais() && podeAcessarCapacitacaoParaEdicao(record) && (
           <Tooltip text="Imprimir QR Code de Avaliação" backgroundColor="#f59e0b" delay={0}>
             <button
               onClick={async () => {
@@ -322,7 +342,8 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
               <QrCode size={16} />
             </button>
           </Tooltip>
-          <Tooltip text="Gerar PDF do conteúdo" backgroundColor="#3b82f6" delay={0}>
+          )}
+          <Tooltip text="Capacitação (PDF)" backgroundColor="#3b82f6" delay={0}>
             <button
               onClick={async () => {
                 try {
@@ -354,10 +375,10 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
                 e.currentTarget.style.color = '#3b82f6';
               }}
             >
-              <Download size={16} />
+              <FileText size={16} />
             </button>
           </Tooltip>
-          <Tooltip text="Gerar PDF do relatório" backgroundColor="#10b981" delay={0}>
+          <Tooltip text="Relatório da capacitação (PDF)" backgroundColor="#10b981" delay={0}>
             <button
               onClick={async () => {
                 try {
@@ -425,7 +446,7 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
                   e.currentTarget.style.color = '#10b981';
                 }}
               >
-                <Clipboard size={16} />
+                <CheckCircle size={16} />
               </button>
             </Tooltip>
           )}

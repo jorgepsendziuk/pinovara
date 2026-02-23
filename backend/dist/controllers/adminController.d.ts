@@ -9,7 +9,12 @@ declare class AdminController {
     updateUserStatus(req: AuthRequest, res: Response): Promise<void>;
     assignRole(req: AuthRequest, res: Response): Promise<void>;
     removeRole(req: AuthRequest, res: Response): Promise<void>;
+    getModules(req: AuthRequest, res: Response): Promise<void>;
+    createModule(req: AuthRequest, res: Response): Promise<void>;
+    updateModule(req: AuthRequest, res: Response): Promise<void>;
+    deleteModule(req: AuthRequest, res: Response): Promise<void>;
     getRoles(req: AuthRequest, res: Response): Promise<void>;
+    getPermissionsFull(req: AuthRequest, res: Response): Promise<void>;
     getPermissions(req: AuthRequest, res: Response): Promise<void>;
     getRolePermissions(req: AuthRequest, res: Response): Promise<void>;
     updateRolePermissions(req: AuthRequest, res: Response): Promise<void>;

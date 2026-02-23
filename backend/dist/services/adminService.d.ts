@@ -40,6 +40,40 @@ declare class AdminService {
     updateUserStatus(userId: number, active: boolean): Promise<UserWithRoles>;
     assignRoleToUser(userId: number, roleId: number): Promise<void>;
     removeRoleFromUser(userId: number, roleId: number): Promise<void>;
+    getAllModules(): Promise<{
+        id: number;
+        name: string;
+        description: string;
+        active: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        _count: {
+            roles: number;
+        };
+    }[]>;
+    createModule(data: {
+        name: string;
+        description?: string;
+    }): Promise<{
+        id: number;
+        name: string;
+        active: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
+    }>;
+    updateModule(moduleId: number, data: {
+        name?: string;
+        description?: string;
+    }): Promise<{
+        id: number;
+        name: string;
+        active: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        description: string | null;
+    }>;
+    deleteModule(moduleId: number): Promise<void>;
     getAllRoles(): Promise<{
         id: number;
         name: string;

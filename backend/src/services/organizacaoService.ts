@@ -207,6 +207,28 @@ class OrganizacaoService {
     
     console.log(`   Retornando: ${organizacoesPaginadas.length} organizações`);
 
+    // Enriquecer com equipe_tecnica (ids) para controle de acesso no frontend
+    if (organizacoesPaginadas.length > 0) {
+      const idsOrgs = organizacoesPaginadas.map((o: any) => o.id);
+      try {
+        const equipes = await prisma.organizacao_tecnico.findMany({
+          where: { id_organizacao: { in: idsOrgs } },
+          select: { id_organizacao: true, id_tecnico: true }
+        });
+        const porOrg = new Map<number, Array<{ id_tecnico: number }>>();
+        for (const eq of equipes) {
+          const arr = porOrg.get(eq.id_organizacao) || [];
+          arr.push({ id_tecnico: eq.id_tecnico });
+          porOrg.set(eq.id_organizacao, arr);
+        }
+        for (const org of organizacoesPaginadas) {
+          (org as any).equipe_tecnica = porOrg.get(org.id) || [];
+        }
+      } catch (e) {
+        console.warn('⚠️ Erro ao carregar equipe_tecnica para lista:', e);
+      }
+    }
+
     // Log para debug
     if (organizacoesPaginadas.length > 0) {
       console.log('📊 Amostra de organização:', {

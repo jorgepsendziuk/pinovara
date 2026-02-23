@@ -117,9 +117,14 @@ CREATE INDEX "ORGANIZACAO_PARTICIPANTE_ASSINATURA_REF_lud" ON odk_prod."ORGANIZA
 
 
 
-o usuario tecnico nao esta tendo poderes de atualizar as qualificacoes  qual tem acesso ou é criador.
+lista de Capacitações:
+Gerenciar materiais -> "Materiais" icone de pasta amarelo
+Validar Qualificacao icone check verde
+gerar pdf do conteudo -> Qualificação (PDF) - icone de pdf
+excluir qualificacao - somente técnico criador pode excluir
 
-libere a funcao de edicao das qualificacoes para role tecnico.
 
-e vamos pensar numa pagina na administracao pra gerenciar essas permissoes de cada role.
-detalhe todas aspermissoes por roles, ache onde elas estao definidas no codigo, e veja o que é mecessario mudar  para fazermos a gestao, ligar e desligar todas sa funcoes de todos os roles pela gestao de roles da administracao?
+em Editar Capacitação
+Qualificação na ecolha da qualificacao mostrar s
+
+

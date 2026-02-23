@@ -18,6 +18,9 @@ class OrganizacaoController {
       // Verificar permissões do usuário
       const userPermissions = (req as any).userPermissions;
       
+      const rawUserId = userPermissions?.userId;
+      const userId = rawUserId != null ? (typeof rawUserId === 'string' ? parseInt(rawUserId, 10) : rawUserId) : undefined;
+
       const filters: OrganizacaoFilters = {
         nome: req.query.nome as string,
         cnpj: req.query.cnpj as string,
@@ -27,9 +30,7 @@ class OrganizacaoController {
         // Aceitar tanto 'limit' quanto 'pageSize'
         limit: req.query.limit ? parseInt(req.query.limit as string) : 
                req.query.pageSize ? parseInt(req.query.pageSize as string) : 10,
-        // Passar userId para filtro híbrido (id_tecnico OU email em _creator_uri_user)
-        userId: userPermissions?.userId,
-        // Incluir organizações removidas se o parâmetro for 'true'
+        userId: !isNaN(userId as number) ? userId : undefined,
         incluirRemovidas: req.query.incluirRemovidas === 'true'
       };
 
