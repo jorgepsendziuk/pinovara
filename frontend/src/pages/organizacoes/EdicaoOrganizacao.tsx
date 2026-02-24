@@ -64,10 +64,10 @@ interface EdicaoOrganizacaoProps {
 function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps) {
   
   // Verificação de permissão
-  const { isCoordinator, isSupervisor, hasPermission, user } = useAuth();
+  const { isCoordinator, isSupervisor, isEditor, hasPermission, user } = useAuth();
   
-  // Bloquear acesso para supervisores
-  if (isSupervisor()) {
+  // Bloquear acesso para supervisores (exceto se tiverem papel de editor)
+  if (isSupervisor() && !isEditor()) {
     return (
       <div style={{ 
         padding: '40px', 
@@ -81,7 +81,7 @@ function EdicaoOrganizacao({ organizacaoId, onNavigate }: EdicaoOrganizacaoProps
         <AlertCircle size={64} color="#856404" style={{ marginBottom: '20px' }} />
         <h2 style={{ color: '#856404', marginBottom: '16px' }}>Acesso Não Permitido</h2>
         <p style={{ color: '#856404', marginBottom: '24px', fontSize: '16px' }}>
-          Usuários com perfil de <strong>Supervisão</strong> podem visualizar organizações mas não podem editá-las.
+          Usuários com perfil de <strong>Supervisão</strong> podem visualizar organizações mas não podem editá-las (a menos que tenham o papel de Editor).
         </p>
         <button 
           onClick={() => onNavigate('lista')}

@@ -15,7 +15,7 @@ import '../organizacoes/OrganizacoesModule.css';
 type ViewType = 'dashboard' | 'lista' | 'cadastro' | 'edicao' | 'mapa' | 'detalhes' | 'planoGestao';
 
 function OrganizacoesModule() {
-  const { isSupervisor } = useAuth();
+  const { isSupervisor, isEditor } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [viewAtiva, setViewAtiva] = useState<ViewType>('lista');
@@ -25,8 +25,8 @@ function OrganizacoesModule() {
   useEffect(() => {
     const path = location.pathname;
     
-    // Bloquear supervisores de acessar rotas de edição e cadastro via URL
-    if (isSupervisor() && (path.includes('/cadastro') || path.includes('/edicao/'))) {
+    // Bloquear supervisores de edição/cadastro via URL (exceto se tiverem papel de editor)
+    if (isSupervisor() && !isEditor() && (path.includes('/cadastro') || path.includes('/edicao/'))) {
       console.warn('⚠️ Supervisores não podem acessar páginas de edição/cadastro');
       navigate('/organizacoes/lista', { replace: true });
       return;
@@ -56,11 +56,11 @@ function OrganizacoesModule() {
       // Rota padrão /organizacoes vai para lista
       setViewAtiva('lista');
     }
-  }, [location.pathname, isSupervisor, navigate]);
+  }, [location.pathname, isSupervisor, isEditor, navigate]);
 
   const handleNavegacao = (view: ViewType, organizacaoId?: number) => {
-    // Bloquear acesso de supervisores a edição e cadastro
-    if (isSupervisor() && (view === 'edicao' || view === 'cadastro')) {
+    // Bloquear supervisores de edição/cadastro (exceto se tiverem papel de editor)
+    if (isSupervisor() && !isEditor() && (view === 'edicao' || view === 'cadastro')) {
       console.warn('⚠️ Supervisores não podem acessar páginas de edição/cadastro');
       navigate('/organizacoes/lista');
       return;
