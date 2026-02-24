@@ -15,7 +15,7 @@ interface ListaQualificacoesProps {
 }
 
 function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
-  const { user, isAdmin, isCoordinator, hasPermission } = useAuth();
+  const { user, isAdmin, isCoordinator, isEditor, hasPermission } = useAuth();
   const [qualificacoes, setQualificacoes] = useState<Qualificacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroTitulo, setFiltroTitulo] = useState('');
@@ -62,10 +62,11 @@ function ListaQualificacoes({ onNavigate }: ListaQualificacoesProps) {
     return record.created_by != null && String(record.created_by) === String(user.id);
   };
 
-  // Verificar se pode editar qualificação: admin OU técnico (criador ou membro da equipe)
+  // Verificar se pode editar qualificação: admin OU editor OU técnico (criador ou membro da equipe)
   const podeEditarQualificacao = (record: Qualificacao): boolean => {
     if (isQualificacaoPadrao(record.id)) return isAdmin();
     if (isAdmin()) return true;
+    if (isEditor()) return true;
     const isTecnico = hasPermission('organizacoes', 'tecnico') || hasPermission('qualificacoes', 'tecnico');
     if (isTecnico && user) {
       const userId = user.id;

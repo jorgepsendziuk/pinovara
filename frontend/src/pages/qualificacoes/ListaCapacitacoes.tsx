@@ -35,7 +35,7 @@ interface ListaCapacitacoesProps {
 }
 
 function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
-  const { user, isCoordinator, hasPermission } = useAuth();
+  const { user, isCoordinator, isEditor, hasPermission } = useAuth();
   const [capacitacoes, setCapacitacoes] = useState<Capacitacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroTitulo, setFiltroTitulo] = useState('');
@@ -127,9 +127,10 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
     return hasPermission('sistema', 'admin') || !isCoordinator();
   };
 
-  // Técnico só acessa Painel/QR/edição se for criador, membro da equipe ou admin
+  // Admin ou editor acessam todas; técnico só se for criador ou membro da equipe
   const podeAcessarCapacitacaoParaEdicao = (record: Capacitacao): boolean => {
     if (hasPermission('sistema', 'admin')) return true;
+    if (isEditor()) return true;
     if (!user) return false;
     const userId = String(user.id);
     if (record.created_by != null && String(record.created_by) === userId) return true;

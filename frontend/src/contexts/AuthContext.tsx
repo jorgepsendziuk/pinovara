@@ -39,6 +39,7 @@ interface AuthContextData {
   isAdmin: () => boolean;
   isCoordinator: () => boolean;
   isSupervisor: () => boolean;
+  isEditor: () => boolean;
   refreshUser: () => Promise<void>;
   refreshToken: () => Promise<void>;
   stopImpersonation: () => void;
@@ -281,6 +282,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     ) || false;
   };
 
+  /**
+   * Verificar se usuário tem role editor no módulo organizações (pode editar todos os cadastros)
+   */
+  const isEditor = (): boolean => {
+    return user?.roles?.some(role =>
+      role.module?.name === 'organizacoes' && role.name === 'editor'
+    ) || false;
+  };
+
   // ========== CICLO DE VIDA ==========
 
   /**
@@ -383,6 +393,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAdmin,
     isCoordinator,
     isSupervisor,
+    isEditor,
     refreshUser,
     refreshToken,
     stopImpersonation,

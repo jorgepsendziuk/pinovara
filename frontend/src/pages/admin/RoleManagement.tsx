@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Edit, Trash, Shield } from 'lucide-react';
+import api from '../../services/api';
 
 interface Permission {
   id: number;
@@ -58,11 +59,12 @@ function RoleManagement() {
   const [newModule, setNewModule] = useState({ name: '', description: '' });
   const [newRole, setNewRole] = useState({ name: '', description: '', moduleId: '' });
 
-  // Em dev: usa /api (proxy Vite -> localhost:3001). Em prod: URL completa.
-  const API_BASE = import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_URL || 'https://pinovaraufba.com.br');
+  // Usar a mesma base URL do axios (VITE_API_URL em prod, proxy /api em dev)
+  const API_BASE = (api.defaults.baseURL || '').replace(/\/$/, '');
 
   const fetchModules = async () => {
     try {
+      setError(null);
       const token = localStorage.getItem('@pinovara:token');
       
       const response = await fetch(`${API_BASE}/admin/modules`, {
@@ -73,6 +75,9 @@ function RoleManagement() {
       });
 
       if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Endpoint /admin/modules não encontrado. No servidor, verifique se o backend está atualizado e se o Nginx faz proxy de /admin/ para o backend (veja docs/nginx-final.conf).');
+        }
         throw new Error('Falha ao carregar módulos');
       }
 
@@ -97,6 +102,9 @@ function RoleManagement() {
       });
 
       if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Endpoint /admin/roles não encontrado. No servidor, verifique se o backend está atualizado e se o Nginx faz proxy de /admin/ para o backend.');
+        }
         throw new Error('Falha ao carregar papéis');
       }
 

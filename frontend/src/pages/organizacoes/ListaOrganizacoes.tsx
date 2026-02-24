@@ -63,7 +63,7 @@ interface ListaOrganizacoesProps {
 }
 
 function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
-  const { user, isCoordinator, isSupervisor, hasPermission } = useAuth();
+  const { user, isCoordinator, isSupervisor, isEditor, hasPermission } = useAuth();
   const [loading, setLoading] = useState(true);
   const [gerandoPDF, setGerandoPDF] = useState<number | null>(null);
   const [gerandoPDFPlano, setGerandoPDFPlano] = useState<number | null>(null);
@@ -585,6 +585,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
   const podeAcessarPlanoGestao = (record: Organizacao) => {
     if (userIdNum == null) return false;
     if (isAdmin) return true;
+    if (isEditor()) return true;
     if (record.id_tecnico === userIdNum) return true;
     const equipe = record.equipe_tecnica || [];
     return equipe.some((m) => m.id_tecnico === userIdNum);
@@ -613,7 +614,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
       align: 'left',
       render: (_, record: Organizacao) => {
         const podeValidar = isCoordinator() || hasPermission('sistema', 'admin');
-        const podeEditar = !isCoordinator() && !isSupervisor();
+        const podeEditar = isEditor() || (!isCoordinator() && !isSupervisor());
         const podePlano = podeAcessarPlanoGestao(record);
         const podeDel = podeExcluir(record);
 
@@ -1228,7 +1229,7 @@ function ListaOrganizacoes({ onNavigate }: ListaOrganizacoesProps) {
                   </div>
                 </div>
                 <div className="organization-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                  {!isCoordinator() && !isSupervisor() && (
+                  {(isEditor() || (!isCoordinator() && !isSupervisor())) && (
                     <Link to={`/organizacoes/edicao/${org.id}`} title="Editar Perfil de Entrada" style={{ color: '#3b2313', display: 'flex', padding: '8px', textDecoration: 'none' }}>
                       <Edit size={16} />
                     </Link>

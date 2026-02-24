@@ -412,9 +412,14 @@ module.exports = {
 };
 EOF
 
-# Reiniciar com configuração correta
+# Remover processo antigo (cwd apontava para dir temporário que não existe mais) e iniciar com config nova
 cd "$BACKEND_DIR"
-pm2 restart pinovara-backend --update-env
+pm2 delete pinovara-backend 2>/dev/null || true
+if ! pm2 start ecosystem.config.js --env production; then
+    print_error "Falha ao iniciar PM2 com ecosystem.config.js"
+    print_warning "Tentando: pm2 start dist/server.js --name pinovara-backend"
+    pm2 start dist/server.js --name pinovara-backend --cwd "$BACKEND_DIR"
+fi
 pm2 save
 
 print_success "Deploy concluído - diretórios atualizados"

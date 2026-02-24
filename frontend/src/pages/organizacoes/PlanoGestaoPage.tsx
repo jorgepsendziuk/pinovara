@@ -50,12 +50,15 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
   } | null>(null);
   const [orgTecnicoIds, setOrgTecnicoIds] = useState<{ id_tecnico: number | null; equipe: number[] }>({ id_tecnico: null, equipe: [] });
 
-  // Edição: admin pode tudo. Tecnico: apenas criador ou equipe vinculada. Coordenador e supervisao não editam.
+  // Edição: admin e editor podem tudo. Técnico: apenas criador ou equipe vinculada. Coordenador e supervisão não editam.
   const canEdit = (() => {
     if (!user?.id) return false;
-    const roleNames = (user.roles || []).map((r: any) => r.name);
+    const roles = user.roles || [];
+    const roleNames = roles.map((r: any) => r.name);
     const isAdmin = roleNames.some((n: string) => n === 'admin');
     if (isAdmin) return true;
+    const isEditor = roles.some((r: any) => r.module?.name === 'organizacoes' && r.name === 'editor');
+    if (isEditor) return true;
     if (!roleNames.some((n: string) => n === 'tecnico')) return false;
     if (orgTecnicoIds.id_tecnico === user.id) return true;
     return orgTecnicoIds.equipe.includes(user.id);
