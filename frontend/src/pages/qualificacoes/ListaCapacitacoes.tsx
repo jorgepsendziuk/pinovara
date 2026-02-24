@@ -122,14 +122,15 @@ function ListaCapacitacoes({ onNavigate }: ListaCapacitacoesProps) {
     }
   };
 
-  // Coordenador (sem ser admin) só vê: Validar, Relatórios, Ver Página Pública
+  // Quem vê ações operacionais (Painel do Instrutor, QR, etc.): admin, coordenador e técnicos (acesso por capacitação é filtrado em podeAcessarCapacitacaoParaEdicao)
   const podeVerAcoesOperacionais = (): boolean => {
-    return hasPermission('sistema', 'admin') || !isCoordinator();
+    return hasPermission('sistema', 'admin') || isCoordinator() || !isCoordinator(); // admin, coordenador ou não-coordenador (técnico etc.)
   };
 
-  // Admin ou editor acessam todas; técnico só se for criador ou membro da equipe
+  // Admin, coordenador ou editor acessam todas; técnico só se for criador ou membro da equipe
   const podeAcessarCapacitacaoParaEdicao = (record: Capacitacao): boolean => {
     if (hasPermission('sistema', 'admin')) return true;
+    if (isCoordinator()) return true;
     if (isEditor()) return true;
     if (!user) return false;
     const userId = String(user.id);
