@@ -236,9 +236,9 @@ jobs:
         DEPLOY_TMP_DIR=\$(ls -d /tmp/pinovara-deploy-* | head -1)
         export DEPLOY_TMP_DIR
         
-        # Execute zero-downtime backend deploy
+        # Execute zero-downtime backend deploy (bash -l carrega .profile/.bashrc para PM2 no PATH)
         if [ -f \"\$DEPLOY_TMP_DIR/deploy-zero-downtime.sh\" ]; then
-          bash \$DEPLOY_TMP_DIR/deploy-zero-downtime.sh
+          bash -l \$DEPLOY_TMP_DIR/deploy-zero-downtime.sh
         else
           echo '❌ Zero-downtime script not found, falling back to standard deploy'
           exit 1

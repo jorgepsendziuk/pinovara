@@ -130,9 +130,21 @@ if [ ! -d "/var/www/pinovara" ]; then
     exit 1
 fi
 
-# Verificar PM2
+# Garantir PM2 no PATH (SSH não-interativo pode não carregar .bashrc)
+export PATH="/usr/local/bin:/usr/bin:${PATH:-}"
+[ -f "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" 2>/dev/null || true
+[ -f "$HOME/.profile" ] && . "$HOME/.profile" 2>/dev/null || true
+[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc" 2>/dev/null || true
 if ! command -v pm2 &> /dev/null; then
-    print_error "PM2 não está instalado"
+    for d in /usr/local/bin /usr/bin "$HOME/.local/bin"; do
+        [ -x "$d/pm2" ] && export PATH="$d:$PATH" && break
+    done
+    for nvm_node in "$HOME/.nvm/versions/node"/*; do
+        [ -x "${nvm_node}/bin/pm2" ] && export PATH="${nvm_node}/bin:$PATH" && print_status "PM2 via nvm: ${nvm_node}/bin/pm2" && break
+    done 2>/dev/null
+fi
+if ! command -v pm2 &> /dev/null; then
+    print_error "PM2 não está instalado ou não está no PATH. Instale com: npm install -g pm2"
     exit 1
 fi
 
@@ -415,12 +427,34 @@ EOF
 # Remover processo antigo (cwd apontava para dir temporário que não existe mais) e iniciar com config nova
 cd "$BACKEND_DIR"
 pm2 delete pinovara-backend 2>/dev/null || true
-if ! pm2 start ecosystem.config.js --env production; then
-    print_error "Falha ao iniciar PM2 com ecosystem.config.js"
-    print_warning "Tentando: pm2 start dist/server.js --name pinovara-backend"
-    pm2 start dist/server.js --name pinovara-backend --cwd "$BACKEND_DIR"
+if [ ! -f "ecosystem.config.js" ]; then
+    print_warning "ecosystem.config.js não encontrado, criando..."
+    cat > ecosystem.config.js << EOF
+module.exports = {
+  apps: [{
+    name: 'pinovara-backend',
+    script: 'dist/server.js',
+    cwd: '$BACKEND_DIR',
+    instances: 1,
+    exec_mode: 'fork',
+    env: { NODE_ENV: 'production', PORT: 3001 }
+  }]
+};
+EOF
+fi
+if pm2 start ecosystem.config.js --env production; then
+    print_success "Backend iniciado com ecosystem.config.js"
+else
+    print_warning "pm2 start ecosystem.config.js falhou, tentando start direto..."
+    if pm2 start dist/server.js --name pinovara-backend --cwd "$BACKEND_DIR"; then
+        print_success "Backend iniciado com dist/server.js"
+    else
+        print_error "Falha ao iniciar backend no PM2"
+        exit 1
+    fi
 fi
 pm2 save
+print_status "Process list saved (pm2 save). Para iniciar após reboot: pm2 startup"
 
 print_success "Deploy concluído - diretórios atualizados"
 

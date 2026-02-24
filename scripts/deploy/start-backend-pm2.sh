@@ -1,9 +1,14 @@
 #!/bin/bash
 # Inicia o backend no PM2 no servidor (usa mesmo quando ecosystem.config.js não existe).
-# Uso no servidor: bash start-backend-pm2.sh
-# Ou: cd /var/www/pinovara/backend && bash /caminho/para/start-backend-pm2.sh
+# Uso no servidor: bash -l start-backend-pm2.sh   ( -l carrega .profile para PM2 no PATH )
+# Ou: cd /var/www/pinovara/backend && bash start-backend-pm2.sh
 
 set -e
+
+# Garantir PM2 no PATH quando rodado via SSH
+export PATH="/usr/local/bin:/usr/bin:${PATH:-}"
+[ -f "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" 2>/dev/null || true
+[ -f "$HOME/.profile" ] && . "$HOME/.profile" 2>/dev/null || true
 
 BACKEND_DIR="${1:-/var/www/pinovara/backend}"
 
