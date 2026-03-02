@@ -57,17 +57,25 @@ const checkOrganizacaoPermission = async (req, res, next) => {
     const isTechnician = req.user.roles?.some((role) => role.name === 'tecnico' && role.module?.name === 'organizacoes');
     const isCoordinator = req.user.roles?.some((role) => role.name === 'coordenador' && role.module?.name === 'organizacoes');
     const isSupervisor = req.user.roles?.some((role) => role.name === 'supervisao' && role.module?.name === 'organizacoes');
+    const isEditor = req.user.roles?.some((role) => role.name === 'editor' && role.module?.name === 'organizacoes');
     let canAccessAll;
     let canEdit;
-    const useDb = await permissionService_1.permissionService.hasRolePermissionsData(userId);
-    if (useDb) {
-        const codes = await permissionService_1.permissionService.getEffectivePermissions(userId);
-        canAccessAll = codes.includes('organizacoes.list_all') || codes.includes('sistema.admin');
-        canEdit = codes.includes('organizacoes.edit') || codes.includes('sistema.admin');
+    try {
+        const useDb = await permissionService_1.permissionService.hasRolePermissionsData(userId);
+        if (useDb) {
+            const codes = await permissionService_1.permissionService.getEffectivePermissions(userId);
+            canAccessAll = codes.includes('organizacoes.list_all') || codes.includes('sistema.admin');
+            canEdit = codes.includes('organizacoes.edit') || codes.includes('sistema.admin');
+        }
+        else {
+            canAccessAll = isAdmin || isCoordinator || isSupervisor;
+            canEdit = isAdmin || isTechnician || isEditor;
+        }
     }
-    else {
+    catch (err) {
+        console.warn('roleAuth: falha ao carregar permissões do banco, usando fallback por role:', err);
         canAccessAll = isAdmin || isCoordinator || isSupervisor;
-        canEdit = isAdmin || isTechnician;
+        canEdit = isAdmin || isTechnician || isEditor;
     }
     req.userPermissions = {
         isAdmin,

@@ -86,8 +86,8 @@ rollback() {
     print_status "Restaurando backup de $backup_path..."
     
     # Parar versão nova (se estiver rodando)
-    pm2 stop pinovara-backend-new 2>/dev/null || true
-    pm2 delete pinovara-backend-new 2>/dev/null || true
+    "$PM2_CMD" stop pinovara-backend-new 2>/dev/null || true
+    "$PM2_CMD" delete pinovara-backend-new 2>/dev/null || true
     
     # Restaurar backend antigo
     if [ -d "$backup_path" ]; then
@@ -96,11 +96,11 @@ rollback() {
         
         # Reiniciar versão antiga
         cd "$BACKEND_DIR"
-        pm2 start ecosystem.config.js --env production 2>/dev/null || \
-        pm2 restart pinovara-backend 2>/dev/null || \
-        pm2 start dist/server.js --name pinovara-backend
+        "$PM2_CMD" start ecosystem.config.js --env production 2>/dev/null || \
+        "$PM2_CMD" restart pinovara-backend 2>/dev/null || \
+        "$PM2_CMD" start dist/server.js --name pinovara-backend
         
-        pm2 save
+        "$PM2_CMD" save
         
         print_success "Rollback concluído - versão antiga restaurada"
         
@@ -147,6 +147,8 @@ if ! command -v pm2 &> /dev/null; then
     print_error "PM2 não está instalado ou não está no PATH. Instale com: npm install -g pm2"
     exit 1
 fi
+PM2_CMD=$(command -v pm2)
+print_status "Usando PM2: $PM2_CMD ($($PM2_CMD --version 2>/dev/null || true))"
 
 # Verificar se há código novo para deploy
 if [ -z "$DEPLOY_TMP_DIR" ] || [ ! -d "$DEPLOY_TMP_DIR" ]; then
@@ -316,8 +318,8 @@ fi
 print_status "🛑 Parando versão antiga para liberar porta 3001..."
 
 # Parar e remover todos os processos PM2 relacionados
-pm2 stop all 2>/dev/null || true
-pm2 delete all 2>/dev/null || true
+"$PM2_CMD" stop all 2>/dev/null || true
+"$PM2_CMD" delete all 2>/dev/null || true
 
 # Garantir que porta 3001 está livre
 print_status "🔓 Liberando porta 3001..."
@@ -365,8 +367,8 @@ EOF
 
 cd "$NEW_BACKEND_DIR"
 
-# Iniciar nova versão
-if pm2 start ecosystem.config.js --env production; then
+# Iniciar nova versão (usar PM2_CMD para não depender do PATH)
+if "$PM2_CMD" start ecosystem.config.js --env production; then
     print_success "Nova versão iniciada"
     sleep 5  # Dar tempo para iniciar
 else
@@ -394,7 +396,7 @@ fi
 print_status "🔄 Finalizando deploy..."
 
 # Parar processo atual (já está rodando com caminho temporário)
-pm2 stop pinovara-backend 2>/dev/null || true
+"$PM2_CMD" stop pinovara-backend 2>/dev/null || true
 
 # Trocar diretório (mover nova versão para produção)
 if [ -L "$BACKEND_DIR" ]; then
@@ -425,8 +427,9 @@ module.exports = {
 EOF
 
 # Remover processo antigo (cwd apontava para dir temporário que não existe mais) e iniciar com config nova
+# Usar PM2_CMD para não depender do PATH neste ponto
 cd "$BACKEND_DIR"
-pm2 delete pinovara-backend 2>/dev/null || true
+"$PM2_CMD" delete pinovara-backend 2>/dev/null || true
 if [ ! -f "ecosystem.config.js" ]; then
     print_warning "ecosystem.config.js não encontrado, criando..."
     cat > ecosystem.config.js << EOF
@@ -442,19 +445,22 @@ module.exports = {
 };
 EOF
 fi
-if pm2 start ecosystem.config.js --env production; then
+if "$PM2_CMD" start ecosystem.config.js --env production; then
     print_success "Backend iniciado com ecosystem.config.js"
 else
     print_warning "pm2 start ecosystem.config.js falhou, tentando start direto..."
-    if pm2 start dist/server.js --name pinovara-backend --cwd "$BACKEND_DIR"; then
+    if "$PM2_CMD" start dist/server.js --name pinovara-backend --cwd "$BACKEND_DIR"; then
         print_success "Backend iniciado com dist/server.js"
     else
         print_error "Falha ao iniciar backend no PM2"
         exit 1
     fi
 fi
-pm2 save
-print_status "Process list saved (pm2 save). Para iniciar após reboot: pm2 startup"
+"$PM2_CMD" save
+print_status "Process list saved. Para sobreviver a reboot no servidor: $PM2_CMD startup"
+echo ""
+print_status "Lista PM2 (deve mostrar pinovara-backend):"
+"$PM2_CMD" list | grep -E "pinovara|App name|online|errored" || "$PM2_CMD" list
 
 print_success "Deploy concluído - diretórios atualizados"
 
@@ -468,8 +474,8 @@ sleep 3
 if check_backend_health "$HEALTH_CHECK_URL" 5; then
     print_success "✅ ✅ ✅ DEPLOY CONCLUÍDO COM SUCESSO! ✅ ✅ ✅"
     echo ""
-    echo "📊 Status:"
-    pm2 status | grep pinovara-backend || true
+    echo "📊 Status PM2:"
+    "$PM2_CMD" status | grep pinovara-backend || true
     echo ""
     echo "💾 Backup disponível em: $CURRENT_BACKUP"
     echo "🌐 Sistema operacional em: $HEALTH_CHECK_URL"

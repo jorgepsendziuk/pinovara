@@ -23,6 +23,7 @@ app.use((0, cors_1.default)({
         'http://localhost:5174',
         'http://localhost:8080',
         'http://localhost:3000',
+        'http://localhost:3004',
         'https://pinovaraufba.com.br'
     ],
     credentials: true,

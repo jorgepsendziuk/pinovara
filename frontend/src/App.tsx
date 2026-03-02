@@ -44,6 +44,7 @@ import ParecerTecnico from './pages/ParecerTecnico';
 import AvisoCookies from './components/AvisoCookies';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import SessionExpiryAlert from './components/SessionExpiryAlert';
+import { VersionChecker } from './components/VersionChecker';
 import { useAuth } from './contexts/AuthContext';
 import { usePageTitle } from './hooks/usePageTitle';
 import './App.css';
@@ -258,6 +259,7 @@ function App() {
   return (
     <Router>
       <AuthProvider>
+        <VersionChecker />
         <GoogleAnalytics />
         <AppWithSession />
       </AuthProvider>

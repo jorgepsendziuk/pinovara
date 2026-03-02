@@ -32,6 +32,7 @@ app.use(cors({
     'http://localhost:5174',  // teste local de deploy
     'http://localhost:8080',
     'http://localhost:3000',
+    'http://localhost:3004',  // frontend dev (porta alterada para evitar conflito)
     'https://pinovaraufba.com.br'
   ],
   credentials: true,

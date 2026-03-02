@@ -225,7 +225,8 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
       await carregarDados();
     } catch (error: any) {
       console.error('Erro ao salvar capacitação:', error);
-      alert(error.message || 'Erro ao salvar capacitação');
+      const msg = error.response?.data?.error?.message || error.message || 'Erro ao salvar capacitação';
+      alert(msg);
     } finally {
       setSalvandoEdicao(false);
     }

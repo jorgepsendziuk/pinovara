@@ -488,6 +488,18 @@ class AvaliacaoService {
   }
 
   /**
+   * Obter valor da resposta (resposta_opcao ou resposta_texto)
+   * Algumas respostas podem ter sido salvas em resposta_texto mesmo para perguntas de opção
+   */
+  private obterValorResposta(resposta: any): string | null {
+    const opcao = resposta.resposta_opcao?.trim();
+    if (opcao) return opcao;
+    const texto = resposta.resposta_texto?.trim();
+    if (texto) return texto;
+    return null;
+  }
+
+  /**
    * Obter estatísticas de avaliações de uma capacitação
    * Usa as perguntas das respostas reais (não versão ativa) para garantir
    * que perguntas sim/nao/talvez etc. tenham suas distribuições calculadas
@@ -504,21 +516,52 @@ class AvaliacaoService {
       return [];
     }
 
+    // IDs de perguntas que não têm pergunta no include (fallback: buscar do banco)
+    const idsPerguntasSemPergunta = new Set<number>();
+    const perguntasCache = new Map<number, any>();
+
     // Agrupar por id_pergunta preservando ordem (via Map com ordem de primeira aparição)
     const grupos = new Map<number, { respostas: typeof todasRespostas; pergunta: any }>();
     for (const r of todasRespostas) {
-      const pergunta = (r as any).pergunta ?? (r as any).avaliacao_pergunta;
-      if (!pergunta) continue;
+      let pergunta = (r as any).pergunta ?? (r as any).avaliacao_pergunta;
+      if (!pergunta) {
+        idsPerguntasSemPergunta.add(r.id_pergunta);
+      }
       const id = r.id_pergunta;
       if (!grupos.has(id)) {
-        grupos.set(id, { respostas: [], pergunta });
+        grupos.set(id, { respostas: [], pergunta: pergunta || null });
       }
       grupos.get(id)!.respostas.push(r);
     }
 
+    // Buscar perguntas que não vieram no include
+    if (idsPerguntasSemPergunta.size > 0) {
+      const perguntasEncontradas = await prisma.avaliacao_pergunta.findMany({
+        where: { id: { in: Array.from(idsPerguntasSemPergunta) } }
+      });
+      for (const p of perguntasEncontradas) {
+        let opcoesParsed;
+        try {
+          opcoesParsed = p.opcoes ? JSON.parse(p.opcoes) : undefined;
+        } catch {
+          opcoesParsed = p.opcoes ? [p.opcoes] : undefined;
+        }
+        perguntasCache.set(p.id, { ...p, opcoes: opcoesParsed });
+      }
+      for (const [, grupo] of grupos) {
+        if (!grupo.pergunta && grupo.respostas.length > 0) {
+          const idPerg = grupo.respostas[0].id_pergunta;
+          grupo.pergunta = perguntasCache.get(idPerg);
+        }
+      }
+    }
+
+    // Filtrar grupos que ainda não têm pergunta (dados inconsistentes)
+    const gruposValidos = Array.from(grupos.entries()).filter(([, g]) => g.pergunta);
+
     // Ordenar por ordem da pergunta
     const estatisticas: AvaliacaoEstatisticas[] = [];
-    const itensOrdenados = Array.from(grupos.entries()).sort(
+    const itensOrdenados = gruposValidos.sort(
       (a, b) => (a[1].pergunta.ordem ?? 0) - (b[1].pergunta.ordem ?? 0)
     );
 
@@ -539,7 +582,7 @@ class AvaliacaoService {
           opcoes = [];
         }
         for (const resposta of respostas) {
-          const valor = resposta.resposta_opcao?.trim();
+          const valor = this.obterValorResposta(resposta);
           if (!valor) continue;
           distribuicao[valor] = (distribuicao[valor] || 0) + 1;
           const num = parseInt(valor);
@@ -556,8 +599,13 @@ class AvaliacaoService {
       } else if (pergunta.tipo !== 'texto_livre') {
         distribuicao = {};
         for (const resposta of respostas) {
-          const opcao = String(resposta.resposta_opcao ?? 'sem_resposta').trim() || 'sem_resposta';
-          distribuicao[opcao] = (distribuicao[opcao] || 0) + 1;
+          const valor = this.obterValorResposta(resposta);
+          const opcao = (valor && valor.trim()) || 'sem_resposta';
+          // Normalizar chave para sim_nao_talvez/sim_nao_parcialmente (Sim/sim/SIM -> sim)
+          const chave = (pergunta.tipo === 'sim_nao_talvez' || pergunta.tipo === 'sim_nao_parcialmente')
+            ? opcao.toLowerCase()
+            : opcao;
+          distribuicao[chave] = (distribuicao[chave] || 0) + 1;
         }
       }
 

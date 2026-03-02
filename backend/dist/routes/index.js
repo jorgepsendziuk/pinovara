@@ -53,6 +53,8 @@ router.get('/', (req, res) => {
                 'DELETE /organizacoes/:id/fotos/:fotoId'
             ],
             admin: [
+                'GET /admin/modules',
+                'GET /admin/roles',
                 'GET /admin/users',
                 'GET /admin/users/:id',
                 'POST /admin/users',

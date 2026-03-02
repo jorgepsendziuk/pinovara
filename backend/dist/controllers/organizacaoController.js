@@ -15,6 +15,8 @@ class OrganizacaoController {
     async list(req, res) {
         try {
             const userPermissions = req.userPermissions;
+            const rawUserId = userPermissions?.userId;
+            const userId = rawUserId != null ? (typeof rawUserId === 'string' ? parseInt(rawUserId, 10) : rawUserId) : undefined;
             const filters = {
                 nome: req.query.nome,
                 cnpj: req.query.cnpj,
@@ -23,7 +25,7 @@ class OrganizacaoController {
                 page: req.query.page ? parseInt(req.query.page) : 1,
                 limit: req.query.limit ? parseInt(req.query.limit) :
                     req.query.pageSize ? parseInt(req.query.pageSize) : 10,
-                userId: userPermissions?.userId,
+                userId: !isNaN(userId) ? userId : undefined,
                 incluirRemovidas: req.query.incluirRemovidas === 'true'
             };
             const result = await organizacaoService_1.default.list(filters);

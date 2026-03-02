@@ -66,6 +66,14 @@ export default VERSION_INFO;
 
     // Escrever o arquivo
     fs.writeFileSync(versionFilePath, fileContent, 'utf8');
+
+    // Gerar version.json para detecção de novas versões (anti-cache)
+    const publicDir = path.join(__dirname, '..', 'public');
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+    const versionJsonPath = path.join(publicDir, 'version.json');
+    fs.writeFileSync(versionJsonPath, JSON.stringify(versionInfo, null, 0), 'utf8');
     
     console.log('✅ Arquivo de versão gerado com sucesso!');
     console.log(`📁 Local: ${versionFilePath}`);
@@ -110,6 +118,13 @@ export default VERSION_INFO;
 
     const versionFilePath = path.join(__dirname, '..', 'src', 'version.ts');
     fs.writeFileSync(versionFilePath, fallbackContent, 'utf8');
+
+    // Gerar version.json mesmo em fallback
+    const publicDir = path.join(__dirname, '..', 'public');
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+    fs.writeFileSync(path.join(publicDir, 'version.json'), JSON.stringify(fallbackInfo, null, 0), 'utf8');
     
     console.log('⚠️ Arquivo de versão gerado em modo fallback');
     return fallbackInfo;

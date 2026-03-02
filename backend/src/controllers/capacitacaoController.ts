@@ -85,11 +85,12 @@ class CapacitacaoController {
 
       // Se não for admin/supervisor/coordenador, verificar se pode ver esta capacitação
       if (!canSeeAll) {
-        const isCriador = capacitacao.created_by === req.user?.id;
+        const userId = req.user?.id != null ? Number(req.user.id) : null;
+        const isCriador = userId != null && capacitacao.created_by === userId;
         const capacitacaoData = capacitacao as any;
-        const isMembroEquipe = capacitacaoData.equipe_tecnica?.some(
-          (membro: any) => membro.id_tecnico === req.user?.id
-        ) || false;
+        const isMembroEquipe = userId != null && (capacitacaoData.equipe_tecnica?.some(
+          (membro: any) => Number(membro.id_tecnico) === userId
+        ) ?? false);
 
         // Pode ver se: é criador OU membro da equipe técnica
         if (!isCriador && !isMembroEquipe) {
@@ -199,23 +200,24 @@ class CapacitacaoController {
         return;
       }
 
-      // Verificar permissões: apenas admin pode editar qualquer capacitação,
-      // outros só podem editar se forem criador ou membro da equipe técnica
+      // Verificar permissões: admin, coordenador e supervisor podem editar qualquer capacitação;
+      // outros só podem editar se forem criador ou membro da equipe técnica (alinhado à regra de visualização getById)
       const userPermissions = (req as any).userPermissions;
-      const isAdmin = userPermissions?.isAdmin || false;
+      const canEditAll = userPermissions?.isAdmin || userPermissions?.isCoordinator || userPermissions?.isSupervisor || false;
 
-      if (!isAdmin) {
-        const isCriador = oldData.created_by === req.user?.id;
+      if (!canEditAll) {
+        const userId = req.user?.id != null ? Number(req.user.id) : null;
+        const isCriador = userId != null && oldData.created_by === userId;
         const capacitacaoData = oldData as any;
-        const isMembroEquipe = capacitacaoData.equipe_tecnica?.some(
-          (membro: any) => membro.id_tecnico === req.user?.id
-        ) || false;
+        const isMembroEquipe = userId != null && (capacitacaoData.equipe_tecnica?.some(
+          (membro: any) => Number(membro.id_tecnico) === userId
+        ) ?? false);
 
         if (!isCriador && !isMembroEquipe) {
           res.status(HttpStatus.FORBIDDEN).json({
             success: false,
             error: {
-              message: 'Acesso negado. Apenas administradores, o criador e a equipe técnica podem editar esta capacitação.',
+              message: 'Acesso negado. Apenas administradores, coordenadores, supervisores, o criador e a equipe técnica podem editar esta capacitação.',
               statusCode: HttpStatus.FORBIDDEN
             },
             timestamp: new Date().toISOString()
@@ -292,23 +294,24 @@ class CapacitacaoController {
         return;
       }
 
-      // Verificar permissões: apenas admin pode excluir qualquer capacitação,
-      // outros só podem excluir se forem criador ou membro da equipe técnica
+      // Verificar permissões: admin, coordenador e supervisor podem excluir qualquer capacitação;
+      // outros só podem excluir se forem criador ou membro da equipe técnica (alinhado à regra de visualização getById)
       const userPermissions = (req as any).userPermissions;
-      const isAdmin = userPermissions?.isAdmin || false;
+      const canDeleteAll = userPermissions?.isAdmin || userPermissions?.isCoordinator || userPermissions?.isSupervisor || false;
 
-      if (!isAdmin) {
-        const isCriador = oldData.created_by === req.user?.id;
+      if (!canDeleteAll) {
+        const userId = req.user?.id != null ? Number(req.user.id) : null;
+        const isCriador = userId != null && oldData.created_by === userId;
         const capacitacaoData = oldData as any;
-        const isMembroEquipe = capacitacaoData.equipe_tecnica?.some(
-          (membro: any) => membro.id_tecnico === req.user?.id
-        ) || false;
+        const isMembroEquipe = userId != null && (capacitacaoData.equipe_tecnica?.some(
+          (membro: any) => Number(membro.id_tecnico) === userId
+        ) ?? false);
 
         if (!isCriador && !isMembroEquipe) {
           res.status(HttpStatus.FORBIDDEN).json({
             success: false,
             error: {
-              message: 'Acesso negado. Apenas administradores, o criador e a equipe técnica podem excluir esta capacitação.',
+              message: 'Acesso negado. Apenas administradores, coordenadores, supervisores, o criador e a equipe técnica podem excluir esta capacitação.',
               statusCode: HttpStatus.FORBIDDEN
             },
             timestamp: new Date().toISOString()
