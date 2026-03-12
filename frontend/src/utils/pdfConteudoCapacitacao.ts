@@ -406,17 +406,18 @@ export async function gerarPdfConteudoCapacitacao(capacitacao: Capacitacao) {
         doc.text('Evidências da Capacitação', margin, yPos);
         yPos += 12;
 
-        const imgMaxW = 85;
-        const imgMaxH = 70;
-        const gap = 5;
-        const colsPerRow = 2;
-        let col = 0;
-        let rowMaxH = 0;
+        const imgMaxW = pageWidth - 2 * margin;
+        const imgMaxH = pageHeight - margin - FOOTER_ZONE - 30; // espaço para título e descrição
 
         for (const ev of fotosEvidencias) {
           try {
             const result = await capacitacaoAPI.getEvidenciaBase64(capacitacao.id!, ev.id);
             if (!result) continue;
+
+            renderFooter(doc, pageWidth, pageHeight, ctx.pageNumber, doc.getNumberOfPages());
+            doc.addPage();
+            ctx.pageNumber++;
+            yPos = margin;
 
             const dims = await getImageDimensions(result.base64);
             const ratio = dims.height / dims.width;
@@ -427,46 +428,24 @@ export async function gerarPdfConteudoCapacitacao(capacitacao: Capacitacao) {
               w = h / ratio;
             }
 
-            const x = margin + col * (imgMaxW + gap);
-            if (yPos + h > pageHeight - FOOTER_ZONE) {
-              renderFooter(doc, pageWidth, pageHeight, ctx.pageNumber, doc.getNumberOfPages());
-              doc.addPage();
-              ctx.pageNumber++;
-              yPos = margin;
-              col = 0;
-              rowMaxH = 0;
-            }
-
+            const x = margin + (imgMaxW - w) / 2; // centralizar
             doc.addImage(result.base64, result.format, x, yPos, w, h);
-            rowMaxH = Math.max(rowMaxH, h);
+            yPos += h + 8;
 
             if (ev.descricao) {
-              doc.setFontSize(9);
+              doc.setFontSize(10);
               doc.setFont('helvetica', 'normal');
               doc.setTextColor(80, 80, 80);
-              const descLinhas = doc.splitTextToSize(sanitizarTextoParaPdf(ev.descricao), w);
-              let descY = yPos + h + 3;
-              descLinhas.slice(0, 2).forEach((linha: string) => {
-                doc.text(linha, x, descY);
-                descY += 4;
-                rowMaxH += 4;
+              const descLinhas = doc.splitTextToSize(sanitizarTextoParaPdf(ev.descricao), imgMaxW);
+              descLinhas.forEach((linha: string) => {
+                doc.text(linha, margin, yPos);
+                yPos += 5;
               });
               doc.setTextColor(0, 0, 0);
-            }
-
-            col++;
-            if (col >= colsPerRow) {
-              col = 0;
-              yPos += rowMaxH + gap;
-              rowMaxH = 0;
             }
           } catch (err) {
             console.warn('Erro ao incluir evidência no PDF:', ev.id, err);
           }
-        }
-
-        if (col > 0) {
-          yPos += rowMaxH + gap;
         }
       }
     } catch (err) {
