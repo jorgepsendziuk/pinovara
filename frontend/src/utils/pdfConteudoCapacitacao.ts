@@ -149,7 +149,6 @@ function renderText(
 
   lines.forEach((line: string) => {
     if (currentY + LINE_HEIGHT > yLimit) {
-      renderFooter(doc, pageWidth, pageHeight, currentPage, doc.getNumberOfPages());
       doc.addPage();
       currentPage++;
       currentY = margin;
@@ -294,7 +293,6 @@ export async function gerarPdfConteudoCapacitacao(capacitacao: Capacitacao) {
 
   // Qualificação Vinculada - nova página
   if (qualificacaoCompleta) {
-    renderFooter(doc, pageWidth, pageHeight, ctx.pageNumber, doc.getNumberOfPages());
     doc.addPage();
     ctx.pageNumber++;
     yPos = margin;
@@ -395,7 +393,6 @@ export async function gerarPdfConteudoCapacitacao(capacitacao: Capacitacao) {
       );
 
       if (fotosEvidencias.length > 0) {
-        renderFooter(doc, pageWidth, pageHeight, ctx.pageNumber, doc.getNumberOfPages());
         doc.addPage();
         ctx.pageNumber++;
         yPos = margin;
@@ -414,7 +411,6 @@ export async function gerarPdfConteudoCapacitacao(capacitacao: Capacitacao) {
             const result = await capacitacaoAPI.getEvidenciaBase64(capacitacao.id!, ev.id);
             if (!result) continue;
 
-            renderFooter(doc, pageWidth, pageHeight, ctx.pageNumber, doc.getNumberOfPages());
             doc.addPage();
             ctx.pageNumber++;
             yPos = margin;

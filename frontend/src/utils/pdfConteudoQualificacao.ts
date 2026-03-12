@@ -137,7 +137,6 @@ function renderText(
 
   lines.forEach((line: string) => {
     if (currentY + LINE_HEIGHT > yLimit) {
-      renderFooter(doc, pageWidth, pageHeight, currentPage, doc.getNumberOfPages());
       doc.addPage();
       currentPage++;
       currentY = margin;
