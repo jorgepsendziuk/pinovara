@@ -415,6 +415,36 @@ export const capacitacaoAPI = {
   },
 
   /**
+   * Buscar evidência como base64 (para inclusão em PDF).
+   * Retorna null se não for imagem (ex.: PDF).
+   */
+  getEvidenciaBase64: async (
+    idCapacitacao: number,
+    evidenciaId: number
+  ): Promise<{ base64: string; format: 'JPEG' | 'PNG' } | null> => {
+    const response = await api.get(`/capacitacoes/${idCapacitacao}/evidencias/${evidenciaId}/download`, {
+      responseType: 'blob'
+    });
+
+    const contentType = response.headers?.['content-type'] ?? response.headers?.['Content-Type'] ?? '';
+    if (!contentType.startsWith('image/')) {
+      return null;
+    }
+
+    const blob = response.data as Blob;
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        const format = contentType.includes('png') ? 'PNG' : 'JPEG';
+        resolve({ base64: dataUrl, format });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  },
+
+  /**
    * Excluir evidência
    */
   deleteEvidencia: async (idCapacitacao: number, evidenciaId: number): Promise<void> => {

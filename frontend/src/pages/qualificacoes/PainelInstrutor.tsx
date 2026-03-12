@@ -252,8 +252,10 @@ function PainelInstrutor({ idCapacitacao, onNavigate, modoInscricoes = false }: 
       await carregarEvidencias();
       alert('Evidência enviada com sucesso!');
     } catch (error: any) {
-      console.error('Erro ao fazer upload de evidência:', error);
-      alert(error.message || 'Erro ao fazer upload de evidência');
+      const apiError = error?.response?.data?.error;
+      const msg = apiError?.details || apiError?.message || error?.message || 'Erro ao fazer upload de evidência';
+      console.error('Erro ao fazer upload de evidência:', msg, error);
+      alert(msg);
     } finally {
       setUploading(false);
     }

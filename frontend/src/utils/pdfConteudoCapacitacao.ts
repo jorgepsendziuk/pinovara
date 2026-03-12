@@ -1,6 +1,18 @@
 import { jsPDF } from 'jspdf';
-import { Capacitacao } from '../types/capacitacao';
+import { Capacitacao, CapacitacaoEvidencia } from '../types/capacitacao';
 import { qualificacaoAPI } from '../services/qualificacaoService';
+import { capacitacaoAPI } from '../services/capacitacaoService';
+import { sanitizarTextoParaPdf } from './pdfTextoUtils';
+
+// Retorna dimensões da imagem em pixels (para calcular proporção)
+function getImageDimensions(src: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.width, height: img.height });
+    img.onerror = reject;
+    img.src = src;
+  });
+}
 
 // Função helper para carregar imagem como base64
 async function carregarImagemComoBase64(url: string): Promise<string | null> {
@@ -98,72 +110,55 @@ function renderFooter(doc: jsPDF, pageWidth: number, pageHeight: number, pageNum
   doc.text(`Página ${pageNumber} de ${totalPages}`, pageWidth / 2, footerY, { align: 'center' });
 }
 
-// Função helper para calcular altura aproximada do texto
-function calcularAlturaTexto(text: string, maxWidth: number): number {
-  if (!text || text.trim() === '') {
-    return 0;
-  }
-  const lineHeight = 5; // Altura de cada linha em mm
-  const avgCharsPerLine = Math.floor(maxWidth / 3); // Aproximadamente 3mm por caractere
-  const numLines = Math.max(1, Math.ceil(text.length / avgCharsPerLine));
-  return numLines * lineHeight;
-}
+const LINE_HEIGHT = 5;
+const FOOTER_ZONE = 25;
 
-// Função helper para verificar se há espaço suficiente e adicionar página se necessário
-function verificarEspacoEAdicionarPagina(
+// Função helper para renderizar texto com limite de largura e quebra de página
+function renderText(
   doc: jsPDF,
-  pageWidth: number,
-  pageHeight: number,
-  yPos: number,
-  alturaNecessaria: number,
-  pageNumber: number,
-  margin: number
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  ctx: { pageWidth: number; pageHeight: number; margin: number; pageNumber: number },
+  options: any = {}
 ): { yPos: number; pageNumber: number } {
-  const espacoDisponivel = pageHeight - yPos - 20; // 20mm para rodapé e margem
-  
-  if (alturaNecessaria > espacoDisponivel) {
-    renderFooter(doc, pageWidth, pageHeight, pageNumber, doc.getNumberOfPages());
-    doc.addPage();
-    pageNumber++;
-    yPos = margin;
-  }
-  
-  return { yPos, pageNumber };
-}
+  const { pageWidth, pageHeight, margin, pageNumber } = ctx;
+  let currentY = y;
+  let currentPage = pageNumber;
 
-// Função helper para renderizar texto com limite de largura
-function renderText(doc: any, text: string, x: number, y: number, maxWidth: number, options: any = {}) {
-  if (!text || text.trim() === '') {
-    return y; // Retorna Y atual se não houver texto
+  const sanitized = sanitizarTextoParaPdf(text);
+  if (!sanitized) {
+    return { yPos: currentY, pageNumber: currentPage };
   }
-  
+
   const isBold = options.bold || false;
-  
-  // Aplicar formatação de fonte
   if (isBold) {
     doc.setFont('helvetica', 'bold');
   } else {
     doc.setFont('helvetica', 'normal');
   }
-  
-  // Textos comuns em preto (não bold)
   if (!isBold) {
-    doc.setTextColor(0, 0, 0); // Preto
+    doc.setTextColor(0, 0, 0);
   } else {
-    doc.setTextColor(59, 35, 19); // Marrom para títulos
+    doc.setTextColor(59, 35, 19);
   }
-  
-  // Quebrar texto em linhas respeitando maxWidth
-  const lines = doc.splitTextToSize(text, maxWidth);
-  
-  // Renderizar cada linha
-  let currentY = y;
+
+  const lines = doc.splitTextToSize(sanitized, maxWidth);
+  const yLimit = pageHeight - FOOTER_ZONE;
+
   lines.forEach((line: string) => {
+    if (currentY + LINE_HEIGHT > yLimit) {
+      renderFooter(doc, pageWidth, pageHeight, currentPage, doc.getNumberOfPages());
+      doc.addPage();
+      currentPage++;
+      currentY = margin;
+    }
     doc.text(line, x, currentY, { align: 'left' });
-    currentY += 5; // Espaçamento entre linhas
+    currentY += LINE_HEIGHT;
   });
-  
-  return currentY;
+
+  return { yPos: currentY, pageNumber: currentPage };
 }
 
 // Função helper para formatar data
@@ -201,49 +196,48 @@ export async function gerarPdfConteudoCapacitacao(capacitacao: Capacitacao) {
   let pageNumber = 1;
   
   // Renderizar cabeçalho na primeira página
-  const tituloCapacitacao = capacitacao.titulo || capacitacao.qualificacao?.titulo || 'Capacitação';
+  const tituloCapacitacao = sanitizarTextoParaPdf(capacitacao.titulo || capacitacao.qualificacao?.titulo || 'Capacitação');
   let yPos = await renderHeader(doc, pageWidth, 'CONTEÚDO DA CAPACITAÇÃO', tituloCapacitacao);
   yPos += 10;
+
+  const ctx = { pageWidth, pageHeight, margin, pageNumber };
 
   // Título da capacitação
   if (capacitacao.titulo) {
     doc.setFontSize(12);
-    yPos = renderText(doc, 'Título:', margin, yPos, maxWidth, { bold: true });
+    let r = renderText(doc, 'Título:', margin, yPos, maxWidth, ctx, { bold: true });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 5;
     doc.setFontSize(11);
-    yPos = renderText(doc, capacitacao.titulo, margin, yPos, maxWidth, { bold: false });
+    r = renderText(doc, capacitacao.titulo, margin, yPos, maxWidth, ctx, { bold: false });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 10;
   }
 
-  // Informações básicas da capacitação - texto corrido com maxWidth
+  // Informações básicas da capacitação
   doc.setFontSize(11);
-  doc.setTextColor(0, 0, 0); // Preto para textos comuns
-  
-  // Data Início
+  doc.setTextColor(0, 0, 0);
+
   if (capacitacao.data_inicio) {
-    yPos = renderText(doc, `Data Início: ${formatarData(capacitacao.data_inicio)}`, margin, yPos, maxWidth, { bold: false });
+    let r = renderText(doc, `Data Início: ${formatarData(capacitacao.data_inicio)}`, margin, yPos, maxWidth, ctx, { bold: false });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 7;
   }
-
-  // Data Fim
   if (capacitacao.data_fim) {
-    yPos = renderText(doc, `Data Fim: ${formatarData(capacitacao.data_fim)}`, margin, yPos, maxWidth, { bold: false });
+    let r = renderText(doc, `Data Fim: ${formatarData(capacitacao.data_fim)}`, margin, yPos, maxWidth, ctx, { bold: false });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 7;
   }
-
-  // Local
   if (capacitacao.local) {
-    yPos = renderText(doc, `Local: ${capacitacao.local}`, margin, yPos, maxWidth, { bold: false });
+    let r = renderText(doc, `Local: ${capacitacao.local}`, margin, yPos, maxWidth, ctx, { bold: false });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 7;
   }
-
-  // Turno
   if (capacitacao.turno) {
-    yPos = renderText(doc, `Turno: ${capacitacao.turno}`, margin, yPos, maxWidth, { bold: false });
+    let r = renderText(doc, `Turno: ${capacitacao.turno}`, margin, yPos, maxWidth, ctx, { bold: false });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 7;
   }
-
-  // Status
   if (capacitacao.status) {
     const statusMap: Record<string, string> = {
       'planejada': 'Planejada',
@@ -251,45 +245,36 @@ export async function gerarPdfConteudoCapacitacao(capacitacao: Capacitacao) {
       'concluida': 'Concluída',
       'cancelada': 'Cancelada'
     };
-    yPos = renderText(doc, `Status: ${statusMap[capacitacao.status] || capacitacao.status}`, margin, yPos, maxWidth, { bold: false });
+    let r = renderText(doc, `Status: ${statusMap[capacitacao.status] || capacitacao.status}`, margin, yPos, maxWidth, ctx, { bold: false });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 7;
   }
 
   yPos += 5;
 
-  // Organizações - texto corrido com maxWidth
   if (capacitacao.organizacoes_completas && capacitacao.organizacoes_completas.length > 0) {
-    if (yPos > pageHeight - 50) {
-      renderFooter(doc, pageWidth, pageHeight, pageNumber, doc.getNumberOfPages());
-      doc.addPage();
-      pageNumber++;
-      yPos = margin;
-    }
     doc.setFontSize(11);
-    yPos = renderText(doc, 'Organizações Participantes:', margin, yPos, maxWidth, { bold: true });
+    let r = renderText(doc, 'Organizações Participantes:', margin, yPos, maxWidth, ctx, { bold: true });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 5;
     capacitacao.organizacoes_completas.forEach(org => {
-      yPos = renderText(doc, `• ${org.nome}`, margin, yPos, maxWidth, { bold: false });
+      r = renderText(doc, `• ${org.nome}`, margin, yPos, maxWidth, ctx, { bold: false });
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 5;
     });
     yPos += 5;
   }
 
-  // Equipe Técnica - texto corrido com maxWidth
   if (capacitacao.equipe_tecnica && capacitacao.equipe_tecnica.length > 0) {
-    if (yPos > pageHeight - 50) {
-      renderFooter(doc, pageWidth, pageHeight, pageNumber, doc.getNumberOfPages());
-      doc.addPage();
-      pageNumber++;
-      yPos = margin;
-    }
     doc.setFontSize(11);
-    yPos = renderText(doc, 'Equipe Técnica:', margin, yPos, maxWidth, { bold: true });
+    let r = renderText(doc, 'Equipe Técnica:', margin, yPos, maxWidth, ctx, { bold: true });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 5;
     capacitacao.equipe_tecnica.forEach(membro => {
       const nome = membro.tecnico?.name || 'Nome não informado';
       const email = membro.tecnico?.email || '';
-      yPos = renderText(doc, `• ${nome}${email ? ` (${email})` : ''}`, margin, yPos, maxWidth, { bold: false });
+      r = renderText(doc, `• ${nome}${email ? ` (${email})` : ''}`, margin, yPos, maxWidth, ctx, { bold: false });
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 5;
     });
     yPos += 5;
@@ -309,121 +294,183 @@ export async function gerarPdfConteudoCapacitacao(capacitacao: Capacitacao) {
 
   // Qualificação Vinculada - nova página
   if (qualificacaoCompleta) {
-    // Sempre quebrar página antes de Qualificação Vinculada
-    renderFooter(doc, pageWidth, pageHeight, pageNumber, doc.getNumberOfPages());
+    renderFooter(doc, pageWidth, pageHeight, ctx.pageNumber, doc.getNumberOfPages());
     doc.addPage();
-    pageNumber++;
+    ctx.pageNumber++;
     yPos = margin;
-    
-    // Título da seção simples
+
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(59, 35, 19); // Marrom #3b2313
-    yPos = renderText(doc, 'Qualificação Vinculada', margin, yPos, maxWidth, { bold: true });
+    doc.setTextColor(59, 35, 19);
+    let r = renderText(doc, 'Qualificação Vinculada', margin, yPos, maxWidth, ctx, { bold: true });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 10;
 
     if (qualificacaoCompleta.titulo) {
       doc.setFontSize(11);
-      yPos = renderText(doc, `Título: ${qualificacaoCompleta.titulo}`, margin, yPos, maxWidth, { bold: false });
+      r = renderText(doc, `Título: ${qualificacaoCompleta.titulo}`, margin, yPos, maxWidth, ctx, { bold: false });
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 10;
     }
 
     if (qualificacaoCompleta.objetivo_geral) {
-      // Verificar espaço antes de renderizar texto grande
-      const alturaNecessaria = calcularAlturaTexto(qualificacaoCompleta.objetivo_geral, maxWidth) + 15;
-      const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-      yPos = resultado.yPos;
-      pageNumber = resultado.pageNumber;
-      
       doc.setFontSize(11);
-      yPos = renderText(doc, 'Objetivo Geral:', margin, yPos, maxWidth, { bold: true });
+      r = renderText(doc, 'Objetivo Geral:', margin, yPos, maxWidth, ctx, { bold: true });
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 5;
-      yPos = renderText(doc, qualificacaoCompleta.objetivo_geral, margin, yPos, maxWidth);
+      r = renderText(doc, qualificacaoCompleta.objetivo_geral, margin, yPos, maxWidth, ctx);
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 10;
     }
 
     if (qualificacaoCompleta.objetivos_especificos) {
-      // Verificar espaço antes de renderizar texto grande
-      const alturaNecessaria = calcularAlturaTexto(qualificacaoCompleta.objetivos_especificos, maxWidth) + 15;
-      const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-      yPos = resultado.yPos;
-      pageNumber = resultado.pageNumber;
-      
       doc.setFontSize(11);
-      yPos = renderText(doc, 'Objetivos Específicos:', margin, yPos, maxWidth, { bold: true });
+      r = renderText(doc, 'Objetivos Específicos:', margin, yPos, maxWidth, ctx, { bold: true });
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 5;
-      yPos = renderText(doc, qualificacaoCompleta.objetivos_especificos, margin, yPos, maxWidth);
+      r = renderText(doc, qualificacaoCompleta.objetivos_especificos, margin, yPos, maxWidth, ctx);
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 10;
     }
 
     if (qualificacaoCompleta.conteudo_programatico) {
-      // Verificar espaço antes de renderizar texto grande
-      const alturaNecessaria = calcularAlturaTexto(qualificacaoCompleta.conteudo_programatico, maxWidth) + 15;
-      const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-      yPos = resultado.yPos;
-      pageNumber = resultado.pageNumber;
-      
       doc.setFontSize(11);
-      yPos = renderText(doc, 'Conteúdo Programático:', margin, yPos, maxWidth, { bold: true });
+      r = renderText(doc, 'Conteúdo Programático:', margin, yPos, maxWidth, ctx, { bold: true });
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 5;
-      yPos = renderText(doc, qualificacaoCompleta.conteudo_programatico, margin, yPos, maxWidth);
+      r = renderText(doc, qualificacaoCompleta.conteudo_programatico, margin, yPos, maxWidth, ctx);
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 10;
     }
 
     if (qualificacaoCompleta.metodologia) {
-      // Verificar espaço antes de renderizar texto grande
-      const alturaNecessaria = calcularAlturaTexto(qualificacaoCompleta.metodologia, maxWidth) + 15;
-      const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-      yPos = resultado.yPos;
-      pageNumber = resultado.pageNumber;
-      
       doc.setFontSize(11);
-      yPos = renderText(doc, 'Metodologia:', margin, yPos, maxWidth, { bold: true });
+      r = renderText(doc, 'Metodologia:', margin, yPos, maxWidth, ctx, { bold: true });
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 5;
-      yPos = renderText(doc, qualificacaoCompleta.metodologia, margin, yPos, maxWidth);
+      r = renderText(doc, qualificacaoCompleta.metodologia, margin, yPos, maxWidth, ctx);
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 10;
     }
 
     if (qualificacaoCompleta.recursos_didaticos) {
-      // Verificar espaço antes de renderizar texto grande
-      const alturaNecessaria = calcularAlturaTexto(qualificacaoCompleta.recursos_didaticos, maxWidth) + 15;
-      const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-      yPos = resultado.yPos;
-      pageNumber = resultado.pageNumber;
-      
       doc.setFontSize(11);
-      yPos = renderText(doc, 'Recursos Didáticos:', margin, yPos, maxWidth, { bold: true });
+      r = renderText(doc, 'Recursos Didáticos:', margin, yPos, maxWidth, ctx, { bold: true });
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 5;
-      yPos = renderText(doc, qualificacaoCompleta.recursos_didaticos, margin, yPos, maxWidth);
+      r = renderText(doc, qualificacaoCompleta.recursos_didaticos, margin, yPos, maxWidth, ctx);
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 10;
     }
 
     if (qualificacaoCompleta.estrategia_avaliacao) {
-      // Verificar espaço antes de renderizar texto grande
-      const alturaNecessaria = calcularAlturaTexto(qualificacaoCompleta.estrategia_avaliacao, maxWidth) + 15;
-      const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-      yPos = resultado.yPos;
-      pageNumber = resultado.pageNumber;
-      
       doc.setFontSize(11);
-      yPos = renderText(doc, 'Estratégia de Avaliação:', margin, yPos, maxWidth, { bold: true });
+      r = renderText(doc, 'Estratégia de Avaliação:', margin, yPos, maxWidth, ctx, { bold: true });
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 5;
-      yPos = renderText(doc, qualificacaoCompleta.estrategia_avaliacao, margin, yPos, maxWidth);
+      r = renderText(doc, qualificacaoCompleta.estrategia_avaliacao, margin, yPos, maxWidth, ctx);
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 10;
     }
 
     if (qualificacaoCompleta.referencias) {
-      // Verificar espaço antes de renderizar texto grande
-      const alturaNecessaria = calcularAlturaTexto(qualificacaoCompleta.referencias, maxWidth) + 15;
-      const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-      yPos = resultado.yPos;
-      pageNumber = resultado.pageNumber;
-      
       doc.setFontSize(11);
-      yPos = renderText(doc, 'Referências:', margin, yPos, maxWidth, { bold: true });
+      r = renderText(doc, 'Referências:', margin, yPos, maxWidth, ctx, { bold: true });
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 5;
-      yPos = renderText(doc, qualificacaoCompleta.referencias, margin, yPos, maxWidth);
+      r = renderText(doc, qualificacaoCompleta.referencias, margin, yPos, maxWidth, ctx);
+      yPos = r.yPos; ctx.pageNumber = r.pageNumber;
       yPos += 10;
+    }
+  }
+
+  // Evidências (fotos) da capacitação
+  if (capacitacao.id) {
+    try {
+      const evidencias = await capacitacaoAPI.listEvidencias(capacitacao.id);
+      const fotosEvidencias = evidencias.filter(
+        (e: CapacitacaoEvidencia) =>
+          e.tipo === 'foto' ||
+          /\.(jpg|jpeg|png)$/i.test(e.nome_arquivo || '')
+      );
+
+      if (fotosEvidencias.length > 0) {
+        renderFooter(doc, pageWidth, pageHeight, ctx.pageNumber, doc.getNumberOfPages());
+        doc.addPage();
+        ctx.pageNumber++;
+        yPos = margin;
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(59, 35, 19);
+        doc.text('Evidências da Capacitação', margin, yPos);
+        yPos += 12;
+
+        const imgMaxW = 85;
+        const imgMaxH = 70;
+        const gap = 5;
+        const colsPerRow = 2;
+        let col = 0;
+        let rowMaxH = 0;
+
+        for (const ev of fotosEvidencias) {
+          try {
+            const result = await capacitacaoAPI.getEvidenciaBase64(capacitacao.id!, ev.id);
+            if (!result) continue;
+
+            const dims = await getImageDimensions(result.base64);
+            const ratio = dims.height / dims.width;
+            let w = imgMaxW;
+            let h = w * ratio;
+            if (h > imgMaxH) {
+              h = imgMaxH;
+              w = h / ratio;
+            }
+
+            const x = margin + col * (imgMaxW + gap);
+            if (yPos + h > pageHeight - FOOTER_ZONE) {
+              renderFooter(doc, pageWidth, pageHeight, ctx.pageNumber, doc.getNumberOfPages());
+              doc.addPage();
+              ctx.pageNumber++;
+              yPos = margin;
+              col = 0;
+              rowMaxH = 0;
+            }
+
+            doc.addImage(result.base64, result.format, x, yPos, w, h);
+            rowMaxH = Math.max(rowMaxH, h);
+
+            if (ev.descricao) {
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(80, 80, 80);
+              const descLinhas = doc.splitTextToSize(sanitizarTextoParaPdf(ev.descricao), w);
+              let descY = yPos + h + 3;
+              descLinhas.slice(0, 2).forEach((linha: string) => {
+                doc.text(linha, x, descY);
+                descY += 4;
+                rowMaxH += 4;
+              });
+              doc.setTextColor(0, 0, 0);
+            }
+
+            col++;
+            if (col >= colsPerRow) {
+              col = 0;
+              yPos += rowMaxH + gap;
+              rowMaxH = 0;
+            }
+          } catch (err) {
+            console.warn('Erro ao incluir evidência no PDF:', ev.id, err);
+          }
+        }
+
+        if (col > 0) {
+          yPos += rowMaxH + gap;
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar evidências para PDF:', err);
     }
   }
 

@@ -143,12 +143,14 @@ class CapacitacaoEvidenciaController {
         data: evidencia,
         timestamp: new Date().toISOString()
       });
-    } catch (error) {
-      console.error('❌ [CapacitacaoEvidenciaController] Error:', error);
+    } catch (error: any) {
+      const errorMsg = error?.message || String(error);
+      console.error('❌ [CapacitacaoEvidenciaController] Error:', errorMsg, error?.stack);
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         success: false,
         error: {
           message: 'Erro ao fazer upload de evidência',
+          details: errorMsg,
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR
         },
         timestamp: new Date().toISOString()

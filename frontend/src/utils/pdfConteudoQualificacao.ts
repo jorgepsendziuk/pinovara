@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { Qualificacao } from '../types/qualificacao';
+import { sanitizarTextoParaPdf } from './pdfTextoUtils';
 
 // Função helper para carregar imagem como base64
 async function carregarImagemComoBase64(url: string): Promise<string | null> {
@@ -97,72 +98,55 @@ function renderFooter(doc: jsPDF, pageWidth: number, pageHeight: number, pageNum
   doc.text(`Página ${pageNumber} de ${totalPages}`, pageWidth / 2, footerY, { align: 'center' });
 }
 
-// Função helper para calcular altura aproximada do texto
-function calcularAlturaTexto(text: string, maxWidth: number): number {
-  if (!text || text.trim() === '') {
-    return 0;
-  }
-  const lineHeight = 5; // Altura de cada linha em mm
-  const avgCharsPerLine = Math.floor(maxWidth / 3); // Aproximadamente 3mm por caractere
-  const numLines = Math.max(1, Math.ceil(text.length / avgCharsPerLine));
-  return numLines * lineHeight;
-}
+const LINE_HEIGHT = 5;
+const FOOTER_ZONE = 25; // mm reservados para rodapé
 
-// Função helper para verificar se há espaço suficiente e adicionar página se necessário
-function verificarEspacoEAdicionarPagina(
+// Função helper para renderizar texto com limite de largura e quebra de página
+function renderText(
   doc: jsPDF,
-  pageWidth: number,
-  pageHeight: number,
-  yPos: number,
-  alturaNecessaria: number,
-  pageNumber: number,
-  margin: number
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  ctx: { pageWidth: number; pageHeight: number; margin: number; pageNumber: number },
+  options: any = {}
 ): { yPos: number; pageNumber: number } {
-  const espacoDisponivel = pageHeight - yPos - 20; // 20mm para rodapé e margem
-  
-  if (alturaNecessaria > espacoDisponivel) {
-    renderFooter(doc, pageWidth, pageHeight, pageNumber, doc.getNumberOfPages());
-    doc.addPage();
-    pageNumber++;
-    yPos = margin;
-  }
-  
-  return { yPos, pageNumber };
-}
+  const { pageWidth, pageHeight, margin, pageNumber } = ctx;
+  let currentY = y;
+  let currentPage = pageNumber;
 
-// Função helper para renderizar texto com limite de largura
-function renderText(doc: any, text: string, x: number, y: number, maxWidth: number, options: any = {}) {
-  if (!text || text.trim() === '') {
-    return y; // Retorna Y atual se não houver texto
+  const sanitized = sanitizarTextoParaPdf(text);
+  if (!sanitized) {
+    return { yPos: currentY, pageNumber: currentPage };
   }
-  
+
   const isBold = options.bold || false;
-  
-  // Aplicar formatação de fonte
   if (isBold) {
     doc.setFont('helvetica', 'bold');
   } else {
     doc.setFont('helvetica', 'normal');
   }
-  
-  // Textos comuns em preto (não bold)
   if (!isBold) {
-    doc.setTextColor(0, 0, 0); // Preto
+    doc.setTextColor(0, 0, 0);
   } else {
-    doc.setTextColor(59, 35, 19); // Marrom para títulos
+    doc.setTextColor(59, 35, 19);
   }
-  
-  // Quebrar texto em linhas respeitando maxWidth
-  const lines = doc.splitTextToSize(text, maxWidth);
-  
-  // Renderizar cada linha
-  let currentY = y;
+
+  const lines = doc.splitTextToSize(sanitized, maxWidth);
+  const yLimit = pageHeight - FOOTER_ZONE;
+
   lines.forEach((line: string) => {
+    if (currentY + LINE_HEIGHT > yLimit) {
+      renderFooter(doc, pageWidth, pageHeight, currentPage, doc.getNumberOfPages());
+      doc.addPage();
+      currentPage++;
+      currentY = margin;
+    }
     doc.text(line, x, currentY, { align: 'left' });
-    currentY += 5; // Espaçamento entre linhas
+    currentY += LINE_HEIGHT;
   });
-  
-  return currentY;
+
+  return { yPos: currentY, pageNumber: currentPage };
 }
 
 export async function gerarPdfConteudoQualificacao(qualificacao: Qualificacao) {
@@ -181,121 +165,97 @@ export async function gerarPdfConteudoQualificacao(qualificacao: Qualificacao) {
   let pageNumber = 1;
   
   // Renderizar cabeçalho na primeira página
-  let yPos = await renderHeader(doc, pageWidth, 'CONTEÚDO DA QUALIFICAÇÃO', qualificacao.titulo || 'Qualificação');
+  let yPos = await renderHeader(doc, pageWidth, 'CONTEÚDO DA QUALIFICAÇÃO', sanitizarTextoParaPdf(qualificacao.titulo || 'Qualificação'));
   yPos += 10;
+
+  const ctx = { pageWidth, pageHeight, margin, pageNumber };
 
   // Título da qualificação
   if (qualificacao.titulo) {
     doc.setFontSize(12);
-    yPos = renderText(doc, 'Título:', margin, yPos, maxWidth, { bold: true });
+    let r = renderText(doc, 'Título:', margin, yPos, maxWidth, ctx, { bold: true });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 5;
     doc.setFontSize(11);
-    yPos = renderText(doc, qualificacao.titulo, margin, yPos, maxWidth, { bold: false });
+    r = renderText(doc, qualificacao.titulo, margin, yPos, maxWidth, ctx, { bold: false });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 10;
   }
 
   // Objetivo Geral
   if (qualificacao.objetivo_geral) {
-    // Verificar espaço antes de renderizar texto grande
-    const alturaNecessaria = calcularAlturaTexto(qualificacao.objetivo_geral, maxWidth) + 15;
-    const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-    yPos = resultado.yPos;
-    pageNumber = resultado.pageNumber;
-    
     doc.setFontSize(11);
-    yPos = renderText(doc, 'Objetivo Geral:', margin, yPos, maxWidth, { bold: true });
+    let r = renderText(doc, 'Objetivo Geral:', margin, yPos, maxWidth, ctx, { bold: true });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 5;
-    yPos = renderText(doc, qualificacao.objetivo_geral, margin, yPos, maxWidth);
+    r = renderText(doc, qualificacao.objetivo_geral, margin, yPos, maxWidth, ctx);
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 10;
   }
 
   // Objetivos Específicos
   if (qualificacao.objetivos_especificos) {
-    // Verificar espaço antes de renderizar texto grande
-    const alturaNecessaria = calcularAlturaTexto(qualificacao.objetivos_especificos, maxWidth) + 15;
-    const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-    yPos = resultado.yPos;
-    pageNumber = resultado.pageNumber;
-    
     doc.setFontSize(11);
-    yPos = renderText(doc, 'Objetivos Específicos:', margin, yPos, maxWidth, { bold: true });
+    let r = renderText(doc, 'Objetivos Específicos:', margin, yPos, maxWidth, ctx, { bold: true });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 5;
-    yPos = renderText(doc, qualificacao.objetivos_especificos, margin, yPos, maxWidth);
+    r = renderText(doc, qualificacao.objetivos_especificos, margin, yPos, maxWidth, ctx);
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 10;
   }
 
   // Conteúdo Programático
   if (qualificacao.conteudo_programatico) {
-    // Verificar espaço antes de renderizar texto grande
-    const alturaNecessaria = calcularAlturaTexto(qualificacao.conteudo_programatico, maxWidth) + 15;
-    const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-    yPos = resultado.yPos;
-    pageNumber = resultado.pageNumber;
-    
     doc.setFontSize(11);
-    yPos = renderText(doc, 'Conteúdo Programático:', margin, yPos, maxWidth, { bold: true });
+    let r = renderText(doc, 'Conteúdo Programático:', margin, yPos, maxWidth, ctx, { bold: true });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 5;
-    yPos = renderText(doc, qualificacao.conteudo_programatico, margin, yPos, maxWidth);
+    r = renderText(doc, qualificacao.conteudo_programatico, margin, yPos, maxWidth, ctx);
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 10;
   }
 
   // Metodologia
   if (qualificacao.metodologia) {
-    // Verificar espaço antes de renderizar texto grande
-    const alturaNecessaria = calcularAlturaTexto(qualificacao.metodologia, maxWidth) + 15;
-    const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-    yPos = resultado.yPos;
-    pageNumber = resultado.pageNumber;
-    
     doc.setFontSize(11);
-    yPos = renderText(doc, 'Metodologia:', margin, yPos, maxWidth, { bold: true });
+    let r = renderText(doc, 'Metodologia:', margin, yPos, maxWidth, ctx, { bold: true });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 5;
-    yPos = renderText(doc, qualificacao.metodologia, margin, yPos, maxWidth);
+    r = renderText(doc, qualificacao.metodologia, margin, yPos, maxWidth, ctx);
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 10;
   }
 
   // Recursos Didáticos
   if (qualificacao.recursos_didaticos) {
-    // Verificar espaço antes de renderizar texto grande
-    const alturaNecessaria = calcularAlturaTexto(qualificacao.recursos_didaticos, maxWidth) + 15;
-    const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-    yPos = resultado.yPos;
-    pageNumber = resultado.pageNumber;
-    
     doc.setFontSize(11);
-    yPos = renderText(doc, 'Recursos Didáticos:', margin, yPos, maxWidth, { bold: true });
+    let r = renderText(doc, 'Recursos Didáticos:', margin, yPos, maxWidth, ctx, { bold: true });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 5;
-    yPos = renderText(doc, qualificacao.recursos_didaticos, margin, yPos, maxWidth);
+    r = renderText(doc, qualificacao.recursos_didaticos, margin, yPos, maxWidth, ctx);
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 10;
   }
 
   // Estratégia de Avaliação
   if (qualificacao.estrategia_avaliacao) {
-    // Verificar espaço antes de renderizar texto grande
-    const alturaNecessaria = calcularAlturaTexto(qualificacao.estrategia_avaliacao, maxWidth) + 15;
-    const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-    yPos = resultado.yPos;
-    pageNumber = resultado.pageNumber;
-    
     doc.setFontSize(11);
-    yPos = renderText(doc, 'Estratégia de Avaliação:', margin, yPos, maxWidth, { bold: true });
+    let r = renderText(doc, 'Estratégia de Avaliação:', margin, yPos, maxWidth, ctx, { bold: true });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 5;
-    yPos = renderText(doc, qualificacao.estrategia_avaliacao, margin, yPos, maxWidth);
+    r = renderText(doc, qualificacao.estrategia_avaliacao, margin, yPos, maxWidth, ctx);
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 10;
   }
 
   // Referências
   if (qualificacao.referencias) {
-    // Verificar espaço antes de renderizar texto grande
-    const alturaNecessaria = calcularAlturaTexto(qualificacao.referencias, maxWidth) + 15;
-    const resultado = verificarEspacoEAdicionarPagina(doc, pageWidth, pageHeight, yPos, alturaNecessaria, pageNumber, margin);
-    yPos = resultado.yPos;
-    pageNumber = resultado.pageNumber;
-    
     doc.setFontSize(11);
-    yPos = renderText(doc, 'Referências:', margin, yPos, maxWidth, { bold: true });
+    let r = renderText(doc, 'Referências:', margin, yPos, maxWidth, ctx, { bold: true });
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 5;
-    yPos = renderText(doc, qualificacao.referencias, margin, yPos, maxWidth);
+    r = renderText(doc, qualificacao.referencias, margin, yPos, maxWidth, ctx);
+    yPos = r.yPos; ctx.pageNumber = r.pageNumber;
     yPos += 10;
   }
 

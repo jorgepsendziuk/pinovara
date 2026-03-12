@@ -426,7 +426,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Erro ${response.status}: ${response.statusText}`);
+        throw new Error(errorData.details || errorData.error || `Erro ${response.status}: ${response.statusText}`);
       }
 
       const result = await response.json();
@@ -464,7 +464,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Erro ${response.status}: ${response.statusText}`);
+        throw new Error(errorData.details || errorData.error || `Erro ${response.status}: ${response.statusText}`);
       }
 
       setEvidencias(prev => prev.filter(ev => ev.id !== idEvidencia));
@@ -521,7 +521,7 @@ export const PlanoGestaoPage: React.FC<PlanoGestaoPageProps> = ({ organizacaoId 
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Erro ${response.status}: ${response.statusText}`);
+        throw new Error(errorData.details || errorData.error || `Erro ${response.status}: ${response.statusText}`);
       }
 
       const blob = await response.blob();

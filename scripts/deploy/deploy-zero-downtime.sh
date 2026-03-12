@@ -159,6 +159,10 @@ fi
 
 print_status "📂 Diretório de deploy: $DEPLOY_TMP_DIR"
 
+# Nota: Diretórios de upload (/var/pinovara/shared/uploads/) devem ser criados UMA VEZ
+# via scripts/setup-upload-directories-remote.sh. O deploy NÃO toca nessa pasta para
+# evitar qualquer risco aos arquivos enviados pelos usuários.
+
 # ==========================================
 # PASSO 1: BACKUP DA VERSÃO ATUAL
 # ==========================================
